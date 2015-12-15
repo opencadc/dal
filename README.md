@@ -1,2 +1,2 @@
-# core
-core libraries used by modules in other OpenCADC repositories
+# dal 
+common IVOA DataAccess layer (DAL) libraries
