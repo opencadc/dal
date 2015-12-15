@@ -1,2 +1,2 @@
 # dal 
-common IVOA DataAccess layer (DAL) libraries
+common libraries for IVOA Data Access Layer (DAL) services
