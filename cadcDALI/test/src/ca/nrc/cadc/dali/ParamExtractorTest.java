@@ -107,7 +107,8 @@ public class ParamExtractorTest
             
             Map<String,List<String>> map = extractor.getParameters(params);
             Assert.assertNotNull(map);
-            Assert.assertEquals(1, map.size());
+            Assert.assertEquals(2, map.size()); // number of valid params
+            
             List<String> foos = map.get("FOO");
             Assert.assertNotNull(foos);
             Assert.assertEquals(1, foos.size());
@@ -116,7 +117,7 @@ public class ParamExtractorTest
             params.add(new Parameter("FOO", "thing2"));
             map = extractor.getParameters(params);
             Assert.assertNotNull(map);
-            Assert.assertEquals(1, map.size());
+            Assert.assertEquals(2, map.size());
             foos = map.get("FOO");
             Assert.assertNotNull(foos);
             Assert.assertEquals(2, foos.size());
@@ -174,7 +175,7 @@ public class ParamExtractorTest
             Map<String,List<String>> map = extractor.getParameters(params);
             map = extractor.getParameters(params);
             Assert.assertNotNull(map);
-            Assert.assertEquals(1, map.size());
+            Assert.assertEquals(2, map.size());
             List<String> foos = map.get("FOO");
             Assert.assertNotNull(foos);
             Assert.assertEquals(3, foos.size());

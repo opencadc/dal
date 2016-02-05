@@ -67,56 +67,73 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali;
+package ca.nrc.cadc.dali.util;
 
-import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
-import ca.nrc.cadc.uws.Parameter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+
+import ca.nrc.cadc.dali.Coord;
+import ca.nrc.cadc.dali.Polygon;
 import org.apache.log4j.Logger;
 
 /**
- * Extract a list of query parameter-value pairs from a UWS job parameter list. This
- * implementation assumes parameter names are not case sensitive and ignores unknown 
- * parameter names.
- * 
+ *
  * @author pdowler
  */
-public class ParamExtractor 
+public class PolygonFormat implements Format<Polygon>
 {
-    private static final Logger log = Logger.getLogger(ParamExtractor.class);
-    
-    private Set<String> names = new TreeSet<String>(new CaseInsensitiveStringComparator());
-    
-    public ParamExtractor(List<String> paramNames)
+    private static final Logger log = Logger.getLogger(PolygonFormat.class);
+
+    public PolygonFormat() { }
+
+    public static boolean isPolygon(String s)
     {
-        this.names.addAll(paramNames);
-    }
-    
-    /**
-     * Get a map of parameter name to 
-     * @param paramList
-     * @return 
-     */
-    public Map<String,List<String>> getParameters(List<Parameter> paramList)
-    {
-        Map<String,List<String>> ret = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
-        for (String n : names)
-            ret.put(n, new ArrayList<String>());
+        if (s == null)
+            throw new IllegalArgumentException();
+        s = s.trim().toLowerCase();
         
-        for (Parameter p : paramList)
-        {
-            if ( names.contains(p.getName()))
-            {
-                String pname = p.getName();
-                List<String> values = ret.get(pname);
-                values.add(p.getValue());
-            }
-        }
-        return ret;
+        return s.startsWith("polygon");
     }
+    
+    public Polygon parse(String s)
+    {
+        if (s == null)
+            throw new IllegalArgumentException();
+        s = s.trim().toLowerCase();
+        
+        if (!s.startsWith("polygon"))
+            throw new IllegalArgumentException();
+        s = s.substring(7);
+        
+        DoubleArrayFormat daf = new DoubleArrayFormat();
+        double[] dd = daf.parse(s);
+        
+        try
+        {
+            if (dd.length < 6)
+                throw new IndexOutOfBoundsException();
+            Polygon poly = new Polygon();
+            for (int i=0; i<dd.length; i += 2)
+            {
+                Coord v = new Coord(dd[i], dd[i+1]);
+                poly.getVertices().add(v);
+            }
+            return poly;
+        }
+        catch(IndexOutOfBoundsException ex)
+        {
+            throw new IllegalArgumentException("invalid polygon: " + s);
+        }
+    }
+
+    public String format(Polygon poly)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("polygon ");
+        for (Coord c : poly.getVertices())
+        {
+            sb.append(c.getLongitude()).append(" ");
+            sb.append(c.getLatitude()).append(" ");
+        }
+        return sb.substring(0, sb.length() - 1);
+    }
+    
 }

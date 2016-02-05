@@ -69,54 +69,41 @@
 
 package ca.nrc.cadc.dali;
 
-import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
-import ca.nrc.cadc.uws.Parameter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+
 import org.apache.log4j.Logger;
 
 /**
- * Extract a list of query parameter-value pairs from a UWS job parameter list. This
- * implementation assumes parameter names are not case sensitive and ignores unknown 
- * parameter names.
- * 
+ *
  * @author pdowler
  */
-public class ParamExtractor 
+public class Circle 
 {
-    private static final Logger log = Logger.getLogger(ParamExtractor.class);
+    private static final Logger log = Logger.getLogger(Circle.class);
+
+    private Coord center;
+    private double radius;
     
-    private Set<String> names = new TreeSet<String>(new CaseInsensitiveStringComparator());
-    
-    public ParamExtractor(List<String> paramNames)
-    {
-        this.names.addAll(paramNames);
+    public Circle(Coord center, double radius) 
+    { 
+        DaliUtil.assertNotNull("center", center);
+        DaliUtil.assertValidRange("radius", radius, 0.0, 360.0);
+        this.center = center;
+        this.radius = radius;
     }
     
-    /**
-     * Get a map of parameter name to 
-     * @param paramList
-     * @return 
-     */
-    public Map<String,List<String>> getParameters(List<Parameter> paramList)
+    @Override
+    public String toString()
     {
-        Map<String,List<String>> ret = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
-        for (String n : names)
-            ret.put(n, new ArrayList<String>());
-        
-        for (Parameter p : paramList)
-        {
-            if ( names.contains(p.getName()))
-            {
-                String pname = p.getName();
-                List<String> values = ret.get(pname);
-                values.add(p.getValue());
-            }
-        }
-        return ret;
+        return "Circle[" + center + "," + radius + "]";
+    }
+
+    public Coord getCenter()
+    {
+        return center;
+    }
+
+    public double getRadius()
+    {
+        return radius;
     }
 }

@@ -67,56 +67,58 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali;
+package ca.nrc.cadc.dali.util;
 
-import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
-import ca.nrc.cadc.uws.Parameter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+
+import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.Coord;
 import org.apache.log4j.Logger;
 
 /**
- * Extract a list of query parameter-value pairs from a UWS job parameter list. This
- * implementation assumes parameter names are not case sensitive and ignores unknown 
- * parameter names.
- * 
+ *
  * @author pdowler
  */
-public class ParamExtractor 
+public class CircleFormat implements Format<Circle>
 {
-    private static final Logger log = Logger.getLogger(ParamExtractor.class);
+    private static final Logger log = Logger.getLogger(CircleFormat.class);
+
+    public CircleFormat() { }
     
-    private Set<String> names = new TreeSet<String>(new CaseInsensitiveStringComparator());
-    
-    public ParamExtractor(List<String> paramNames)
+    public static boolean isCircle(String s)
     {
-        this.names.addAll(paramNames);
-    }
-    
-    /**
-     * Get a map of parameter name to 
-     * @param paramList
-     * @return 
-     */
-    public Map<String,List<String>> getParameters(List<Parameter> paramList)
-    {
-        Map<String,List<String>> ret = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
-        for (String n : names)
-            ret.put(n, new ArrayList<String>());
+        if (s == null)
+            throw new IllegalArgumentException();
+        s = s.trim().toLowerCase();
         
-        for (Parameter p : paramList)
-        {
-            if ( names.contains(p.getName()))
-            {
-                String pname = p.getName();
-                List<String> values = ret.get(pname);
-                values.add(p.getValue());
-            }
-        }
-        return ret;
+        return s.startsWith("circle");
     }
+
+    public Circle parse(String s)
+    {
+        if (s == null)
+            throw new IllegalArgumentException();
+        s = s.trim().toLowerCase();
+        
+        if (!s.startsWith("circle"))
+            throw new IllegalArgumentException();
+        s = s.substring(7);
+        
+        DoubleArrayFormat daf = new DoubleArrayFormat();
+        double[] dd = daf.parse(s);
+        if (dd.length != 3)
+            throw new IllegalArgumentException();
+        return new Circle(new Coord(dd[0], dd[1]), dd[2]);
+    }
+
+    public String format(Circle t)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("circle ");
+        sb.append(t.getCenter().getLongitude()).append(" ");
+        sb.append(t.getCenter().getLatitude()).append(" ");
+        sb.append(t.getRadius());
+        return sb.toString();
+    }
+
+    
 }
