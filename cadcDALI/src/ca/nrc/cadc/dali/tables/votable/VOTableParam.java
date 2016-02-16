@@ -69,6 +69,9 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author pdowler
@@ -76,6 +79,10 @@ package ca.nrc.cadc.dali.tables.votable;
 public class VOTableParam extends VOTableField
 {
     private String value;
+    
+    private List<String> options = new ArrayList<String>();
+    private String min;
+    private String max;
 
     protected VOTableParam() { }
 
@@ -94,4 +101,36 @@ public class VOTableParam extends VOTableField
     {
         return value;
     }
+
+    public boolean hasValues()
+    {
+        return (min != null || max != null || !options.isEmpty());
+    }
+    
+    public List<String> getOptions()
+    {
+        return options;
+    }
+
+    public String getMin()
+    {
+        return min;
+    }
+
+    public String getMax()
+    {
+        return max;
+    }
+
+    public void setMin(String min)
+    {
+        this.min = min;
+    }
+
+    public void setMax(String max)
+    {
+        this.max = max;
+    }
+    
+    
 }

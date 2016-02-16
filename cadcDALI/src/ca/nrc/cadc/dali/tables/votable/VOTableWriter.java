@@ -260,44 +260,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
 
         for (VOTableResource votResource : votable.getResources())
         {
-            // Create the RESOURCE element and add to the VOTABLE element.
-            Element resource = new Element("RESOURCE", namespace);
+            Element resource = createResource(votResource, namespace);
             root.addContent(resource);
-
-            resource.setAttribute("type", votResource.getType());
-            log.debug("wrote resource.type: " + votResource.getType());
-
-            if (votResource.id != null)
-                resource.setAttribute("ID", votResource.id);
-
-            if (votResource.getName() != null)
-                resource.setAttribute("name", votResource.getName());
-            
-            if (votResource.utype != null)
-                resource.setAttribute("utype", votResource.utype);
-
-            // Create the INFO element and add to the RESOURCE element.
-            for (VOTableInfo in : votResource.getInfos())
-            {
-                Element info = new Element("INFO", namespace);
-                info.setAttribute("name", in.getName());
-                info.setAttribute("value", in.getValue());
-                if (in.content != null)
-                    info.setText(in.content);
-                resource.addContent(info);
-            }
-            log.debug("wrote resource.info: " + votResource.getInfos().size());
-
-            for (VOTableParam param : votResource.getParams())
-            {
-                resource.addContent(new ParamElement(param, namespace));
-            }
-            log.debug("wrote resource.param: " + votResource.getParams().size());
-
-            for (VOTableGroup vg : votResource.getGroups())
-            {
-                resource.addContent(new GroupElement(vg, namespace));
-            }
 
             if (votResource.getTable() != null)
             {
@@ -368,14 +332,55 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
                     }
                 }
             }
-
-
         }
-
+        
         // Write out the VOTABLE.
         XMLOutputter outputter = new XMLOutputter();
         outputter.setFormat(org.jdom2.output.Format.getPrettyFormat());
         outputter.output(document, writer);
+    }
+    
+    private Element createResource(VOTableResource votResource, Namespace namespace)
+    {
+        // Create the RESOURCE element and add to the VOTABLE element.
+        Element resource = new Element("RESOURCE", namespace);
+
+        resource.setAttribute("type", votResource.getType());
+        log.debug("wrote resource.type: " + votResource.getType());
+
+        if (votResource.id != null)
+            resource.setAttribute("ID", votResource.id);
+
+        if (votResource.getName() != null)
+            resource.setAttribute("name", votResource.getName());
+
+        if (votResource.utype != null)
+            resource.setAttribute("utype", votResource.utype);
+
+        // Create the INFO element and add to the RESOURCE element.
+        for (VOTableInfo in : votResource.getInfos())
+        {
+            Element info = new Element("INFO", namespace);
+            info.setAttribute("name", in.getName());
+            info.setAttribute("value", in.getValue());
+            if (in.content != null)
+                info.setText(in.content);
+            resource.addContent(info);
+        }
+        log.debug("wrote resource.info: " + votResource.getInfos().size());
+
+        for (VOTableParam param : votResource.getParams())
+        {
+            resource.addContent(new ParamElement(param, namespace));
+        }
+        log.debug("wrote resource.param: " + votResource.getParams().size());
+
+        for (VOTableGroup vg : votResource.getGroups())
+        {
+            resource.addContent(new GroupElement(vg, namespace));
+        }
+        
+        return resource;
     }
 
     /**

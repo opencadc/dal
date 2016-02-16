@@ -69,6 +69,8 @@
 
 package ca.nrc.cadc.dali.util;
 
+import java.util.Iterator;
+
 /**
  * Formats and parses a double[].
  *
@@ -76,7 +78,7 @@ package ca.nrc.cadc.dali.util;
 public class DoubleArrayFormat implements Format<double[]>
 {
     /**
-     * Takes an double[] and returns the default String representation.
+     * Takes an double[] and returns the standard String representation.
      * If the double[] is null an empty String is returned.
      *
      * @param object double[] to format.
@@ -93,6 +95,28 @@ public class DoubleArrayFormat implements Format<double[]>
         for (double d : object)
         {
             sb.append(Double.toString(d));
+            sb.append(" ");
+        }
+        return sb.substring(0, sb.length() - 1); // trim trailing comma
+    }
+    
+    /**
+     * Takes a sequence of double values and returns the standard String 
+     * representation. If the iterator is null or empty an empty String is
+     * returned.
+     * 
+     * @param iter
+     * @return 
+     */
+    public String format(Iterator<Double> iter)
+    {
+        if (iter == null || !iter.hasNext())
+            return "";
+        
+        StringBuilder sb = new StringBuilder();
+        while ( iter.hasNext() )
+        {
+            sb.append(iter.next().toString());
             sb.append(" ");
         }
         return sb.substring(0, sb.length() - 1); // trim trailing comma
