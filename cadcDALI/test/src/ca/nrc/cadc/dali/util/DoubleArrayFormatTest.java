@@ -126,7 +126,8 @@ public class DoubleArrayFormatTest
 
         DoubleArrayFormat format = new DoubleArrayFormat();
 
-        String s = format.format(null);
+        double[] val = null;
+        String s = format.format(val);
         assertEquals("", s);
 
         double[] object = format.parse(null);

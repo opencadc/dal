@@ -105,17 +105,15 @@ public class ParamExtractor
     public Map<String,List<String>> getParameters(List<Parameter> paramList)
     {
         Map<String,List<String>> ret = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
+        for (String n : names)
+            ret.put(n, new ArrayList<String>());
+        
         for (Parameter p : paramList)
         {
             if ( names.contains(p.getName()))
             {
                 String pname = p.getName();
                 List<String> values = ret.get(pname);
-                if (values == null)
-                {
-                    values = new ArrayList<String>();
-                    ret.put(pname, values);
-                }
                 values.add(p.getValue());
             }
         }

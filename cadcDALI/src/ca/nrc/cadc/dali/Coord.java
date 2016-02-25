@@ -67,70 +67,42 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali;
 
-import java.util.ArrayList;
-import java.util.List;
+
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class VOTableParam extends VOTableField
+public class Coord 
 {
-    private String value;
-    
-    private List<String> options = new ArrayList<String>();
-    private String min;
-    private String max;
+    private static final Logger log = Logger.getLogger(Coord.class);
 
-    protected VOTableParam() { }
-
-    public VOTableParam(String name, String datatype, String value)
-    {
-        this(name, datatype, null, false, value);
-    }
-
-    public VOTableParam(String name, String datatype, Integer arraysize, boolean variableSize, String value)
-    {
-        super(name, datatype, arraysize, variableSize, null);
-        this.value = value;
-    }
-
-    public String getValue()
-    {
-        return value;
-    }
-
-    public boolean hasValues()
-    {
-        return (min != null || max != null || !options.isEmpty());
+    private final double longitude, latitude;
+            
+    public Coord(double longitude, double latitude) 
+    { 
+        DaliUtil.assertValidRange("longitude", longitude, 0.0, 360.0);
+        DaliUtil.assertValidRange("latitude", latitude, -90.0, 90.0);
+        this.longitude = longitude;
+        this.latitude = latitude;
     }
     
-    public List<String> getOptions()
+    @Override
+    public String toString()
     {
-        return options;
+        return "Coord[" + longitude + "," + latitude + "]";
     }
 
-    public String getMin()
+    public double getLongitude()
     {
-        return min;
+        return longitude;
     }
 
-    public String getMax()
+    public double getLatitude()
     {
-        return max;
+        return latitude;
     }
-
-    public void setMin(String min)
-    {
-        this.min = min;
-    }
-
-    public void setMax(String max)
-    {
-        this.max = max;
-    }
-    
-    
 }

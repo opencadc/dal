@@ -68,6 +68,7 @@
  */
 package ca.nrc.cadc.dali.tables.votable;
 
+import org.jdom2.Element;
 import org.jdom2.Namespace;
 
 /**
@@ -89,6 +90,30 @@ public class ParamElement extends FieldElement
         if (param != null)
         {
             setFieldAttribute("value", param.getValue());
+        }
+        
+        if (param != null && param.hasValues())
+        {
+            Element values = new Element("VALUES", namespace);
+            this.addContent(values);
+            if (param.getMin() != null)
+            {
+                Element e = new Element("MIN");
+                e.setAttribute("value", param.getMin());
+                values.addContent(e);
+            }
+            if (param.getMax() != null)
+            {
+                Element e = new Element("MAX", namespace);
+                e.setAttribute("value", param.getMax());
+                values.addContent(e);
+            }
+            for (String s : param.getOptions())
+            {
+                Element e = new Element("OPTION", namespace);
+                e.setAttribute("value", s);
+                values.addContent(e);
+            }
         }
     }
     

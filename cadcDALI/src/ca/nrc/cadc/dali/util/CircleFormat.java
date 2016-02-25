@@ -67,70 +67,58 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali.util;
 
-import java.util.ArrayList;
-import java.util.List;
+
+import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.Coord;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class VOTableParam extends VOTableField
+public class CircleFormat implements Format<Circle>
 {
-    private String value;
+    private static final Logger log = Logger.getLogger(CircleFormat.class);
+
+    public CircleFormat() { }
     
-    private List<String> options = new ArrayList<String>();
-    private String min;
-    private String max;
-
-    protected VOTableParam() { }
-
-    public VOTableParam(String name, String datatype, String value)
+    public static boolean isCircle(String s)
     {
-        this(name, datatype, null, false, value);
+        if (s == null)
+            throw new IllegalArgumentException();
+        s = s.trim().toLowerCase();
+        
+        return s.startsWith("circle");
     }
 
-    public VOTableParam(String name, String datatype, Integer arraysize, boolean variableSize, String value)
+    public Circle parse(String s)
     {
-        super(name, datatype, arraysize, variableSize, null);
-        this.value = value;
+        if (s == null)
+            throw new IllegalArgumentException();
+        s = s.trim().toLowerCase();
+        
+        if (!s.startsWith("circle"))
+            throw new IllegalArgumentException();
+        s = s.substring(7);
+        
+        DoubleArrayFormat daf = new DoubleArrayFormat();
+        double[] dd = daf.parse(s);
+        if (dd.length != 3)
+            throw new IllegalArgumentException();
+        return new Circle(new Coord(dd[0], dd[1]), dd[2]);
     }
 
-    public String getValue()
+    public String format(Circle t)
     {
-        return value;
+        StringBuilder sb = new StringBuilder();
+        sb.append("circle ");
+        sb.append(t.getCenter().getLongitude()).append(" ");
+        sb.append(t.getCenter().getLatitude()).append(" ");
+        sb.append(t.getRadius());
+        return sb.toString();
     }
 
-    public boolean hasValues()
-    {
-        return (min != null || max != null || !options.isEmpty());
-    }
-    
-    public List<String> getOptions()
-    {
-        return options;
-    }
-
-    public String getMin()
-    {
-        return min;
-    }
-
-    public String getMax()
-    {
-        return max;
-    }
-
-    public void setMin(String min)
-    {
-        this.min = min;
-    }
-
-    public void setMax(String max)
-    {
-        this.max = max;
-    }
-    
     
 }

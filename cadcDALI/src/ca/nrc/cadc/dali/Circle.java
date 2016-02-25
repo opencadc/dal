@@ -67,70 +67,43 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali;
 
-import java.util.ArrayList;
-import java.util.List;
+
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class VOTableParam extends VOTableField
+public class Circle 
 {
-    private String value;
+    private static final Logger log = Logger.getLogger(Circle.class);
+
+    private Coord center;
+    private double radius;
     
-    private List<String> options = new ArrayList<String>();
-    private String min;
-    private String max;
-
-    protected VOTableParam() { }
-
-    public VOTableParam(String name, String datatype, String value)
-    {
-        this(name, datatype, null, false, value);
-    }
-
-    public VOTableParam(String name, String datatype, Integer arraysize, boolean variableSize, String value)
-    {
-        super(name, datatype, arraysize, variableSize, null);
-        this.value = value;
-    }
-
-    public String getValue()
-    {
-        return value;
-    }
-
-    public boolean hasValues()
-    {
-        return (min != null || max != null || !options.isEmpty());
+    public Circle(Coord center, double radius) 
+    { 
+        DaliUtil.assertNotNull("center", center);
+        DaliUtil.assertValidRange("radius", radius, 0.0, 360.0);
+        this.center = center;
+        this.radius = radius;
     }
     
-    public List<String> getOptions()
+    @Override
+    public String toString()
     {
-        return options;
+        return "Circle[" + center + "," + radius + "]";
     }
 
-    public String getMin()
+    public Coord getCenter()
     {
-        return min;
+        return center;
     }
 
-    public String getMax()
+    public double getRadius()
     {
-        return max;
+        return radius;
     }
-
-    public void setMin(String min)
-    {
-        this.min = min;
-    }
-
-    public void setMax(String max)
-    {
-        this.max = max;
-    }
-    
-    
 }

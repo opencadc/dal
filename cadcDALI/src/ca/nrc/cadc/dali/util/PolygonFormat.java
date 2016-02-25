@@ -67,70 +67,73 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali.util;
 
-import java.util.ArrayList;
-import java.util.List;
+
+import ca.nrc.cadc.dali.Coord;
+import ca.nrc.cadc.dali.Polygon;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class VOTableParam extends VOTableField
+public class PolygonFormat implements Format<Polygon>
 {
-    private String value;
-    
-    private List<String> options = new ArrayList<String>();
-    private String min;
-    private String max;
+    private static final Logger log = Logger.getLogger(PolygonFormat.class);
 
-    protected VOTableParam() { }
+    public PolygonFormat() { }
 
-    public VOTableParam(String name, String datatype, String value)
+    public static boolean isPolygon(String s)
     {
-        this(name, datatype, null, false, value);
-    }
-
-    public VOTableParam(String name, String datatype, Integer arraysize, boolean variableSize, String value)
-    {
-        super(name, datatype, arraysize, variableSize, null);
-        this.value = value;
-    }
-
-    public String getValue()
-    {
-        return value;
-    }
-
-    public boolean hasValues()
-    {
-        return (min != null || max != null || !options.isEmpty());
+        if (s == null)
+            throw new IllegalArgumentException();
+        s = s.trim().toLowerCase();
+        
+        return s.startsWith("polygon");
     }
     
-    public List<String> getOptions()
+    public Polygon parse(String s)
     {
-        return options;
+        if (s == null)
+            throw new IllegalArgumentException();
+        s = s.trim().toLowerCase();
+        
+        if (!s.startsWith("polygon"))
+            throw new IllegalArgumentException();
+        s = s.substring(7);
+        
+        DoubleArrayFormat daf = new DoubleArrayFormat();
+        double[] dd = daf.parse(s);
+        
+        try
+        {
+            if (dd.length < 6)
+                throw new IndexOutOfBoundsException();
+            Polygon poly = new Polygon();
+            for (int i=0; i<dd.length; i += 2)
+            {
+                Coord v = new Coord(dd[i], dd[i+1]);
+                poly.getVertices().add(v);
+            }
+            return poly;
+        }
+        catch(IndexOutOfBoundsException ex)
+        {
+            throw new IllegalArgumentException("invalid polygon: " + s);
+        }
     }
 
-    public String getMin()
+    public String format(Polygon poly)
     {
-        return min;
+        StringBuilder sb = new StringBuilder();
+        sb.append("polygon ");
+        for (Coord c : poly.getVertices())
+        {
+            sb.append(c.getLongitude()).append(" ");
+            sb.append(c.getLatitude()).append(" ");
+        }
+        return sb.substring(0, sb.length() - 1);
     }
-
-    public String getMax()
-    {
-        return max;
-    }
-
-    public void setMin(String min)
-    {
-        this.min = min;
-    }
-
-    public void setMax(String max)
-    {
-        this.max = max;
-    }
-    
     
 }

@@ -67,69 +67,40 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali;
+
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class VOTableParam extends VOTableField
+public class Polygon 
 {
-    private String value;
+    private static final Logger log = Logger.getLogger(Polygon.class);
+
+    private List<Coord> vertices = new ArrayList<Coord>();
     
-    private List<String> options = new ArrayList<String>();
-    private String min;
-    private String max;
+    public Polygon() { }
 
-    protected VOTableParam() { }
-
-    public VOTableParam(String name, String datatype, String value)
+    @Override
+    public String toString()
     {
-        this(name, datatype, null, false, value);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Polygon[");
+        for (Coord v : vertices)
+        {
+            sb.append(v.getLongitude()).append(" ").append(v.getLatitude()).append(" ");
+        }
+        sb.setCharAt(sb.length() - 1, ']');
+        return sb.toString();
     }
-
-    public VOTableParam(String name, String datatype, Integer arraysize, boolean variableSize, String value)
+    public List<Coord> getVertices()
     {
-        super(name, datatype, arraysize, variableSize, null);
-        this.value = value;
-    }
-
-    public String getValue()
-    {
-        return value;
-    }
-
-    public boolean hasValues()
-    {
-        return (min != null || max != null || !options.isEmpty());
-    }
-    
-    public List<String> getOptions()
-    {
-        return options;
-    }
-
-    public String getMin()
-    {
-        return min;
-    }
-
-    public String getMax()
-    {
-        return max;
-    }
-
-    public void setMin(String min)
-    {
-        this.min = min;
-    }
-
-    public void setMax(String max)
-    {
-        this.max = max;
+        return vertices;
     }
     
     
