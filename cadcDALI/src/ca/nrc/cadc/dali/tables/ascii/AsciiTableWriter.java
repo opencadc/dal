@@ -165,12 +165,29 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
         return contentType.getValue();
     }
 
+    public String getErrorContentType()
+    {
+        return "text/plain";
+    }
+
     @Override
     public void setFormatFactory(FormatFactory formatFactory)
     {
         this.formatFactory = formatFactory;
     }
 
+    public void write(Throwable thrown, OutputStream out) 
+        throws IOException
+    {
+        Writer writer = new BufferedWriter(new OutputStreamWriter(out, US_ASCII));
+        CsvWriter csv = new CsvWriter(writer, delimeter);
+        
+        csv.write(thrown.getMessage());
+        csv.endRecord();
+        
+        csv.flush();
+    }
+    
     @Override
     public void write(VOTableDocument vot, OutputStream out)
         throws IOException

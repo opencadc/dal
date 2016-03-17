@@ -159,6 +159,11 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
         return mimeType;
     }
 
+    public String getErrorContentType()
+    {
+        return getContentType();
+    }
+
     /**
      * Get the extension for the VOTable.
      *

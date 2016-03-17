@@ -97,6 +97,14 @@ public interface TableWriter<T>
     String getContentType();
 
     /**
+     * Get the content0-type for errors. Error messages are written via the
+     * write(Throwable, OutputStream) method.
+     * 
+     * @return content-type
+     */
+    String getErrorContentType();
+    
+    /**
      * Set a custom factory for Format objects. If this is not set, a default
      * factory will be used.
      * 
@@ -131,4 +139,13 @@ public interface TableWriter<T>
     void write (T t, Writer out, Long maxrec)
         throws IOException;
     
+    /**
+     * Write the Throwable to the OutputStream
+     *
+     * @param thrown Throwable to write.
+     * @param output OutputStream to write to.
+     * @throws IOException if problem writing to the stream.
+     */
+    public void write(Throwable thrown, OutputStream output)
+        throws IOException;
 }
