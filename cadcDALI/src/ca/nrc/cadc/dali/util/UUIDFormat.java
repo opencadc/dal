@@ -87,7 +87,15 @@ public class UUIDFormat implements Format<UUID>
     {
         if (s == null)
             return null;
-        return UUID.fromString(s);
+        try
+        {
+            return UUID.fromString(s);
+        }
+        catch(IllegalArgumentException ex)
+        {
+            // ex doesn't say what string it got
+            throw new IllegalArgumentException("invalid UUID: " + s);
+        }
     }
 
     public String format(UUID t)

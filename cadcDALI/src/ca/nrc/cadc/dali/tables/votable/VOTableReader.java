@@ -511,7 +511,9 @@ public class VOTableReader
                     Element td = tds.get(i);
                     VOTableField field = fields.get(i);
                     Format format = formatFactory.getFormat(field);
-                    String text = td.getText();
+                    String text = td.getTextTrim();
+                    if (text != null && text.length() == 0)
+                        text = null;
                     Object o = format.parse(text);
                     row.add(o);
                 }

@@ -86,7 +86,7 @@ public class DefaultFormat implements Format<Object>
 {
     public Object parse(String s)
     {
-        if (s.isEmpty())
+        if (s == null || s.isEmpty())
             return null;
         return s;
     }
