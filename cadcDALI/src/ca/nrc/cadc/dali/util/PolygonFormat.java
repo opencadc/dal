@@ -70,12 +70,13 @@
 package ca.nrc.cadc.dali.util;
 
 
-import ca.nrc.cadc.dali.Coord;
+import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import org.apache.log4j.Logger;
 
 /**
- *
+ * DALI-1.1 polygon formatter.
+ * 
  * @author pdowler
  */
 public class PolygonFormat implements Format<Polygon>
@@ -84,24 +85,10 @@ public class PolygonFormat implements Format<Polygon>
 
     public PolygonFormat() { }
 
-    public static boolean isPolygon(String s)
-    {
-        if (s == null)
-            throw new IllegalArgumentException();
-        s = s.trim().toLowerCase();
-        
-        return s.startsWith("polygon");
-    }
-    
     public Polygon parse(String s)
     {
         if (s == null)
-            throw new IllegalArgumentException();
-        s = s.trim().toLowerCase();
-        
-        if (!s.startsWith("polygon"))
-            throw new IllegalArgumentException();
-        s = s.substring(7);
+            return null;
         
         DoubleArrayFormat daf = new DoubleArrayFormat();
         double[] dd = daf.parse(s);
@@ -113,7 +100,7 @@ public class PolygonFormat implements Format<Polygon>
             Polygon poly = new Polygon();
             for (int i=0; i<dd.length; i += 2)
             {
-                Coord v = new Coord(dd[i], dd[i+1]);
+                Point v = new Point(dd[i], dd[i+1]);
                 poly.getVertices().add(v);
             }
             return poly;
@@ -126,9 +113,10 @@ public class PolygonFormat implements Format<Polygon>
 
     public String format(Polygon poly)
     {
+        if (poly == null)
+            return "";
         StringBuilder sb = new StringBuilder();
-        sb.append("polygon ");
-        for (Coord c : poly.getVertices())
+        for (Point c : poly.getVertices())
         {
             sb.append(c.getLongitude()).append(" ");
             sb.append(c.getLatitude()).append(" ");

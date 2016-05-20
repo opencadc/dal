@@ -67,77 +67,51 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.util;
+package ca.nrc.cadc.dali;
 
 
-import ca.nrc.cadc.dali.Point;
-import java.util.UUID;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class PointFormatTest 
+public class Point 
 {
-    private static final Logger log = Logger.getLogger(PointFormatTest.class);
+    private static final Logger log = Logger.getLogger(Point.class);
 
-    public PointFormatTest() { }
-    
-    /**
-     * Test of format and parse method, of class ByteArrayFormat.
-     */
-    @Test
-    public void testValue()
-    {
-        log.debug("testValue");
-        try
-        {
-            PointFormat format = new PointFormat();
-            Point expected = new Point(12.0, 34.0);
+    private final double longitude, latitude;
             
-            String result = format.format(expected);
-            Point actual = format.parse(result);
-
-            Assert.assertEquals(expected, actual);
-        }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testInvalidStringRep() throws Exception
-    {
-        log.debug("testInvalidStringRep");
-
-        PointFormat format = new PointFormat();
-        
-        String tooShort = "12.0";
-        String tooLong = "12.0 34.0 56.0";
-
-        try { format.parse(tooShort); }
-        catch(IllegalArgumentException expected) { }
-        
-        try { format.parse(tooLong); }
-        catch(IllegalArgumentException expected) { }
+    public Point(double longitude, double latitude) 
+    { 
+        DaliUtil.assertValidRange("longitude", longitude, 0.0, 360.0);
+        DaliUtil.assertValidRange("latitude", latitude, -90.0, 90.0);
+        this.longitude = longitude;
+        this.latitude = latitude;
     }
     
-    @Test
-    public void testNull() throws Exception
+    @Override
+    public String toString()
     {
-        log.debug("testNull");
+        return "Point[" + longitude + "," + latitude + "]";
+    }
 
-        PointFormat format = new PointFormat();
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+            return false;
+        Point rhs = (Point) obj;
+        return this.longitude == rhs.longitude && this.latitude == rhs.latitude; 
+    }
 
-        String s = format.format(null);
-        Assert.assertEquals("", s);
+    public double getLongitude()
+    {
+        return longitude;
+    }
 
-        Point object = format.parse(null);
-        Assert.assertNull(object);
+    public double getLatitude()
+    {
+        return latitude;
     }
 }

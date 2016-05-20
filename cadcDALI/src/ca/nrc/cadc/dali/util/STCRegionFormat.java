@@ -76,7 +76,7 @@ import ca.nrc.cadc.stc.StcsParsingException;
  *
  * @author jburke
  */
-public class RegionFormat implements Format<Region>
+public class STCRegionFormat implements Format<Region>
 {
     /**
      * Takes a Region and returns the default String representation.

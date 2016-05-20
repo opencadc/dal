@@ -70,74 +70,30 @@
 package ca.nrc.cadc.dali.util;
 
 
-import ca.nrc.cadc.dali.Point;
 import java.util.UUID;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class PointFormatTest 
+public class UUIDFormat implements Format<UUID>
 {
-    private static final Logger log = Logger.getLogger(PointFormatTest.class);
+    private static final Logger log = Logger.getLogger(UUIDFormat.class);
 
-    public PointFormatTest() { }
-    
-    /**
-     * Test of format and parse method, of class ByteArrayFormat.
-     */
-    @Test
-    public void testValue()
+    public UUIDFormat() { }
+
+    public UUID parse(String s)
     {
-        log.debug("testValue");
-        try
-        {
-            PointFormat format = new PointFormat();
-            Point expected = new Point(12.0, 34.0);
-            
-            String result = format.format(expected);
-            Point actual = format.parse(result);
-
-            Assert.assertEquals(expected, actual);
-        }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
+        if (s == null)
+            return null;
+        return UUID.fromString(s);
     }
 
-    @Test
-    public void testInvalidStringRep() throws Exception
+    public String format(UUID t)
     {
-        log.debug("testInvalidStringRep");
-
-        PointFormat format = new PointFormat();
-        
-        String tooShort = "12.0";
-        String tooLong = "12.0 34.0 56.0";
-
-        try { format.parse(tooShort); }
-        catch(IllegalArgumentException expected) { }
-        
-        try { format.parse(tooLong); }
-        catch(IllegalArgumentException expected) { }
-    }
-    
-    @Test
-    public void testNull() throws Exception
-    {
-        log.debug("testNull");
-
-        PointFormat format = new PointFormat();
-
-        String s = format.format(null);
-        Assert.assertEquals("", s);
-
-        Point object = format.parse(null);
-        Assert.assertNull(object);
+        if (t == null)
+            return "";
+        return t.toString();
     }
 }

@@ -82,7 +82,7 @@ public class Polygon
 {
     private static final Logger log = Logger.getLogger(Polygon.class);
 
-    private List<Coord> vertices = new ArrayList<Coord>();
+    private List<Point> vertices = new ArrayList<Point>();
     
     public Polygon() { }
 
@@ -91,17 +91,38 @@ public class Polygon
     {
         StringBuilder sb = new StringBuilder();
         sb.append("Polygon[");
-        for (Coord v : vertices)
+        for (Point v : vertices)
         {
             sb.append(v.getLongitude()).append(" ").append(v.getLatitude()).append(" ");
         }
         sb.setCharAt(sb.length() - 1, ']');
         return sb.toString();
     }
-    public List<Coord> getVertices()
+    public List<Point> getVertices()
     {
         return vertices;
     }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+            return false;
+        Polygon rhs = (Polygon) obj;
+        
+        if (this.vertices.size() != rhs.vertices.size())
+            return false;
+        for (int i=0; i<vertices.size(); i++)
+        {
+            Point tp = this.vertices.get(i);
+            Point rp = rhs.vertices.get(i);
+            if ( ! tp.equals(rp) )
+                return false;
+        }
+        return true;
+    }
+    
+    
     
     
 }

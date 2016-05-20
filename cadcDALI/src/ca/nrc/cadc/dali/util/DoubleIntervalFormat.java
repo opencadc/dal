@@ -67,42 +67,43 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali;
+package ca.nrc.cadc.dali.util;
 
 
+import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.LongInterval;
 import org.apache.log4j.Logger;
 
 /**
- *
+ * DALI-1.1 floating point interval formatter.
+ * 
  * @author pdowler
  */
-public class Coord 
+public class DoubleIntervalFormat implements Format<DoubleInterval>
 {
-    private static final Logger log = Logger.getLogger(Coord.class);
+    private static final Logger log = Logger.getLogger(DoubleIntervalFormat.class);
 
-    private final double longitude, latitude;
-            
-    public Coord(double longitude, double latitude) 
-    { 
-        DaliUtil.assertValidRange("longitude", longitude, 0.0, 360.0);
-        DaliUtil.assertValidRange("latitude", latitude, -90.0, 90.0);
-        this.longitude = longitude;
-        this.latitude = latitude;
+    public DoubleIntervalFormat() { }
+
+    public DoubleInterval parse(String s)
+    {
+        if (s == null)
+            return null;
+        
+        DoubleArrayFormat daf = new DoubleArrayFormat();
+        double[] vv = daf.parse(s);
+        if (vv.length != 2)
+            throw new IllegalArgumentException();
+    
+        return new DoubleInterval(vv[0], vv[1]);
+    }
+
+    public String format(DoubleInterval t)
+    {
+        if (t == null)
+            return "";
+        return t.getLower() + " " + t.getUpper();
     }
     
-    @Override
-    public String toString()
-    {
-        return "Coord[" + longitude + "," + latitude + "]";
-    }
-
-    public double getLongitude()
-    {
-        return longitude;
-    }
-
-    public double getLatitude()
-    {
-        return latitude;
-    }
+    
 }

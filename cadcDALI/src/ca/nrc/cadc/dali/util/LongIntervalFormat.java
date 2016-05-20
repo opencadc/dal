@@ -70,74 +70,37 @@
 package ca.nrc.cadc.dali.util;
 
 
-import ca.nrc.cadc.dali.Point;
-import java.util.UUID;
+import ca.nrc.cadc.dali.LongInterval;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
- *
+ * DALI-1.1 fixed point interval formatter.
+ * 
  * @author pdowler
  */
-public class PointFormatTest 
+public class LongIntervalFormat implements Format<LongInterval>
 {
-    private static final Logger log = Logger.getLogger(PointFormatTest.class);
+    private static final Logger log = Logger.getLogger(LongIntervalFormat.class);
 
-    public PointFormatTest() { }
-    
-    /**
-     * Test of format and parse method, of class ByteArrayFormat.
-     */
-    @Test
-    public void testValue()
+    public LongIntervalFormat() { }
+
+    public LongInterval parse(String s)
     {
-        log.debug("testValue");
-        try
-        {
-            PointFormat format = new PointFormat();
-            Point expected = new Point(12.0, 34.0);
-            
-            String result = format.format(expected);
-            Point actual = format.parse(result);
+        if (s == null)
+            return null;
+        
+        LongArrayFormat laf = new LongArrayFormat();
+        long[] vv = laf.parse(s);
+        if (vv.length != 2)
+            throw new IllegalArgumentException();
 
-            Assert.assertEquals(expected, actual);
-        }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
+        return new LongInterval(vv[0], vv[1]);
     }
 
-    @Test
-    public void testInvalidStringRep() throws Exception
+    public String format(LongInterval t)
     {
-        log.debug("testInvalidStringRep");
-
-        PointFormat format = new PointFormat();
-        
-        String tooShort = "12.0";
-        String tooLong = "12.0 34.0 56.0";
-
-        try { format.parse(tooShort); }
-        catch(IllegalArgumentException expected) { }
-        
-        try { format.parse(tooLong); }
-        catch(IllegalArgumentException expected) { }
-    }
-    
-    @Test
-    public void testNull() throws Exception
-    {
-        log.debug("testNull");
-
-        PointFormat format = new PointFormat();
-
-        String s = format.format(null);
-        Assert.assertEquals("", s);
-
-        Point object = format.parse(null);
-        Assert.assertNull(object);
+        if (t == null)
+            return "";
+        return t.getLower() + " " + t.getUpper();
     }
 }

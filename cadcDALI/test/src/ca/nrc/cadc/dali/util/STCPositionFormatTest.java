@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2009.                            (c) 2009.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,32 +62,40 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
+*  $Revision: 4 $
 *
 ************************************************************************
 */
 
 package ca.nrc.cadc.dali.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
-import ca.nrc.cadc.dali.Point;
-import java.util.UUID;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
 import org.junit.Test;
+
+import ca.nrc.cadc.stc.Position;
+import ca.nrc.cadc.util.Log4jInit;
 
 /**
  *
- * @author pdowler
+ * @author jburke
  */
-public class PointFormatTest 
+public class STCPositionFormatTest
 {
-    private static final Logger log = Logger.getLogger(PointFormatTest.class);
+    private static final Logger log = Logger.getLogger(STCPositionFormatTest.class);
+    static
+    {
+        Log4jInit.setLevel("ca", Level.INFO);
+    }
 
-    public PointFormatTest() { }
-    
+    public STCPositionFormatTest() { }
+
     /**
-     * Test of format and parse method, of class ByteArrayFormat.
+     * Test of format and parse method, of class STCPositionFormat.
      */
     @Test
     public void testValue()
@@ -95,49 +103,38 @@ public class PointFormatTest
         log.debug("testValue");
         try
         {
-            PointFormat format = new PointFormat();
-            Point expected = new Point(12.0, 34.0);
-            
-            String result = format.format(expected);
-            Point actual = format.parse(result);
+            STCPositionFormat format = new STCPositionFormat();
 
-            Assert.assertEquals(expected, actual);
+            String expected = "Position ICRS BARYCENTER SPHERICAL2 1.0 2.0";
+
+            Position result = format.parse(expected);
+            String actual = format.format(result);
+
+            assertEquals(expected.toUpperCase(), actual.toUpperCase());
+
+            log.info("testValue passed");
         }
         catch(Exception unexpected)
         {
             log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
+            fail("unexpected exception: " + unexpected);
         }
     }
 
-    @Test
-    public void testInvalidStringRep() throws Exception
-    {
-        log.debug("testInvalidStringRep");
-
-        PointFormat format = new PointFormat();
-        
-        String tooShort = "12.0";
-        String tooLong = "12.0 34.0 56.0";
-
-        try { format.parse(tooShort); }
-        catch(IllegalArgumentException expected) { }
-        
-        try { format.parse(tooLong); }
-        catch(IllegalArgumentException expected) { }
-    }
-    
     @Test
     public void testNull() throws Exception
     {
         log.debug("testNull");
 
-        PointFormat format = new PointFormat();
+        STCPositionFormat format = new STCPositionFormat();
 
         String s = format.format(null);
-        Assert.assertEquals("", s);
+        assertEquals("", s);
 
-        Point object = format.parse(null);
-        Assert.assertNull(object);
+        Position object = format.parse(null);
+        assertNull(object);
+
+        log.info("testNull passed");
     }
+
 }

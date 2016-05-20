@@ -70,8 +70,7 @@
 package ca.nrc.cadc.dali.util;
 
 
-import ca.nrc.cadc.dali.Point;
-import java.util.UUID;
+import ca.nrc.cadc.dali.LongInterval;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -80,11 +79,11 @@ import org.junit.Test;
  *
  * @author pdowler
  */
-public class PointFormatTest 
+public class LongIntervalFormatTest 
 {
-    private static final Logger log = Logger.getLogger(PointFormatTest.class);
+    private static final Logger log = Logger.getLogger(LongIntervalFormatTest.class);
 
-    public PointFormatTest() { }
+    public LongIntervalFormatTest() { }
     
     /**
      * Test of format and parse method, of class ByteArrayFormat.
@@ -95,11 +94,11 @@ public class PointFormatTest
         log.debug("testValue");
         try
         {
-            PointFormat format = new PointFormat();
-            Point expected = new Point(12.0, 34.0);
+            LongIntervalFormat format = new LongIntervalFormat();
+            LongInterval expected = new LongInterval(1, 2);
             
             String result = format.format(expected);
-            Point actual = format.parse(result);
+            LongInterval actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);
         }
@@ -115,10 +114,10 @@ public class PointFormatTest
     {
         log.debug("testInvalidStringRep");
 
-        PointFormat format = new PointFormat();
+        LongIntervalFormat format = new LongIntervalFormat();
         
-        String tooShort = "12.0";
-        String tooLong = "12.0 34.0 56.0";
+        String tooShort = "1";
+        String tooLong = "1 2 3";
 
         try { format.parse(tooShort); }
         catch(IllegalArgumentException expected) { }
@@ -132,12 +131,12 @@ public class PointFormatTest
     {
         log.debug("testNull");
 
-        PointFormat format = new PointFormat();
+        LongIntervalFormat format = new LongIntervalFormat();
 
         String s = format.format(null);
         Assert.assertEquals("", s);
 
-        Point object = format.parse(null);
+        LongInterval object = format.parse(null);
         Assert.assertNull(object);
     }
 }

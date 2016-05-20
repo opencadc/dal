@@ -80,10 +80,10 @@ public class Circle
 {
     private static final Logger log = Logger.getLogger(Circle.class);
 
-    private Coord center;
+    private Point center;
     private double radius;
     
-    public Circle(Coord center, double radius) 
+    public Circle(Point center, double radius) 
     { 
         DaliUtil.assertNotNull("center", center);
         DaliUtil.assertValidRange("radius", radius, 0.0, 360.0);
@@ -97,7 +97,16 @@ public class Circle
         return "Circle[" + center + "," + radius + "]";
     }
 
-    public Coord getCenter()
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+            return false;
+        Circle rhs = (Circle) obj;
+        return this.center.equals(rhs.getCenter()) && this.radius == rhs.radius; 
+    }
+    
+    public Point getCenter()
     {
         return center;
     }

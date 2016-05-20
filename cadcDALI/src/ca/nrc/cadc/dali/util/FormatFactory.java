@@ -123,7 +123,12 @@ public class FormatFactory
         {
             if (isArray(field))
             {
-                ret = new ShortArrayFormat();
+                if ("interval".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new LongIntervalFormat();
+                }
+                else
+                    ret = new ShortArrayFormat();
             }
             else
             {
@@ -134,7 +139,12 @@ public class FormatFactory
         {
             if (isArray(field))
             {
-                ret = new IntArrayFormat();
+                if ("interval".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new LongIntervalFormat();
+                }
+                else
+                    ret = new IntArrayFormat();
             }
             else
             {
@@ -145,7 +155,12 @@ public class FormatFactory
         {
             if (isArray(field))
             {
-                ret = new LongArrayFormat();
+                if ("interval".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new LongIntervalFormat();
+                }
+                else
+                    ret = new LongArrayFormat();
             }
             else
             {
@@ -160,7 +175,24 @@ public class FormatFactory
         {
             if (isArray(field))
             {
-                ret = new FloatArrayFormat();
+                if ("point".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new PointFormat();
+                }
+                else if ("circle".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new CircleFormat();
+                }
+                else if ("polygon".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new PolygonFormat();
+                }
+                else if ("interval".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new DoubleIntervalFormat();
+                }
+                else
+                    ret = new FloatArrayFormat();
             }
             else
             {
@@ -171,7 +203,24 @@ public class FormatFactory
         {
             if (isArray(field))
             {
-                ret = new DoubleArrayFormat();
+                if ("point".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new PointFormat();
+                }
+                else if ("circle".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new CircleFormat();
+                }
+                else if ("polygon".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new PolygonFormat();
+                }
+                else if ("interval".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new DoubleIntervalFormat();
+                }
+                else
+                    ret = new DoubleArrayFormat();
             }
             else
             {
@@ -190,20 +239,25 @@ public class FormatFactory
         {
             if (isArray(field))
             {
-                if (field.xtype != null)
+                if ("timestamp".equalsIgnoreCase(field.xtype)) // DALI-1.1
                 {
-                    if (field.xtype.equalsIgnoreCase("adql:timestamp"))
-                    {
-                        ret = new UTCTimestampFormat();
-                    }
-                    if (field.xtype.equalsIgnoreCase("adql:point"))
-                    {
-                        ret = new PointFormat();
-                    }
-                    if (field.xtype.equalsIgnoreCase("adql:region"))
-                    {
-                        ret = new RegionFormat();
-                    }
+                    ret = new UTCTimestampFormat();
+                }
+                else if ("adql:timestamp".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new UTCTimestampFormat();
+                }
+                else if ("adql:point".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new STCPositionFormat();
+                }
+                else if ("adql:region".equalsIgnoreCase(field.xtype))
+                {
+                    ret = new STCRegionFormat();
+                }
+                else if ("uuid".equalsIgnoreCase(field.xtype)) // custom
+                {
+                    ret = new UUIDFormat();
                 }
             }
         }

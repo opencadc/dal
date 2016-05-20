@@ -67,77 +67,45 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.util;
+package ca.nrc.cadc.dali;
 
 
-import ca.nrc.cadc.dali.Point;
-import java.util.UUID;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class PointFormatTest 
+public class LongInterval 
 {
-    private static final Logger log = Logger.getLogger(PointFormatTest.class);
+    private static final Logger log = Logger.getLogger(LongInterval.class);
 
-    public PointFormatTest() { }
+    private long lower;
+    private long upper;
     
-    /**
-     * Test of format and parse method, of class ByteArrayFormat.
-     */
-    @Test
-    public void testValue()
-    {
-        log.debug("testValue");
-        try
-        {
-            PointFormat format = new PointFormat();
-            Point expected = new Point(12.0, 34.0);
-            
-            String result = format.format(expected);
-            Point actual = format.parse(result);
-
-            Assert.assertEquals(expected, actual);
-        }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
+    public LongInterval(long lower, long upper) 
+    { 
+        this.lower = lower;
+        this.upper = upper;
     }
 
-    @Test
-    public void testInvalidStringRep() throws Exception
+    public long getLower()
     {
-        log.debug("testInvalidStringRep");
-
-        PointFormat format = new PointFormat();
-        
-        String tooShort = "12.0";
-        String tooLong = "12.0 34.0 56.0";
-
-        try { format.parse(tooShort); }
-        catch(IllegalArgumentException expected) { }
-        
-        try { format.parse(tooLong); }
-        catch(IllegalArgumentException expected) { }
+        return lower;
     }
-    
-    @Test
-    public void testNull() throws Exception
+
+    public long getUpper()
     {
-        log.debug("testNull");
+        return upper;
+    }
 
-        PointFormat format = new PointFormat();
-
-        String s = format.format(null);
-        Assert.assertEquals("", s);
-
-        Point object = format.parse(null);
-        Assert.assertNull(object);
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+            return false;
+        
+        LongInterval rhs = (LongInterval) obj;
+        return lower == rhs.lower && upper == rhs.upper;
     }
 }
