@@ -84,15 +84,15 @@ import ca.nrc.cadc.util.Log4jInit;
  *
  * @author jburke
  */
-public class RegionFormatTest
+public class STCRegionFormatTest
 {
-    private static final Logger log = Logger.getLogger(RegionFormatTest.class);
+    private static final Logger log = Logger.getLogger(STCRegionFormatTest.class);
     static
     {
         Log4jInit.setLevel("ca", Level.INFO);
     }
 
-    public RegionFormatTest() { }
+    public STCRegionFormatTest() { }
 
     /**
      * Test of format and parse method, of class RegionFormat.
@@ -103,7 +103,7 @@ public class RegionFormatTest
         log.debug("testValue");
         try
         {
-            RegionFormat format = new RegionFormat();
+            STCRegionFormat format = new STCRegionFormat();
 
             String expected = "Circle ICRS GEOCENTER SPHERICAL2 1.0 2.0 3.0";
 
@@ -126,7 +126,7 @@ public class RegionFormatTest
     {
         log.debug("testNull");
 
-        RegionFormat format = new RegionFormat();
+        STCRegionFormat format = new STCRegionFormat();
 
         String s = format.format(null);
         assertEquals("", s);
