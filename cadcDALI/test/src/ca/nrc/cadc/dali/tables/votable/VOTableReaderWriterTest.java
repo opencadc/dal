@@ -447,8 +447,8 @@ public class VOTableReaderWriterTest
     public static List<VOTableParam> getMetaParams()
     {
         List<VOTableParam> params = new ArrayList<VOTableParam>();
-        params.add(new VOTableParam("standardID", "char", "ivo://ivoa.net/std/DataLink/1.0"));
-        params.add(new VOTableParam("resourceIdentifier", "char", "ivo://cadc.nrc.ca/datalink"));
+        params.add(new VOTableParam("standardID", "char", "ivo://ivoa.net/std/DataLink#links-1.0"));
+        params.add(new VOTableParam("resourceIdentifier", "char", "ivo://cadc.nrc.ca/caom2ops"));
         params.add(new VOTableParam("accessURL", "char", "http://www.cadc.hia.nrc.gc.ca/caom2ops/datalink"));
         return params;
     }
