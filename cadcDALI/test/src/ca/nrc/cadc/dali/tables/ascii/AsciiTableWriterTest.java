@@ -92,7 +92,7 @@ public class AsciiTableWriterTest
 
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.DEBUG);
+        Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.INFO);
     }
 
     public AsciiTableWriterTest() { }

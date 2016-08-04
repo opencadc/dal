@@ -103,7 +103,7 @@ public class VOTableReaderWriterTest
     
     static
     {
-        Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.DEBUG);
+        Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.INFO);
         dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
     }
     
