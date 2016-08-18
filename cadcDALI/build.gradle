@@ -1,8 +1,8 @@
 plugins {
-    id "java"
-    id "maven"
-    id "maven-publish"
-    id "com.jfrog.bintray" version "1.7.1"
+    id 'java'
+    id 'maven'
+    id 'maven-publish'
+    id 'com.jfrog.bintray' version '1.7.1'
 }
 
 repositories {
@@ -11,7 +11,7 @@ repositories {
 
     // Only here until cadcUtil is in jcenter.
     maven {
-        url  "http://dl.bintray.com/opencadc/software"
+        url  'http://dl.bintray.com/opencadc/software'
     }
 }
 
