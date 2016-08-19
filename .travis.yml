@@ -1,0 +1,6 @@
+language: java
+jdk:
+  - openjdk7
+  - oraclejdk8
+script: for mod in cadcDALI ; do cd $mod; gradle assemble check install; cd ..; done
+
