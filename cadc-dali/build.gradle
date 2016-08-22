@@ -15,8 +15,10 @@ repositories {
     }
 }
 
-group = 'opencadc'
 sourceCompatibility = 1.7
+
+group = 'org.opencadc'
+
 version = '1.0'
 
 dependencies {
@@ -24,8 +26,8 @@ dependencies {
     compile 'org.jdom:jdom2:2.+'
     compile 'net.sourceforge.javacsv:javacsv:2.+'
 
-    compile 'opencadc:cadcUtil:1.+'
-    compile 'opencadc:cadcUWS:1.+'
+    compile 'org.opencadc:cadc-util:1.+'
+    compile 'org.opencadc:cadc-uws:1.+'
 
     testCompile 'junit:junit:4.+'
     testCompile 'xerces:xercesImpl:2.+'
