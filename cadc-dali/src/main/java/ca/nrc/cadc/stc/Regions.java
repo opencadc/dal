@@ -98,7 +98,7 @@ public enum Regions
      * Return the regions object based on the string parameter.  The check
      * is case insensitive.
      *
-     * @param regions The regions to lookup.
+     * @param s The regions to lookup.
      * @return The matching regions.
      */
     public static Regions toValue(String s)

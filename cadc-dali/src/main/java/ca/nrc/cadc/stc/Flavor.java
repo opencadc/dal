@@ -97,7 +97,7 @@ public enum Flavor
      * Return the flavor object based on the string parameter.  The check
      * is case insensitive.
      *
-     * @param flavor The flavor to lookup.
+     * @param s The flavor to lookup.
      * @return The matching flavor.
      */
     public static Flavor toValue(String s)

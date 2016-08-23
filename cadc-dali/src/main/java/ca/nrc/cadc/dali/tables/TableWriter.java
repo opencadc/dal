@@ -77,7 +77,6 @@ import java.io.Writer;
 /**
  * Interface for classes that write tables in specific formats.
  * 
- * @see TableWriterFactory
  * @author pdowler
  */
 public interface TableWriter<T>
@@ -108,7 +107,6 @@ public interface TableWriter<T>
      * Set a custom factory for Format objects. If this is not set, a default
      * factory will be used.
      * 
-     * @see ca.nrc.cadc.dali.util.FormatFactory
      * @param ff 
      */
     void setFormatFactory(FormatFactory ff);
@@ -116,27 +114,27 @@ public interface TableWriter<T>
     /**
      * Write a TableModel to the OutputStream.
      *
-     * @param rs
+     * @param tm
      * @param out
      * @throws IOException
      */
-    void write(T t, OutputStream out)
+    void write(T tm, OutputStream out)
         throws IOException;
 
     /**
      * Write a TableModel to the OutputStream.
      *
-     * @param rs
+     * @param tm
      * @param out
      * @throws IOException
      */
-    void write(T t, OutputStream out, Long maxrec)
+    void write(T tm, OutputStream out, Long maxrec)
         throws IOException;
     
-    void write (T t, Writer out)
+    void write (T tm, Writer out)
         throws IOException;
     
-    void write (T t, Writer out, Long maxrec)
+    void write (T tm, Writer out, Long maxrec)
         throws IOException;
     
     /**

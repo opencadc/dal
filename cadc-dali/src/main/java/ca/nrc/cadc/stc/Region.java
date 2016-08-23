@@ -93,7 +93,6 @@ public abstract class Region
      *               for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
      * @param flavor the flavor describing the Region. Allowed values for flavor are
      *               from <code>ca.nrc.cadc.stc.Flavor</code>.
-     * @param regions the regions of the Intersection.
      */
     protected Region(String name, Frame frame, ReferencePosition refpos, Flavor flavor)
     {

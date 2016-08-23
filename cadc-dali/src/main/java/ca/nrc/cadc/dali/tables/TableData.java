@@ -78,10 +78,11 @@ import java.util.List;
  * over the rows during output. Implementations of this class simply provide the
  * values for the rows; this can be dynamically generated or streamed from another 
  * source of rows (eg. a java.sql.ResultSet).
- * </p><p>
+ * <p>
  * In the current implementation of table data models, you would create a 
  * VOTableDocument, a VOTableResource with type="results", and a VOTableTable with
  * the VOTableField(s) and your own TableData implementation.
+ * </p>
  * 
  * @author pdowler
  */

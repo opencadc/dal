@@ -202,7 +202,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
      *
      * @param votable VOTable object to write.
      * @param ostream OutputStream to write to.
-     * @param maxRec maximum number of rows to write.
+     * @param maxrec maximum number of rows to write.
      * @throws IOException if problem writing to OutputStream.
      */
     @Override
@@ -234,7 +234,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument>
      *
      * @param votable VOTable object to write.
      * @param writer Writer to write to.
-     * @param maxRec maximum number of rows to write.
+     * @param maxrec maximum number of rows to write.
      * @throws IOException if problem writing to the writer.
      */
     @Override

@@ -99,7 +99,7 @@ public enum ReferencePosition
      * Return the referencePosition object based on the string parameter.  The check
      * is case insensitive.
      *
-     * @param referencePosition The referencePosition to lookup.
+     * @param s The referencePosition to lookup.
      * @return The matching referencePosition.
      */
     public static ReferencePosition toValue(String s)
