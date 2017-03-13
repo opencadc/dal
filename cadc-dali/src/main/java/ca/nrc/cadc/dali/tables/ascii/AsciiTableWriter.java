@@ -282,7 +282,8 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
                 if (maxrec != null && numRows == maxrec.longValue())
                     ok = false;
 
-                writer.flush();
+                // do not flush here: let the caller setup a BufferedWriter of approp size
+                //writer.flush();
             }
         }
         catch (Exception ex)
