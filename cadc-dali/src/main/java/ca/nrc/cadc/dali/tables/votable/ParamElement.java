@@ -98,7 +98,7 @@ public class ParamElement extends FieldElement
             this.addContent(values);
             if (param.getMin() != null)
             {
-                Element e = new Element("MIN");
+                Element e = new Element("MIN", namespace);
                 e.setAttribute("value", param.getMin());
                 values.addContent(e);
             }
