@@ -68,19 +68,15 @@
 */
 package ca.nrc.cadc.dali.tables.votable;
 
+import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.Point;
+import ca.nrc.cadc.dali.Polygon;
+import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.date.DateUtil;
-import ca.nrc.cadc.stc.Circle;
-import ca.nrc.cadc.stc.Flavor;
-import ca.nrc.cadc.stc.Frame;
-import ca.nrc.cadc.stc.Position;
-import ca.nrc.cadc.stc.ReferencePosition;
-import ca.nrc.cadc.stc.Region;
-import ca.nrc.cadc.stc.STC;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.StringWriter;
-import java.net.URI;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -173,7 +169,7 @@ public class VOTableReaderWriterTest
         }
     }
     
-    @Test
+    //@Test
     public void testReadWriteVOTableWithMax() throws Exception
     {
         log.debug("testReadWriteVOTable");
@@ -226,6 +222,113 @@ public class VOTableReaderWriterTest
         }
     }
 
+    @Test
+    public void testReadWriteVOTableArraysize() throws Exception
+    {
+        log.debug("testReadWriteVOTableArraysize");
+        try
+        {
+            String resourceName = "VOTable resource name";
+            
+
+            // Build a VOTable.
+            VOTableDocument expected = new VOTableDocument();
+            
+            VOTableResource vr = new VOTableResource("meta");
+            expected.getResources().add(vr);
+            vr = new VOTableResource("results");
+            VOTableInfo vi = new VOTableInfo("FOO", "bar");
+            vi.content = "useful message";
+            vr.getInfos().add(vi);
+            expected.getResources().add(vr);
+            vr.setName(resourceName);
+            
+            VOTableTable vot = new VOTableTable();
+            vr.setTable(vot);
+
+            VOTableField f;
+            
+            f = new VOTableField("scalar", "double", null);
+            vot.getFields().add(f);
+            f = new VOTableField("array-1", "double", "1");
+            vot.getFields().add(f);
+            f = new VOTableField("array-4", "double", "4");
+            vot.getFields().add(f);
+            f = new VOTableField("array-4*", "double", "4*");
+            vot.getFields().add(f);
+            f = new VOTableField("array-2x3", "double", "4x3");
+            vot.getFields().add(f);
+            f = new VOTableField("array-4x*", "double", "4x*");
+            vot.getFields().add(f);
+            f = new VOTableField("array-*", "double", "*");
+            vot.getFields().add(f);
+
+            ListTableData tData = new ListTableData();
+            List<Object> nullData = new ArrayList<>();
+            nullData.add(null);
+            nullData.add(null);
+            nullData.add(null);
+            nullData.add(null);
+            nullData.add(null);
+            nullData.add(null);
+            nullData.add(null);
+            tData.getArrayList().add(nullData);
+            
+            List<Object> valData = new ArrayList<>();
+            valData.add(1.0);
+            valData.add(2.0);
+            double[] fa = new double[4];
+            valData.add(fa);
+            double[] va = new double[4];
+            valData.add(va);
+            double[][] fa2 = new double[4][3];
+            valData.add(fa2);
+            double[][] va2 = new double[4][5];
+            valData.add(va2);
+            for (int i=0; i<4; i++)
+            {
+                fa[i] = i;
+                if (i<5)
+                    va[i]  = i;
+                for (int j=0; j<3; j++)
+                    fa2[i][j] = i+j;
+                for (int j=0; j<5; j++)
+                    va2[i][j] = i+j;
+            }
+            double[] va3 = new double[7];
+            valData.add(va3);
+            for (int i=0; i<7; i++)
+                va3[i] = i;
+            tData.getArrayList().add(valData);
+            
+            // Add TableData.
+            vot.setTableData(tData);
+
+            // Write VOTable to xml.
+            StringWriter sw = new StringWriter();
+            TableWriter<VOTableDocument> writer = new VOTableWriter();
+            writer.write(expected, sw);
+            String xml = sw.toString();
+            log.debug("XML: \n\n" + xml);
+
+            // Read in xml to VOTable with schema validation.
+            VOTableReader reader = new VOTableReader();
+            VOTableDocument actual = reader.read(xml);
+            
+            log.debug("Expected:\n\n" + expected);
+            log.debug("Actual:\n\n" + actual);
+
+            // writer always places this placeholder after a table
+            vr.getInfos().add(new VOTableInfo("QUERY_STATUS", "OK"));
+            compareVOTable(expected, actual, null);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
     /**
      *
      * Test might be a bit dodgy since it's assuming the VOTable
@@ -305,6 +408,18 @@ public class VOTableReaderWriterTest
                 {
                     Assert.assertArrayEquals((double[]) expectedObject, (double[]) actualObject, 0.0);
                 }
+                else if (expectedObject instanceof double[][] && actualObject instanceof double[][])
+                {
+                    double[][] exp = (double[][]) expectedObject;
+                    double[][] act = (double[][]) actualObject;
+                    Assert.assertEquals(exp.length, act.length);
+                    for (int i1=0; i1<exp.length; i1++)
+                    {
+                        Assert.assertEquals(exp[i1].length, act[i1].length);
+                        for (int i2=0; i2<exp[i1].length; i2++)
+                            Assert.assertEquals("array["+i1+","+i2+"]", exp[i1][i2], act[i1][i2], 0.0);
+                    }
+                }
                 else if (expectedObject instanceof float[] && actualObject instanceof float[])
                 {
                     Assert.assertArrayEquals((float[]) expectedObject, (float[]) actualObject, 0.0f);
@@ -321,6 +436,7 @@ public class VOTableReaderWriterTest
                 {
                     Assert.assertArrayEquals((short[]) expectedObject, (short[]) actualObject);
                 }
+                /*
                 else if (expectedObject instanceof Position && actualObject instanceof Position)
                 {
                     Position expectedPosition = (Position) expectedObject;
@@ -333,6 +449,7 @@ public class VOTableReaderWriterTest
                     Region actualRegion = (Region) actualObject;
                     Assert.assertEquals(STC.format(expectedRegion), STC.format(actualRegion));
                 }
+                */
                 else
                 {
                      Assert.assertEquals(expectedObject, actualObject);
@@ -395,7 +512,6 @@ public class VOTableReaderWriterTest
             Assert.assertEquals(expectedParam.utype, actualParam.utype);
             Assert.assertEquals(expectedParam.xtype, actualParam.xtype);
             Assert.assertEquals(expectedParam.getArraysize(), actualParam.getArraysize());
-            Assert.assertEquals(expectedParam.isVariableSize(), actualParam.isVariableSize());
             Assert.assertEquals(expectedParam.description, actualParam.description);
             List<String> expectedValues = expectedParam.getValues();
             List<String> actualValues = actualParam.getValues();
@@ -431,7 +547,6 @@ public class VOTableReaderWriterTest
             Assert.assertEquals(expectedField.utype, actualField.utype);
             Assert.assertEquals(expectedField.xtype, actualField.xtype);
             Assert.assertEquals(expectedField.getArraysize(), actualField.getArraysize());
-            Assert.assertEquals(expectedField.isVariableSize(), actualField.isVariableSize());
             Assert.assertEquals(expectedField.description, actualField.description);
         }
     }
@@ -468,13 +583,12 @@ public class VOTableReaderWriterTest
     {
         List<VOTableParam> params = new ArrayList<VOTableParam>();
         
-        VOTableParam intersects = new VOTableParam("INPUT:INTERSECTS", "char", "OVERLAPS");
+        VOTableParam intersects = new VOTableParam("INPUT:INTERSECTS", "char", "*", "OVERLAPS");
         intersects.id = null;
         intersects.ucd = null;
         intersects.unit = null;
         intersects.utype = null;
         intersects.xtype = null;
-        intersects.setVariableSize(true);
         intersects.description = null;
         intersects.getValues().add("ALL");
         intersects.getValues().add("BLAST");
@@ -483,13 +597,12 @@ public class VOTableReaderWriterTest
         intersects.getValues().add("JCMT");
         params.add(intersects);
 
-        VOTableParam collection = new VOTableParam("INPUT:COLLECTION", "char", "ALL");
+        VOTableParam collection = new VOTableParam("INPUT:COLLECTION", "char", "*", "ALL");
         collection.id = null;
         collection.ucd = null;
         collection.unit = null;
         collection.utype = null;
         collection.xtype = null;
-        collection.setVariableSize(true);
         collection.description = null;
         params.add(collection);
 
@@ -510,13 +623,12 @@ public class VOTableReaderWriterTest
         booleanColumn.description = "boolean column";
         fields.add(booleanColumn);
 
-        VOTableField byteArrayColumn = new VOTableField("byte[] column", "unsignedByte");
+        VOTableField byteArrayColumn = new VOTableField("byte[] column", "unsignedByte", "*");
         byteArrayColumn.id = "byteArrayColumn.id";
         byteArrayColumn.ucd = "byteArrayColumn.ucd";
         byteArrayColumn.unit = "byteArrayColumn.unit";
         byteArrayColumn.utype = "byteArrayColumn.utype";
         byteArrayColumn.xtype = null;
-        byteArrayColumn.setVariableSize(true);
         byteArrayColumn.description = "byte[] column";
         fields.add(byteArrayColumn);
 
@@ -529,13 +641,12 @@ public class VOTableReaderWriterTest
         byteColumn.description = "byte column";
         fields.add(byteColumn);
 
-        VOTableField doubleArrayColumn = new VOTableField("double[] column", "double");
+        VOTableField doubleArrayColumn = new VOTableField("double[] column", "double", "*");
         doubleArrayColumn.id = "doubleArrayColumn.id";
         doubleArrayColumn.ucd = "doubleArrayColumn.ucd";
         doubleArrayColumn.unit = "doubleArrayColumn.unit";
         doubleArrayColumn.utype = "doubleArrayColumn.utype";
         doubleArrayColumn.xtype = null;
-        doubleArrayColumn.setVariableSize(true);
         doubleArrayColumn.description = "double[] column";
         fields.add(doubleArrayColumn);
 
@@ -548,13 +659,12 @@ public class VOTableReaderWriterTest
         doubleColumn.description = "double column";
         fields.add(doubleColumn);
 
-        VOTableField floatArrayColumn = new VOTableField("float[] column", "float");
+        VOTableField floatArrayColumn = new VOTableField("float[] column", "float", "*");
         floatArrayColumn.id = "floatArrayColumn.id";
         floatArrayColumn.ucd = "floatArrayColumn.ucd";
         floatArrayColumn.unit = "floatArrayColumn.unit";
         floatArrayColumn.utype = "floatArrayColumn.utype";
         floatArrayColumn.xtype = null;
-        floatArrayColumn.setVariableSize(true);
         floatArrayColumn.description = "float[] column";
         fields.add(floatArrayColumn);
 
@@ -567,13 +677,12 @@ public class VOTableReaderWriterTest
         floatColumn.description = "float column";
         fields.add(floatColumn);
 
-        VOTableField intArrayColumn = new VOTableField("int[] column", "int");
+        VOTableField intArrayColumn = new VOTableField("int[] column", "int", "*");
         intArrayColumn.id = "intArrayColumn.id";
         intArrayColumn.ucd = "intArrayColumn.ucd";
         intArrayColumn.unit = "intArrayColumn.unit";
         intArrayColumn.utype = "intArrayColumn.utype";
         intArrayColumn.xtype = null;
-        intArrayColumn.setVariableSize(true);
         intArrayColumn.description = "int[] column";
         fields.add(intArrayColumn);
 
@@ -586,13 +695,12 @@ public class VOTableReaderWriterTest
         integerColumn.description = "float column";
         fields.add(integerColumn);
 
-        VOTableField longArrayColumn = new VOTableField("long[] column", "long");
+        VOTableField longArrayColumn = new VOTableField("long[] column", "long", "*");
         longArrayColumn.id = "longArrayColumn.id";
         longArrayColumn.ucd = "longArrayColumn.ucd";
         longArrayColumn.unit = "longArrayColumn.unit";
         longArrayColumn.utype = "longArrayColumn.utype";
         longArrayColumn.xtype = null;
-        longArrayColumn.setVariableSize(true);
         longArrayColumn.description = "long[] column";
         fields.add(longArrayColumn);
 
@@ -605,13 +713,12 @@ public class VOTableReaderWriterTest
         longColumn.description = "long column";
         fields.add(longColumn);
 
-        VOTableField shortArrayColumn = new VOTableField("short[] column", "short");
+        VOTableField shortArrayColumn = new VOTableField("short[] column", "short", "*");
         shortArrayColumn.id = "shortArrayColumn.id";
         shortArrayColumn.ucd = "shortArrayColumn.ucd";
         shortArrayColumn.unit = "shortArrayColumn.unit";
         shortArrayColumn.utype = "shortArrayColumn.utype";
         shortArrayColumn.xtype = null;
-        shortArrayColumn.setVariableSize(true);
         shortArrayColumn.description = "short[] column";
         fields.add(shortArrayColumn);
 
@@ -624,52 +731,65 @@ public class VOTableReaderWriterTest
         shortColumn.description = "short column";
         fields.add(shortColumn);
 
-        VOTableField charColumn = new VOTableField("char column", "char");
+        VOTableField charColumn = new VOTableField("char column", "char", "*");
         charColumn.id = "charColumn.id";
         charColumn.ucd = "charColumn.ucd";
         charColumn.unit = "charColumn.unit";
         charColumn.utype = "charColumn.utype";
         charColumn.xtype = null;
-        charColumn.setVariableSize(true);
         charColumn.description = "char column";
         fields.add(charColumn);
 
-        VOTableField dateColumn = new VOTableField("date column", "char");
+        VOTableField dateColumn = new VOTableField("date column", "char", "*");
         dateColumn.id = "dateColumn.id";
         dateColumn.ucd = "dateColumn.ucd";
         dateColumn.unit = "dateColumn.unit";
         dateColumn.utype = "dateColumn.utype";
-        dateColumn.xtype = "adql:TIMESTAMP";
-        dateColumn.setVariableSize(true);
+        dateColumn.xtype = "timestamp";
         dateColumn.description = "date column";
         fields.add(dateColumn);
 
-        VOTableField pointColumn = new VOTableField("point column", "char");
+        VOTableField pointColumn = new VOTableField("point column", "double", "2");
         pointColumn.id = "pointColumn.id";
         pointColumn.ucd = "pointColumn.ucd";
         pointColumn.unit = "pointColumn.unit";
         pointColumn.utype = "pointColumn.utype";
-        pointColumn.xtype = "adql:POINT";
-        pointColumn.setVariableSize(true);
+        pointColumn.xtype = "point";
         pointColumn.description = "point column";
         fields.add(pointColumn);
+        
+        VOTableField circleColumn = new VOTableField("circle column", "double", "3");
+        circleColumn.id = "circleColumn.id";
+        circleColumn.ucd = "circleColumn.ucd";
+        circleColumn.unit = "circleColumn.unit";
+        circleColumn.utype = "circleColumn.utype";
+        circleColumn.xtype = "circle";
+        circleColumn.description = "circle column";
+        fields.add(circleColumn);
+        
+        VOTableField polyColumn = new VOTableField("polygon column", "double", "*");
+        polyColumn.id = "polyColumn.id";
+        polyColumn.ucd = "polyColumn.ucd";
+        polyColumn.unit = "polyColumn.unit";
+        polyColumn.utype = "polyColumn.utype";
+        polyColumn.xtype = "polygon";
+        polyColumn.description = "poly column";
+        fields.add(polyColumn);
+        
+        //VOTableField regionColumn = new VOTableField("region column", "char", "*");
+        //regionColumn.id = "regionColumn.id";
+        //regionColumn.ucd = "regionColumn.ucd";
+        //regionColumn.unit = "regionColumn.unit";
+        //regionColumn.utype = "regionColumn.utype";
+        //regionColumn.xtype = "adql:REGION";
+        //regionColumn.description = "region column";
+        //fields.add(regionColumn);
 
-        VOTableField regionColumn = new VOTableField("region column", "char");
-        regionColumn.id = "regionColumn.id";
-        regionColumn.ucd = "regionColumn.ucd";
-        regionColumn.unit = "regionColumn.unit";
-        regionColumn.utype = "regionColumn.utype";
-        regionColumn.xtype = "adql:REGION";
-        regionColumn.setVariableSize(true);
-        regionColumn.description = "region column";
-        fields.add(regionColumn);
-
-        VOTableField idColumn = new VOTableField("id column", "char");
+        VOTableField idColumn = new VOTableField("id column", "char", "*");
         idColumn.id = "someID";
         idColumn.ucd = "idColumn.ucd";
         idColumn.unit = "idColumn.unit";
         idColumn.utype = "idColumn.utype";
-        idColumn.setVariableSize(true);
         idColumn.description = "id column";
         fields.add(idColumn);
         
@@ -700,13 +820,22 @@ public class VOTableReaderWriterTest
             row1.add(new Short("17"));
             row1.add("string value");
             row1.add(dateFormat.parse(DATE_TIME));
-            row1.add(new Position(Frame.ICRS, ReferencePosition.BARYCENTER, Flavor.SPHERICAL2, 1.0, 2.0));
-            row1.add(new Circle(Frame.ICRS, ReferencePosition.GEOCENTER, Flavor.SPHERICAL2, 1.0, 2.0, 3.0));
+            
+            // DALI geom
+            row1.add(new Point(1.0, 2.0));
+            row1.add(new Circle(new Point(1.0, 2.0), 0.2));
+            Polygon poly = new Polygon();
+            poly.getVertices().add(new Point(2.0, 2.0));
+            poly.getVertices().add(new Point(1.0, 4.0));
+            poly.getVertices().add(new Point(3.0, 5.0));
+            poly.getVertices().add(new Point(4.0, 3.0));
+            row1.add(poly);
+            
+            // STC 
+            //row1.add(new Position(Frame.ICRS, ReferencePosition.BARYCENTER, Flavor.SPHERICAL2, 1.0, 2.0));
+            //row1.add(new Circle(Frame.ICRS, ReferencePosition.GEOCENTER, Flavor.SPHERICAL2, 1.0, 2.0, 3.0));
+            
             row1.add("foo:bar/baz");
-            fields.add(row1);
-            fields.add(row1);
-            fields.add(row1);
-            fields.add(row1);
             fields.add(row1);
 
             List<Object> row2 = new ArrayList<Object>();

@@ -286,8 +286,8 @@ public class AsciiTableWriterTest
             {
                 numRows++;
             }
-            // 3 rows plus 1 header row
-            Assert.assertEquals(3 + 1, numRows);
+            // 2 rows plus 1 header row
+            Assert.assertEquals(3, numRows);
 
         }
         catch(Exception unexpected)

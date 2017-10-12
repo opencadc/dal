@@ -95,7 +95,7 @@ public class LongIntervalFormatTest
         try
         {
             LongIntervalFormat format = new LongIntervalFormat();
-            LongInterval expected = new LongInterval(1, 2);
+            LongInterval expected = new LongInterval(1l, 2l);
             
             String result = format.format(expected);
             LongInterval actual = format.parse(result);

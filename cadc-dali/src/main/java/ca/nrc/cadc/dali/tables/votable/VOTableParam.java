@@ -88,12 +88,12 @@ public class VOTableParam extends VOTableField
 
     public VOTableParam(String name, String datatype, String value)
     {
-        this(name, datatype, null, false, value);
+        this(name, datatype, null, value);
     }
 
-    public VOTableParam(String name, String datatype, Integer arraysize, boolean variableSize, String value)
+    public VOTableParam(String name, String datatype, String arraysize, String value)
     {
-        super(name, datatype, arraysize, variableSize, null);
+        super(name, datatype, arraysize, null);
         this.value = value;
     }
 

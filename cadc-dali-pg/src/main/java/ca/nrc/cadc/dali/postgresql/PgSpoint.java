@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2017.                            (c) 2017.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,119 +62,69 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali.postgresql;
 
-import java.util.ArrayList;
-import java.util.List;
 
-import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.Point;
+import java.sql.SQLException;
+import org.apache.log4j.Logger;
+import org.postgresql.util.PGobject;
 
 /**
- * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
- * and a list of string values as permitted by the VOTable schema.
  *
  * @author pdowler
  */
-public class VOTableField
+public class PgSpoint 
 {
-    private String name;
-    private String datatype;
+    private static final Logger log = Logger.getLogger(PgSpoint.class);
 
-    protected String arraysize;
-    protected int[] arrayShape;
-    protected Format<Object> format;
-
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public String description;
-
-    // TODO: add precision support and use it to configure numeric format objects
-
-    public String id;
-    public String ref;
-
-    private List<String> values = new ArrayList<String>();
-
-    protected VOTableField() { }
-
-    public VOTableField(String name, String datatype)
+    public PgSpoint() { }
+    
+    public PGobject generatePoint(Point p)
+        throws SQLException
     {
-        this(name, datatype, null);
-    }
+        if (p == null)
+            return null;
+        
+        StringBuilder sval = new StringBuilder();
+        sval.append("(");
+        sval.append(Math.toRadians(p.getLongitude()));
+        sval.append(",");
+        sval.append(Math.toRadians(p.getLatitude()));
+        sval.append(")");
+        String spt = sval.toString();
 
-    public VOTableField(String name, String datatype, String arraysize)
-    {
-        this(name, datatype, arraysize, null);
-    }
-
-    public VOTableField(String name, String datatype, String arraysize, Format<Object> format)
-    {
-        this.name = name;
-        this.datatype = datatype;
-        this.arraysize = arraysize;
-        this.format = format;
-        validateArraysize();
-    }
-
-    private void validateArraysize()
-    {
-        this.arrayShape = VOTableUtil.getArrayShape(arraysize);
+        PGobject pgo = new PGobject();
+        pgo.setType("spoint");
+        pgo.setValue(spt);
+        
+        return pgo;
     }
     
-    public String getName()
+    public Point getPoint(String s)
     {
-        return name;
-    }
+        if (s == null)
+            return null;
+        
+        int open = s.indexOf("(");
+        int close = s.lastIndexOf(")");
+        if (open == -1 || close == -1)
+            throw new IllegalArgumentException("Missing opening or closing ( ) " + s);
+        
+        s = s.substring(open + 1, close);
+        String[] values = s.split(",");
+        if (values.length != 2)
+            throw new IllegalArgumentException("point must have only 2 values " + s);
 
-    public String getDatatype()
-    {
-        return datatype;
-    }
+        double x = Double.parseDouble(values[0]);
+        double y = Double.parseDouble(values[1]);
 
-    public String getArraysize()
-    {
-        return arraysize;
-    }
-
-    public Format<Object> getFormat()
-    {
-        return format;
-    }
-
-    public int[] getArrayShape()
-    {
-        return arrayShape;
-    }
-
-    public List<String> getValues()
-    {
-        return values;
-    }
-
-    public void setFormat(Format<Object> format)
-    {
-        this.format = format;
-    }
-
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName()).append("[");
-        sb.append(name).append(",");
-        sb.append(datatype);
-        if (arraysize != null)
-            sb.append(",").append(arraysize);
-        if (xtype != null)
-            sb.append(",").append(xtype);
-        sb.append("]");
-        return sb.toString();
+        x = Math.toDegrees(x);
+        y = Math.toDegrees(y);
+        
+        return new Point(x, y);
     }
 }

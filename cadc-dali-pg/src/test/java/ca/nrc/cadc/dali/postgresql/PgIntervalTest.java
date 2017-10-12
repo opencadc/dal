@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2017.                            (c) 2017.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,119 +62,132 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali.postgresql;
 
-import java.util.ArrayList;
-import java.util.List;
 
-import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
+import org.postgresql.geometric.PGpolygon;
 
 /**
- * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
- * and a list of string values as permitted by the VOTable schema.
  *
  * @author pdowler
  */
-public class VOTableField
+public class PgIntervalTest 
 {
-    private String name;
-    private String datatype;
+    private static final Logger log = Logger.getLogger(PgIntervalTest.class);
 
-    protected String arraysize;
-    protected int[] arrayShape;
-    protected Format<Object> format;
-
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public String description;
-
-    // TODO: add precision support and use it to configure numeric format objects
-
-    public String id;
-    public String ref;
-
-    private List<String> values = new ArrayList<String>();
-
-    protected VOTableField() { }
-
-    public VOTableField(String name, String datatype)
+    static
     {
-        this(name, datatype, null);
-    }
-
-    public VOTableField(String name, String datatype, String arraysize)
-    {
-        this(name, datatype, arraysize, null);
-    }
-
-    public VOTableField(String name, String datatype, String arraysize, Format<Object> format)
-    {
-        this.name = name;
-        this.datatype = datatype;
-        this.arraysize = arraysize;
-        this.format = format;
-        validateArraysize();
-    }
-
-    private void validateArraysize()
-    {
-        this.arrayShape = VOTableUtil.getArrayShape(arraysize);
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
     }
     
-    public String getName()
+    public PgIntervalTest() { }
+    
+    PgInterval gen = new PgInterval();
+    
+    @Test
+    public void testNull()
     {
-        return name;
+        try
+        {
+            Interval iexp = null;
+            DoubleInterval[] expected = null;
+            
+            PGpolygon ip;
+            
+            ip = gen.generatePolygon2D(iexp);
+            Assert.assertNull(ip);
+            
+            Interval iact = gen.getInterval(null);
+            Assert.assertNull(iact);
+            
+            ip = gen.generatePolygon2D(expected);
+            Assert.assertNull(ip);
+            
+            DoubleInterval[] actual = gen.getIntervalArray(null);
+            Assert.assertNull(actual);
+            
+            expected = new DoubleInterval[0];
+            ip = gen.generatePolygon2D(expected);
+            Assert.assertNull("empty", ip);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
-
-    public String getDatatype()
+    
+    @Test
+    public void testGetPolygonFromInterval()
     {
-        return datatype;
+        try
+        {
+            Interval expected = new Interval(1.0, 3.0);
+
+            PGpolygon ip = gen.generatePolygon2D(expected);
+            Assert.assertNotNull(ip);
+            Assert.assertEquals(4, ip.points.length);
+            
+            String sval = ip.getValue(); // equiv to db round-trip
+            log.info("testGetPolygonFromInterval: " + sval);
+            
+            Interval actual = gen.getInterval(sval);
+            Assert.assertNotNull(actual);
+            log.info("actual: " + actual.getLower() + "," + actual.getUpper());
+            Assert.assertEquals(expected.getLower(), actual.getLower());
+            Assert.assertEquals(expected.getUpper(), actual.getUpper());
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
-
-    public String getArraysize()
+    
+    @Test
+    public void testGetPolygonFromIntervalArray()
     {
-        return arraysize;
-    }
-
-    public Format<Object> getFormat()
-    {
-        return format;
-    }
-
-    public int[] getArrayShape()
-    {
-        return arrayShape;
-    }
-
-    public List<String> getValues()
-    {
-        return values;
-    }
-
-    public void setFormat(Format<Object> format)
-    {
-        this.format = format;
-    }
-
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName()).append("[");
-        sb.append(name).append(",");
-        sb.append(datatype);
-        if (arraysize != null)
-            sb.append(",").append(arraysize);
-        if (xtype != null)
-            sb.append(",").append(xtype);
-        sb.append("]");
-        return sb.toString();
+        try
+        {
+            DoubleInterval[] expected = new DoubleInterval[]
+            {
+                new DoubleInterval(1.0, 1.2),
+                new DoubleInterval(2.8, 3.0)
+            };
+            
+            PGpolygon ip = gen.generatePolygon2D(expected);
+            Assert.assertNotNull(ip);
+            Assert.assertEquals(8, ip.points.length);
+            
+            String sval = ip.getValue(); // equiv to db round-trip
+            log.info("testGetPolygonFromIntervalArray: " + sval);
+            
+            DoubleInterval[] actual = gen.getIntervalArray(sval);
+            Assert.assertNotNull(actual);
+            Assert.assertEquals(expected.length, actual.length);
+            for (int i=0; i<expected.length; i++)
+            {
+                DoubleInterval ie = expected[i];
+                DoubleInterval ia = actual[i];
+                log.info(i + " actual: " + ia.getLower() + "," + ia.getUpper());
+                Assert.assertEquals(i + " lower: ", ie.getLower(), ia.getLower());
+                Assert.assertEquals(i + " upper: ", ie.getUpper(), ia.getUpper());
+            }
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
 }

@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2017.                            (c) 2017.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,119 +62,55 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
 package ca.nrc.cadc.dali.tables.votable;
 
-import java.util.ArrayList;
-import java.util.List;
 
-import ca.nrc.cadc.dali.util.Format;
+import org.apache.log4j.Logger;
 
 /**
- * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
- * and a list of string values as permitted by the VOTable schema.
  *
  * @author pdowler
  */
-public class VOTableField
+public abstract class VOTableUtil 
 {
-    private String name;
-    private String datatype;
+    private static final Logger log = Logger.getLogger(VOTableUtil.class);
 
-    protected String arraysize;
-    protected int[] arrayShape;
-    protected Format<Object> format;
-
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public String description;
-
-    // TODO: add precision support and use it to configure numeric format objects
-
-    public String id;
-    public String ref;
-
-    private List<String> values = new ArrayList<String>();
-
-    protected VOTableField() { }
-
-    public VOTableField(String name, String datatype)
-    {
-        this(name, datatype, null);
-    }
-
-    public VOTableField(String name, String datatype, String arraysize)
-    {
-        this(name, datatype, arraysize, null);
-    }
-
-    public VOTableField(String name, String datatype, String arraysize, Format<Object> format)
-    {
-        this.name = name;
-        this.datatype = datatype;
-        this.arraysize = arraysize;
-        this.format = format;
-        validateArraysize();
-    }
-
-    private void validateArraysize()
-    {
-        this.arrayShape = VOTableUtil.getArrayShape(arraysize);
-    }
+    private VOTableUtil() { }
     
-    public String getName()
+    public static int[] getArrayShape(String arraysize)
     {
-        return name;
-    }
-
-    public String getDatatype()
-    {
-        return datatype;
-    }
-
-    public String getArraysize()
-    {
-        return arraysize;
-    }
-
-    public Format<Object> getFormat()
-    {
-        return format;
-    }
-
-    public int[] getArrayShape()
-    {
+        if (arraysize == null || arraysize.equals("1")) // interpretation TBD
+            return null;
+        
+        String[] sa = arraysize.split("x");
+        int[] arrayShape = new int[sa.length];
+        for (int i = 0; i<sa.length; i++)
+        {
+            String s = sa[i];
+            int starIndex = s.indexOf('*');
+            boolean variableSize = (starIndex >= 0);
+            if (variableSize && i != sa.length-1)
+                throw new IllegalArgumentException("invalid arraysize: " + arraysize + " found * in position " + i);
+            String dim = s;
+            if (starIndex == 0)
+                dim = "";
+            else if (variableSize)
+                dim = s.substring(0, starIndex);
+            try
+            {
+                if (dim.length() > 0)
+                    arrayShape[i] = Integer.parseInt(dim);
+                else
+                    arrayShape[i] = -1; // better than default 0?
+            }
+            catch(NumberFormatException ex)
+            {
+                throw new IllegalArgumentException("invalid arraysize: " + arraysize + " found: " + dim + " expected: integer");
+            }
+        }
         return arrayShape;
-    }
-
-    public List<String> getValues()
-    {
-        return values;
-    }
-
-    public void setFormat(Format<Object> format)
-    {
-        this.format = format;
-    }
-
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName()).append("[");
-        sb.append(name).append(",");
-        sb.append(datatype);
-        if (arraysize != null)
-            sb.append(",").append(arraysize);
-        if (xtype != null)
-            sb.append(",").append(xtype);
-        sb.append("]");
-        return sb.toString();
     }
 }

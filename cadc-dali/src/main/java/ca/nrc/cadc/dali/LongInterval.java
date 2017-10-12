@@ -76,36 +76,10 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class LongInterval 
+public class LongInterval extends Interval<Long>
 {
-    private static final Logger log = Logger.getLogger(LongInterval.class);
-
-    private long lower;
-    private long upper;
-    
-    public LongInterval(long lower, long upper) 
+    public LongInterval(Long lower, Long upper) 
     { 
-        this.lower = lower;
-        this.upper = upper;
-    }
-
-    public long getLower()
-    {
-        return lower;
-    }
-
-    public long getUpper()
-    {
-        return upper;
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (obj == null)
-            return false;
-        
-        LongInterval rhs = (LongInterval) obj;
-        return lower == rhs.lower && upper == rhs.upper;
+        super(lower, upper);
     }
 }

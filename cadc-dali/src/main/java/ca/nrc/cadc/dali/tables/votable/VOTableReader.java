@@ -392,14 +392,11 @@ public class VOTableReader
         ArrayList<VOTableParam> params = new ArrayList<VOTableParam>();
         for (Element element : elements)
         {
-            String datatype = element.getAttributeValue("datatype");
-            if (datatype == null)
-            {
-                datatype = element.getAttributeValue("xtype");
-            }
             String name = element.getAttributeValue("name");
+            String datatype = element.getAttributeValue("datatype");
+            String arraysize = element.getAttributeValue("arraysize");
             String value = element.getAttributeValue("value");
-            VOTableParam tableParam = new VOTableParam(name, datatype, value);
+            VOTableParam tableParam = new VOTableParam(name, datatype, arraysize, value);
             updateTableField(tableParam, element, namespace);
             params.add(tableParam);
         }
@@ -418,13 +415,10 @@ public class VOTableReader
         ArrayList<VOTableField> fields = new ArrayList<VOTableField>();
         for (Element element : elements)
         {
-            String datatype = element.getAttributeValue("datatype");
-            if (datatype == null)
-            {
-                datatype = element.getAttributeValue("xtype");
-            }
             String name = element.getAttributeValue("name");
-            VOTableField tableField = new VOTableField(name, datatype);
+            String datatype = element.getAttributeValue("datatype");
+            String arraysize = element.getAttributeValue("arraysize");
+            VOTableField tableField = new VOTableField(name, datatype, arraysize);
             updateTableField(tableField, element, namespace);
             fields.add(tableField);
         }
@@ -446,25 +440,6 @@ public class VOTableReader
         tableField.utype = element.getAttributeValue("utype");
         tableField.xtype = element.getAttributeValue("xtype");
         tableField.ref = element.getAttributeValue("ref");
-
-        String arraysize = element.getAttributeValue("arraysize");
-        if (arraysize != null)
-        {
-            int index = arraysize.indexOf("*");
-            if (index == -1)
-            {
-                tableField.setVariableSize(false);
-            }
-            else
-            {
-                arraysize = arraysize.substring(0, index);
-                tableField.setVariableSize(true);
-            }
-            if (!arraysize.trim().isEmpty())
-            {
-                tableField.setArraysize(Integer.parseInt(arraysize));
-            }
-        }
 
         // DESCRIPTION element for the FIELD.
         Element description = element.getChild("DESCRIPTION", namespace);

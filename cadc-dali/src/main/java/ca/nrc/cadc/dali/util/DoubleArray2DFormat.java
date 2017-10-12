@@ -67,111 +67,102 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali.util;
 
-import java.util.List;
-import org.jdom2.Element;
-import org.jdom2.Namespace;
+import java.util.Iterator;
 
-public class FieldElement extends Element
+/**
+ * Formats and parses a double[].
+ *
+ */
+public class DoubleArray2DFormat implements Format<double[][]>
 {
+    private int[] arrayshape;
+    
+    public DoubleArray2DFormat(int[] arrayshape)
+    {
+        this.arrayshape = arrayshape;
+    }
+    
     /**
-     * Builds a FIELD Element from a TableField.
+     * Takes an double[] and returns the standard String representation.
+     * If the double[] is null an empty String is returned.
      *
-     * @param field
-     * @param namespace 
+     * @param object double[] to format.
+     * @return String representation of the double[].
      */
-    public FieldElement(VOTableField field, Namespace namespace)
+    public String format(double[][] object)
     {
-        this("FIELD", field, namespace);
+        if (object == null)
+        {
+            return "";
+        }
+        
+        StringBuilder sb = new StringBuilder();
+        for (int i=0; i<object.length; i++)
+            for (int j=0; j<object[i].length; j++)
+            {
+                sb.append(Double.toString(object[i][j]));
+                sb.append(" ");
+            }
+        return sb.substring(0, sb.length() - 1); // trim trailing comma
+    }
+    
+    /**
+     * Takes a sequence of double values and returns the standard String 
+     * representation. If the iterator is null or empty an empty String is
+     * returned.
+     * 
+     * @param iter
+     * @return 
+     */
+    public String format(Iterator<Double> iter)
+    {
+        if (iter == null || !iter.hasNext())
+            return "";
+        
+        StringBuilder sb = new StringBuilder();
+        while ( iter.hasNext() )
+        {
+            sb.append(iter.next().toString());
+            sb.append(" ");
+        }
+        return sb.substring(0, sb.length() - 1); // trim trailing comma
     }
 
     /**
-     * Builds an Element with the specified element name and populates
-     * the Element using the TableField.
+     * Parses a String to a double[].
      *
-     * @param elementName
-     * @param field
-     * @param namespace
+     * @param s the String to parse.
+     * @return double[] value of the String.
      */
-    protected FieldElement(String elementName, VOTableField field, Namespace namespace)
+    public double[][] parse(String s)
     {
-        super(elementName, namespace);
-        init(field);
-    }
-
-    private void init(VOTableField field)
-    {
-        if (field != null)
+        if (s == null || s.isEmpty())
         {
-            setFieldAttribute("name", field.getName());
-            setFieldAttribute("datatype", field.getDatatype());
-            setFieldAttribute("arraysize", field.getArraysize());
-            setFieldAttribute("ID", field.id);
-            setFieldAttribute("ucd", field.ucd);
-            setFieldAttribute("unit", field.unit);
-            setFieldAttribute("utype", field.utype);
-            setFieldAttribute("xtype", field.xtype);
-            setFieldAttribute("ref", field.ref);
-            setFieldAttribute("ID", field.id);
-            
-            setDescription(field.description, namespace);
-            setValues(field.getValues(), namespace);
+            return null;
         }
-    }
-
-    /**
-     * Set a String or Integer FIELD attribute.
-     * @param name
-     * @param value
-     */
-    protected void setFieldAttribute(String name, Object value)
-    {
-        if (value != null)
+        else
         {
-            if (value instanceof String)
+            String[] tokens = s.split(" ");
+            int n1 = arrayshape[0];
+            //int n2 = arrayshape[1];
+            //if (arrayshape[1] == -1) // variable
+            int n2 = tokens.length/arrayshape[0];
+            double[][] array = new double[n1][n2];
+            int i=0;
+            int j=0;
+            for (int t = 0; t < tokens.length; t++)
             {
-                setAttribute(name, (String) value);
+                array[i][j] = Double.parseDouble(tokens[t]);
+                j++;
+                if (j == n2)
+                {
+                    j = 0;
+                    i++;
+                }
             }
-            else if (value instanceof Integer)
-            {
-                setAttribute(name, String.valueOf((Integer) value));
-            }
-        }
-    }
-
-    /**
-     * Add a DESCRIPTION Element to the FIELD.
-     * @param description
-     * @param namespace
-     */
-    protected void setDescription(String description, Namespace namespace)
-    {
-        if (description != null)
-        {
-            Element element = new Element("DESCRIPTION", namespace);
-            element.setText(description);
-            addContent(element);
-        }
-    }
-
-    /**
-     * Add VALUES Element with OPTION child Elements.
-     * @param values
-     * @param namespace
-     */
-    protected void setValues(List<String> values, Namespace namespace)
-    {
-        if (values != null && !values.isEmpty())
-        {
-            Element element = new Element("VALUES", namespace);
-            for (String value : values)
-            {
-                Element option = new Element("OPTION", namespace);
-                option.setAttribute("value", value);
-                element.addContent(option);
-            }
-            addContent(element);
+            return array;
         }
     }
     
