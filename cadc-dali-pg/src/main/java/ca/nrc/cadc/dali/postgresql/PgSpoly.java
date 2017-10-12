@@ -86,6 +86,14 @@ public class PgSpoly
 
     public PgSpoly() { }
     
+    /**
+     * Generate a PGobject suitable for use in a PreparedStatement (insert or update
+     * of an spoly column).
+     * 
+     * @param c
+     * @return PGobject or null
+     * @throws SQLException 
+     */
     public PGobject generatePolygon(Polygon poly)
         throws SQLException
     {
@@ -113,6 +121,15 @@ public class PgSpoly
         return pgo;
     }
     
+    /**
+     * Parse the string representation of an spoly value (from ResultSet.getString(...)).
+     * A round-trip to the database spoly column does not preserve starting vertex 
+     * or numeric values exactly. TODO: verify that round-trip preserves winding
+     * direction.
+     * 
+     * @param s
+     * @return Polygon or null
+     */
     public Polygon getPolygon(String s)
     {
         // spoly string format: {(a,b),(c,d),(e,f) ... }

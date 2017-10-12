@@ -102,9 +102,10 @@ public class PgInterval
     public PgInterval() { }
     
     /**
+     * Generate a PGpolygon that straddles the x-axis and represents the interval.
      * 
      * @param val
-     * @return simple 4-point polygon
+     * @return simple 4-point polygon or null
      */
     public PGpolygon generatePolygon2D(Interval val)
     {
@@ -127,8 +128,11 @@ public class PgInterval
     }
     
     /**
+     * Generate a PGpolygon that straddles the x-axis and represents the array of 
+     * disjoint intervals. 
+     * 
      * @param vals
-     * @return a n-point polygon shaped like a comb with teeth crossing PgInterval.YVALUE
+     * @return a n-point polygon shaped like a comb with teeth crossing PgInterval.YVALUE or null
      */
     public PGpolygon generatePolygon2D(DoubleInterval[] vals)
     {
@@ -141,7 +145,7 @@ public class PgInterval
         // corresponds to one (sub) interval... it is a simple box for an Interval with no sub-samples
         LinkedList<DoubleInterval> samples = new LinkedList<DoubleInterval>();
         for (DoubleInterval ii : vals)
-            samples.add(ii); // TODO: sort
+            samples.add(ii); // TODO: sort and verify the intervals are disjoint
         
         // full-span line at y1
         double lb = samples.getFirst().getLower();
@@ -168,7 +172,8 @@ public class PgInterval
     }
     
     /**
-     * Get an interval from a ResultSet set column.
+     * Parse the string representation of a polygon value (from ResultSet.getString(...)).
+     * 
      * @param s string returned from ResultSet.getString
      * @return the interval or null 
      */
@@ -184,9 +189,10 @@ public class PgInterval
     }
     
     /**
-     * Get an interval from a ResultSet set column.
+     * Parse the string representation of a polygon value (from ResultSet.getString(...)).
+     * 
      * @param s string returned from ResultSet.getString
-     * @return the interval or null 
+     * @return the interval array or null 
      */
     public DoubleInterval[] getIntervalArray(String s)
     {

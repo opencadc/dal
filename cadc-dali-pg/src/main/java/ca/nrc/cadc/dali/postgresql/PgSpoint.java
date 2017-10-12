@@ -83,6 +83,14 @@ public class PgSpoint
 
     public PgSpoint() { }
     
+    /**
+     * Generate a PGobject suitable for use in a PreparedStatement (insert or update
+     * of an spoint column).
+     * 
+     * @param c
+     * @return PGobject or null
+     * @throws SQLException 
+     */
     public PGobject generatePoint(Point p)
         throws SQLException
     {
@@ -104,6 +112,12 @@ public class PgSpoint
         return pgo;
     }
     
+    /**
+     * Parse the string representation of an spoint value (from ResultSet.getString(...)).
+     * 
+     * @param s
+     * @return Point or null
+     */
     public Point getPoint(String s)
     {
         if (s == null)
