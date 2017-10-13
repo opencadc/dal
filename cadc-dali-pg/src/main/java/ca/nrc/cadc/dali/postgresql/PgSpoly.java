@@ -90,9 +90,9 @@ public class PgSpoly
      * Generate a PGobject suitable for use in a PreparedStatement (insert or update
      * of an spoly column).
      * 
-     * @param c
+     * @param poly value to transform, may be null
      * @return PGobject or null
-     * @throws SQLException 
+     * @throws SQLException if PGobject creation fails
      */
     public PGobject generatePolygon(Polygon poly)
         throws SQLException
@@ -127,7 +127,7 @@ public class PgSpoly
      * or numeric values exactly. TODO: verify that round-trip preserves winding
      * direction.
      * 
-     * @param s
+     * @param s value to transform, may be null
      * @return Polygon or null
      */
     public Polygon getPolygon(String s)

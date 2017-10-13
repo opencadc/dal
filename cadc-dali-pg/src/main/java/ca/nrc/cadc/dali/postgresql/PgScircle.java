@@ -88,9 +88,9 @@ public class PgScircle
      * Generate a PGobject suitable for use in a PreparedStatement (insert or update
      * of an scircle column).
      * 
-     * @param c
+     * @param c value to transform, may be null
      * @return PGobject or null
-     * @throws SQLException 
+     * @throws SQLException if PGobject creation fails
      */
     public PGobject generateCircle(Circle c)
         throws SQLException
@@ -120,7 +120,7 @@ public class PgScircle
     /**
      * Parse the string representation of an scircle value (from ResultSet.getString(...)).
      * 
-     * @param s
+     * @param s value to transform, may be null
      * @return Circle or null
      */
     public Circle getCircle(String s)

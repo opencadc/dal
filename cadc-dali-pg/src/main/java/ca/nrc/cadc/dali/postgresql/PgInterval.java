@@ -104,7 +104,7 @@ public class PgInterval
     /**
      * Generate a PGpolygon that straddles the x-axis and represents the interval.
      * 
-     * @param val
+     * @param val value to transform, may be null
      * @return simple 4-point polygon or null
      */
     public PGpolygon generatePolygon2D(Interval val)
@@ -131,7 +131,7 @@ public class PgInterval
      * Generate a PGpolygon that straddles the x-axis and represents the array of 
      * disjoint intervals. 
      * 
-     * @param vals
+     * @param vals value to transform, may be null
      * @return a n-point polygon shaped like a comb with teeth crossing PgInterval.YVALUE or null
      */
     public PGpolygon generatePolygon2D(DoubleInterval[] vals)

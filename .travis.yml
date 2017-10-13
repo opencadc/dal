@@ -9,5 +9,5 @@ jdk:
 
 before_script: openssl s_client -CApath /etc/ssl/certs/ -connect plugins.gradle.org:443 </dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /tmp/gradle.crt; sudo keytool -importcert -noprompt -file /tmp/gradle.crt -trustcacerts -keystore $JAVA_HOME/jre/lib/security/cacerts -alias root -storepass changeit;
 
-script: for mod in cadc-dali cadc-dali-pg ; do cd $mod; gradle assemble check install || break -1; cd ..; done
+script: for mod in cadc-dali cadc-dali-pg ; do cd $mod; gradle build install javadoc || break -1; cd ..; done
 
