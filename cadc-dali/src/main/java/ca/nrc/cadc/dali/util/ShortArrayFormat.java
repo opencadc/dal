@@ -94,7 +94,8 @@ public class ShortArrayFormat implements Format<short[]>
             sb.append(Short.toString(s));
             sb.append(" ");
         }
-        return sb.substring(0, sb.length() - 1); // trim trailing comma
+        sb.trimToSize();
+        return sb.toString();
     }
 
     /**

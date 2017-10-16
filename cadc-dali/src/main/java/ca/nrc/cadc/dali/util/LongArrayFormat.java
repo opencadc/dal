@@ -94,7 +94,8 @@ public class LongArrayFormat implements Format<long[]>
             sb.append(Long.toString(i));
             sb.append(" ");
         }
-        return sb.substring(0, sb.length() - 1); // trim trailing comma
+        sb.trimToSize();
+        return sb.toString();
     }
 
     /**

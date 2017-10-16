@@ -111,6 +111,7 @@ public class DoubleIntervalArrayFormat  implements Format<DoubleInterval[]>
         StringBuilder sb = new StringBuilder();
         for (int i=0; i<t.length; i++)
             sb.append(t[i].getLower()).append(" ").append(t[i].getUpper()).append(" ");
-        return sb.toString().trim();
+        sb.trimToSize();
+        return sb.toString();
     }
 }

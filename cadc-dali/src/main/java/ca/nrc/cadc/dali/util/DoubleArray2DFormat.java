@@ -105,7 +105,8 @@ public class DoubleArray2DFormat implements Format<double[][]>
                 sb.append(Double.toString(object[i][j]));
                 sb.append(" ");
             }
-        return sb.substring(0, sb.length() - 1); // trim trailing comma
+        sb.trimToSize();
+        return sb.toString();
     }
     
     /**
@@ -127,7 +128,8 @@ public class DoubleArray2DFormat implements Format<double[][]>
             sb.append(iter.next().toString());
             sb.append(" ");
         }
-        return sb.substring(0, sb.length() - 1); // trim trailing comma
+        sb.trimToSize();
+        return sb.toString();
     }
 
     /**

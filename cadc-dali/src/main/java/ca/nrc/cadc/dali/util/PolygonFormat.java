@@ -121,7 +121,8 @@ public class PolygonFormat implements Format<Polygon>
             sb.append(c.getLongitude()).append(" ");
             sb.append(c.getLatitude()).append(" ");
         }
-        return sb.substring(0, sb.length() - 1);
+        sb.trimToSize();
+        return sb.toString();
     }
     
 }
