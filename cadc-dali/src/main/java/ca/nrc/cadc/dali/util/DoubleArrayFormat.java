@@ -97,7 +97,8 @@ public class DoubleArrayFormat implements Format<double[]>
             sb.append(Double.toString(d));
             sb.append(" ");
         }
-        return sb.substring(0, sb.length() - 1); // trim trailing comma
+        sb.trimToSize();
+        return sb.toString();
     }
     
     /**
@@ -119,7 +120,8 @@ public class DoubleArrayFormat implements Format<double[]>
             sb.append(iter.next().toString());
             sb.append(" ");
         }
-        return sb.substring(0, sb.length() - 1); // trim trailing comma
+        sb.trimToSize();
+        return sb.toString();
     }
 
     /**

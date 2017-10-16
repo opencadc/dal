@@ -106,6 +106,7 @@ public class FieldElement extends Element
         {
             setFieldAttribute("name", field.getName());
             setFieldAttribute("datatype", field.getDatatype());
+            setFieldAttribute("arraysize", field.getArraysize());
             setFieldAttribute("ID", field.id);
             setFieldAttribute("ucd", field.ucd);
             setFieldAttribute("unit", field.unit);
@@ -113,7 +114,7 @@ public class FieldElement extends Element
             setFieldAttribute("xtype", field.xtype);
             setFieldAttribute("ref", field.ref);
             setFieldAttribute("ID", field.id);
-            setArraysize(field.getArraysize(), field.isVariableSize());
+            
             setDescription(field.description, namespace);
             setValues(field.getValues(), namespace);
         }
@@ -151,30 +152,6 @@ public class FieldElement extends Element
             Element element = new Element("DESCRIPTION", namespace);
             element.setText(description);
             addContent(element);
-        }
-    }
-
-    /**
-     * Set the arraysize attribute.
-     * @param arraysize
-     * @param variableSize
-     */
-    protected void setArraysize(Integer arraysize, boolean variableSize)
-    {
-        if (arraysize != null)
-        {
-            if (variableSize)
-            {
-                setFieldAttribute("arraysize", arraysize.toString() + "*");
-            }
-            else
-            {
-                setFieldAttribute("arraysize", arraysize.toString());
-            }
-        }
-        else if (variableSize)
-        {
-            setFieldAttribute("arraysize", "*");
         }
     }
 

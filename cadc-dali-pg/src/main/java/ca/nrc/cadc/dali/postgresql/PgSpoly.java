@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2017.                            (c) 2017.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,119 +62,119 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali.postgresql;
 
+
+import ca.nrc.cadc.dali.Point;
+import ca.nrc.cadc.dali.Polygon;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import ca.nrc.cadc.dali.util.Format;
+import org.apache.log4j.Logger;
+import org.postgresql.util.PGobject;
 
 /**
- * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
- * and a list of string values as permitted by the VOTable schema.
  *
  * @author pdowler
  */
-public class VOTableField
+public class PgSpoly 
 {
-    private String name;
-    private String datatype;
+    private static final Logger log = Logger.getLogger(PgSpoly.class);
 
-    protected String arraysize;
-    protected int[] arrayShape;
-    protected Format<Object> format;
-
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public String description;
-
-    // TODO: add precision support and use it to configure numeric format objects
-
-    public String id;
-    public String ref;
-
-    private List<String> values = new ArrayList<String>();
-
-    protected VOTableField() { }
-
-    public VOTableField(String name, String datatype)
+    public PgSpoly() { }
+    
+    /**
+     * Generate a PGobject suitable for use in a PreparedStatement (insert or update
+     * of an spoly column).
+     * 
+     * @param poly value to transform, may be null
+     * @return PGobject or null
+     * @throws SQLException if PGobject creation fails
+     */
+    public PGobject generatePolygon(Polygon poly)
+        throws SQLException
     {
-        this(name, datatype, null);
-    }
+        if (poly == null)
+            return null;
+        
+        StringBuilder sval = new StringBuilder();
+        sval.append("{");
+        for (Point p : poly.getVertices())
+        {
+            sval.append("(");
+            sval.append(Math.toRadians(p.getLongitude()));
+            sval.append(",");
+            sval.append(Math.toRadians(p.getLatitude()));
+            sval.append(")");
+            sval.append(",");
+        }
+        sval.setCharAt(sval.length()-1, '}'); // replace last comma with closing }
+        String spoly = sval.toString();
 
-    public VOTableField(String name, String datatype, String arraysize)
-    {
-        this(name, datatype, arraysize, null);
-    }
-
-    public VOTableField(String name, String datatype, String arraysize, Format<Object> format)
-    {
-        this.name = name;
-        this.datatype = datatype;
-        this.arraysize = arraysize;
-        this.format = format;
-        validateArraysize();
-    }
-
-    private void validateArraysize()
-    {
-        this.arrayShape = VOTableUtil.getArrayShape(arraysize);
+        PGobject pgo = new PGobject();
+        pgo.setType("spoly");
+        pgo.setValue(spoly);
+        
+        return pgo;
     }
     
-    public String getName()
+    /**
+     * Parse the string representation of an spoly value (from ResultSet.getString(...)).
+     * A round-trip to the database spoly column does not preserve starting vertex 
+     * or numeric values exactly. TODO: verify that round-trip preserves winding
+     * direction.
+     * 
+     * @param s value to transform, may be null
+     * @return Polygon or null
+     */
+    public Polygon getPolygon(String s)
     {
-        return name;
-    }
+        // spoly string format: {(a,b),(c,d),(e,f) ... }
+        if (s == null)
+            return null;
 
-    public String getDatatype()
-    {
-        return datatype;
-    }
+        // Get the string inside the enclosing brackets.
+        int open = s.indexOf("{");
+        int close = s.indexOf("}");
+        if (open == -1 || close == -1)
+            throw new IllegalArgumentException("Missing opening or closing { } " + s);
 
-    public String getArraysize()
-    {
-        return arraysize;
-    }
+        // Get the string inside the enclosing parentheses.
+        s = s.substring(open + 1, close);
+        open = s.indexOf("(");
+        close = s.lastIndexOf(")");
+        if (open == -1 || close == -1)
+            throw new IllegalArgumentException("Missing opening or closing ( ) " + s);
 
-    public Format<Object> getFormat()
-    {
-        return format;
-    }
+        // Each set of vertices is '),(' separated.
+        s = s.substring(open + 1, close);
+        String[] vertices = s.split("\\){1}?\\s*,\\s*{1}\\({1}?");
 
-    public int[] getArrayShape()
-    {
-        return arrayShape;
-    }
+        // Check minimum vertices to make a polygon.
+        if (vertices.length < 3)
+            throw new IllegalArgumentException("Minimum 3 vertices required to form a Polygon " + s);
 
-    public List<String> getValues()
-    {
-        return values;
-    }
+        Polygon ret = new Polygon();
 
-    public void setFormat(Format<Object> format)
-    {
-        this.format = format;
-    }
+        // Loop through each set of vertices.
+        for (int i = 0; i < vertices.length; i++)
+        {
+            // Each vertex is 2 values separated by a comma.
+            String vertex = vertices[i];
+            String[] values = vertex.split(",");
+            if (values.length != 2)
+                throw new IllegalArgumentException("Each set of vertices must have only 2 values " + vertex);
 
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName()).append("[");
-        sb.append(name).append(",");
-        sb.append(datatype);
-        if (arraysize != null)
-            sb.append(",").append(arraysize);
-        if (xtype != null)
-            sb.append(",").append(xtype);
-        sb.append("]");
-        return sb.toString();
+            double x = Double.parseDouble(values[0]);
+            double y = Double.parseDouble(values[1]);
+
+            x = Math.toDegrees(x);
+            y = Math.toDegrees(y);
+            ret.getVertices().add(new Point(x, y));
+        }
+        return ret;
     }
 }

@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2017.                            (c) 2017.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,119 +62,56 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali.util;
 
-import java.util.ArrayList;
-import java.util.List;
 
-import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.DoubleInterval;
+import org.apache.log4j.Logger;
 
 /**
- * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
- * and a list of string values as permitted by the VOTable schema.
  *
  * @author pdowler
  */
-public class VOTableField
+public class DoubleIntervalArrayFormat  implements Format<DoubleInterval[]>
 {
-    private String name;
-    private String datatype;
+    private static final Logger log = Logger.getLogger(DoubleIntervalArrayFormat.class);
 
-    protected String arraysize;
-    protected int[] arrayShape;
-    protected Format<Object> format;
+    public DoubleIntervalArrayFormat() { }
 
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public String description;
-
-    // TODO: add precision support and use it to configure numeric format objects
-
-    public String id;
-    public String ref;
-
-    private List<String> values = new ArrayList<String>();
-
-    protected VOTableField() { }
-
-    public VOTableField(String name, String datatype)
+    @Override
+    public DoubleInterval[] parse(String s)
     {
-        this(name, datatype, null);
-    }
-
-    public VOTableField(String name, String datatype, String arraysize)
-    {
-        this(name, datatype, arraysize, null);
-    }
-
-    public VOTableField(String name, String datatype, String arraysize, Format<Object> format)
-    {
-        this.name = name;
-        this.datatype = datatype;
-        this.arraysize = arraysize;
-        this.format = format;
-        validateArraysize();
-    }
-
-    private void validateArraysize()
-    {
-        this.arrayShape = VOTableUtil.getArrayShape(arraysize);
-    }
-    
-    public String getName()
-    {
-        return name;
-    }
-
-    public String getDatatype()
-    {
-        return datatype;
-    }
-
-    public String getArraysize()
-    {
-        return arraysize;
-    }
-
-    public Format<Object> getFormat()
-    {
-        return format;
-    }
-
-    public int[] getArrayShape()
-    {
-        return arrayShape;
-    }
-
-    public List<String> getValues()
-    {
-        return values;
-    }
-
-    public void setFormat(Format<Object> format)
-    {
-        this.format = format;
+        if (s == null)
+            return null;
+        
+        DoubleArrayFormat daf = new DoubleArrayFormat();
+        double[] vv = daf.parse(s);
+        int len = vv.length/2;
+        DoubleInterval[] ret = new DoubleInterval[len];
+        try
+        {
+            for (int i=0; i<vv.length; i+= 2)
+                ret[i/2] = new DoubleInterval(vv[i], vv[i+1]);
+        }
+        catch(ArrayIndexOutOfBoundsException ex)
+        {
+            throw new IllegalArgumentException("invalid array length for array of interval: " + vv.length);
+        }
+        return ret;
     }
 
     @Override
-    public String toString()
+    public String format(DoubleInterval[] t)
     {
+        if (t == null)
+            return "";
         StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName()).append("[");
-        sb.append(name).append(",");
-        sb.append(datatype);
-        if (arraysize != null)
-            sb.append(",").append(arraysize);
-        if (xtype != null)
-            sb.append(",").append(xtype);
-        sb.append("]");
+        for (int i=0; i<t.length; i++)
+            sb.append(t[i].getLower()).append(" ").append(t[i].getUpper()).append(" ");
+        sb.trimToSize();
         return sb.toString();
     }
 }

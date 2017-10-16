@@ -69,29 +69,63 @@
 
 package ca.nrc.cadc.dali.util;
 
+import java.util.Iterator;
+
 /**
+ * Formats and parses a double[].
  *
- * @author pdowler
  */
-public class LongArrayFormat implements Format<long[]>
+public class DoubleArray2DFormat implements Format<double[][]>
 {
+    private int[] arrayshape;
+    
+    public DoubleArray2DFormat(int[] arrayshape)
+    {
+        this.arrayshape = arrayshape;
+    }
+    
     /**
-     * Takes an long[] and returns the default String representation.
+     * Takes an double[] and returns the standard String representation.
+     * If the double[] is null an empty String is returned.
      *
-     * @param object long[] to format.
-     * @return String representation of the long[].
+     * @param object double[] to format.
+     * @return String representation of the double[].
      */
-    public String format(long[] object)
+    public String format(double[][] object)
     {
         if (object == null)
         {
             return "";
         }
-
+        
         StringBuilder sb = new StringBuilder();
-        for (long i : object)
+        for (int i=0; i<object.length; i++)
+            for (int j=0; j<object[i].length; j++)
+            {
+                sb.append(Double.toString(object[i][j]));
+                sb.append(" ");
+            }
+        sb.trimToSize();
+        return sb.toString();
+    }
+    
+    /**
+     * Takes a sequence of double values and returns the standard String 
+     * representation. If the iterator is null or empty an empty String is
+     * returned.
+     * 
+     * @param iter
+     * @return 
+     */
+    public String format(Iterator<Double> iter)
+    {
+        if (iter == null || !iter.hasNext())
+            return "";
+        
+        StringBuilder sb = new StringBuilder();
+        while ( iter.hasNext() )
         {
-            sb.append(Long.toString(i));
+            sb.append(iter.next().toString());
             sb.append(" ");
         }
         sb.trimToSize();
@@ -99,12 +133,12 @@ public class LongArrayFormat implements Format<long[]>
     }
 
     /**
-     * Parses a String to a long[].
+     * Parses a String to a double[].
      *
      * @param s the String to parse.
-     * @return long[] value of the String.
+     * @return double[] value of the String.
      */
-    public long[] parse(String s)
+    public double[][] parse(String s)
     {
         if (s == null || s.isEmpty())
         {
@@ -113,10 +147,22 @@ public class LongArrayFormat implements Format<long[]>
         else
         {
             String[] tokens = s.split(" ");
-            long[] array = new long[tokens.length];
-            for (int i = 0; i < tokens.length; i++)
+            int n1 = arrayshape[0];
+            //int n2 = arrayshape[1];
+            //if (arrayshape[1] == -1) // variable
+            int n2 = tokens.length/arrayshape[0];
+            double[][] array = new double[n1][n2];
+            int i=0;
+            int j=0;
+            for (int t = 0; t < tokens.length; t++)
             {
-                array[i] = Long.parseLong(tokens[i]);
+                array[i][j] = Double.parseDouble(tokens[t]);
+                j++;
+                if (j == n2)
+                {
+                    j = 0;
+                    i++;
+                }
             }
             return array;
         }

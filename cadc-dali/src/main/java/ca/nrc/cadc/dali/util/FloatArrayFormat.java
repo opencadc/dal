@@ -95,7 +95,8 @@ public class FloatArrayFormat  implements Format<float[]>
             sb.append(Float.toString(f));
             sb.append(" ");
         }
-        return sb.substring(0, sb.length() - 1); // trim trailing comma
+        sb.trimToSize();
+        return sb.toString();
     }
 
     /**

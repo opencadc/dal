@@ -69,9 +69,7 @@
 
 package ca.nrc.cadc.dali.util;
 
-
 import ca.nrc.cadc.dali.DoubleInterval;
-import ca.nrc.cadc.dali.LongInterval;
 import org.apache.log4j.Logger;
 
 /**

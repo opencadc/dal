@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2017.                            (c) 2017.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,119 +62,84 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali.util;
 
-import java.util.ArrayList;
-import java.util.List;
 
-import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.DoubleInterval;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
- * and a list of string values as permitted by the VOTable schema.
  *
  * @author pdowler
  */
-public class VOTableField
+public class DoubleIntervalArrayFormatTest 
 {
-    private String name;
-    private String datatype;
+    private static final Logger log = Logger.getLogger(DoubleIntervalArrayFormatTest.class);
 
-    protected String arraysize;
-    protected int[] arrayShape;
-    protected Format<Object> format;
-
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public String description;
-
-    // TODO: add precision support and use it to configure numeric format objects
-
-    public String id;
-    public String ref;
-
-    private List<String> values = new ArrayList<String>();
-
-    protected VOTableField() { }
-
-    public VOTableField(String name, String datatype)
+    public DoubleIntervalArrayFormatTest() { }
+    
+    @Test
+    public void testValue()
     {
-        this(name, datatype, null);
+        log.debug("testValue");
+        DoubleIntervalArrayFormat format = new DoubleIntervalArrayFormat();
+        
+        try
+        {
+            DoubleInterval[] expected = new DoubleInterval[]
+            {
+                new DoubleInterval(1.0, 2.0),
+                new DoubleInterval(3.0, 4.0),
+                new DoubleInterval(5.0, 6.0)
+            };
+            
+            String result = format.format(expected);
+            DoubleInterval[] actual = format.parse(result);
+
+            Assert.assertEquals(expected.length, actual.length);
+            for (int i=0; i<expected.length; i++)
+                Assert.assertEquals(expected[i], actual[i]);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
 
-    public VOTableField(String name, String datatype, String arraysize)
+    @Test
+    public void testInvalidStringRep() throws Exception
     {
-        this(name, datatype, arraysize, null);
-    }
+        log.debug("testInvalidStringRep");
 
-    public VOTableField(String name, String datatype, String arraysize, Format<Object> format)
-    {
-        this.name = name;
-        this.datatype = datatype;
-        this.arraysize = arraysize;
-        this.format = format;
-        validateArraysize();
-    }
+        DoubleIntervalArrayFormat format = new DoubleIntervalArrayFormat();
+        
+        String tooShort = "1.0";
+        String oddLength = "1.0 2.0 3.0 4.0 5.0";
 
-    private void validateArraysize()
-    {
-        this.arrayShape = VOTableUtil.getArrayShape(arraysize);
+        try { format.parse(tooShort); }
+        catch(IllegalArgumentException expected) { }
+        
+        try { format.parse(oddLength); }
+        catch(IllegalArgumentException expected) { }
     }
     
-    public String getName()
+    @Test
+    public void testNull() throws Exception
     {
-        return name;
-    }
+        log.debug("testNull");
 
-    public String getDatatype()
-    {
-        return datatype;
-    }
+        DoubleIntervalArrayFormat format = new DoubleIntervalArrayFormat();
 
-    public String getArraysize()
-    {
-        return arraysize;
-    }
+        String s = format.format(null);
+        Assert.assertEquals("", s);
 
-    public Format<Object> getFormat()
-    {
-        return format;
-    }
-
-    public int[] getArrayShape()
-    {
-        return arrayShape;
-    }
-
-    public List<String> getValues()
-    {
-        return values;
-    }
-
-    public void setFormat(Format<Object> format)
-    {
-        this.format = format;
-    }
-
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName()).append("[");
-        sb.append(name).append(",");
-        sb.append(datatype);
-        if (arraysize != null)
-            sb.append(",").append(arraysize);
-        if (xtype != null)
-            sb.append(",").append(xtype);
-        sb.append("]");
-        return sb.toString();
+        DoubleInterval[] object = format.parse(null);
+        Assert.assertNull(object);
     }
 }

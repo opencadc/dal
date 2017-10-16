@@ -76,36 +76,10 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class DoubleInterval
+public class DoubleInterval extends Interval<Double>
 {
-    private static final Logger log = Logger.getLogger(DoubleInterval.class);
-
-    private double lower;
-    private double upper;
-    
-    public DoubleInterval(double lower, double upper) 
+    public DoubleInterval(Double lower, Double upper) 
     { 
-        this.lower = lower;
-        this.upper = upper;
-    }
-
-    public double getLower()
-    {
-        return lower;
-    }
-
-    public double getUpper()
-    {
-        return upper;
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (obj == null)
-            return false;
-        
-        DoubleInterval rhs = (DoubleInterval) obj;
-        return lower == rhs.lower && upper == rhs.upper;
+        super(lower, upper);
     }
 }

@@ -191,7 +191,7 @@ public class FormatFactory
                 {
                     ret = new DoubleIntervalFormat();
                 }
-                else
+                else if (field.getArrayShape().length == 1)
                     ret = new FloatArrayFormat();
             }
             else
@@ -217,10 +217,15 @@ public class FormatFactory
                 }
                 else if ("interval".equalsIgnoreCase(field.xtype))
                 {
-                    ret = new DoubleIntervalFormat();
+                    if (field.getArrayShape().length == 1 && field.getArrayShape()[0] == 2) // don't check value = 2?
+                        ret = new DoubleIntervalFormat();
+                    else if (field.getArrayShape().length == 2 && field.getArrayShape()[0] == 2)
+                        ret = new DoubleIntervalArrayFormat();
                 }
-                else
+                else  if (field.getArrayShape().length == 1)
                     ret = new DoubleArrayFormat();
+                else  if (field.getArrayShape().length == 2)
+                    ret = new DoubleArray2DFormat(field.getArrayShape());
             }
             else
             {
@@ -267,7 +272,7 @@ public class FormatFactory
 
     private static boolean isArray(VOTableField field)
     {
-        return (field.getArraysize() != null && field.getArraysize() > 1) || field.isVariableSize();
+        return field.getArrayShape() != null;
     }
 
 }
