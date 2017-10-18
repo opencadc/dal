@@ -69,9 +69,10 @@
 
 package ca.nrc.cadc.dali.util;
 
-
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import org.apache.log4j.Logger;
 
 /**
@@ -83,6 +84,8 @@ public class PolygonFormat implements Format<Polygon>
 {
     private static final Logger log = Logger.getLogger(PolygonFormat.class);
 
+    private final DoubleArrayFormat fmt = new DoubleArrayFormat();
+            
     public PolygonFormat() { }
 
     public Polygon parse(String s)
@@ -111,18 +114,35 @@ public class PolygonFormat implements Format<Polygon>
         }
     }
 
-    public String format(Polygon poly)
+    public String format(final Polygon poly)
     {
         if (poly == null)
             return "";
-        StringBuilder sb = new StringBuilder();
-        for (Point c : poly.getVertices())
-        {
-            sb.append(c.getLongitude()).append(" ");
-            sb.append(c.getLatitude()).append(" ");
-        }
-        sb.trimToSize();
-        return sb.toString();
+        return fmt.format(new Iterator<Double>() {
+            private int num = 0;
+            private int numP = 0;
+            @Override
+            public boolean hasNext() {
+                return (numP < poly.getVertices().size());
+            }
+
+            @Override
+            public Double next() {
+                if (!hasNext())
+                    throw new NoSuchElementException();
+                
+                Point p = poly.getVertices().get(numP);
+                
+                if (num == 0) {
+                    num++;
+                    return p.getLongitude();
+                }
+                
+                numP++;
+                num = 0;
+                return p.getLatitude();
+            }
+        });
     }
     
 }

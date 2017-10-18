@@ -99,6 +99,7 @@ public class DoubleIntervalArrayFormatTest
             };
             
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             DoubleInterval[] actual = format.parse(result);
 
             Assert.assertEquals(expected.length, actual.length);

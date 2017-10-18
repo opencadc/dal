@@ -69,6 +69,8 @@ package ca.nrc.cadc.dali.util;
 
 
 import ca.nrc.cadc.dali.DoubleInterval;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import org.apache.log4j.Logger;
 
 /**
@@ -79,6 +81,8 @@ public class DoubleIntervalArrayFormat  implements Format<DoubleInterval[]>
 {
     private static final Logger log = Logger.getLogger(DoubleIntervalArrayFormat.class);
 
+    private DoubleArrayFormat fmt = new DoubleArrayFormat();
+    
     public DoubleIntervalArrayFormat() { }
 
     @Override
@@ -104,14 +108,35 @@ public class DoubleIntervalArrayFormat  implements Format<DoubleInterval[]>
     }
 
     @Override
-    public String format(DoubleInterval[] t)
+    public String format(final DoubleInterval[] t)
     {
         if (t == null)
             return "";
-        StringBuilder sb = new StringBuilder();
-        for (int i=0; i<t.length; i++)
-            sb.append(t[i].getLower()).append(" ").append(t[i].getUpper()).append(" ");
-        sb.trimToSize();
-        return sb.toString();
+        return fmt.format(new Iterator<Double>() {
+            private int num = 0;
+            private int numDI = 0;
+            @Override
+            public boolean hasNext() {
+                return (numDI < t.length);
+            }
+
+            @Override
+            public Double next() {
+                if (!hasNext())
+                    throw new NoSuchElementException();
+                
+                DoubleInterval di = t[numDI];
+                
+                if (num == 0) {
+                    num++;
+                    return di.getLower();
+                    
+                }
+                
+                numDI++;
+                num = 0;
+                return di.getUpper();
+            }
+        });
     }
 }

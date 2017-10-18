@@ -98,6 +98,7 @@ public class DoubleIntervalFormatTest
             DoubleInterval expected = new DoubleInterval(1.0, 2.0);
             
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             DoubleInterval actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);

@@ -72,6 +72,7 @@ package ca.nrc.cadc.dali.util;
 import ca.nrc.cadc.util.Log4jInit;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -102,6 +103,7 @@ public class FloatArrayFormatTest
             float[] expected = new float[] { 1.0f, 2.5f, 3.9f };
 
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             float[] actual = format.parse(result);
 
             assertEquals(expected.length, actual.length);

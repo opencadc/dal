@@ -72,6 +72,7 @@ package ca.nrc.cadc.dali.util;
 import ca.nrc.cadc.util.Log4jInit;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -102,6 +103,7 @@ public class LongArrayFormatTest
             long[] expected = new long[] { 1, 25, 100 };
 
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             long[] actual = format.parse(result);
 
             assertEquals(expected.length, actual.length);

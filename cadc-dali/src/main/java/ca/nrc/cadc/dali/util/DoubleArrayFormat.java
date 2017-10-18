@@ -97,8 +97,7 @@ public class DoubleArrayFormat implements Format<double[]>
             sb.append(Double.toString(d));
             sb.append(" ");
         }
-        sb.trimToSize();
-        return sb.toString();
+        return sb.toString().trim();
     }
     
     /**
@@ -120,8 +119,7 @@ public class DoubleArrayFormat implements Format<double[]>
             sb.append(iter.next().toString());
             sb.append(" ");
         }
-        sb.trimToSize();
-        return sb.toString();
+        return sb.toString().trim();
     }
 
     /**

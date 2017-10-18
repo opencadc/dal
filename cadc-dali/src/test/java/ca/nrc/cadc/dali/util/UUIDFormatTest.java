@@ -98,6 +98,7 @@ public class UUIDFormatTest
             UUID expected = UUID.randomUUID();
             
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             UUID actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);

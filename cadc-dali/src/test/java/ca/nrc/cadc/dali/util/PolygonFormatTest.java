@@ -102,6 +102,7 @@ public class PolygonFormatTest
             expected.getVertices().add(new Point(11.0, 11.0));
             
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             Polygon actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);
