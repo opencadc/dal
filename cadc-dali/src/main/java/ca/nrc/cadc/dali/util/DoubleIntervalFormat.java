@@ -70,6 +70,8 @@
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.DoubleInterval;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import org.apache.log4j.Logger;
 
 /**
@@ -81,6 +83,8 @@ public class DoubleIntervalFormat implements Format<DoubleInterval>
 {
     private static final Logger log = Logger.getLogger(DoubleIntervalFormat.class);
 
+    private DoubleArrayFormat fmt = new DoubleArrayFormat();
+    
     public DoubleIntervalFormat() { }
 
     public DoubleInterval parse(String s)
@@ -96,12 +100,32 @@ public class DoubleIntervalFormat implements Format<DoubleInterval>
         return new DoubleInterval(vv[0], vv[1]);
     }
 
-    public String format(DoubleInterval t)
+    public String format(final DoubleInterval t)
     {
         if (t == null)
             return "";
-        return t.getLower() + " " + t.getUpper();
+        return fmt.format(new Iterator<Double>() {
+            private int num = 0;
+            @Override
+            public boolean hasNext() {
+                return (num < 2);
+            }
+
+            @Override
+            public Double next() {
+                if (!hasNext())
+                    throw new NoSuchElementException();
+                num++;
+                if (num == 1)
+                    return t.getLower();
+                return t.getUpper();
+            }
+            
+            // java7 support
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        });
     }
-    
-    
 }

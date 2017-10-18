@@ -74,6 +74,7 @@ import ca.nrc.cadc.util.HexUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
@@ -107,6 +108,7 @@ public class MD5FormatTest
             assertEquals("setup", 16, expected.length);
 
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             byte[] actual = format.parse(result);
 
             assertEquals(expected.length, actual.length);

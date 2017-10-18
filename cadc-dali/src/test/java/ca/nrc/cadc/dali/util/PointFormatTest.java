@@ -99,6 +99,7 @@ public class PointFormatTest
             Point expected = new Point(12.0, 34.0);
             
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             Point actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);

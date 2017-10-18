@@ -94,8 +94,7 @@ public class LongArrayFormat implements Format<long[]>
             sb.append(Long.toString(i));
             sb.append(" ");
         }
-        sb.trimToSize();
-        return sb.toString();
+        return sb.toString().trim();
     }
 
     /**

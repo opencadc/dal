@@ -73,6 +73,7 @@ import ca.nrc.cadc.util.Log4jInit;
 import java.util.Date;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -100,16 +101,19 @@ public class UTCTimestampFormatTest
             Date expected = new Date();
 
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             Date actual = format.parse(result);
             assertEquals(expected, actual);
 
             Date object = new java.sql.Date(expected.getTime());
             result = format.format(object);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             actual = format.parse(result);
             assertEquals(expected, actual);
 
             object = new java.sql.Timestamp(expected.getTime());
             result = format.format(object);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             actual = format.parse(result);
             assertEquals(expected, actual);
 

@@ -99,6 +99,7 @@ public class CircleFormatTest
             Circle expected = new Circle(new Point(12.0, 34.0), 2.0);
             
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             Circle actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);

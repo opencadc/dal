@@ -103,6 +103,7 @@ public class URIFormatTest
             URI expected = new URI("foo", "bar/baz", "frag");
 
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             URI actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);

@@ -98,6 +98,7 @@ public class LongIntervalFormatTest
             LongInterval expected = new LongInterval(1l, 2l);
             
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             LongInterval actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);

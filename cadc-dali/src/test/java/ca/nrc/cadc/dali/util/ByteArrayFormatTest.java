@@ -102,6 +102,7 @@ public class ByteArrayFormatTest
             byte[] expected = new byte[] { 1,2,3 };
 
             String result = format.format(expected);
+            assertEquals("no extra whitespace", result.trim(), result);
             byte[] actual = format.parse(result);
 
             assertEquals(expected.length, actual.length);

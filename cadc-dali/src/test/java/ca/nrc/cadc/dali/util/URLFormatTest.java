@@ -103,6 +103,7 @@ public class URLFormatTest
             URL expected = new URL("http://www.example.com/foo");
 
             String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
             URL actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);

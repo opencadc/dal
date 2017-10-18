@@ -94,8 +94,7 @@ public class ByteArrayFormat implements Format<byte[]>
             sb.append(Byte.toString(b));
             sb.append(" ");
         }
-        sb.trimToSize();
-        return sb.toString();
+        return sb.toString().trim();
     }
 
     /**

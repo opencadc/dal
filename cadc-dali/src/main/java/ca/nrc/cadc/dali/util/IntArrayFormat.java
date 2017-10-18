@@ -94,8 +94,7 @@ public class IntArrayFormat implements Format<int[]>
             sb.append(Integer.toString(i));
             sb.append(" ");
         }
-        sb.trimToSize();
-        return sb.toString();
+        return sb.toString().trim();
     }
 
     /**
