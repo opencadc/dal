@@ -137,6 +137,12 @@ public class DoubleIntervalArrayFormat  implements Format<DoubleInterval[]>
                 num = 0;
                 return di.getUpper();
             }
+
+            // java7 support
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
         });
     }
 }

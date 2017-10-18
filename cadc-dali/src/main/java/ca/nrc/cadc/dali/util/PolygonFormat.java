@@ -142,6 +142,12 @@ public class PolygonFormat implements Format<Polygon>
                 num = 0;
                 return p.getLatitude();
             }
+            
+            // java7 support
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
         });
     }
     

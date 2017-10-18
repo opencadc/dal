@@ -120,6 +120,12 @@ public class DoubleIntervalFormat implements Format<DoubleInterval>
                     return t.getLower();
                 return t.getUpper();
             }
+            
+            // java7 support
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
         });
     }
 }

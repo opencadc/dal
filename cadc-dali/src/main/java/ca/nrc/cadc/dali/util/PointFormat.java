@@ -71,6 +71,8 @@ package ca.nrc.cadc.dali.util;
 
 
 import ca.nrc.cadc.dali.Point;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import org.apache.log4j.Logger;
 
 /**
@@ -82,6 +84,8 @@ public class PointFormat implements Format<Point>
 {
     private static final Logger log = Logger.getLogger(PointFormat.class);
 
+    private DoubleArrayFormat fmt = new DoubleArrayFormat();
+    
     public PointFormat() { }
 
     public Point parse(String s)
@@ -97,11 +101,33 @@ public class PointFormat implements Format<Point>
         return new Point(vv[0], vv[1]);
     }
 
-    public String format(Point t)
+    public String format(final Point t)
     {
         if (t == null)
             return "";
-        return t.getLongitude() + " " + t.getLatitude();
+        return fmt.format(new Iterator<Double>() {
+            private int num = 0;
+            @Override
+            public boolean hasNext() {
+                return (num < 2);
+            }
+
+            @Override
+            public Double next() {
+                if (!hasNext())
+                    throw new NoSuchElementException();
+                num++;
+                if (num == 1)
+                    return t.getLongitude();
+                return t.getLatitude();
+            }
+            
+            // java7 support
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        });
     }
     
     
