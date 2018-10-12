@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2017.                            (c) 2017.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,10 +63,9 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.postgresql;
-
 
 import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.Point;
@@ -78,25 +77,25 @@ import org.postgresql.util.PGobject;
  *
  * @author pdowler
  */
-public class PgScircle 
-{
+public class PgScircle {
+
     private static final Logger log = Logger.getLogger(PgScircle.class);
 
-    public PgScircle() { }
-    
+    public PgScircle() {
+    }
+
     /**
      * Generate a PGobject suitable for use in a PreparedStatement (insert or update
      * of an scircle column).
-     * 
+     *
      * @param c value to transform, may be null
      * @return PGobject or null
-     * @throws SQLException if PGobject creation fails
      */
-    public PGobject generateCircle(Circle c)
-    {
-        if (c == null)
+    public PGobject generateCircle(Circle c) {
+        if (c == null) {
             return null;
-        
+        }
+
         StringBuilder sval = new StringBuilder();
         sval.append("<");
         sval.append("(");
@@ -118,45 +117,48 @@ public class PgScircle
             throw new RuntimeException("BUG: failed to convert circle to PGobject", ex);
         }
     }
-    
+
     /**
      * Parse the string representation of an scircle value (from ResultSet.getString(...)).
-     * 
+     *
      * @param s value to transform, may be null
      * @return Circle or null
      */
-    public Circle getCircle(String s)
-    {
-        if (s == null)
+    public Circle getCircle(String s) {
+        if (s == null) {
             return null;
-        
+        }
+
         int open = s.indexOf("<");
         int close = s.lastIndexOf(">");
-        if (open == -1 || close == -1)
+        if (open == -1 || close == -1) {
             throw new IllegalArgumentException("Missing opening or closing < > " + s);
+        }
         s = s.substring(open + 1, close);
         String[] values = s.split(",");
-        
+
         double r = Double.parseDouble(values[2]);
-        
+
         open = s.indexOf("(");
         close = s.lastIndexOf(")");
         int comma = s.lastIndexOf(',');
-        if (open == -1 || close == -1)
+        if (open == -1 || close == -1) {
             throw new IllegalArgumentException("Missing opening or closing ( ) " + s);
-        
+        }
+
         s = s.substring(open + 1, close);
         values = s.split(",");
-        if (values.length != 2)
+        if (values.length != 2) {
             throw new IllegalArgumentException("point must have only 2 values " + s);
-        
+        }
+
         double x = Double.parseDouble(values[0]);
         double y = Double.parseDouble(values[1]);
 
         x = Math.toDegrees(x);
         y = Math.toDegrees(y);
         r = Math.toDegrees(r);
-        
+
         return new Circle(new Point(x, y), r);
     }
 }
