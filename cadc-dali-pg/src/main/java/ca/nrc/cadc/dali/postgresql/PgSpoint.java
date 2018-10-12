@@ -92,7 +92,6 @@ public class PgSpoint
      * @throws SQLException if PGobject creation fails
      */
     public PGobject generatePoint(Point p)
-        throws SQLException
     {
         if (p == null)
             return null;
@@ -105,11 +104,14 @@ public class PgSpoint
         sval.append(")");
         String spt = sval.toString();
 
-        PGobject pgo = new PGobject();
-        pgo.setType("spoint");
-        pgo.setValue(spt);
-        
-        return pgo;
+        try {
+            PGobject pgo = new PGobject();
+            pgo.setType("spoint");
+            pgo.setValue(spt);
+            return pgo;
+        } catch (SQLException ex) {
+            throw new RuntimeException("BUG: failed to convert point to PGobject", ex);
+        }
     }
     
     /**

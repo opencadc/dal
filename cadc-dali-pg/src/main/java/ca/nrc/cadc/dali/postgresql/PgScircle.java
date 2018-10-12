@@ -93,7 +93,6 @@ public class PgScircle
      * @throws SQLException if PGobject creation fails
      */
     public PGobject generateCircle(Circle c)
-        throws SQLException
     {
         if (c == null)
             return null;
@@ -110,11 +109,14 @@ public class PgScircle
         sval.append(">");
         String spt = sval.toString();
 
-        PGobject pgo = new PGobject();
-        pgo.setType("scircle");
-        pgo.setValue(spt);
-        
-        return pgo;
+        try {
+            PGobject pgo = new PGobject();
+            pgo.setType("scircle");
+            pgo.setValue(spt);
+            return pgo;
+        } catch (SQLException ex) {
+            throw new RuntimeException("BUG: failed to convert circle to PGobject", ex);
+        }
     }
     
     /**

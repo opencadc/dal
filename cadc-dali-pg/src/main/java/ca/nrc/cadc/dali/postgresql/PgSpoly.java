@@ -95,7 +95,6 @@ public class PgSpoly
      * @throws SQLException if PGobject creation fails
      */
     public PGobject generatePolygon(Polygon poly)
-        throws SQLException
     {
         if (poly == null)
             return null;
@@ -114,11 +113,14 @@ public class PgSpoly
         sval.setCharAt(sval.length()-1, '}'); // replace last comma with closing }
         String spoly = sval.toString();
 
-        PGobject pgo = new PGobject();
-        pgo.setType("spoly");
-        pgo.setValue(spoly);
-        
-        return pgo;
+        try {
+            PGobject pgo = new PGobject();
+            pgo.setType("spoly");
+            pgo.setValue(spoly);
+            return pgo;
+        } catch (SQLException ex) {
+            throw new RuntimeException("BUG: failed to convert polygon to PGobject", ex);
+        }
     }
     
     /**
