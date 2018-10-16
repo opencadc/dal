@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2017.                            (c) 2017.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,10 +63,9 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.postgresql;
-
 
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
@@ -80,30 +79,28 @@ import org.postgresql.util.PGobject;
  *
  * @author pdowler
  */
-public class PgSpoly 
-{
+public class PgSpoly {
+
     private static final Logger log = Logger.getLogger(PgSpoly.class);
 
-    public PgSpoly() { }
-    
+    public PgSpoly() {
+    }
+
     /**
      * Generate a PGobject suitable for use in a PreparedStatement (insert or update
      * of an spoly column).
-     * 
+     *
      * @param poly value to transform, may be null
      * @return PGobject or null
-     * @throws SQLException if PGobject creation fails
      */
-    public PGobject generatePolygon(Polygon poly)
-        throws SQLException
-    {
-        if (poly == null)
+    public PGobject generatePolygon(Polygon poly) {
+        if (poly == null) {
             return null;
-        
+        }
+
         StringBuilder sval = new StringBuilder();
         sval.append("{");
-        for (Point p : poly.getVertices())
-        {
+        for (Point p : poly.getVertices()) {
             sval.append("(");
             sval.append(Math.toRadians(p.getLongitude()));
             sval.append(",");
@@ -111,62 +108,68 @@ public class PgSpoly
             sval.append(")");
             sval.append(",");
         }
-        sval.setCharAt(sval.length()-1, '}'); // replace last comma with closing }
+        sval.setCharAt(sval.length() - 1, '}'); // replace last comma with closing }
         String spoly = sval.toString();
 
-        PGobject pgo = new PGobject();
-        pgo.setType("spoly");
-        pgo.setValue(spoly);
-        
-        return pgo;
+        try {
+            PGobject pgo = new PGobject();
+            pgo.setType("spoly");
+            pgo.setValue(spoly);
+            return pgo;
+        } catch (SQLException ex) {
+            throw new RuntimeException("BUG: failed to convert polygon to PGobject", ex);
+        }
     }
-    
+
     /**
      * Parse the string representation of an spoly value (from ResultSet.getString(...)).
-     * A round-trip to the database spoly column does not preserve starting vertex 
+     * A round-trip to the database spoly column does not preserve starting vertex
      * or numeric values exactly. TODO: verify that round-trip preserves winding
      * direction.
-     * 
+     *
      * @param s value to transform, may be null
      * @return Polygon or null
      */
-    public Polygon getPolygon(String s)
-    {
+    public Polygon getPolygon(String s) {
         // spoly string format: {(a,b),(c,d),(e,f) ... }
-        if (s == null)
+        if (s == null) {
             return null;
+        }
 
         // Get the string inside the enclosing brackets.
         int open = s.indexOf("{");
         int close = s.indexOf("}");
-        if (open == -1 || close == -1)
+        if (open == -1 || close == -1) {
             throw new IllegalArgumentException("Missing opening or closing { } " + s);
+        }
 
         // Get the string inside the enclosing parentheses.
         s = s.substring(open + 1, close);
         open = s.indexOf("(");
         close = s.lastIndexOf(")");
-        if (open == -1 || close == -1)
+        if (open == -1 || close == -1) {
             throw new IllegalArgumentException("Missing opening or closing ( ) " + s);
+        }
 
         // Each set of vertices is '),(' separated.
         s = s.substring(open + 1, close);
         String[] vertices = s.split("\\){1}?\\s*,\\s*{1}\\({1}?");
 
         // Check minimum vertices to make a polygon.
-        if (vertices.length < 3)
+        if (vertices.length < 3) {
             throw new IllegalArgumentException("Minimum 3 vertices required to form a Polygon " + s);
+        }
 
         Polygon ret = new Polygon();
 
         // Loop through each set of vertices.
-        for (int i = 0; i < vertices.length; i++)
-        {
+        for (int i = 0; i < vertices.length; i++) {
             // Each vertex is 2 values separated by a comma.
             String vertex = vertices[i];
             String[] values = vertex.split(",");
-            if (values.length != 2)
+            if (values.length != 2) {
                 throw new IllegalArgumentException("Each set of vertices must have only 2 values " + vertex);
+            }
 
             double x = Double.parseDouble(values[0]);
             double y = Double.parseDouble(values[1]);

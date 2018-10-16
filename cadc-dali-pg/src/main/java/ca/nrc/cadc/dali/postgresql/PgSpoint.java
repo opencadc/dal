@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2017.                            (c) 2017.
+*  (c) 2018.                            (c) 2018.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,10 +63,9 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.postgresql;
-
 
 import ca.nrc.cadc.dali.Point;
 import java.sql.SQLException;
@@ -77,26 +76,25 @@ import org.postgresql.util.PGobject;
  *
  * @author pdowler
  */
-public class PgSpoint 
-{
+public class PgSpoint {
+
     private static final Logger log = Logger.getLogger(PgSpoint.class);
 
-    public PgSpoint() { }
-    
+    public PgSpoint() {
+    }
+
     /**
      * Generate a PGobject suitable for use in a PreparedStatement (insert or update
      * of an spoint column).
-     * 
+     *
      * @param p value to transform, may be null
      * @return PGobject or null
-     * @throws SQLException if PGobject creation fails
      */
-    public PGobject generatePoint(Point p)
-        throws SQLException
-    {
-        if (p == null)
+    public PGobject generatePoint(Point p) {
+        if (p == null) {
             return null;
-        
+        }
+
         StringBuilder sval = new StringBuilder();
         sval.append("(");
         sval.append(Math.toRadians(p.getLongitude()));
@@ -105,40 +103,45 @@ public class PgSpoint
         sval.append(")");
         String spt = sval.toString();
 
-        PGobject pgo = new PGobject();
-        pgo.setType("spoint");
-        pgo.setValue(spt);
-        
-        return pgo;
+        try {
+            PGobject pgo = new PGobject();
+            pgo.setType("spoint");
+            pgo.setValue(spt);
+            return pgo;
+        } catch (SQLException ex) {
+            throw new RuntimeException("BUG: failed to convert point to PGobject", ex);
+        }
     }
-    
+
     /**
      * Parse the string representation of an spoint value (from ResultSet.getString(...)).
-     * 
+     *
      * @param s value to transform, may be null
      * @return Point or null
      */
-    public Point getPoint(String s)
-    {
-        if (s == null)
+    public Point getPoint(String s) {
+        if (s == null) {
             return null;
-        
+        }
+
         int open = s.indexOf("(");
         int close = s.lastIndexOf(")");
-        if (open == -1 || close == -1)
+        if (open == -1 || close == -1) {
             throw new IllegalArgumentException("Missing opening or closing ( ) " + s);
-        
+        }
+
         s = s.substring(open + 1, close);
         String[] values = s.split(",");
-        if (values.length != 2)
+        if (values.length != 2) {
             throw new IllegalArgumentException("point must have only 2 values " + s);
+        }
 
         double x = Double.parseDouble(values[0]);
         double y = Double.parseDouble(values[1]);
 
         x = Math.toDegrees(x);
         y = Math.toDegrees(y);
-        
+
         return new Point(x, y);
     }
 }
