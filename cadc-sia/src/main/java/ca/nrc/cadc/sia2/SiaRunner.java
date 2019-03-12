@@ -191,7 +191,8 @@ public class SiaRunner implements JobRunner
             // post ADQL query to TAP but do not follow redirect to execute it
             String tapURI = ServiceAvailability.getTapURI();
             AuthMethod am = AuthenticationUtil.getAuthMethod(AuthenticationUtil.getCurrentSubject());
-            URL tapSyncURL = regClient.getServiceURL(new URI(tapURI), Standards.TAP_10, am, Standards.INTERFACE_UWS_SYNC);
+            URL tapBaseURL = regClient.getServiceURL(new URI(tapURI), Standards.TAP_10, am);
+            URL tapSyncURL = new URL(tapBaseURL.toExternalForm() + "/sync");
             HttpPost post = new HttpPost(tapSyncURL, parameters, false);
             post.run();
 
