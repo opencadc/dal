@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -246,12 +246,110 @@ public class SiaValidatorTest
     {
         
         String[] testParams = new String[] { "BAND", "band", "BaNd" };
+        String LB = "550e-9 +Inf";
+        String UB = "-Inf 550e-9";
+        String OPEN = "-Inf +Inf";
+        String SCALAR = "550e-9";
+        String[] testValues = new String[]
+        {
+            "550e-9 600e-9",
+            "5.5e-7 6.0e-7",
+            "5.5E-7 6.0E-7",
+            LB,
+            UB,
+            OPEN,
+            SCALAR
+        };
+        String[] invalidValues = new String[]
+        {
+            "550e-9 600e-9 650e-9", // too many
+            "550x 55432.1", // number format
+        };
         
         try
         {
-            sia.validateBAND(null); // compile and null arg check
-            Method m = SiaValidator.class.getMethod("validateBAND", Map.class);
-            doValidateNumeric(m, "BAND", testParams);
+            List empty = sia.validateBAND(null); // null arg check
+            Assert.assertNotNull(empty);
+            Assert.assertTrue(empty.isEmpty());
+            
+            Map<String,List<String>> params = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
+            
+            for (String tp : testParams)
+            {
+                for (String tv : testValues)
+                {
+                    List<String> vals = new ArrayList<String>();
+                    vals.add(tv);
+                    params.put(tp, vals);
+                    List<Range<Double>> times = sia.validateBAND(params);
+                    Assert.assertNotNull(times);
+                    Assert.assertEquals(1, times.size());
+                    Range<Double> r = times.get(0);
+                    
+                    if (tv == LB)
+                    {
+                        Assert.assertEquals(550e-9, r.getLower(), 1e-12);
+                        Assert.assertNull(r.getUpper());
+                    }
+                    else if (tv == UB)
+                    {
+                        Assert.assertNull(r.getLower());
+                        Assert.assertEquals(550e-9, r.getUpper(), 1e-12);
+                    }
+                    else if (tv == OPEN)
+                    {
+                        Assert.assertNull(r.getLower());
+                        Assert.assertNull(r.getUpper());
+                    }
+                    else if (tv == SCALAR)
+                    {
+                        Assert.assertEquals(550e-9, r.getLower(), 1e-12);
+                        Assert.assertEquals(550e-9, r.getUpper(), 1e-12);
+                    }
+                    else
+                    {
+                        Assert.assertEquals(550e-9, r.getLower(), 1e-12);
+                        Assert.assertEquals(600e-9, r.getUpper(), 1e-12);
+                    }
+                }
+            }
+            
+            // test invalid
+            for (String tp : testParams)
+            {
+                for (String tv : invalidValues)
+                {
+                    List<String> vals = new ArrayList<String>();
+                    vals.add(tv);
+                    params.put(tp, vals);
+                    try
+                    {
+                        List<Range<Double>> ranges = sia.validateBAND(params);
+                        Assert.fail("expected IllegalArgumentException, got: " + ranges.size() + " Range(s)");
+                    }
+                    catch(IllegalArgumentException expected)
+                    {
+                        log.debug("caught expected: " + expected);
+                    }
+                }
+            }
+            
+            // test multiple values
+            params.clear();
+            List<String> vals = new ArrayList<String>();
+            for (int i=0; i<3; i++)
+            {
+                vals.add(testValues[i]);
+            }
+            params.put("BAND", vals);
+            List<Range<Double>> times = sia.validateBAND(params);
+            Assert.assertNotNull(times);
+            Assert.assertEquals(3, times.size());
+            for (Range<Double> r : times)
+            {
+                Assert.assertEquals(550e-9, r.getLower(), 1e-12);
+                Assert.assertEquals(600e-9, r.getUpper(), 0.001);
+            } 
         }
         catch (Exception unexpected)
         {
@@ -266,6 +364,7 @@ public class SiaValidatorTest
         String LB = "54321.0 +Inf";
         String UB = "-Inf 55432.1";
         String OPEN = "-Inf +Inf";
+        String SCALAR = "54321.0";
         String[] testParams = new String[] { "TIME", "time", "TiMe" };
         String[] testValues = new String[]
         {
@@ -274,7 +373,8 @@ public class SiaValidatorTest
             "5.43210E4 5.54321E4",
             LB,
             UB,
-            OPEN
+            OPEN,
+            SCALAR
         };
         String[] invalidValues = new String[]
         {
@@ -303,18 +403,23 @@ public class SiaValidatorTest
                     
                     if (tv == LB)
                     {
-                        Assert.assertEquals(54321.0, r.getLower(), 0.001);
+                        Assert.assertEquals(54321.0, r.getLower(), 0.0001);
                         Assert.assertNull(r.getUpper());
                     }
                     else if (tv == UB)
                     {
                         Assert.assertNull(r.getLower());
-                        Assert.assertEquals(55432.1, r.getUpper(), 0.001);
+                        Assert.assertEquals(55432.1, r.getUpper(), 0.0001);
                     }
                     else if (tv == OPEN)
                     {
                         Assert.assertNull(r.getLower());
                         Assert.assertNull(r.getUpper());
+                    }
+                    else if (tv == SCALAR)
+                    {
+                        Assert.assertEquals(54321.0, r.getLower(), 0.0001);
+                        Assert.assertEquals(54321.0, r.getUpper(), 0.0001);
                     }
                     else
                     {

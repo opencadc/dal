@@ -197,6 +197,24 @@ public class SiaValidator
         return ret;
     }
     
+    public List<Range<Double>> validateBAND(Map<String,List<String>> params)
+    {
+        List<Range<Double>> ret = new ArrayList<Range<Double>>();
+        if (params == null)
+            return ret;
+        List<String> values = params.get(BAND);
+        if (values == null)
+            return ret;
+        for (String v : values)
+        {
+            log.debug("validateBAND: " + v);
+            Range<String> sr = parseStringRange(v, true);
+            ret.add( parseDoubleRange(BAND, sr) );
+        }
+        
+        return ret;
+    }
+    
     public List<Range<Double>> validateTIME(Map<String,List<String>> params)
     {
         List<Range<Double>> ret = new ArrayList<Range<Double>>();
@@ -207,8 +225,8 @@ public class SiaValidator
             return ret;
         for (String v : values)
         {
-            log.debug("validateTime: " + v);
-            Range<String> sr = parseStringRange(v);
+            log.debug("validateTIME: " + v);
+            Range<String> sr = parseStringRange(v, true);
             ret.add( parseDoubleRange(TIME, sr) );
         }
         
@@ -220,10 +238,6 @@ public class SiaValidator
         return validateString(POL, params, POL_STATES);
     }
     
-    public List<Range<Double>> validateBAND(Map<String,List<String>> params)
-    {
-        return validateNumeric(BAND, params);
-    }
     public List<Range<Double>> validateFOV(Map<String,List<String>> params)
     {
         return validateNumeric(FOV, params);
@@ -374,13 +388,23 @@ public class SiaValidator
         }
     }
 
-    private Range<String> parseStringRange(String v)
+    private Range<String> parseStringRange(String v) {
+        return parseStringRange(v, false);
+    }
+    
+    private Range<String> parseStringRange(String v, boolean allowScalar)
     {
         String[] vals = v.split(" ");
-        if (vals.length != 2)
+        if (allowScalar && vals.length == 1) {
+            String vv = vals[0];
+            vals = new String[] { vv, vv } ;
+        }
+        if (vals.length != 2) {
             throw new IllegalArgumentException("invalid range (must have 2 values): " + v);
+        }
         return parseStringRange(vals);
     }
+    
     private static Range<String> parseStringRange(String[] vals)
     {
         // make this directly parseable by java.lang.Double

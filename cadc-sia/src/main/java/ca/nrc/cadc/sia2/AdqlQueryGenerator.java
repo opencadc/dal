@@ -104,7 +104,6 @@ public class AdqlQueryGenerator
     public Map<String,Object> getParameterMap()
     {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put("REQUEST", "doQuery");
         map.put("LANG", "ADQL");
         String adql = getQuery();
         log.debug("SIAv2 query:\n" + adql);

@@ -119,15 +119,45 @@ public class AdqlQueryGeneratorTest
             AdqlQueryGenerator gen = new AdqlQueryGenerator(params);
             Map<String,Object> tapParams = gen.getParameterMap();
             
-            String req = (String) tapParams.get("REQUEST");
             String lang = (String) tapParams.get("LANG");
             String adql = (String) tapParams.get("QUERY");
             
-            Assert.assertEquals("doQuery", req);
             Assert.assertEquals("ADQL", lang);
             
             log.info("testNoParams ADQL:\n" + adql);
             Assert.assertTrue("dataproduct_type", adql.contains("dataproduct_type"));
+        }
+        catch (Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testScalarInterval()
+    {
+        
+        try
+        {
+            Map<String,List<String>> params = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
+            params.put("BAND", Arrays.asList("550e-9"));
+            params.put("TIME", Arrays.asList("54321.0"));
+            
+            AdqlQueryGenerator gen = new AdqlQueryGenerator(params);
+            Map<String,Object> tapParams = gen.getParameterMap();
+            
+            String lang = (String) tapParams.get("LANG");
+            String adql = (String) tapParams.get("QUERY");
+            
+            Assert.assertEquals("ADQL", lang);
+            
+            log.info("testScalarInterval ADQL:\n" + adql);
+            Assert.assertTrue("dataproduct_type", adql.contains("dataproduct_type"));
+            Assert.assertTrue("em_min", adql.contains("em_min <="));
+            Assert.assertTrue("em_max", adql.contains("<= em_max"));
+            Assert.assertTrue("t_min", adql.contains("t_min <="));
+            Assert.assertTrue("t_max", adql.contains("<= t_max"));
         }
         catch (Exception unexpected)
         {
