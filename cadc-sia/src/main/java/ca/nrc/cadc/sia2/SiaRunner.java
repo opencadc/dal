@@ -111,7 +111,7 @@ public class SiaRunner implements JobRunner
 {
     private static Logger log = Logger.getLogger(SiaRunner.class);
 
-    private static final Integer DEF_MAXREC = new Integer(1000);
+    private static final Integer DEF_MAXREC = 1000;
     private static final Integer MAX_MAXREC = null;
 
     private Job job;
@@ -155,7 +155,6 @@ public class SiaRunner implements JobRunner
 
     private void doit()
     {
-        RegistryClient regClient = new RegistryClient();
         URL url = null;
         try
         {
@@ -187,12 +186,10 @@ public class SiaRunner implements JobRunner
 
             // the implementation assumes that the /tap/sync service follows the 
             // POST-redirect-GET (PrG) pattern; cadcUWS SyncServlet does
-            
-            // post ADQL query to TAP but do not follow redirect to execute it
-            String tapURI = ServiceAvailability.getTapURI();
-            AuthMethod am = AuthenticationUtil.getAuthMethod(AuthenticationUtil.getCurrentSubject());
-            URL tapBaseURL = regClient.getServiceURL(new URI(tapURI), Standards.TAP_10, am);
-            URL tapSyncURL = new URL(tapBaseURL.toExternalForm() + "/sync");
+
+            URL tapSyncURL = new URL(ServiceAvailability.getTapBaseURL().toExternalForm() + "/sync");
+
+            // POST ADQL query to TAP but do not follow redirect to execute it.
             HttpPost post = new HttpPost(tapSyncURL, parameters, false);
             post.run();
 
@@ -207,11 +204,11 @@ public class SiaRunner implements JobRunner
             // redirect the caller to the G part of the /tap/sync PrG pattern
             url = post.getRedirectURL();
             log.debug("redirectURL " + url);
-            syncOutput.setResponseCode(303);
+            syncOutput.setCode(303);
             syncOutput.setHeader("Location", url.toExternalForm());
             
             // Mark the Job as completed adding the URL to the query results.
-            List<Result> results = new ArrayList<Result>();
+            List<Result> results = new ArrayList<>();
             results.add(new Result("result", new URI(url.toExternalForm())));
             jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.COMPLETED, results, new Date());
         }
@@ -231,7 +228,7 @@ public class SiaRunner implements JobRunner
                 VOTableWriter writer = new VOTableWriter();
                 syncOutput.setHeader("Content-Type", VOTableWriter.CONTENT_TYPE);
                 // TODO: chose suitable response code here (assume bad input for now)
-                syncOutput.setResponseCode(400); 
+                syncOutput.setCode(400);
                 writer.write(t, syncOutput.getOutputStream());
             }
             catch (IOException ioe)

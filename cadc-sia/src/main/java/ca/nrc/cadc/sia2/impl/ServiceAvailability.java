@@ -70,11 +70,12 @@
 package ca.nrc.cadc.sia2.impl;
 
 import ca.nrc.cadc.auth.AuthMethod;
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.sia2.SiaRunner;
+import ca.nrc.cadc.vosi.AvailabilityPlugin;
 import ca.nrc.cadc.vosi.AvailabilityStatus;
-import ca.nrc.cadc.vosi.WebService;
 import ca.nrc.cadc.vosi.avail.CheckException;
 import ca.nrc.cadc.vosi.avail.CheckWebService;
 import java.net.URI;
@@ -86,13 +87,28 @@ import org.apache.log4j.Logger;
  *
  * @author Sailor Zhang
  */
-public class ServiceAvailability implements WebService
+public class ServiceAvailability implements AvailabilityPlugin
 {
     private static final Logger log = Logger.getLogger(ServiceAvailability.class);
-    
+
+    private String applicationName;
+
     private static String tapURI;
-    
+
     public ServiceAvailability() { }
+
+
+    /**
+     * Set application name. The appName is a string unique to this
+     * application.
+     *
+     * @param appName unique application name
+     */
+    @Override
+    public void setAppName(String appName)
+    {
+        this.applicationName = appName;
+    }
 
     public AvailabilityStatus getStatus()
     {
@@ -101,14 +117,12 @@ public class ServiceAvailability implements WebService
 
         try
         {
-            // test the TAP service
-            RegistryClient regClient = new RegistryClient();
-            URL tapBaseURL = regClient.getServiceURL(new URI(getTapURI()), Standards.TAP_10, AuthMethod.ANON);
+            // Test the TAP service
+            URL tapBaseURL = ServiceAvailability.getTapBaseURL();
             String availURL = tapBaseURL.toExternalForm() + "/availability";
-            CheckWebService checkWebService = null;
-            checkWebService = new CheckWebService(availURL);
+            CheckWebService checkWebService = new CheckWebService(availURL);
             checkWebService.check();
-            
+
             // TODO: use CheckDataSource if the JobPersistence impl is changed to use a database
         }
         catch(CheckException ce)
@@ -121,7 +135,7 @@ public class ServiceAvailability implements WebService
         {
             // the test itself failed
             isGood = false;
-            note = "test failed, reason: " + t;
+            note = String.format("%s test failed, reason: %s", applicationName, t);
         }
         return new AvailabilityStatus(isGood, null, null, null, note);
     }
@@ -130,7 +144,28 @@ public class ServiceAvailability implements WebService
     {
         //no-op
     }
-    
+
+    /**
+     * Obtain the base TAP URL to use.  This method will read in an optionally configured 'tapURI' property and if it
+     * appears to be a URL, then assume an unregistered TAP service was configured and treat it as the base URL,
+     * otherwise attempt to use it as a URI and look the URL up in the Registry.
+     *
+     * @return  URL     Base URL of the TAP service to use.
+     * @throws Exception    If a URL cannot be created from the specified string.
+     */
+    public static URL getTapBaseURL() throws Exception
+    {
+        RegistryClient regClient = new RegistryClient();
+        URI configuredTapURI = URI.create(ServiceAvailability.getTapURI());
+
+        if (configuredTapURI.getScheme().startsWith("http")) {
+            return configuredTapURI.toURL();
+        } else {
+            AuthMethod am = AuthenticationUtil.getAuthMethod(AuthenticationUtil.getCurrentSubject());
+            return regClient.getServiceURL(configuredTapURI, Standards.TAP_10, am);
+        }
+    }
+
     public static String getTapURI()
     {
         if (tapURI == null)
