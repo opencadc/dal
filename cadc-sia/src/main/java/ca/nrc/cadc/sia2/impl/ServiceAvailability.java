@@ -162,7 +162,7 @@ public class ServiceAvailability implements AvailabilityPlugin
             return configuredTapURI.toURL();
         } else {
             AuthMethod am = AuthenticationUtil.getAuthMethod(AuthenticationUtil.getCurrentSubject());
-            return regClient.getServiceURL(configuredTapURI, Standards.TAP_10, am);
+            return regClient.getServiceURL(configuredTapURI, Standards.TAP_10, (am == null) ? AuthMethod.ANON : am);
         }
     }
 
