@@ -73,11 +73,12 @@ import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.RegistryClient;
-import ca.nrc.cadc.sia2.SiaRunner;
 import ca.nrc.cadc.vosi.AvailabilityPlugin;
 import ca.nrc.cadc.vosi.AvailabilityStatus;
 import ca.nrc.cadc.vosi.avail.CheckException;
 import ca.nrc.cadc.vosi.avail.CheckWebService;
+
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Properties;
@@ -90,6 +91,7 @@ import org.apache.log4j.Logger;
 public class ServiceAvailability implements AvailabilityPlugin
 {
     private static final Logger log = Logger.getLogger(ServiceAvailability.class);
+    private static final String DEFAULT_TAP_URI = "ivo://cadc.nrc.ca/tap";
 
     private String applicationName;
 
@@ -169,26 +171,35 @@ public class ServiceAvailability implements AvailabilityPlugin
         }
     }
 
+
     public static String getTapURI()
     {
         if (tapURI == null)
         {
-            String fname = "SiaRunner.properties";
+            final String configFileLocation = System.getProperty("user.home") + "/config/SiaRunner.properties";
             try
             {
-                URL url = SiaRunner.class.getResource(fname);
-                if (url == null)
-                    url = SiaRunner.class.getResource("/" + fname);
-                Properties props = new Properties();
+                final URL url = new URL("file://" + configFileLocation);
+                final Properties props = new Properties();
                 props.load(url.openStream());
+
                 tapURI = props.getProperty("tapURI");
+
                 if (tapURI == null)
+                {
                     throw new RuntimeException("config error: failed to find tapURI in " + url.toExternalForm());
+                }
+            }
+            catch (IOException iex)
+            {
+                log.warn(String.format("Failed to find/read config file '%s'.  Using default '%s' service.",
+                         configFileLocation, ServiceAvailability.DEFAULT_TAP_URI));
+                tapURI = DEFAULT_TAP_URI;
             }
             catch(Exception ex)
             {
-                log.error("failed to read config: " + fname, ex);
-                throw new RuntimeException("failed to read config: " + fname, ex);
+                log.error("failed to read config: " + configFileLocation, ex);
+                throw new RuntimeException("failed to read config: " + configFileLocation, ex);
             }
         }
         return tapURI;
