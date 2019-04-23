@@ -160,15 +160,11 @@ public class ServiceAvailability implements AvailabilityPlugin
         RegistryClient regClient = new RegistryClient();
         URI configuredTapURI = URI.create(ServiceAvailability.getTapURI());
 
-        if (configuredTapURI.getScheme().startsWith("http"))
-        {
-            return configuredTapURI.toURL();
-        }
-        else
-        {
-            AuthMethod am = AuthenticationUtil.getAuthMethod(AuthenticationUtil.getCurrentSubject());
-            return regClient.getServiceURL(configuredTapURI, Standards.TAP_10, (am == null) ? AuthMethod.ANON : am);
-        }
+        AuthMethod am = AuthenticationUtil.getAuthMethod(AuthenticationUtil.getCurrentSubject());
+        URL serviceURL = regClient.getServiceURL(configuredTapURI, Standards.TAP_10,
+                                                 (am == null) ? AuthMethod.ANON : am);
+
+        return (serviceURL == null) ? configuredTapURI.toURL() : serviceURL;
     }
 
 
