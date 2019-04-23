@@ -82,6 +82,7 @@ import ca.nrc.cadc.vosi.avail.CheckException;
 import ca.nrc.cadc.vosi.avail.CheckWebService;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -160,9 +161,9 @@ public class ServiceAvailability implements AvailabilityPlugin
      * otherwise attempt to use it as a URI and look the URL up in the Registry.
      *
      * @return  URL     Base URL of the TAP service to use.
-     * @throws Exception    If a URL cannot be created from the specified string.
+     * @throws MalformedURLException    If a URL cannot be created from the specified string.
      */
-    public static URL getTapBaseURL() throws Exception
+    public static URL getTapBaseURL() throws MalformedURLException
     {
         RegistryClient regClient = new RegistryClient();
         URI configuredTapURI = URI.create(ServiceAvailability.getTapURI());
