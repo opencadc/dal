@@ -73,6 +73,9 @@ import ca.nrc.cadc.auth.AuthMethod;
 import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.RegistryClient;
+import ca.nrc.cadc.sia2.SiaRunner;
+import ca.nrc.cadc.util.MultiValuedProperties;
+import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.vosi.AvailabilityPlugin;
 import ca.nrc.cadc.vosi.AvailabilityStatus;
 import ca.nrc.cadc.vosi.avail.CheckException;
@@ -81,8 +84,11 @@ import ca.nrc.cadc.vosi.avail.CheckWebService;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import org.apache.log4j.Logger;
+
 
 /**
  *
@@ -91,11 +97,12 @@ import org.apache.log4j.Logger;
 public class ServiceAvailability implements AvailabilityPlugin
 {
     private static final Logger log = Logger.getLogger(ServiceAvailability.class);
-    private static final String DEFAULT_TAP_URI = "ivo://cadc.nrc.ca/tap";
+    private static final String CONFIG_FILE_NAME = SiaRunner.class.getSimpleName() + ".properties";
+    private static final String CONFIG_TAP_URI_KEY = "tapURI";
 
     private String applicationName;
-
     private static String tapURI;
+
 
     public ServiceAvailability() { }
 
@@ -172,32 +179,45 @@ public class ServiceAvailability implements AvailabilityPlugin
     {
         if (tapURI == null)
         {
-            final String configFileLocation = System.getProperty("user.home") + "/config/SiaRunner.properties";
             try
             {
-                final URL url = new URL("file://" + configFileLocation);
-                final Properties props = new Properties();
-                props.load(url.openStream());
-
-                tapURI = props.getProperty("tapURI");
+                tapURI = ServiceAvailability.getTapURIProperty();
 
                 if (tapURI == null)
                 {
-                    throw new RuntimeException("config error: failed to find tapURI in " + url.toExternalForm());
+                    throw new RuntimeException("config error: failed to find tapURI in classpath or external file.");
                 }
             }
-            catch (IOException iex)
+            catch(IOException ex)
             {
-                log.warn(String.format("Failed to find/read config file '%s'.  Using default '%s' service.",
-                         configFileLocation, ServiceAvailability.DEFAULT_TAP_URI));
-                tapURI = DEFAULT_TAP_URI;
-            }
-            catch(Exception ex)
-            {
-                log.error("failed to read config: " + configFileLocation, ex);
-                throw new RuntimeException("failed to read config: " + configFileLocation, ex);
+                final String message = String.format("failed to read config file '%s' from classpath.",
+                                                     CONFIG_FILE_NAME);
+                log.error(message, ex);
+                throw new RuntimeException(message, ex);
             }
         }
         return tapURI;
+    }
+
+    private static String getTapURIProperty() throws IOException
+    {
+        URL url = SiaRunner.class.getResource(CONFIG_FILE_NAME);
+        if (url == null)
+            url = SiaRunner.class.getResource("/" + CONFIG_FILE_NAME);
+
+        if (url == null)
+        {
+            final PropertiesReader propertiesReader = new PropertiesReader(CONFIG_FILE_NAME);
+            final MultiValuedProperties multiValuedProperties = propertiesReader.getAllProperties();
+            final List<String> props = (multiValuedProperties == null) ?
+                    new ArrayList<String>() : multiValuedProperties.getProperty(CONFIG_TAP_URI_KEY);
+            return props.isEmpty() ? null : props.get(0);
+        }
+        else
+        {
+            Properties props = new Properties();
+            props.load(url.openStream());
+            return props.getProperty(CONFIG_TAP_URI_KEY);
+        }
     }
 }
