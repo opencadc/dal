@@ -70,29 +70,55 @@
 package ca.nrc.cadc.sia2.impl;
 
 import ca.nrc.cadc.auth.AuthMethod;
+import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.sia2.SiaRunner;
+import ca.nrc.cadc.util.MultiValuedProperties;
+import ca.nrc.cadc.util.PropertiesReader;
+import ca.nrc.cadc.vosi.AvailabilityPlugin;
 import ca.nrc.cadc.vosi.AvailabilityStatus;
-import ca.nrc.cadc.vosi.WebService;
 import ca.nrc.cadc.vosi.avail.CheckException;
 import ca.nrc.cadc.vosi.avail.CheckWebService;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import org.apache.log4j.Logger;
+
 
 /**
  *
  * @author Sailor Zhang
  */
-public class ServiceAvailability implements WebService
+public class ServiceAvailability implements AvailabilityPlugin
 {
     private static final Logger log = Logger.getLogger(ServiceAvailability.class);
-    
+    private static final String CONFIG_FILE_NAME = SiaRunner.class.getSimpleName() + ".properties";
+    private static final String CONFIG_TAP_URI_KEY = "tapURI";
+
+    private String applicationName;
     private static String tapURI;
-    
+
+
     public ServiceAvailability() { }
+
+
+    /**
+     * Set application name. The appName is a string unique to this
+     * application.
+     *
+     * @param appName unique application name
+     */
+    @Override
+    public void setAppName(String appName)
+    {
+        this.applicationName = appName;
+    }
 
     public AvailabilityStatus getStatus()
     {
@@ -101,14 +127,12 @@ public class ServiceAvailability implements WebService
 
         try
         {
-            // test the TAP service
-            RegistryClient regClient = new RegistryClient();
-            URL tapBaseURL = regClient.getServiceURL(new URI(getTapURI()), Standards.TAP_10, AuthMethod.ANON);
+            // Test the TAP service
+            URL tapBaseURL = ServiceAvailability.getTapBaseURL();
             String availURL = tapBaseURL.toExternalForm() + "/availability";
-            CheckWebService checkWebService = null;
-            checkWebService = new CheckWebService(availURL);
+            CheckWebService checkWebService = new CheckWebService(availURL);
             checkWebService.check();
-            
+
             // TODO: use CheckDataSource if the JobPersistence impl is changed to use a database
         }
         catch(CheckException ce)
@@ -121,7 +145,7 @@ public class ServiceAvailability implements WebService
         {
             // the test itself failed
             isGood = false;
-            note = "test failed, reason: " + t;
+            note = String.format("%s test failed, reason: %s", applicationName, t);
         }
         return new AvailabilityStatus(isGood, null, null, null, note);
     }
@@ -130,29 +154,71 @@ public class ServiceAvailability implements WebService
     {
         //no-op
     }
-    
+
+    /**
+     * Obtain the base TAP URL to use.  This method will read in an optionally configured 'tapURI' property and if it
+     * appears to be a URL, then assume an unregistered TAP service was configured and treat it as the base URL,
+     * otherwise attempt to use it as a URI and look the URL up in the Registry.
+     *
+     * @return  URL     Base URL of the TAP service to use.
+     * @throws MalformedURLException    If a URL cannot be created from the specified string.
+     */
+    public static URL getTapBaseURL() throws MalformedURLException
+    {
+        RegistryClient regClient = new RegistryClient();
+        URI configuredTapURI = URI.create(ServiceAvailability.getTapURI());
+
+        AuthMethod am = AuthenticationUtil.getAuthMethod(AuthenticationUtil.getCurrentSubject());
+        URL serviceURL = regClient.getServiceURL(configuredTapURI, Standards.TAP_10,
+                                                 (am == null) ? AuthMethod.ANON : am);
+
+        return (serviceURL == null) ? configuredTapURI.toURL() : serviceURL;
+    }
+
+
     public static String getTapURI()
     {
         if (tapURI == null)
         {
-            String fname = "SiaRunner.properties";
             try
             {
-                URL url = SiaRunner.class.getResource(fname);
-                if (url == null)
-                    url = SiaRunner.class.getResource("/" + fname);
-                Properties props = new Properties();
-                props.load(url.openStream());
-                tapURI = props.getProperty("tapURI");
+                tapURI = ServiceAvailability.getTapURIProperty();
+
                 if (tapURI == null)
-                    throw new RuntimeException("config error: failed to find tapURI in " + url.toExternalForm());
+                {
+                    throw new RuntimeException("config error: failed to find tapURI in classpath or external file.");
+                }
             }
-            catch(Exception ex)
+            catch(IOException ex)
             {
-                log.error("failed to read config: " + fname, ex);
-                throw new RuntimeException("failed to read config: " + fname, ex);
+                final String message = String.format("failed to read config file '%s' from classpath.",
+                                                     CONFIG_FILE_NAME);
+                log.error(message, ex);
+                throw new RuntimeException(message, ex);
             }
         }
         return tapURI;
+    }
+
+    private static String getTapURIProperty() throws IOException
+    {
+        URL url = SiaRunner.class.getResource(CONFIG_FILE_NAME);
+        if (url == null)
+            url = SiaRunner.class.getResource("/" + CONFIG_FILE_NAME);
+
+        if (url == null)
+        {
+            final PropertiesReader propertiesReader = new PropertiesReader(CONFIG_FILE_NAME);
+            final MultiValuedProperties multiValuedProperties = propertiesReader.getAllProperties();
+            final List<String> props = (multiValuedProperties == null) ?
+                    new ArrayList<String>() : multiValuedProperties.getProperty(CONFIG_TAP_URI_KEY);
+            return props.isEmpty() ? null : props.get(0);
+        }
+        else
+        {
+            Properties props = new Properties();
+            props.load(url.openStream());
+            return props.getProperty(CONFIG_TAP_URI_KEY);
+        }
     }
 }
