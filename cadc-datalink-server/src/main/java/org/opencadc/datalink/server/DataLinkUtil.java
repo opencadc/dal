@@ -179,6 +179,11 @@ public abstract class DataLinkUtil {
             DataLink dl = iter.next();
             return linkToRow(dl);
         }
+        
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     public static TableData getTableDataWrapper(Iterator<DataLink> iter) {
