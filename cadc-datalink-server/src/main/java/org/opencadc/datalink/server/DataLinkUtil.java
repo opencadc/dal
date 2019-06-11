@@ -63,10 +63,9 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package org.opencadc.datalink.server;
-
 
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
@@ -91,15 +90,16 @@ import org.opencadc.datalink.ServiceParameter;
  * @author pdowler
  */
 public abstract class DataLinkUtil {
+
     private static final Logger log = Logger.getLogger(DataLinkUtil.class);
 
-    private DataLinkUtil() { 
+    private DataLinkUtil() {
     }
-    
+
     /**
      * Get list of table fields that matches the iteration order of the DataLink.
      *
-     * @return
+     * @return List of VOTabel FIELD objects for links table
      */
     public static List<VOTableField> getFields() {
         List<VOTableField> fields = new ArrayList<VOTableField>();
@@ -145,7 +145,7 @@ public abstract class DataLinkUtil {
 
         return fields;
     }
-    
+
     public static VOTableDocument createVOTable() {
         VOTableDocument vot = new VOTableDocument();
         VOTableResource vr = new VOTableResource("results");
@@ -155,10 +155,11 @@ public abstract class DataLinkUtil {
         tab.getFields().addAll(getFields());
         return vot;
     }
-    
+
     private static class TableDataWrapper implements TableData, Iterator<List<Object>> {
+
         Iterator<DataLink> iter;
-        
+
         TableDataWrapper(Iterator<DataLink> iter) {
             this.iter = iter;
         }
@@ -179,13 +180,13 @@ public abstract class DataLinkUtil {
             return linkToRow(dl);
         }
     }
-    
+
     public static TableData getTableDataWrapper(Iterator<DataLink> iter) {
         return new TableDataWrapper(iter);
     }
-    
+
     public static List<Object> linkToRow(DataLink dl) {
-        Object[] vals = new Object[] {
+        Object[] vals = new Object[]{
             dl.getID(),
             safeToString(dl.accessURL),
             dl.serviceDef,
@@ -237,10 +238,10 @@ public abstract class DataLinkUtil {
             inputParams.getParams().add(vp);
         }
         metaResource.getGroups().add(inputParams);
-        
+
         return metaResource;
     }
-    
+
     private static String safeToString(URI uri) {
         if (uri == null) {
             return null;

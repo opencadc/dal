@@ -131,8 +131,8 @@ public class ServiceParameter {
      * Only one of value or ref can be set. The ref is an IDREF value (to a FIELD with an ID attribute)
      * indicating which table column contains values suitable for this parameter.
      *
-     * @param val
-     * @param ref
+     * @param val constant value for the param
+     * @param ref IDREF value for the param
      */
     public void setValueRef(String val, String ref) {
         if (val != null && ref != null) {

@@ -63,7 +63,7 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package org.opencadc.datalink.server;
 
@@ -73,46 +73,43 @@ import org.opencadc.datalink.ServiceDescriptor;
 
 /**
  * Interface to the back end that generates links and descriptors for output.
- * 
+ *
  * @author pdowler
  */
 public interface DataLinkSource {
-    
+
     /**
-     * Set optional download-only mode. If downloadOnly is specified, only return 
-     * links to downloads that are part(s) of the specified entity and not service 
+     * Set optional download-only mode. If downloadOnly is specified, only return
+     * links to downloads that are part(s) of the specified entity and not service
      * links or more loosely related resources.
-     * 
-     * @param dlo 
+     *
+     * @param dlo true to generate download links only
      */
     void setDownloadOnly(boolean dlo);
-    
+
     /**
-     * Set maximum number of links to return. If maxrec is specified, truncate the 
+     * Set maximum number of links to return. If maxrec is specified, truncate the
      * returned link iterator when the specified number of links is reached plus
-     * any remaining links from the same input ID such that if an ID is returned 
+     * any remaining links from the same input ID such that if an ID is returned
      * then all links for that ID are returned.
-     * 
+     *
      * @param maxrec may be null for no limit
      */
     void setMaxrec(Integer maxrec);
 
     /**
      * Set of links to output. This should only be empty if the service was called with no
-     * ID values or MAXREC=0. The row must be generated with values in the order given by
-     * the DataLink.iterator method so they match the DataLink.getFields output. Use the 
-     * LinkToRowIterator wrapper to convert DataLink to List-of-Object.
-     * 
+     * ID values or MAXREC=0.
+     *
      * @return a non-null iterator (may be empty)
      */
     Iterator<DataLink> links();
-    
-    
+
     /**
      * Set of service descriptors to output. These are additional static descriptors and
      * should not include the link-specific descriptors that are attached to DataLink objects
      * returned by the links iterator.
-     * 
+     *
      * @return a non-null iterator (may be empty)
      */
     Iterator<ServiceDescriptor> descriptors();

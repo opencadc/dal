@@ -78,8 +78,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * A single result output by the data link service.  Exactly one of accessURL, serviceDef,
-     * and errorMessage must be set prior to output.
+ * A single result output by the data link service. Exactly one of accessURL, serviceDef,
+ * and errorMessage must be set prior to output.
  *
  * @author pdowler
  */
@@ -120,13 +120,13 @@ public class DataLink {
      * and errorMessage must be set prior to output.
      */
     public URL accessURL;
-    
-    /** 
+
+    /**
      * The service_def field with ID of a service descriptor. Exactly one of accessURL, serviceDef,
      * and errorMessage must be set prior to output.
      */
     public String serviceDef;
-    
+
     /**
      * The error_message field if a link could not be created. Exactly one of accessURL, serviceDef,
      * and errorMessage must be set prior to output.
@@ -136,7 +136,7 @@ public class DataLink {
     public String description;
     public String contentType;
     public Long contentLength;
-    
+
     /**
      * If the serviceDef specifies a link-specific service descriptor, this is it.
      */
@@ -146,11 +146,11 @@ public class DataLink {
     public Boolean readable; // predict that the current user is allowed to download
 
     /**
-     * This is a link-specific service descriptor for use when the descriptor has file-specific metadata
-     * or options.
+     * Constructor.
+     *
+     * @param id Input ID value
+     * @param semantics semantics tag for this link
      */
-    //public ServiceDescriptor descriptor; // link-specific service descriptor
-
     public DataLink(String id, Term semantics) {
         if (id == null) {
             throw new IllegalArgumentException("id cannot be null");

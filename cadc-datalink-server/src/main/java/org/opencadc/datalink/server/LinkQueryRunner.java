@@ -100,12 +100,13 @@ import org.opencadc.datalink.DataLink;
 import org.opencadc.datalink.ServiceDescriptor;
 
 /**
- * UWS JobRunner that implements the DataLink#links-1.0 capability. This is 
+ * UWS JobRunner that implements the DataLink#links-1.0 capability. This is
  * expected to be deployed with sync JobAction(s).
- * 
+ *
  * @author pdowler
  */
 public abstract class LinkQueryRunner implements JobRunner {
+
     private static final Logger log = Logger.getLogger(LinkQueryRunner.class);
 
     private static final int MAXREC = 100;
@@ -120,11 +121,9 @@ public abstract class LinkQueryRunner implements JobRunner {
     }
 
     /**
-     * Create a DataLinkSource.
+     * Factory method to create a DataLinkSource.
      *
-     * @param downloadOnly only generate download links (accessURL or errorMessage)
-     * @param maxrec maximum number of links to generate
-     * @return
+     * @return plugin to generate links and descriptors
      */
     protected abstract DataLinkSource getDataLinkSource();
 
@@ -156,7 +155,6 @@ public abstract class LinkQueryRunner implements JobRunner {
     }
 
     private void doit() {
-
         ExecutionPhase ep;
         try {
             ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
@@ -197,10 +195,10 @@ public abstract class LinkQueryRunner implements JobRunner {
             DataLinkSource dls = getDataLinkSource();
             dls.setDownloadOnly(downloadOnly);
             dls.setMaxrec(maxrec);
-            
+
             VOTableDocument vot = DataLinkUtil.createVOTable();
             VOTableTable tab = vot.getResourceByType("results").getTable();
-            
+
             if (downloadOnly) {
                 // set up streaming table write
                 tab.setTableData(DataLinkUtil.getTableDataWrapper(dls.links()));
@@ -280,8 +278,7 @@ public abstract class LinkQueryRunner implements JobRunner {
                 } catch (Exception ex2) {
                     log.error("failed to check job phase after InterruptedException", ex2);
                 }
-            } else if (ThrowableUtil.isACause(t, AccessControlException.class)) // CredUtil + CredClient
-            {
+            } else if (ThrowableUtil.isACause(t, AccessControlException.class)) {
                 sendError(t, "permission denied -- reason: " + t.getCause().getMessage(), 403);
                 return;
             }
@@ -317,7 +314,7 @@ public abstract class LinkQueryRunner implements JobRunner {
         try {
             VOTableWriter writer = new VOTableWriter();
             syncOutput.setHeader("Content-Type", VOTableWriter.CONTENT_TYPE);
-            syncOutput.setResponseCode(code);
+            syncOutput.setCode(code);
             writer.write(t, syncOutput.getOutputStream());
         } catch (IOException ex) {
             log.debug("write error failed", ex);
