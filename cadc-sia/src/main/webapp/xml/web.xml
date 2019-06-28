@@ -120,7 +120,7 @@
         <init-param>
             <description>
             </description>
-            <param-name>ca.nrc.cadc.vosi.WebService</param-name>
+            <param-name>ca.nrc.cadc.vosi.AvailabilityPlugin</param-name>
             <param-value>ca.nrc.cadc.sia2.impl.ServiceAvailability</param-value>
         </init-param>
     </servlet>
