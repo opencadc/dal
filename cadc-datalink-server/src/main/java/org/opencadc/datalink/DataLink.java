@@ -97,8 +97,8 @@ public class DataLink {
         DERIVATION("#derivation"),
         PROC("#proc"),
         CUTOUT("#cutout"),
-        THUMBNAIL("http://www.openadc.org/caom2#thumbnail"), // TODO: move these out
-        PKG("http://www.openadc.org/caom2#pkg");             // TODO: move these out
+        THUMBNAIL("http://www.opencadc.org/caom2#thumbnail"), // TODO: move these out
+        PKG("http://www.opencadc.org/caom2#pkg");             // TODO: move these out
 
         private final String value;
 
