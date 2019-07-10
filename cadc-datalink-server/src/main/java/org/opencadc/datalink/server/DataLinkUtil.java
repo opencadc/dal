@@ -191,18 +191,22 @@ public abstract class DataLinkUtil {
     }
 
     public static List<Object> linkToRow(DataLink dl) {
-        Object[] vals = new Object[]{
-            dl.getID(),
-            safeToString(dl.accessURL),
-            dl.serviceDef,
-            dl.errorMessage,
-            dl.getSemantics().getValue(),
-            dl.description,
-            dl.contentType,
-            dl.contentLength,
-            dl.readable
-        };
-        return Arrays.asList(vals);
+        StringBuilder sb = new StringBuilder();
+        for (DataLink.Term t : dl.getSemantics()) {
+            sb.append(t.getValue()).append(" ");
+        }
+        List vals = new ArrayList();
+        vals.add(dl.getID());
+        vals.add(safeToString(dl.accessURL));
+        vals.add(dl.serviceDef);
+        vals.add(dl.errorMessage);
+        vals.add(sb.toString());
+        vals.add(dl.description);
+        vals.add(dl.contentType);
+        vals.add(dl.contentLength);
+        vals.add(dl.readable);
+        
+        return vals;
     }
 
     public static VOTableResource convert(ServiceDescriptor sd) {
