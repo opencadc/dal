@@ -62,158 +62,83 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
 package org.opencadc.datalink;
 
+import ca.nrc.cadc.util.Log4jInit;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * A single result output by the data link service. Exactly one of accessURL, serviceDef,
- * and errorMessage must be set prior to output.
  *
  * @author pdowler
  */
-public class DataLink {
+public class DataLinkTest {
+    private static final Logger log = Logger.getLogger(DataLinkTest.class);
 
-    /**
-     * Terms from the http://www.ivoa.net/rdf/datalink/core vocabulary plus
-     * CAOM extensions.
-     */
-    public enum Term { // TODO: re-use the VocabularyTerm code once extracted from caom2
-        THIS("#this"),
-        
-        DATALINK("#datalink"), // recursive
-        
-        PROGENITOR("#progenitor"),
-        DERIVATION("#derivation"),
-        
-        AUXILIARY("#auxiliary"),
-        WEIGHT("#weight"),
-        ERROR("#error"),
-        NOISE("#noise"),
-        
-        CALIBRATION("#calibration"),
-        BIAS("#bias"),
-        DARK("#dark"),
-        FLAT("#flat"),
-        
-        PREVIEW("#preview"),
-        PREVIEW_IMAGE("#preview-image"),
-        PREVIEW_PLOT("#preview-plot"),
-        THUMBNAIL("http://www.opencadc.org/caom2#thumbnail"),
-        
-        PROC("#proc"),
-        CUTOUT("#cutout"),
-        
-        PKG("http://www.opencadc.org/caom2#pkg");
-
-        private final String value;
-
-        private Term(String value) {
-            this.value = value;
-        }
-
-        public String getValue() {
-            return value;
-        }
+    static {
+        Log4jInit.setLevel("org.opencadc.datalink", Level.INFO);
     }
 
-    // standard DataLink fields
-    private final String id;
-    private final List<Term> semantics = new ArrayList<Term>();
+    static String ID = "ivo://org.opencadc/collection?observation/product";
 
-    /**
-     * The access_url field for downloads. Exactly one of accessURL, serviceDef,
-     * and errorMessage must be set prior to output.
-     */
-    public URL accessURL;
-
-    /**
-     * The service_def field with ID of a service descriptor. Exactly one of accessURL, serviceDef,
-     * and errorMessage must be set prior to output.
-     */
-    public String serviceDef;
-
-    /**
-     * The error_message field if a link could not be created. Exactly one of accessURL, serviceDef,
-     * and errorMessage must be set prior to output.
-     */
-    public String errorMessage;
-
-    public String description;
-    public String contentType;
-    public Long contentLength;
-
-    /**
-     * If the serviceDef specifies a link-specific service descriptor, this is it.
-     */
-    public ServiceDescriptor descriptor;
-
-    // custom CADC fields
-    public Boolean readable; // predict that the current user is allowed to download
-
-    /**
-     * Constructor. There must be at least one semantics tag for each link.
-     *
-     * @param id Input ID value
-     * @param semantics single semantics tag for this link
-     */
-    public DataLink(String id, Term semantics) {
-        if (id == null) {
-            throw new IllegalArgumentException("id cannot be null");
-        }
-        if (semantics == null) {
-            throw new IllegalArgumentException("semantics cannot be null");
-        }
-        this.id = id;
-        this.semantics.add(semantics);
-    }
-
-    public void addSemantics(Term semantics) {
-        if (semantics == null) {
-            throw new IllegalArgumentException("semantics cannot be null");
-        }
-        this.semantics.add(semantics);
+    public DataLinkTest() { 
     }
     
-    /**
-     * @return the ID value
-     */
-    public String getID() {
-        return id;
-    }
-
-    /** 
-     * @return unmodifiable list of semantics tags
-     */
-    public List<Term> getSemantics() {
-        return Collections.unmodifiableList(semantics);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("DataLink[").append(id).append(",[");
-        for (Term t : semantics) {
-            sb.append(t.getValue()).append(",");
-        }
-        sb.setCharAt(sb.length() - 1, ']'); // replace last comma
+    @Test
+    public void testCtor() {
+       
+        // OK
+        DataLink ok = new DataLink(ID, DataLink.Term.THIS);
+        log.info("bare link: " + ok);
         
-        if (accessURL != null) {
-            sb.append(",a=").append(accessURL.toExternalForm());
-        } else if (serviceDef != null) {
-            sb.append(",s=").append(serviceDef);
-        } else if (errorMessage != null) {
-            sb.append(",e=").append(errorMessage);
+        try {
+            // null ID
+            DataLink oops = new DataLink(null, DataLink.Term.THIS);
+            Assert.fail("expected IllegalArgumentException, got: " + oops);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
         }
-        sb.append("]");
-        return sb.toString();
+        
+        try {
+            // null semantics
+            DataLink oops = new DataLink(ID, null);
+            Assert.fail("expected IllegalArgumentException, got: " + oops);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
+        }
+    }
+    
+    @Test
+    public void testToString() throws MalformedURLException {
+       
+        // OK
+        DataLink link = new DataLink(ID, DataLink.Term.THIS);
+        link.addSemantics(DataLink.Term.PKG);
+        log.info("bare link: " + link);
+        
+        link.accessURL = new URL("https://www.opencadc.org/files/collection/observation/product/stuff");
+        String surl = link.toString();
+        log.info("link w/ accessURL: " + link);
+        Assert.assertTrue("accessURL", surl.contains(link.accessURL.toExternalForm()));
+        link.accessURL = null;
+        
+        link.serviceDef = "blah-blah";
+        String sd = link.toString();
+        log.info("link w/ serviceDef: " + link);
+        Assert.assertTrue("serviceDef", sd.contains(link.serviceDef));
+        link.serviceDef = null;
+        
+        link.errorMessage = "oops";
+        String se = link.toString();
+        log.info("link w/ errorMessage: " + link);
+        Assert.assertTrue("errorMessage", se.contains(link.errorMessage));
+        link.errorMessage = null;
     }
 }
