@@ -276,7 +276,8 @@ public class VOTableReaderWriterTest
             
             List<Object> valData = new ArrayList<>();
             valData.add(1.0);
-            valData.add(2.0);
+            double[] a1 = new double[1];
+            valData.add(a1);
             double[] fa = new double[4];
             valData.add(fa);
             double[] va = new double[4];
