@@ -13,6 +13,7 @@ script:
   - cd cadc-dali; gradle build install javadoc || exit -1; cd ..
   - cd cadc-dali-pg; gradle build install javadoc || exit -1; cd ..
   - cd cadc-datalink-server; gradle build install javadoc || exit -1; cd ..
+  - cd cadc-soda-server; gradle build install javadoc || exit -1; cd ..
   - cd cadc-sia; gradle build install javadoc || exit -1; cd ..
   
   # checkstyle on latest platform only
