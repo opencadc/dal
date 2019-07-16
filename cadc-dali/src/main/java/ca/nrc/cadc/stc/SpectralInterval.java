@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.stc;
 
 /**
@@ -73,30 +74,30 @@ package ca.nrc.cadc.stc;
  * an interval bound by the low and high limits.
  *
  */
-public class SpectralInterval
-{
+public class SpectralInterval {
+
     public static final String NAME = SpectralInterval.class.getSimpleName();
-    
+
     private double lolimit;
     private double hilimit;
     private SpectralUnit unit;
 
     /**
      * Construct a SpectralInterval with the given limits and unit.
-     * 
+     *
      * @param lolimit the lower limit of the interval.
      * @param hilimit the higher limit of the interval.
      * @param unit the unit of the interval. Allowed values for unit are
-     *             from <code>ca.nrc.cadc.stc.SpectralUnit</code>.
+     *      from <code>ca.nrc.cadc.stc.SpectralUnit</code>.
      */
-    public SpectralInterval(double lolimit, double hilimit, SpectralUnit unit)
-    {
+    public SpectralInterval(double lolimit, double hilimit, SpectralUnit unit) {
         this.lolimit = lolimit;
         this.hilimit = hilimit;
         this.unit = unit;
 
-        if (unit == null)
+        if (unit == null) {
             throw new IllegalArgumentException("SpectralUnit cannot be null");
+        }
     }
 
     /**
@@ -104,8 +105,7 @@ public class SpectralInterval
      *
      * @return the interval low limit.
      */
-    public double getLoLimit()
-    {
+    public double getLoLimit() {
         return lolimit;
     }
 
@@ -114,8 +114,7 @@ public class SpectralInterval
      *
      * @return the interval high limit.
      */
-    public double getHiLimit()
-    {
+    public double getHiLimit() {
         return hilimit;
     }
 
@@ -124,9 +123,8 @@ public class SpectralInterval
      *
      * @return the interval unit.
      */
-    public SpectralUnit getUnit()
-    {
+    public SpectralUnit getUnit() {
         return unit;
     }
-    
+
 }

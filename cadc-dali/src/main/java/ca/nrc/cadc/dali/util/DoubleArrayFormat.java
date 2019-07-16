@@ -75,8 +75,8 @@ import java.util.Iterator;
  * Formats and parses a double[].
  *
  */
-public class DoubleArrayFormat implements Format<double[]>
-{
+public class DoubleArrayFormat implements Format<double[]> {
+
     /**
      * Takes an double[] and returns the standard String representation.
      * If the double[] is null an empty String is returned.
@@ -84,38 +84,34 @@ public class DoubleArrayFormat implements Format<double[]>
      * @param object double[] to format.
      * @return String representation of the double[].
      */
-    public String format(double[] object)
-    {
-        if (object == null)
-        {
+    public String format(double[] object) {
+        if (object == null) {
             return "";
         }
-        
+
         StringBuilder sb = new StringBuilder();
-        for (double d : object)
-        {
+        for (double d : object) {
             sb.append(Double.toString(d));
             sb.append(" ");
         }
         return sb.toString().trim();
     }
-    
+
     /**
-     * Takes a sequence of double values and returns the standard String 
+     * Takes a sequence of double values and returns the standard String
      * representation. If the iterator is null or empty an empty String is
      * returned.
-     * 
+     *
      * @param iter
-     * @return 
+     * @return
      */
-    public String format(Iterator<Double> iter)
-    {
-        if (iter == null || !iter.hasNext())
+    public String format(Iterator<Double> iter) {
+        if (iter == null || !iter.hasNext()) {
             return "";
-        
+        }
+
         StringBuilder sb = new StringBuilder();
-        while ( iter.hasNext() )
-        {
+        while (iter.hasNext()) {
             sb.append(iter.next().toString());
             sb.append(" ");
         }
@@ -128,22 +124,17 @@ public class DoubleArrayFormat implements Format<double[]>
      * @param s the String to parse.
      * @return double[] value of the String.
      */
-    public double[] parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public double[] parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
-        }
-        else
-        {
+        } else {
             String[] tokens = s.split(" ");
             double[] array = new double[tokens.length];
-            for (int i = 0; i < tokens.length; i++)
-            {
+            for (int i = 0; i < tokens.length; i++) {
                 array[i] = Double.parseDouble(tokens[i]);
             }
             return array;
         }
     }
-    
+
 }

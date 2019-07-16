@@ -65,10 +65,9 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
-
 
 import ca.nrc.cadc.util.HexUtil;
 import org.apache.log4j.Logger;
@@ -77,32 +76,36 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class MD5Format implements Format<byte[]>
-{
+public class MD5Format implements Format<byte[]> {
+
     private static final Logger log = Logger.getLogger(MD5Format.class);
 
-    public MD5Format() { }
+    public MD5Format() {
+    }
 
-    public byte[] parse(String s)
-    {
-        if (s == null)
+    public byte[] parse(String s) {
+        if (s == null) {
             return null;
+        }
         s = s.trim();
-        if (s.length() == 0)
+        if (s.length() == 0) {
             return null;
-        if (s.length() != 32)
+        }
+        if (s.length() != 32) {
             throw new IllegalArgumentException("invalid hex MD5: length=" + s.length());
-        
+        }
+
         return HexUtil.toBytes(s);
     }
 
-    public String format(byte[] t)
-    {
-        if (t == null)
+    public String format(byte[] t) {
+        if (t == null) {
             return "";
-        if (t.length != 16)
+        }
+        if (t.length != 16) {
             throw new IllegalArgumentException("invalid MD5: length=" + t.length);
-        
+        }
+
         return HexUtil.toHex(t);
     }
 }

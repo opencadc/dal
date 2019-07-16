@@ -67,7 +67,6 @@
 
 package org.opencadc.soda.server;
 
-
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Shape;
 import ca.nrc.cadc.rest.SyncOutput;
@@ -95,7 +94,7 @@ public interface StreamingSodaPlugin {
      * @param time optional time cutout (may be null)
      * @param pol optional polarization cutout (may be null)
      * @param out wrapper for setting output properties (HTTP headers) and opening the OutputStream
-     * @throws IOException 
+     * @throws IOException failure to read or write data
      */
     void write(URI uri, 
             Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol,

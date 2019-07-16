@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.votable;
 
@@ -73,47 +73,39 @@ package ca.nrc.cadc.dali.tables.votable;
  *
  * @author pdowler
  */
-public class VOTableInfo 
-{
+public class VOTableInfo {
+
     private String name;
     private String value;
     public String content;
 
-    public VOTableInfo(String name, String value)
-    {
-        if (name == null)
-        {
+    public VOTableInfo(String name, String value) {
+        if (name == null) {
             throw new IllegalArgumentException("name cannot be null");
         }
-        if (value == null)
-        {
+        if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
         this.name = name.trim();
         this.value = value.trim();
-        if (this.name.isEmpty())
-        {
+        if (this.name.isEmpty()) {
             throw new IllegalArgumentException("name has no content");
         }
-        if (this.value.isEmpty())
-        {
+        if (this.value.isEmpty()) {
             throw new IllegalArgumentException("value has no content");
         }
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
-    
-    public String getValue()
-    {
+
+    public String getValue() {
         return value;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Info[");
         sb.append(name);
@@ -122,5 +114,5 @@ public class VOTableInfo
         sb.append("]");
         return sb.toString();
     }
-    
+
 }

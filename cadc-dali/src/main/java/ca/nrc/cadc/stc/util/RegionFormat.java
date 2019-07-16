@@ -75,15 +75,14 @@ import ca.nrc.cadc.stc.ReferencePosition;
 import ca.nrc.cadc.stc.Region;
 import ca.nrc.cadc.stc.Regions;
 import ca.nrc.cadc.stc.StcsParsingException;
-import java.text.DecimalFormat;
 import java.util.Scanner;
 
 /**
  * Base class for parsing and formatting STC-S phrases and objects.
  *
  */
-public abstract class RegionFormat
-{
+public abstract class RegionFormat {
+
     // Default values.
     public static final Frame DEFAULT_FRAME = Frame.UNKNOWNFRAME;
     public static final ReferencePosition DEFAULT_REFPOS = ReferencePosition.UNKNOWNREFPOS;
@@ -105,10 +104,10 @@ public abstract class RegionFormat
      * @throws StcsParsingException if unable to parse the phrase.
      */
     protected void parseRegion(String phrase)
-        throws StcsParsingException
-    {
-        if (phrase == null || phrase.isEmpty())
+            throws StcsParsingException {
+        if (phrase == null || phrase.isEmpty()) {
             return;
+        }
         phrase = phrase.trim();
 
         frame = null;
@@ -120,31 +119,27 @@ public abstract class RegionFormat
 
         // The phrase must contain a Region name, i.e. BOX
         currentWord = getNextWord(words, currentWord);
-        if (!Regions.contains(currentWord.toUpperCase()))
-        {
+        if (!Regions.contains(currentWord.toUpperCase())) {
             throw new StcsParsingException("Invalid region " + currentWord);
         }
         name = currentWord;
         currentWord = null;
 
         currentWord = getNextWord(words, currentWord);
-        if (Frame.contains(currentWord.toUpperCase()))
-        {
+        if (Frame.contains(currentWord.toUpperCase())) {
             frame = Frame.valueOf(currentWord.toUpperCase());
             currentWord = null;
         }
 
         currentWord = getNextWord(words, currentWord);
-        if (ReferencePosition.contains(currentWord.toUpperCase()))
-        {
+        if (ReferencePosition.contains(currentWord.toUpperCase())) {
             refpos = ReferencePosition.valueOf(currentWord.toUpperCase());
             currentWord = null;
         }
 
         currentWord = getNextWord(words, currentWord);
-        if (Flavor.contains(currentWord.toUpperCase()))
-        {
-            flavor =Flavor.valueOf(currentWord.toUpperCase());
+        if (Flavor.contains(currentWord.toUpperCase())) {
+            flavor = Flavor.valueOf(currentWord.toUpperCase());
             currentWord = null;
         }
     }
@@ -156,23 +151,19 @@ public abstract class RegionFormat
      * @param region the region to format.
      * @return a STC-S string of the name and coordinate descriptions.
      */
-    protected String formatRegion(Region region)
-    {
+    protected String formatRegion(Region region) {
         StringBuilder sb = new StringBuilder();
         sb.append(region.getName());
         sb.append(" ");
-        if (region.getFrame() != null)
-        {
+        if (region.getFrame() != null) {
             sb.append(region.getFrame().name());
             sb.append(" ");
         }
-        if (region.getRefPos() != null)
-        {
+        if (region.getRefPos() != null) {
             sb.append(region.getRefPos().name());
             sb.append(" ");
         }
-        if (region.getFlavor() != null)
-        {
+        if (region.getFlavor() != null) {
             sb.append(region.getFlavor().name());
             sb.append(" ");
         }
@@ -180,14 +171,13 @@ public abstract class RegionFormat
     }
 
     protected String getNextWord(Scanner words, String currentWord)
-        throws StcsParsingException
-    {
-        if (currentWord == null)
-        {
-            if (words.hasNext())
+            throws StcsParsingException {
+        if (currentWord == null) {
+            if (words.hasNext()) {
                 return words.next();
-            else
+            } else {
                 throw new StcsParsingException("Unexpected end to STC-S phrase " + words.toString());
+            }
         }
         return currentWord;
     }
@@ -197,8 +187,7 @@ public abstract class RegionFormat
      *
      * @return the region name.
      */
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
@@ -207,10 +196,10 @@ public abstract class RegionFormat
      *
      * @return the region frame.
      */
-    public Frame getFrame()
-    {
-        if (frame == null)
+    public Frame getFrame() {
+        if (frame == null) {
             return DEFAULT_FRAME;
+        }
         return frame;
     }
 
@@ -219,10 +208,10 @@ public abstract class RegionFormat
      *
      * @return the region reference position.
      */
-    public ReferencePosition getReferencePosition()
-    {
-        if (refpos == null)
+    public ReferencePosition getReferencePosition() {
+        if (refpos == null) {
             return DEFAULT_REFPOS;
+        }
         return refpos;
     }
 
@@ -231,11 +220,11 @@ public abstract class RegionFormat
      *
      * @return the region flavor.
      */
-    public Flavor getFlavor()
-    {
-        if (flavor == null)
+    public Flavor getFlavor() {
+        if (flavor == null) {
             return DEFAULT_FLAVOR;
+        }
         return flavor;
     }
-    
+
 }

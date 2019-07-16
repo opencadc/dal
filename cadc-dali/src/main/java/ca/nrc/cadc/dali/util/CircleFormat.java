@@ -65,10 +65,9 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
-
 
 import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.Point;
@@ -76,31 +75,33 @@ import org.apache.log4j.Logger;
 
 /**
  * DALI-1.1 circle formatter.
- * 
+ *
  * @author pdowler
  */
-public class CircleFormat implements Format<Circle>
-{
+public class CircleFormat implements Format<Circle> {
+
     private static final Logger log = Logger.getLogger(CircleFormat.class);
 
-    public CircleFormat() { }
-    
-    public Circle parse(String s)
-    {
-        if (s == null)
+    public CircleFormat() {
+    }
+
+    public Circle parse(String s) {
+        if (s == null) {
             return null;
-        
+        }
+
         DoubleArrayFormat daf = new DoubleArrayFormat();
         double[] dd = daf.parse(s);
-        if (dd.length != 3)
+        if (dd.length != 3) {
             throw new IllegalArgumentException();
+        }
         return new Circle(new Point(dd[0], dd[1]), dd[2]);
     }
 
-    public String format(Circle t)
-    {
-        if (t == null)
+    public String format(Circle t) {
+        if (t == null) {
             return "";
+        }
         StringBuilder sb = new StringBuilder();
         sb.append(t.getCenter().getLongitude()).append(" ");
         sb.append(t.getCenter().getLatitude()).append(" ");
@@ -108,5 +109,4 @@ public class CircleFormat implements Format<Circle>
         return sb.toString();
     }
 
-    
 }

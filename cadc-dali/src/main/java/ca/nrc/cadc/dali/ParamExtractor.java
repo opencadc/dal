@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali;
 
@@ -77,41 +77,36 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import org.apache.log4j.Logger;
 
 /**
  * Extract a list of query parameter-value pairs from a UWS job parameter list. This
- * implementation assumes parameter names are not case sensitive and ignores unknown 
+ * implementation assumes parameter names are not case sensitive and ignores unknown
  * parameter names.
- * 
+ *
  * @author pdowler
  */
-public class ParamExtractor 
-{
-    private static final Logger log = Logger.getLogger(ParamExtractor.class);
-    
+public class ParamExtractor {
+
     private Set<String> names = new TreeSet<String>(new CaseInsensitiveStringComparator());
-    
-    public ParamExtractor(List<String> paramNames)
-    {
+
+    public ParamExtractor(List<String> paramNames) {
         this.names.addAll(paramNames);
     }
-    
+
     /**
-     * Get a map of parameter name to 
+     * Get a map of parameter name to value(s).
+     *
      * @param paramList
-     * @return 
+     * @return list of 1+ values or null
      */
-    public Map<String,List<String>> getParameters(List<Parameter> paramList)
-    {
-        Map<String,List<String>> ret = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
-        for (String n : names)
+    public Map<String, List<String>> getParameters(List<Parameter> paramList) {
+        Map<String, List<String>> ret = new TreeMap<String, List<String>>(new CaseInsensitiveStringComparator());
+        for (String n : names) {
             ret.put(n, new ArrayList<String>());
-        
-        for (Parameter p : paramList)
-        {
-            if ( names.contains(p.getName()))
-            {
+        }
+
+        for (Parameter p : paramList) {
+            if (names.contains(p.getName())) {
                 String pname = p.getName();
                 List<String> values = ret.get(pname);
                 values.add(p.getValue());

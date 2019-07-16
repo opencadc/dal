@@ -66,14 +66,14 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.stc;
 
 /**
  * Allowed values for Flavor in a STC-S Space sub-phrase.
  *
  */
-public enum Flavor
-{
+public enum Flavor {
     CARTESIAN2, CARTESIAN3, SPHERICAL2;
 
     /**
@@ -82,30 +82,26 @@ public enum Flavor
      * @param value the value to check.
      * @return true if the value is an allowed value for Flavor, false otherwise.
      */
-    public static boolean contains(final String value)
-    {
+    public static boolean contains(final String value) {
         Flavor[] values = Flavor.values();
-        for (int i = 0; i < values.length; i++)
-        {
-            if (values[i].name().equals(value))
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].name().equals(value)) {
                 return true;
+            }
         }
         return false;
     }
 
     /**
-     * Return the flavor object based on the string parameter.  The check
+     * Return the flavor object based on the string parameter. The check
      * is case insensitive.
      *
      * @param s The flavor to lookup.
      * @return The matching flavor.
      */
-    public static Flavor toValue(String s)
-    {
-        for (Flavor v : values())
-        {
-            if (v.toString().equalsIgnoreCase(s))
-            {
+    public static Flavor toValue(String s) {
+        for (Flavor v : values()) {
+            if (v.toString().equalsIgnoreCase(s)) {
                 return v;
             }
         }

@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables;
 
@@ -76,21 +76,21 @@ import java.io.Writer;
 
 /**
  * Interface for classes that write tables in specific formats.
- * 
+ *
  * @author pdowler
  */
-public interface TableWriter<T>
-{
+public interface TableWriter<T> {
+
     /**
      * Get the usual filename extension for this format.
-     * 
+     *
      * @return filename extension
      */
     String getExtension();
-    
+
     /**
      * Get the usual or requested content-type (mimetype).
-     * 
+     *
      * @return content-type
      */
     String getContentType();
@@ -98,19 +98,19 @@ public interface TableWriter<T>
     /**
      * Get the content0-type for errors. Error messages are written via the
      * write(Throwable, OutputStream) method.
-     * 
+     *
      * @return content-type
      */
     String getErrorContentType();
-    
+
     /**
      * Set a custom factory for Format objects. If this is not set, a default
      * factory will be used.
-     * 
-     * @param ff 
+     *
+     * @param ff
      */
     void setFormatFactory(FormatFactory ff);
-    
+
     /**
      * Write a TableModel to the OutputStream.
      *
@@ -119,7 +119,7 @@ public interface TableWriter<T>
      * @throws IOException
      */
     void write(T tm, OutputStream out)
-        throws IOException;
+            throws IOException;
 
     /**
      * Write a TableModel to the OutputStream.
@@ -129,14 +129,14 @@ public interface TableWriter<T>
      * @throws IOException
      */
     void write(T tm, OutputStream out, Long maxrec)
-        throws IOException;
-    
-    void write (T tm, Writer out)
-        throws IOException;
-    
-    void write (T tm, Writer out, Long maxrec)
-        throws IOException;
-    
+            throws IOException;
+
+    void write(T tm, Writer out)
+            throws IOException;
+
+    void write(T tm, Writer out, Long maxrec)
+            throws IOException;
+
     /**
      * Write the Throwable to the OutputStream
      *
@@ -144,6 +144,6 @@ public interface TableWriter<T>
      * @param output OutputStream to write to.
      * @throws IOException if problem writing to the stream.
      */
-    public void write(Throwable thrown, OutputStream output)
-        throws IOException;
+    void write(Throwable thrown, OutputStream output)
+            throws IOException;
 }

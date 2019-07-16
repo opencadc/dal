@@ -65,7 +65,8 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.stc.util;
 
 import ca.nrc.cadc.stc.Position;
@@ -75,8 +76,8 @@ import ca.nrc.cadc.stc.StcsParsingException;
  * Class to parse a STC-S phrase to a Position object, and format a Position
  * object to a STC-S phrase.
  */
-public class PositionFormat extends RegionFormat implements Format<Position>
-{
+public class PositionFormat extends RegionFormat implements Format<Position> {
+
     /**
      * Parses a String to a Position.
      *
@@ -84,39 +85,34 @@ public class PositionFormat extends RegionFormat implements Format<Position>
      * @return Position value of the String.
      */
     public Position parse(String phrase)
-        throws StcsParsingException
-    {
+            throws StcsParsingException {
         parseRegion(phrase);
 
         // CoordPair x.
         double x;
-        if (currentWord == null)
-        {
-            if (words.hasNextDouble())
+        if (currentWord == null) {
+            if (words.hasNextDouble()) {
                 x = words.nextDouble();
-            else if (words.hasNext())
+            } else if (words.hasNext()) {
                 throw new StcsParsingException("Invalid coordpair element " + words.next());
-            else
+            } else {
                 throw new StcsParsingException("Unexpected end to STC-S phrase before coordpair element");
-        }
-        else
-        {
-            try
-            {
-                x = Double.valueOf(currentWord);
             }
-            catch (NumberFormatException e)
-            {
+        } else {
+            try {
+                x = Double.valueOf(currentWord);
+            } catch (NumberFormatException e) {
                 throw new StcsParsingException("Invalid coordpair " + currentWord + " in " + phrase);
             }
         }
 
         // CoordPair y.
         double y;
-        if (words.hasNextDouble())
+        if (words.hasNextDouble()) {
             y = words.nextDouble();
-        else
+        } else {
             throw new StcsParsingException("Coordpair not found in " + phrase);
+        }
 
         return new Position(frame, refpos, flavor, x, y);
     }
@@ -128,8 +124,7 @@ public class PositionFormat extends RegionFormat implements Format<Position>
      * @param position Position to format
      * @return String representation of the Position.
      */
-    public String format(Position position)
-    {
+    public String format(Position position) {
         StringBuilder sb = new StringBuilder();
         sb.append(formatRegion(position));
         sb.append(" ");

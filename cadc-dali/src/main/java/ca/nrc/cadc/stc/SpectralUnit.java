@@ -66,14 +66,14 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.stc;
 
 /**
  * Allowed values for unit in a STC-S SpectralInterval.
  *
  */
-public enum SpectralUnit
-{
+public enum SpectralUnit {
     Hz("Hz"),
     MHz("MHz"),
     GHz("GHz"),
@@ -88,7 +88,9 @@ public enum SpectralUnit
 
     private String value;
 
-    private SpectralUnit(String value) { this.value = value; }
+    private SpectralUnit(String value) {
+        this.value = value;
+    }
 
     /**
      * Get the SpectralUnit for the given value.
@@ -96,12 +98,9 @@ public enum SpectralUnit
      * @param s SpectralUnit value
      * @return the SpectralUnit for the value.
      */
-    public static SpectralUnit toValue(String s)
-    {
-        for (SpectralUnit v : values())
-        {
-            if (v.toString().equalsIgnoreCase(s))
-            {
+    public static SpectralUnit toValue(String s) {
+        for (SpectralUnit v : values()) {
+            if (v.toString().equalsIgnoreCase(s)) {
                 return v;
             }
         }
@@ -113,22 +112,23 @@ public enum SpectralUnit
      *
      * @return the enum value.
      */
-    public String getValue() { return value; }
+    public String getValue() {
+        return value;
+    }
 
     /**
      * Check if the given value is an allowed value for SpectralUnit.
      *
      * @param v the value to check.
      * @return true if the value is an allowed value for SpectralUnit,
-     *         false otherwise.
+     *      false otherwise.
      */
-    public static boolean contains(final String v)
-    {
+    public static boolean contains(final String v) {
         SpectralUnit[] values = SpectralUnit.values();
-        for (int i = 0; i < values.length; i++)
-        {
-            if (values[i].value.equals(v))
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].value.equals(v)) {
                 return true;
+            }
         }
         return false;
     }

@@ -73,24 +73,21 @@ package ca.nrc.cadc.dali.util;
  * Formats and parses a short[].
  *
  */
-public class ShortArrayFormat implements Format<short[]>
-{
+public class ShortArrayFormat implements Format<short[]> {
+
     /**
-     * Takes an short[]  and returns the default String representation.
+     * Takes an short[] and returns the default String representation.
      *
      * @param object short[] to format.
      * @return String representation of the short[].
      */
-    public String format(short[] object)
-    {
-        if (object == null)
-        {
+    public String format(short[] object) {
+        if (object == null) {
             return "";
         }
 
         StringBuilder sb = new StringBuilder();
-        for (short s : object)
-        {
+        for (short s : object) {
             sb.append(Short.toString(s));
             sb.append(" ");
         }
@@ -103,22 +100,17 @@ public class ShortArrayFormat implements Format<short[]>
      * @param s the String to parse.
      * @return short[] value of the String.
      */
-    public short[] parse(String s)
-    {
-        if (s == null|| s.isEmpty())
-        {
+    public short[] parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
-        }
-        else
-        {
+        } else {
             String[] tokens = s.split(" ");
             short[] array = new short[tokens.length];
-            for (int i = 0; i < tokens.length; i++)
-            {
+            for (int i = 0; i < tokens.length; i++) {
                 array[i] = Short.parseShort(tokens[i]);
             }
             return array;
         }
     }
-    
+
 }

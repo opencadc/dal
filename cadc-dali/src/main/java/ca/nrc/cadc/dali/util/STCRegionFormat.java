@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.stc.Region;
@@ -76,8 +77,8 @@ import ca.nrc.cadc.stc.StcsParsingException;
  *
  * @author jburke
  */
-public class STCRegionFormat implements Format<Region>
-{
+public class STCRegionFormat implements Format<Region> {
+
     /**
      * Takes a Region and returns the default String representation.
      * If the Region is null an empty String is returned.
@@ -85,10 +86,8 @@ public class STCRegionFormat implements Format<Region>
      * @param object Region to format
      * @return String representation of the Region.
      */
-    public String format(Region object)
-    {
-        if (object == null)
-        {
+    public String format(Region object) {
+        if (object == null) {
             return "";
         }
 
@@ -101,20 +100,15 @@ public class STCRegionFormat implements Format<Region>
      * @param s the String to parse.
      * @return Region value of the String.
      */
-    public Region parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public Region parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
-        try
-        {
+        try {
             return STC.parse(s);
-        }
-        catch (StcsParsingException e)
-        {
+        } catch (StcsParsingException e) {
             throw new UnsupportedOperationException("Unable to parse STC Region " + e.getMessage());
         }
     }
-    
+
 }

@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.votable;
 
@@ -76,31 +76,27 @@ import java.util.List;
  *
  * @author pdowler
  */
-public class VOTableGroup 
-{
+public class VOTableGroup {
+
     private String name;
     private List<VOTableParam> params = new ArrayList<VOTableParam>();
     private List<VOTableGroup> groups = new ArrayList<VOTableGroup>();
-    
+
     public String id;
-    
-    public VOTableGroup(String name)
-    {
+
+    public VOTableGroup(String name) {
         this.name = name;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public List<VOTableParam> getParams()
-    {
+    public List<VOTableParam> getParams() {
         return params;
     }
 
-    public List<VOTableGroup> getGroups()
-    {
+    public List<VOTableGroup> getGroups() {
         return groups;
     }
 }

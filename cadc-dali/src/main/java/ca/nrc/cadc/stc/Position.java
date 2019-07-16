@@ -66,14 +66,15 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.stc;
 
 /**
  * Class to represent a STC-S Position.
  *
  */
-public class Position extends Region
-{
+public class Position extends Region {
+
     public static final String NAME = Position.class.getSimpleName();
 
     private CoordPair coordPair;
@@ -83,16 +84,15 @@ public class Position extends Region
      * and coordinates.
      *
      * @param frame the frame describing the Position. Allowed values for frame are
-     *              from <code>ca.nrc.cadc.stc.Frame</code>.
+     *      from <code>ca.nrc.cadc.stc.Frame</code>.
      * @param refpos the reference position describing the Position. Allowed values
-     *               for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
+     *      for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
      * @param flavor the flavor describing the Position. Allowed values for flavor are
-     *               from <code>ca.nrc.cadc.stc.Flavor</code>.
+     *      from <code>ca.nrc.cadc.stc.Flavor</code>.
      * @param x the x coordinate of the position.
      * @param y the y coordinate of the position.
      */
-    public Position(Frame frame, ReferencePosition refpos, Flavor flavor, double x, double y)
-    {
+    public Position(Frame frame, ReferencePosition refpos, Flavor flavor, double x, double y) {
         super(NAME, frame, refpos, flavor);
         this.coordPair = new CoordPair(x, y);
     }
@@ -102,8 +102,7 @@ public class Position extends Region
      *
      * @return CoordPair of this Position.
      */
-    public CoordPair getCoordPair()
-    {
+    public CoordPair getCoordPair() {
         return coordPair;
     }
 

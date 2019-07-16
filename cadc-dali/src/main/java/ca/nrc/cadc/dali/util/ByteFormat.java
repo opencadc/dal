@@ -66,14 +66,15 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 /**
  * Formats and parses a Byte.
  *
  */
-public class ByteFormat implements Format<Byte>
-{
+public class ByteFormat implements Format<Byte> {
+
     /**
      * Takes the passed in Byte and returns the String representation of that Byte.
      * If the Byte is null an empty String is returned.
@@ -81,10 +82,8 @@ public class ByteFormat implements Format<Byte>
      * @param object Byte to format
      * @return String representation of the Byte
      */
-    public String format(Byte object)
-    {
-        if (object == null)
-        {
+    public String format(Byte object) {
+        if (object == null) {
             return "";
         }
         return object.toString();
@@ -92,14 +91,12 @@ public class ByteFormat implements Format<Byte>
 
     /**
      * Parses a String to a Byte.
-     * 
+     *
      * @param s the String to parse.
      * @return Byte value of the String.
      */
-    public Byte parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public Byte parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
         return Byte.valueOf(s);

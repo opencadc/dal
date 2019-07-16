@@ -73,14 +73,15 @@ package ca.nrc.cadc.stc;
  * Abstract base class for a STC-S Region.
  *
  */
-public abstract class Region
-{
+public abstract class Region {
+
     private String name;
     private Frame frame;
     private ReferencePosition refpos;
     private Flavor flavor;
 
-    private Region() {}
+    private Region() {
+    }
 
     /**
      * Construct a Region with the given name and coordinate descriptions. The
@@ -88,21 +89,21 @@ public abstract class Region
      *
      * @param name the name of the Region.
      * @param frame the frame describing the Region. Allowed values for frame are
-     *              from <code>ca.nrc.cadc.stc.Frame</code>.
+     *      from <code>ca.nrc.cadc.stc.Frame</code>.
      * @param refpos the reference position describing the Region. Allowed values
-     *               for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
+     *      for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
      * @param flavor the flavor describing the Region. Allowed values for flavor are
-     *               from <code>ca.nrc.cadc.stc.Flavor</code>.
+     *      from <code>ca.nrc.cadc.stc.Flavor</code>.
      */
-    protected Region(String name, Frame frame, ReferencePosition refpos, Flavor flavor)
-    {
+    protected Region(String name, Frame frame, ReferencePosition refpos, Flavor flavor) {
         this.name = name;
         this.frame = frame;
         this.refpos = refpos;
         this.flavor = flavor;
 
-        if (name == null || name.trim().isEmpty())
+        if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Null or empty name");
+        }
     }
 
     /**
@@ -110,8 +111,7 @@ public abstract class Region
      *
      * @return the name of the Region.
      */
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
@@ -120,8 +120,7 @@ public abstract class Region
      *
      * @return the frame of this Region.
      */
-    public Frame getFrame()
-    {
+    public Frame getFrame() {
         return frame;
     }
 
@@ -130,8 +129,7 @@ public abstract class Region
      *
      * @return the reference position of this Region.
      */
-    public ReferencePosition getRefPos()
-    {
+    public ReferencePosition getRefPos() {
         return refpos;
     }
 
@@ -140,8 +138,7 @@ public abstract class Region
      *
      * @return the flavor of this Region.
      */
-    public Flavor getFlavor()
-    {
+    public Flavor getFlavor() {
         return flavor;
     }
 

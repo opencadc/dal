@@ -73,16 +73,15 @@ import java.util.List;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
 
-public class FieldElement extends Element
-{
+public class FieldElement extends Element {
+
     /**
      * Builds a FIELD Element from a TableField.
      *
      * @param field
-     * @param namespace 
+     * @param namespace
      */
-    public FieldElement(VOTableField field, Namespace namespace)
-    {
+    public FieldElement(VOTableField field, Namespace namespace) {
         this("FIELD", field, namespace);
     }
 
@@ -94,16 +93,13 @@ public class FieldElement extends Element
      * @param field
      * @param namespace
      */
-    protected FieldElement(String elementName, VOTableField field, Namespace namespace)
-    {
+    protected FieldElement(String elementName, VOTableField field, Namespace namespace) {
         super(elementName, namespace);
         init(field);
     }
 
-    private void init(VOTableField field)
-    {
-        if (field != null)
-        {
+    private void init(VOTableField field) {
+        if (field != null) {
             setFieldAttribute("name", field.getName());
             setFieldAttribute("datatype", field.getDatatype());
             setFieldAttribute("arraysize", field.getArraysize());
@@ -114,7 +110,7 @@ public class FieldElement extends Element
             setFieldAttribute("xtype", field.xtype);
             setFieldAttribute("ref", field.ref);
             setFieldAttribute("ID", field.id);
-            
+
             setDescription(field.description, namespace);
             setValues(field.getValues(), namespace);
         }
@@ -122,19 +118,15 @@ public class FieldElement extends Element
 
     /**
      * Set a String or Integer FIELD attribute.
+     *
      * @param name
      * @param value
      */
-    protected void setFieldAttribute(String name, Object value)
-    {
-        if (value != null)
-        {
-            if (value instanceof String)
-            {
+    protected void setFieldAttribute(String name, Object value) {
+        if (value != null) {
+            if (value instanceof String) {
                 setAttribute(name, (String) value);
-            }
-            else if (value instanceof Integer)
-            {
+            } else if (value instanceof Integer) {
                 setAttribute(name, String.valueOf((Integer) value));
             }
         }
@@ -142,13 +134,12 @@ public class FieldElement extends Element
 
     /**
      * Add a DESCRIPTION Element to the FIELD.
+     *
      * @param description
      * @param namespace
      */
-    protected void setDescription(String description, Namespace namespace)
-    {
-        if (description != null)
-        {
+    protected void setDescription(String description, Namespace namespace) {
+        if (description != null) {
             Element element = new Element("DESCRIPTION", namespace);
             element.setText(description);
             addContent(element);
@@ -157,16 +148,14 @@ public class FieldElement extends Element
 
     /**
      * Add VALUES Element with OPTION child Elements.
+     *
      * @param values
      * @param namespace
      */
-    protected void setValues(List<String> values, Namespace namespace)
-    {
-        if (values != null && !values.isEmpty())
-        {
+    protected void setValues(List<String> values, Namespace namespace) {
+        if (values != null && !values.isEmpty()) {
             Element element = new Element("VALUES", namespace);
-            for (String value : values)
-            {
+            for (String value : values) {
                 Element option = new Element("OPTION", namespace);
                 option.setAttribute("value", value);
                 element.addContent(option);
@@ -174,5 +163,5 @@ public class FieldElement extends Element
             addContent(element);
         }
     }
-    
+
 }

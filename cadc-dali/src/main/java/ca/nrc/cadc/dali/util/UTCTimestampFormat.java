@@ -76,43 +76,35 @@ import java.util.Date;
 
 /**
  * Formats a Date or Timestamp in UTC into a String.
- * 
+ *
  */
-public class UTCTimestampFormat implements Format<Date>
-{
+public class UTCTimestampFormat implements Format<Date> {
+
     private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
 
     /**
      * Takes an Date or Timestamp and returns a String representation
      * in UTC ISO8601 date format.
-     * 
+     *
      * @param object Date to format.
      * @return String representation of the Date.
-     * @throws  UnsupportedOperationException if a Date cannot be constructed
-     *          from the object.
+     * @throws UnsupportedOperationException if a Date cannot be constructed from the object
      */
-    public String format(Date object)
-    {
-        if (object == null)
-        {
+    public String format(Date object) {
+        if (object == null) {
             return "";
         }
         Date date = object;
-        if (object instanceof java.sql.Date)
-        {
+        if (object instanceof java.sql.Date) {
             date = DateUtil.toDate(object);
         }
-        if (object instanceof java.sql.Timestamp)
-        {
+        if (object instanceof java.sql.Timestamp) {
             date = DateUtil.toDate(object);
         }
 
-        if (date != null)
-        {
+        if (date != null) {
             return dateFormat.format(date);
-        }
-        else
-        {
+        } else {
             throw new UnsupportedOperationException("formatting " + object.getClass().getName() + " " + object);
         }
     }
@@ -123,20 +115,15 @@ public class UTCTimestampFormat implements Format<Date>
      * @param s the String to parse.
      * @return Date of the String.
      */
-    public Date parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public Date parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
-        try
-        {
+        try {
             return DateUtil.flexToDate(s, dateFormat);
-        }
-        catch (ParseException ex)
-        {
+        } catch (ParseException ex) {
             throw new UnsupportedOperationException("Unable to parse to a Date " + s);
         }
     }
-    
+
 }

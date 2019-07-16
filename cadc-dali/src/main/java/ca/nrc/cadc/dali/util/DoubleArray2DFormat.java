@@ -75,15 +75,14 @@ import java.util.Iterator;
  * Formats and parses a double[].
  *
  */
-public class DoubleArray2DFormat implements Format<double[][]>
-{
+public class DoubleArray2DFormat implements Format<double[][]> {
+
     private int[] arrayshape;
-    
-    public DoubleArray2DFormat(int[] arrayshape)
-    {
+
+    public DoubleArray2DFormat(int[] arrayshape) {
         this.arrayshape = arrayshape;
     }
-    
+
     /**
      * Takes an double[] and returns the standard String representation.
      * If the double[] is null an empty String is returned.
@@ -91,39 +90,36 @@ public class DoubleArray2DFormat implements Format<double[][]>
      * @param object double[] to format.
      * @return String representation of the double[].
      */
-    public String format(double[][] object)
-    {
-        if (object == null)
-        {
+    public String format(double[][] object) {
+        if (object == null) {
             return "";
         }
-        
+
         StringBuilder sb = new StringBuilder();
-        for (int i=0; i<object.length; i++)
-            for (int j=0; j<object[i].length; j++)
-            {
+        for (int i = 0; i < object.length; i++) {
+            for (int j = 0; j < object[i].length; j++) {
                 sb.append(Double.toString(object[i][j]));
                 sb.append(" ");
             }
+        }
         return sb.toString().trim();
     }
-    
+
     /**
-     * Takes a sequence of double values and returns the standard String 
+     * Takes a sequence of double values and returns the standard String
      * representation. If the iterator is null or empty an empty String is
      * returned.
-     * 
+     *
      * @param iter
-     * @return 
+     * @return
      */
-    public String format(Iterator<Double> iter)
-    {
-        if (iter == null || !iter.hasNext())
+    public String format(Iterator<Double> iter) {
+        if (iter == null || !iter.hasNext()) {
             return "";
-        
+        }
+
         StringBuilder sb = new StringBuilder();
-        while ( iter.hasNext() )
-        {
+        while (iter.hasNext()) {
             sb.append(iter.next().toString());
             sb.append(" ");
         }
@@ -137,28 +133,22 @@ public class DoubleArray2DFormat implements Format<double[][]>
      * @param s the String to parse.
      * @return double[] value of the String.
      */
-    public double[][] parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public double[][] parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
-        }
-        else
-        {
+        } else {
             String[] tokens = s.split(" ");
             int n1 = arrayshape[0];
             //int n2 = arrayshape[1];
             //if (arrayshape[1] == -1) // variable
-            int n2 = tokens.length/arrayshape[0];
+            int n2 = tokens.length / arrayshape[0];
             double[][] array = new double[n1][n2];
-            int i=0;
-            int j=0;
-            for (int t = 0; t < tokens.length; t++)
-            {
+            int i = 0;
+            int j = 0;
+            for (int t = 0; t < tokens.length; t++) {
                 array[i][j] = Double.parseDouble(tokens[t]);
                 j++;
-                if (j == n2)
-                {
+                if (j == n2) {
                     j = 0;
                     i++;
                 }
@@ -166,5 +156,5 @@ public class DoubleArray2DFormat implements Format<double[][]>
             return array;
         }
     }
-    
+
 }

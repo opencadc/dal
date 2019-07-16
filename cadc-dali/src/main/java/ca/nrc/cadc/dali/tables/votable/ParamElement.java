@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.tables.votable;
 
 import org.jdom2.Element;
@@ -73,48 +74,42 @@ import org.jdom2.Namespace;
 
 /**
  * A VOTable PARAM element extends FIELD by adding a value attribute.
- * 
+ *
  * @author jburke
  */
-public class ParamElement extends FieldElement
-{
+public class ParamElement extends FieldElement {
+
     /**
      * Builds a PARAM Element from a TableParam Description.
      *
      * @param param
      * @param namespace
      */
-    public ParamElement(VOTableParam param, Namespace namespace)
-    {
+    public ParamElement(VOTableParam param, Namespace namespace) {
         super("PARAM", param, namespace);
-        if (param != null)
-        {
+        if (param != null) {
             setFieldAttribute("value", param.getValue());
         }
-        
-        if (param != null && param.hasValues())
-        {
+
+        if (param != null && param.hasValues()) {
             Element values = new Element("VALUES", namespace);
             this.addContent(values);
-            if (param.getMin() != null)
-            {
+            if (param.getMin() != null) {
                 Element e = new Element("MIN", namespace);
                 e.setAttribute("value", param.getMin());
                 values.addContent(e);
             }
-            if (param.getMax() != null)
-            {
+            if (param.getMax() != null) {
                 Element e = new Element("MAX", namespace);
                 e.setAttribute("value", param.getMax());
                 values.addContent(e);
             }
-            for (String s : param.getOptions())
-            {
+            for (String s : param.getOptions()) {
                 Element e = new Element("OPTION", namespace);
                 e.setAttribute("value", s);
                 values.addContent(e);
             }
         }
     }
-    
+
 }

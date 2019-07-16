@@ -66,14 +66,14 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.stc;
 
 /**
  * Allowed values for Frame in a STC-S Space sub-phrase.
  *
  */
-public enum Frame
-{
+public enum Frame {
     ECLIPTIC, FK4, FK5, GALACTIC, ICRS, UNKNOWNFRAME;
 
     /**
@@ -82,30 +82,26 @@ public enum Frame
      * @param value the value to check.
      * @return true if the value is an allowed value for Frame, false otherwise.
      */
-    public static boolean contains(final String value)
-    {
+    public static boolean contains(final String value) {
         Frame[] values = Frame.values();
-        for (int i = 0; i < values.length; i++)
-        {
-            if (values[i].name().equals(value))
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].name().equals(value)) {
                 return true;
+            }
         }
         return false;
     }
 
     /**
-     * Return the frame object based on the string parameter.  The check
+     * Return the frame object based on the string parameter. The check
      * is case insensitive.
      *
      * @param s The frame to lookup.
      * @return The matching frame.
      */
-    public static Frame toValue(String s)
-    {
-        for (Frame v : values())
-        {
-            if (v.toString().equalsIgnoreCase(s))
-            {
+    public static Frame toValue(String s) {
+        for (Frame v : values()) {
+            if (v.toString().equalsIgnoreCase(s)) {
                 return v;
             }
         }
@@ -113,4 +109,3 @@ public enum Frame
     }
 
 }
-

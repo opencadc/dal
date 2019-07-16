@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.stc.Position;
@@ -78,8 +79,8 @@ import java.util.logging.Logger;
  *
  * @author jburke
  */
-public class STCPositionFormat implements Format<Position>
-{
+public class STCPositionFormat implements Format<Position> {
+
     /**
      * Takes a Point and returns the default String representation.
      * If the Point is null an empty String is returned.
@@ -87,10 +88,8 @@ public class STCPositionFormat implements Format<Position>
      * @param object Point to format
      * @return String representation of the Point.
      */
-    public String format(Position object)
-    {
-        if (object == null)
-        {
+    public String format(Position object) {
+        if (object == null) {
             return "";
         }
 
@@ -103,18 +102,13 @@ public class STCPositionFormat implements Format<Position>
      * @param s the String to parse.
      * @return Point value of the String.
      */
-    public Position parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public Position parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
-        try
-        {
+        try {
             return (Position) STC.parse(s);
-        }
-        catch (StcsParsingException e)
-        {
+        } catch (StcsParsingException e) {
             throw new UnsupportedOperationException("Unable to parse STC Postion " + e.getMessage());
         }
     }

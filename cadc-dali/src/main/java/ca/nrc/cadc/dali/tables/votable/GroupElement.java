@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.votable;
 
@@ -76,20 +76,18 @@ import org.jdom2.Namespace;
  *
  * @author pdowler
  */
-public class GroupElement extends Element
-{
-    public GroupElement(VOTableGroup group, Namespace namespace)
-    {
+public class GroupElement extends Element {
+
+    public GroupElement(VOTableGroup group, Namespace namespace) {
         super("GROUP", namespace);
         setAttribute("name", group.getName());
-        if (group.id != null)
+        if (group.id != null) {
             setAttribute("ID", group.id);
-        for (VOTableParam param : group.getParams())
-        {
+        }
+        for (VOTableParam param : group.getParams()) {
             addContent(new ParamElement(param, namespace));
         }
-        for (VOTableGroup g : group.getGroups())
-        {
+        for (VOTableGroup g : group.getGroups()) {
             addContent(new GroupElement(g, namespace));
         }
     }

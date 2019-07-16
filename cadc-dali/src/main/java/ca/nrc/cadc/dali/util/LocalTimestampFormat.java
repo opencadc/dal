@@ -76,10 +76,10 @@ import java.util.Date;
 
 /**
  * Formats a Date or Timestamp into a String.
- * 
+ *
  */
-public class LocalTimestampFormat implements Format<Date>
-{
+public class LocalTimestampFormat implements Format<Date> {
+
     private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.LOCAL);
 
     /**
@@ -88,35 +88,26 @@ public class LocalTimestampFormat implements Format<Date>
      *
      * @param object to format.
      * @return String representation of the object.
-     * @throws  UnsupportedOperationException if a Date cannot be constructed
-     *          from the object.
+     * @throws UnsupportedOperationException if a Date cannot be constructed from the object
      */
-    public String format(Date object)
-    {
-        if (object == null)
-        {
+    public String format(Date object) {
+        if (object == null) {
             return "";
         }
         Date date = null;
-        if (object instanceof Date)
-        {
+        if (object instanceof Date) {
             date = (Date) object;
         }
-        if (object instanceof java.sql.Date)
-        {
+        if (object instanceof java.sql.Date) {
             date = DateUtil.toDate(object);
         }
-        if (object instanceof java.sql.Timestamp)
-        {
+        if (object instanceof java.sql.Timestamp) {
             date = DateUtil.toDate(object);
         }
 
-        if (date != null)
-        {
+        if (date != null) {
             return dateFormat.format(date);
-        }
-        else
-        {
+        } else {
             throw new UnsupportedOperationException("formatting " + object.getClass().getName() + " " + object);
         }
     }
@@ -127,18 +118,13 @@ public class LocalTimestampFormat implements Format<Date>
      * @param s the String to parse.
      * @return Timestamp of the String.
      */
-    public Date parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public Date parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
-        try
-        {
+        try {
             return DateUtil.flexToDate(s, dateFormat);
-        }
-        catch (ParseException ex)
-        {
+        } catch (ParseException ex) {
             throw new UnsupportedOperationException("Unable to parse to a Date " + s);
         }
     }

@@ -66,14 +66,15 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 /**
  * Formats a Double into a String.
  *
  */
-public class LongFormat implements Format<Long>
-{
+public class LongFormat implements Format<Long> {
+
     /**
      * Takes the passed in Long and returns the String representation of that Long.
      * If the Object is null an empty String is returned.
@@ -81,10 +82,8 @@ public class LongFormat implements Format<Long>
      * @param object Long to format
      * @return String representation of the Long
      */
-    public String format(Long object)
-    {
-        if (object == null)
-        {
+    public String format(Long object) {
+        if (object == null) {
             return "";
         }
         return object.toString();
@@ -96,10 +95,8 @@ public class LongFormat implements Format<Long>
      * @param s the String to parse.
      * @return Long value of the String.
      */
-    public Long parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public Long parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
         return Long.valueOf(s);

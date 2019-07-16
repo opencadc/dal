@@ -82,7 +82,7 @@ import java.util.List;
  * For the latter, the generated URL would be an opaque URL to that back end storage
  * system with the cutout operation embedded.
  * 
- * See StreamingSodaPlugin for details about what an alternative might look like.
+ * <p>See StreamingSodaPlugin for details about what an alternative might look like.
  * 
  * @author pdowler
  */
@@ -100,7 +100,7 @@ public interface SodaPlugin {
      * @param time optional time cutout (may be null)
      * @param pol optional polarization cutout (may be null)
      * @return a URL to the result of the operation
-     * @throws IOException 
+     * @throws IOException failure to read or write data
      */
     URL toURL(int serialNum, URI uri, Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol)
             throws IOException;

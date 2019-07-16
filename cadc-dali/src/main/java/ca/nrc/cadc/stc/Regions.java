@@ -73,8 +73,7 @@ package ca.nrc.cadc.stc;
  * Allowed values for Region in a STC-S Space sub-phrase.
  *
  */
-public enum Regions
-{
+public enum Regions {
     BOX, CIRCLE, POLYGON, POSITION, UNION, NOT, INTERSECTION;
 
     /**
@@ -83,30 +82,26 @@ public enum Regions
      * @param value the value to check.
      * @return true if the value is an allowed value for Region, false otherwise.
      */
-    public static boolean contains(final String value)
-    {
+    public static boolean contains(final String value) {
         Regions[] values = Regions.values();
-        for (int i = 0; i < values.length; i++)
-        {
-            if (values[i].name().equals(value))
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].name().equals(value)) {
                 return true;
+            }
         }
         return false;
     }
 
     /**
-     * Return the regions object based on the string parameter.  The check
+     * Return the regions object based on the string parameter. The check
      * is case insensitive.
      *
      * @param s The regions to lookup.
      * @return The matching regions.
      */
-    public static Regions toValue(String s)
-    {
-        for (Regions v : values())
-        {
-            if (v.toString().equalsIgnoreCase(s))
-            {
+    public static Regions toValue(String s) {
+        for (Regions v : values()) {
+            if (v.toString().equalsIgnoreCase(s)) {
                 return v;
             }
         }

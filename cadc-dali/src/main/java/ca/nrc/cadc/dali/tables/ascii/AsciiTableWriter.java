@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,20 +65,9 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.ascii;
-
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.log4j.Logger;
 
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.TableWriter;
@@ -89,8 +78,16 @@ import ca.nrc.cadc.dali.tables.votable.VOTableTable;
 import ca.nrc.cadc.dali.util.DefaultFormat;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
-
 import com.csvreader.CsvWriter;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import org.apache.log4j.Logger;
 
 /**
  * Write a table document in ascii format (CSV or TSV). This writer can tolerate a
@@ -100,8 +97,8 @@ import com.csvreader.CsvWriter;
  * @see ca.nrc.cadc.dali.util.DefaultFormat
  * @author pdowler
  */
-public class AsciiTableWriter implements TableWriter<VOTableDocument>
-{
+public class AsciiTableWriter implements TableWriter<VOTableDocument> {
+
     private static final Logger log = Logger.getLogger(AsciiTableWriter.class);
 
     // ASCII character set.
@@ -120,115 +117,96 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
 
     private FormatFactory formatFactory;
 
-
-    public static enum ContentType
-    {
+    public static enum ContentType {
         CSV("text/csv; header=present", "csv"),
         TSV("text/tab-separated-values", "tsv");
 
         private String value;
         private String extension;
 
-        private ContentType(String s, String ext)
-        {
-            this.value = s; this.extension = ext;
+        private ContentType(String s, String ext) {
+            this.value = s;
+            this.extension = ext;
         }
 
-        public String getValue()
-        {
+        public String getValue() {
             return value;
         }
 
-        public String getExtension() { return extension; }
+        public String getExtension() {
+            return extension;
+        }
     }
 
-
-
-    public AsciiTableWriter(ContentType fmt)
-    {
+    public AsciiTableWriter(ContentType fmt) {
         this.contentType = fmt;
-        if (ContentType.CSV.equals(fmt))
+        if (ContentType.CSV.equals(fmt)) {
             this.delimeter = CSV_DELI;
-        else
+        } else {
             this.delimeter = TSV_DELI;
+        }
     }
 
     @Override
-    public String getExtension()
-    {
+    public String getExtension() {
         return contentType.getExtension();
     }
 
     @Override
-    public String getContentType()
-    {
+    public String getContentType() {
         return contentType.getValue();
     }
 
-    public String getErrorContentType()
-    {
+    public String getErrorContentType() {
         return "text/plain";
     }
 
     @Override
-    public void setFormatFactory(FormatFactory formatFactory)
-    {
+    public void setFormatFactory(FormatFactory formatFactory) {
         this.formatFactory = formatFactory;
     }
 
-    public void write(Throwable thrown, OutputStream out) 
-        throws IOException
-    {
+    public void write(Throwable thrown, OutputStream out)
+            throws IOException {
         Writer writer = new BufferedWriter(new OutputStreamWriter(out, US_ASCII));
         CsvWriter csv = new CsvWriter(writer, delimeter);
-        
+
         csv.write(thrown.getMessage());
         csv.endRecord();
-        
+
         csv.flush();
     }
-    
+
     @Override
     public void write(VOTableDocument vot, OutputStream out)
-        throws IOException
-    {
+            throws IOException {
         write(vot, out, null);
     }
 
     @Override
     public void write(VOTableDocument vot, OutputStream out, Long maxrec)
-        throws IOException
-    {
+            throws IOException {
         Writer writer = new BufferedWriter(new OutputStreamWriter(out, US_ASCII));
         write(vot, writer, maxrec);
     }
 
     @Override
     public void write(VOTableDocument vot, Writer out)
-        throws IOException
-    {
+            throws IOException {
         write(vot, out, null);
     }
 
     @Override
     public void write(VOTableDocument votable, Writer writer, Long maxrec)
-        throws IOException
-    {
-        try
-        {
-            if (formatFactory == null)
-                this.formatFactory = new FormatFactory();
-            writeImpl(votable, writer, maxrec);
+            throws IOException {
+        if (formatFactory == null) {
+            this.formatFactory = new FormatFactory();
         }
-        finally
-        {
-
-        }
+        writeImpl(votable, writer, maxrec);
     }
 
     protected void writeImpl(VOTableDocument votable, Writer out, Long maxrec)
-        throws IOException
-    {
+            throws IOException {
         // find the TableData object in the VOTable
         VOTableResource vr = votable.getResourceByType("results");
         VOTableTable vt = vr.getTable();
@@ -237,65 +215,57 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument>
 
         // initialize the list of associated formats
         List<Format<Object>> formats = new ArrayList<Format<Object>>();
-        if (fields != null && !fields.isEmpty())
-        {
-            for (VOTableField field : fields)
-            {
+        if (fields != null && !fields.isEmpty()) {
+            for (VOTableField field : fields) {
                 Format<Object> format = null;
-                if (field.getFormat() == null)
+                if (field.getFormat() == null) {
                     format = formatFactory.getFormat(field);
-                else
+                } else {
                     format = field.getFormat();
+                }
                 formats.add(format);
             }
         }
 
         CsvWriter writer = new CsvWriter(out, delimeter);
-        try
-        {
+        try {
             // Add the metadata elements.
-            for (VOTableField field : fields)
+            for (VOTableField field : fields) {
                 writer.write(field.getName());
+            }
             writer.endRecord();
 
             // TODO: header comment?
             long numRows = 0L;
             boolean ok = true;
-            Iterator<List<Object>>rows = td.iterator();
-            while ( ok && rows.hasNext() )
-            {
+            Iterator<List<Object>> rows = td.iterator();
+            while (ok && rows.hasNext()) {
                 List<Object> row = rows.next();
-                if (!fields.isEmpty() && row.size() != fields.size() )
+                if (!fields.isEmpty() && row.size() != fields.size()) {
                     throw new IllegalStateException("cannot write row: " + fields.size() + " metadata fields, " + row.size() + " data columns");
-                for (int i=0; i<row.size(); i++)
-                {
+                }
+                for (int i = 0; i < row.size(); i++) {
                     Object o = row.get(i);
                     Format<Object> fmt = new DefaultFormat();
-                    if (!fields.isEmpty())
-                    {
+                    if (!fields.isEmpty()) {
                         fmt = formats.get(i);
                     }
-                    writer.write( fmt.format(o) );
+                    writer.write(fmt.format(o));
                 }
                 writer.endRecord();
                 numRows++;
-                if (maxrec != null && numRows == maxrec.longValue())
+                if (maxrec != null && numRows == maxrec.longValue()) {
                     ok = false;
+                }
 
                 // do not flush here: let the caller setup a BufferedWriter of approp size
                 //writer.flush();
             }
-        }
-        catch (Exception ex)
-        {
+        } catch (Exception ex) {
             throw new IOException("error while writing", ex);
-        }
-        finally
-        {
+        } finally {
             writer.flush();
         }
     }
-
-
 
 }

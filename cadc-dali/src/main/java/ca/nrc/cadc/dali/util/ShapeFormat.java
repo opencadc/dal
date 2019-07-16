@@ -63,10 +63,9 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
-
 
 import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.Point;
@@ -76,13 +75,14 @@ import org.apache.log4j.Logger;
 
 /**
  * Formatter to handle shapes in polymorphic serialisation (DALI-1.2).
- * 
+ *
  * @author pdowler
  */
 public class ShapeFormat implements Format<Shape> {
+
     private static final Logger log = Logger.getLogger(ShapeFormat.class);
 
-    public ShapeFormat() { 
+    public ShapeFormat() {
     }
 
     @Override
@@ -130,21 +130,22 @@ public class ShapeFormat implements Format<Shape> {
         }
         return sb.toString();
     }
-    
+
     /**
      * Separate the key (first word) from the value(remaining words).
+     *
      * @param s
-     * @return 
+     * @return
      */
     public static String[] separateKey(String s) {
         String[] ret = new String[2];
         int i = s.indexOf(" ");
         if (i > 0) {
-            
+
             ret[0] = s.substring(0, i);
             if (i + 1 < s.length() - 1) {
                 ret[1] = s.substring(i + 1, s.length());
-            } 
+            }
             return ret;
         } else {
             ret[0] = s; // one word

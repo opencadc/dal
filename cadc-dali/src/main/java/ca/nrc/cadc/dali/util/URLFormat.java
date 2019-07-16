@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
 
@@ -76,28 +76,22 @@ import java.net.URL;
  *
  * @author pdowler
  */
-public class URLFormat implements Format<URL>
-{
+public class URLFormat implements Format<URL> {
 
-    public String format(URL t)
-    {
-        if (t == null)
+    public String format(URL t) {
+        if (t == null) {
             return "";
+        }
         return t.toExternalForm();
     }
 
-    public URL parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public URL parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
-        try
-        {
+        try {
             return new URL(s);
-        }
-        catch(MalformedURLException ex)
-        {
+        } catch (MalformedURLException ex) {
             throw new IllegalArgumentException("invalid url: " + s, ex);
         }
     }

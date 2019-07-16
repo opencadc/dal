@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,7 +65,8 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.dali.tables;
 
 import java.util.ArrayList;
@@ -75,25 +76,25 @@ import java.util.List;
 /**
  * Class implements the TableData interface using an ArrayList. This class can be used to
  * easily implement a reader and store the table data in memory.
- * 
+ *
  * @author jburke
  */
-public class ListTableData implements TableData
-{
+public class ListTableData implements TableData {
+
     protected List<List<Object>> list = new ArrayList<List<Object>>();
 
     /**
      * Default constructor.
      */
-    public ListTableData() { }
+    public ListTableData() {
+    }
 
     /**
      * Get the ArrayList of List objects.
      *
      * @return ArrayList of List objects.
      */
-    public List<List<Object>> getArrayList()
-    {
+    public List<List<Object>> getArrayList() {
         return this.list;
     }
 
@@ -102,8 +103,7 @@ public class ListTableData implements TableData
      *
      * @return iterator to the ArrayList.
      */
-    public Iterator<List<Object>> iterator()
-    {
+    public Iterator<List<Object>> iterator() {
         return list.iterator();
     }
 

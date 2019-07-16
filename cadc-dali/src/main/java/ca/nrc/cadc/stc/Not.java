@@ -74,33 +74,32 @@ package ca.nrc.cadc.stc;
  * that is not contained in the original.
  *
  */
-public class Not extends Region
-{
+public class Not extends Region {
+
     public static final String NAME = Not.class.getSimpleName();
 
     private Region region;
 
     /**
      * Construct an Not with the given Region. The Region should not be null.
-     * 
+     *
      * @param region the Region to be negated.
      */
-    public Not(Region region)
-    {
+    public Not(Region region) {
         super(NAME, null, null, null);
         this.region = region;
 
-        if (region == null)
+        if (region == null) {
             throw new IllegalArgumentException("Not requires a Region");
+        }
     }
 
     /**
      * Get the Region for this Not.
-     * 
+     *
      * @return the Region.
      */
-    public Region getRegion()
-    {
+    public Region getRegion() {
         return region;
     }
 

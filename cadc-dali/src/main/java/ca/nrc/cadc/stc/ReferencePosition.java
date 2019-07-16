@@ -73,8 +73,7 @@ package ca.nrc.cadc.stc;
  * Allowed values for ReferencePosition in a STC-S Space sub-phrase.
  *
  */
-public enum ReferencePosition
-{
+public enum ReferencePosition {
     BARYCENTER, GEOCENTER, HELIOCENTER, LSR, TOPOCENTER, RELOCATABLE, UNKNOWNREFPOS;
 
     /**
@@ -82,32 +81,28 @@ public enum ReferencePosition
      *
      * @param value the value to check.
      * @return true if the value is an allowed value for ReferencePosition,
-     *         false otherwise.
+     *      false otherwise.
      */
-    public static boolean contains(final String value)
-    {
+    public static boolean contains(final String value) {
         ReferencePosition[] values = ReferencePosition.values();
-        for (int i = 0; i < values.length; i++)
-        {
-            if (values[i].name().equals(value))
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].name().equals(value)) {
                 return true;
+            }
         }
         return false;
     }
 
     /**
-     * Return the referencePosition object based on the string parameter.  The check
+     * Return the referencePosition object based on the string parameter. The check
      * is case insensitive.
      *
      * @param s The referencePosition to lookup.
      * @return The matching referencePosition.
      */
-    public static ReferencePosition toValue(String s)
-    {
-        for (ReferencePosition v : values())
-        {
-            if (v.toString().equalsIgnoreCase(s))
-            {
+    public static ReferencePosition toValue(String s) {
+        for (ReferencePosition v : values()) {
+            if (v.toString().equalsIgnoreCase(s)) {
                 return v;
             }
         }

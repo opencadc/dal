@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.votable;
 
@@ -76,8 +76,8 @@ import java.util.List;
  *
  * @author pdowler
  */
-public class VOTableResource
-{
+public class VOTableResource {
+
     private String type;
 
     private String name;
@@ -90,48 +90,39 @@ public class VOTableResource
     public String utype;
     public String id;
 
-    public VOTableResource(String type)
-    {
+    public VOTableResource(String type) {
         this.type = type;
     }
 
-    public String getType()
-    {
+    public String getType() {
         return type;
     }
 
-    public List<VOTableInfo> getInfos()
-    {
+    public List<VOTableInfo> getInfos() {
         return infos;
     }
 
-    public List<VOTableParam> getParams()
-    {
+    public List<VOTableParam> getParams() {
         return params;
     }
 
-    public List<VOTableGroup> getGroups()
-    {
+    public List<VOTableGroup> getGroups() {
         return groups;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public void setName(String name)
-    {
+    public void setName(String name) {
         this.name = name;
     }
 
-    public VOTableTable getTable()
-    {
+    public VOTableTable getTable() {
         return table;
     }
 
-    public void setTable(VOTableTable table)
-    {
+    public void setTable(VOTableTable table) {
         this.table = table;
     }
 }

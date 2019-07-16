@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
 
@@ -79,31 +79,30 @@ import java.net.URL;
  * intended to be the way to support custom value objects. Applications should
  * override the behaviour of the FormatFactory to return a custom Format object.
  * The mechanism for that is TBD.
- * 
+ *
  * @author pdowler
  */
-public class DefaultFormat implements Format<Object>
-{
-    public Object parse(String s)
-    {
-        if (s == null || s.isEmpty())
+public class DefaultFormat implements Format<Object> {
+
+    public Object parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
+        }
         return s;
     }
 
-    public String format(Object o)
-    {
-        if (o == null)
+    public String format(Object o) {
+        if (o == null) {
             return "";
-        if (o instanceof String)
+        }
+        if (o instanceof String) {
             return (String) o;
-        if (o instanceof URI)
-        {
+        }
+        if (o instanceof URI) {
             URI uri = (URI) o;
             return uri.toASCIIString();
         }
-        if (o instanceof URL)
-        {
+        if (o instanceof URL) {
             URL uri = (URL) o;
             return uri.toExternalForm();
         }

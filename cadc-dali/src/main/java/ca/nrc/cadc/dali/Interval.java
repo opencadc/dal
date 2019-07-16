@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2017.                            (c) 2017.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,43 +63,39 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali;
-
 
 /**
  *
  * @author pdowler
  * @param <T>
  */
-public class Interval<T extends Number>
-{
+public class Interval<T extends Number> {
+
     private T lower;
     private T upper;
-    
-    public Interval(T lower, T upper) 
-    { 
+
+    public Interval(T lower, T upper) {
         this.lower = lower;
         this.upper = upper;
     }
 
-    public T getLower()
-    {
+    public T getLower() {
         return lower;
     }
 
-    public T getUpper()
-    {
+    public T getUpper() {
         return upper;
     }
-    
+
     @Override
-    public boolean equals(Object obj)
-    {
-        if (obj == null)
+    public boolean equals(Object obj) {
+        if (obj == null) {
             return false;
-        
+        }
+
         Interval rhs = (Interval) obj;
         return lower.equals(rhs.lower) && upper.equals(rhs.upper);
     }

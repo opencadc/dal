@@ -168,12 +168,6 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
     }
 
     void doit() throws IOException {
-        List<Long> tList = new ArrayList<Long>();
-        List<String> sList = new ArrayList<String>();
-
-        tList.add(System.currentTimeMillis());
-        sList.add("start");
-
         try {
             // phase->EXECUTING
             ExecutionPhase ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
@@ -185,8 +179,6 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                 return;
             }
             log.debug(job.getID() + ": QUEUED -> EXECUTING [OK]");
-            tList.add(System.currentTimeMillis());
-            sList.add("QUEUED -> EXECUTING: ");
 
             // validate params
             ParamExtractor pex = new ParamExtractor(SODA_PARAMS);
@@ -248,9 +240,6 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                 timeCut.add(new Cutout<Interval>());
             }
 
-            tList.add(System.currentTimeMillis());
-            sList.add("parse parameters");
-
             String runID = job.getRunID();
             if (runID == null) {
                 runID = job.getID();
@@ -296,14 +285,6 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
             handleError(500, ex.getMessage());
         } catch (TransientException ex) {
             handleError(503, ex.getMessage());
-        } finally {
-            tList.add(System.currentTimeMillis());
-            sList.add("set final job state: ");
-
-            for (int i = 1; i < tList.size(); i++) {
-                long dt = tList.get(i) - tList.get(i - 1);
-                log.debug(job.getID() + " -- " + sList.get(i) + " " + dt + "ms");
-            }
         }
     }
 

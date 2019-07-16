@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,64 +65,56 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali;
 
-
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class Polygon implements Shape
-{
-    private static final Logger log = Logger.getLogger(Polygon.class);
-
+public class Polygon implements Shape {
     private List<Point> vertices = new ArrayList<Point>();
-    
-    public Polygon() { }
+
+    public Polygon() {
+    }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Polygon[");
-        for (Point v : vertices)
-        {
+        for (Point v : vertices) {
             sb.append(v.getLongitude()).append(" ").append(v.getLatitude()).append(" ");
         }
         sb.setCharAt(sb.length() - 1, ']');
         return sb.toString();
     }
-    public List<Point> getVertices()
-    {
+
+    public List<Point> getVertices() {
         return vertices;
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
-        if (obj == null)
+    public boolean equals(Object obj) {
+        if (obj == null) {
             return false;
+        }
         Polygon rhs = (Polygon) obj;
-        
-        if (this.vertices.size() != rhs.vertices.size())
+
+        if (this.vertices.size() != rhs.vertices.size()) {
             return false;
-        for (int i=0; i<vertices.size(); i++)
-        {
+        }
+        for (int i = 0; i < vertices.size(); i++) {
             Point tp = this.vertices.get(i);
             Point rp = rhs.vertices.get(i);
-            if ( ! tp.equals(rp) )
+            if (!tp.equals(rp)) {
                 return false;
+            }
         }
         return true;
     }
-    
-    
-    
-    
+
 }

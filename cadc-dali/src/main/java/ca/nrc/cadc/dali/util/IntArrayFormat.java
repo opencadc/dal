@@ -73,24 +73,21 @@ package ca.nrc.cadc.dali.util;
  * Formats and parses a int[].
  *
  */
-public class IntArrayFormat implements Format<int[]>
-{
+public class IntArrayFormat implements Format<int[]> {
+
     /**
-     * Takes an int[]  and returns the default String representation.
+     * Takes an int[] and returns the default String representation.
      *
      * @param object int[] to format.
      * @return String representation of the int[].
      */
-    public String format(int[] object)
-    {
-        if (object == null)
-        {
+    public String format(int[] object) {
+        if (object == null) {
             return "";
         }
 
         StringBuilder sb = new StringBuilder();
-        for (int i : object)
-        {
+        for (int i : object) {
             sb.append(Integer.toString(i));
             sb.append(" ");
         }
@@ -103,22 +100,17 @@ public class IntArrayFormat implements Format<int[]>
      * @param s the String to parse.
      * @return int[] value of the String.
      */
-    public int[] parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public int[] parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
-        }
-        else
-        {
+        } else {
             String[] tokens = s.split(" ");
             int[] array = new int[tokens.length];
-            for (int i = 0; i < tokens.length; i++)
-            {
+            for (int i = 0; i < tokens.length; i++) {
                 array[i] = Integer.parseInt(tokens[i]);
             }
             return array;
         }
     }
-    
+
 }

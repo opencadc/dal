@@ -66,14 +66,15 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 /**
  *
  * @author jburke
  */
-public class BooleanFormat implements Format<Boolean>
-{
+public class BooleanFormat implements Format<Boolean> {
+
     /**
      * Takes a Boolean and returns the default String representation.
      * If the Boolean is null an empty String is returned.
@@ -81,10 +82,8 @@ public class BooleanFormat implements Format<Boolean>
      * @param object Boolean to format
      * @return String representation of the Boolean.
      */
-    public String format(Boolean object)
-    {
-        if (object == null)
-        {
+    public String format(Boolean object) {
+        if (object == null) {
             return "";
         }
         return object.toString();
@@ -96,14 +95,10 @@ public class BooleanFormat implements Format<Boolean>
      * @param s the String to parse.
      * @return Boolean value of the String.
      */
-    public Boolean parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public Boolean parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
-        }
-        else
-        {
+        } else {
             return Boolean.valueOf(s);
         }
     }

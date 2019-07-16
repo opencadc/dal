@@ -65,7 +65,8 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.stc.util;
 
 import ca.nrc.cadc.stc.CoordPair;
@@ -78,8 +79,8 @@ import java.util.List;
  * Class to parse a STC-S phrase to a Polygon object, and format a Polygon
  * object to a STC-S phrase.
  */
-public class PolygonFormat extends RegionFormat implements Format<Polygon>
-{
+public class PolygonFormat extends RegionFormat implements Format<Polygon> {
+
     /**
      * Parses a String to a Polygon.
      *
@@ -87,52 +88,48 @@ public class PolygonFormat extends RegionFormat implements Format<Polygon>
      * @return Polygon value of the String.
      */
     public Polygon parse(String phrase)
-        throws StcsParsingException
-    {
+            throws StcsParsingException {
         parseRegion(phrase);
 
         // current word or next word as a Double.
         Double value = null;
-        if (currentWord == null)
-        {
-            if (words.hasNextDouble())
+        if (currentWord == null) {
+            if (words.hasNextDouble()) {
                 value = words.nextDouble();
-            else if (words.hasNext())
+            } else if (words.hasNext()) {
                 throw new StcsParsingException("Invalid CoordPair " + words.next());
-            else
+            } else {
                 throw new StcsParsingException("Unexpected end to STC-S phrase before CoordPair");
-        }
-        else
-        {
-            try
-            {
-                value = Double.valueOf(currentWord);
             }
-            catch (NumberFormatException e)
-            {
+        } else {
+            try {
+                value = Double.valueOf(currentWord);
+            } catch (NumberFormatException e) {
                 throw new StcsParsingException("Invalid CoordPair " + currentWord + " in " + phrase);
             }
         }
 
         // Get the first coordpair.
         List<CoordPair> coordPairs = new ArrayList<CoordPair>();
-        if (words.hasNextDouble())
+        if (words.hasNextDouble()) {
             coordPairs.add(new CoordPair(value, words.nextDouble()));
-        else
+        } else {
             throw new StcsParsingException("Polygon must contain at least 3 CoordPairs: " + phrase);
-
-        // Get the rest of the coordpairs.
-        while (words.hasNextDouble())
-        {
-            value = words.nextDouble();
-            if (words.hasNextDouble())
-                coordPairs.add(new CoordPair(value, words.nextDouble()));
-            else
-                throw new StcsParsingException("Polygon must contain at least 3 CoordPairs: " + phrase);
         }
 
-        if (coordPairs.size() < 3)
+        // Get the rest of the coordpairs.
+        while (words.hasNextDouble()) {
+            value = words.nextDouble();
+            if (words.hasNextDouble()) {
+                coordPairs.add(new CoordPair(value, words.nextDouble()));
+            } else {
+                throw new StcsParsingException("Polygon must contain at least 3 CoordPairs: " + phrase);
+            }
+        }
+
+        if (coordPairs.size() < 3) {
             throw new StcsParsingException("Polygon must contain at least 3 CoordPairs: " + phrase);
+        }
 
         return new Polygon(frame, refpos, flavor, coordPairs);
     }
@@ -144,15 +141,12 @@ public class PolygonFormat extends RegionFormat implements Format<Polygon>
      * @param polygon Polygon to format
      * @return String representation of the Polygon.
      */
-    public String format(Polygon polygon)
-    {
+    public String format(Polygon polygon) {
         StringBuilder sb = new StringBuilder();
         sb.append(formatRegion(polygon));
         sb.append(" ");
-        if (polygon.getCoordPairs() != null)
-        {
-            for (CoordPair coordPair : polygon.getCoordPairs())
-            {
+        if (polygon.getCoordPairs() != null) {
+            for (CoordPair coordPair : polygon.getCoordPairs()) {
                 sb.append(coordPair);
                 sb.append(" ");
             }

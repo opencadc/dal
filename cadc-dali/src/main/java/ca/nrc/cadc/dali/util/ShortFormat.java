@@ -66,14 +66,15 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 /**
  * Formats and parses a Short.
  *
  */
-public class ShortFormat implements Format<Short>
-{
+public class ShortFormat implements Format<Short> {
+
     /**
      * Takes the passed in Short and returns the String representation of that Short.
      * If the Short is null an empty String is returned.
@@ -81,10 +82,8 @@ public class ShortFormat implements Format<Short>
      * @param object Short to format
      * @return String representation of the Short
      */
-    public String format(Short object)
-    {
-        if (object == null)
-        {
+    public String format(Short object) {
+        if (object == null) {
             return "";
         }
         return object.toString();
@@ -92,14 +91,12 @@ public class ShortFormat implements Format<Short>
 
     /**
      * Parses a String to a Short.
-     * 
+     *
      * @param s the String to parse.
      * @return Short value of the String.
      */
-    public Short parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public Short parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
         return Short.valueOf(s);
