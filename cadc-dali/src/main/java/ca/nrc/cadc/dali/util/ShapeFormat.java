@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,67 +62,93 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali;
+package ca.nrc.cadc.dali.util;
 
 
-import java.util.ArrayList;
-import java.util.List;
+import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.Point;
+import ca.nrc.cadc.dali.Polygon;
+import ca.nrc.cadc.dali.Shape;
 import org.apache.log4j.Logger;
 
 /**
- *
+ * Formatter to handle shapes in polymorphic serialisation (DALI-1.2).
+ * 
  * @author pdowler
  */
-public class Polygon implements Shape
-{
-    private static final Logger log = Logger.getLogger(Polygon.class);
+public class ShapeFormat implements Format<Shape> {
+    private static final Logger log = Logger.getLogger(ShapeFormat.class);
 
-    private List<Point> vertices = new ArrayList<Point>();
-    
-    public Polygon() { }
+    public ShapeFormat() { 
+    }
 
     @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Polygon[");
-        for (Point v : vertices)
-        {
-            sb.append(v.getLongitude()).append(" ").append(v.getLatitude()).append(" ");
+    public Shape parse(String s) {
+        if (s == null) {
+            return null;
         }
-        sb.setCharAt(sb.length() - 1, ']');
+        s = s.trim();
+        if (s.isEmpty()) {
+            return null;
+        }
+        String[] parts = separateKey(s);
+        if (Point.class.getSimpleName().equalsIgnoreCase(parts[0])) {
+            PointFormat fmt = new PointFormat();
+            return fmt.parse(parts[1]);
+        } else if (Circle.class.getSimpleName().equalsIgnoreCase(parts[0])) {
+            CircleFormat fmt = new CircleFormat();
+            return fmt.parse(parts[1]);
+        } else if (Polygon.class.getSimpleName().equalsIgnoreCase(parts[0])) {
+            PolygonFormat fmt = new PolygonFormat();
+            return fmt.parse(parts[1]);
+        }
+
+        throw new IllegalArgumentException("unexpected shape: " + parts[0]);
+    }
+
+    @Override
+    public String format(Shape t) {
+        if (t == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(t.getClass().getSimpleName().toLowerCase()).append(" ");
+        if (t instanceof Point) {
+            PointFormat fmt = new PointFormat();
+            sb.append(fmt.format((Point) t));
+        } else if (t instanceof Circle) {
+            CircleFormat fmt = new CircleFormat();
+            sb.append(fmt.format((Circle) t));
+        } else if (t instanceof Polygon) {
+            PolygonFormat fmt = new PolygonFormat();
+            sb.append(fmt.format((Polygon) t));
+        } else {
+            throw new IllegalArgumentException("unsupported shape: " + t.getClass().getName());
+        }
         return sb.toString();
     }
-    public List<Point> getVertices()
-    {
-        return vertices;
-    }
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (obj == null)
-            return false;
-        Polygon rhs = (Polygon) obj;
-        
-        if (this.vertices.size() != rhs.vertices.size())
-            return false;
-        for (int i=0; i<vertices.size(); i++)
-        {
-            Point tp = this.vertices.get(i);
-            Point rp = rhs.vertices.get(i);
-            if ( ! tp.equals(rp) )
-                return false;
+    
+    /**
+     * Separate the key (first word) from the value(remaining words).
+     * @param s
+     * @return 
+     */
+    public static String[] separateKey(String s) {
+        String[] ret = new String[2];
+        int i = s.indexOf(" ");
+        if (i > 0) {
+            
+            ret[0] = s.substring(0, i);
+            if (i + 1 < s.length() - 1) {
+                ret[1] = s.substring(i + 1, s.length());
+            } 
+            return ret;
+        } else {
+            ret[0] = s; // one word
         }
-        return true;
+        return ret;
     }
-    
-    
-    
-    
 }

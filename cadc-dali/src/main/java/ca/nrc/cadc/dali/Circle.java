@@ -76,7 +76,7 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class Circle 
+public class Circle implements Shape
 {
     private static final Logger log = Logger.getLogger(Circle.class);
 

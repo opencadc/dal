@@ -76,7 +76,7 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class Point 
+public class Point implements Shape
 {
     private static final Logger log = Logger.getLogger(Point.class);
 

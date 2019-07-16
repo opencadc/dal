@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,67 +62,132 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
-*/
+ */
 
-package ca.nrc.cadc.dali;
+package ca.nrc.cadc.dali.util;
 
-
-import java.util.ArrayList;
-import java.util.List;
+import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.Point;
+import ca.nrc.cadc.dali.Polygon;
+import ca.nrc.cadc.dali.Shape;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class Polygon implements Shape
-{
-    private static final Logger log = Logger.getLogger(Polygon.class);
+public class ShapeFormatTest {
 
-    private List<Point> vertices = new ArrayList<Point>();
+    private static final Logger log = Logger.getLogger(ShapeFormatTest.class);
+
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
+    }
     
-    public Polygon() { }
+    public ShapeFormatTest() {
+    }
 
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Polygon[");
-        for (Point v : vertices)
-        {
-            sb.append(v.getLongitude()).append(" ").append(v.getLatitude()).append(" ");
+    @Test
+    public void testPoint() {
+        log.debug("testPoint");
+        try {
+            ShapeFormat format = new ShapeFormat();
+            Point expected = new Point(12.0, 34.0);
+
+            String result = format.format(expected);
+            log.info("testPoint: " + result);
+            String t = result.trim();
+            Assert.assertEquals("no extra whitespace", t, result);
+            Shape actual = format.parse(result);
+
+            Point ap = (Point) actual;
+            Assert.assertEquals(expected, ap);
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
-        sb.setCharAt(sb.length() - 1, ']');
-        return sb.toString();
     }
-    public List<Point> getVertices()
-    {
-        return vertices;
+    
+    @Test
+    public void testCircle() {
+        log.debug("testCircle");
+        try {
+            ShapeFormat format = new ShapeFormat();
+            Circle expected = new Circle(new Point(12.0, 34.0), 0.5);
+
+            String result = format.format(expected);
+            log.info("testCircle: " + result);
+            String t = result.trim();
+            Assert.assertEquals("no extra whitespace", t, result);
+            Shape actual = format.parse(result);
+
+            Circle ac = (Circle) actual;
+            Assert.assertEquals(expected, ac);
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testPolygon() {
+        log.debug("testPolygon");
+        try {
+            ShapeFormat format = new ShapeFormat();
+            Polygon expected = new Polygon();
+            expected.getVertices().add(new Point(10.0, 10.0));
+            expected.getVertices().add(new Point(12.0, 10.0));
+            expected.getVertices().add(new Point(11.0, 11.0));
+
+            String result = format.format(expected);
+            log.info("testPolygon: " + result);
+            String t = result.trim();
+            Assert.assertEquals("no extra whitespace", t, result);
+            Shape actual = format.parse(result);
+
+            Polygon ap = (Polygon) actual;
+            Assert.assertEquals(expected, ap);
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
     }
 
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (obj == null)
-            return false;
-        Polygon rhs = (Polygon) obj;
-        
-        if (this.vertices.size() != rhs.vertices.size())
-            return false;
-        for (int i=0; i<vertices.size(); i++)
-        {
-            Point tp = this.vertices.get(i);
-            Point rp = rhs.vertices.get(i);
-            if ( ! tp.equals(rp) )
-                return false;
+    @Test
+    public void testInvalidStringRep() throws Exception {
+        log.debug("testInvalidStringRep");
+
+        ShapeFormat format = new ShapeFormat();
+
+        String tooShort = "point 12.0";
+        String tooLong = "point 12.0 34.0 56.0";
+
+        try {
+            format.parse(tooShort);
+        } catch (IllegalArgumentException expected) {
         }
-        return true;
+
+        try {
+            format.parse(tooLong);
+        } catch (IllegalArgumentException expected) {
+        }
     }
-    
-    
-    
-    
+
+    @Test
+    public void testNull() throws Exception {
+        log.debug("testNull");
+
+        ShapeFormat format = new ShapeFormat();
+
+        String s = format.format(null);
+        Assert.assertEquals("", s);
+
+        Shape object = format.parse(null);
+        Assert.assertNull(object);
+    }
 }
