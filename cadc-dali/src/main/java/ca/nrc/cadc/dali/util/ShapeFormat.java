@@ -68,8 +68,10 @@
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
+import ca.nrc.cadc.dali.Range;
 import ca.nrc.cadc.dali.Shape;
 import org.apache.log4j.Logger;
 
@@ -101,6 +103,9 @@ public class ShapeFormat implements Format<Shape> {
         } else if (Circle.class.getSimpleName().equalsIgnoreCase(parts[0])) {
             CircleFormat fmt = new CircleFormat();
             return fmt.parse(parts[1]);
+        } else if (Range.class.getSimpleName().equalsIgnoreCase(parts[0])) {
+            RangeFormat fmt = new RangeFormat();
+            return fmt.parse(parts[1]);
         } else if (Polygon.class.getSimpleName().equalsIgnoreCase(parts[0])) {
             PolygonFormat fmt = new PolygonFormat();
             return fmt.parse(parts[1]);
@@ -122,6 +127,9 @@ public class ShapeFormat implements Format<Shape> {
         } else if (t instanceof Circle) {
             CircleFormat fmt = new CircleFormat();
             sb.append(fmt.format((Circle) t));
+        } else if (t instanceof Range) {
+            RangeFormat fmt = new RangeFormat();
+            sb.append(fmt.format((Range) t));
         } else if (t instanceof Polygon) {
             PolygonFormat fmt = new PolygonFormat();
             sb.append(fmt.format((Polygon) t));

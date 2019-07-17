@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2014.                            (c) 2014.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,14 +65,17 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.sia2;
 
+import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Shape;
+import ca.nrc.cadc.dali.util.DoubleIntervalFormat;
+import ca.nrc.cadc.dali.util.ShapeFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
@@ -81,10 +84,10 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class SiaValidator 
-{
+public class SiaValidator {
+
     private static final Logger log = Logger.getLogger(SiaValidator.class);
-    
+
     private static final String POS = "POS";
     private static final String BAND = "BAND";
     private static final String TIME = "TIME";
@@ -105,316 +108,201 @@ public class SiaValidator
 
     // used by the SiaRunner to pick out supported params only
     static final List<String> QUERY_PARAMS = Arrays.asList(POS, BAND, TIME, POL, FOV, SPATRES, EXPTIME,
-                                                           ID, COLLECTION, FACILITY, INSTRUMENT, DPTYPE,
-                                                           CALIB, TARGET, TIMERES, SPECRP, FORMAT);
-    
+            ID, COLLECTION, FACILITY, INSTRUMENT, DPTYPE,
+            CALIB, TARGET, TIMERES, SPECRP, FORMAT);
+
     // pol_states values are always upper case so use List
     static final List<String> POL_STATES = Arrays.asList("I", "Q", "U", "V", "RR", "LL", "RL", "LR", "XX", "YY", "XY", "YX");
 
     // allowed data product types are image and cube
     static final List<String> ALLOWED_DPTYPES = Arrays.asList("cube", "image");
 
-    private static final String CIRCLE = "CIRCLE";
-    private static final String RANGE = "RANGE";
-    private static final String POLYGON = "POLYGON";
+    public SiaValidator() {
+    }
+
+    private String scalar2interval(String s) {
+        String[] ss = s.split(" ");
+        if (ss.length == 1) {
+            return s + " " + s;
+        }
+        return s;
+    }
     
-    public SiaValidator() { }
-    
-    public List<Shape> validatePOS(Map<String,List<String>> params)
-    {
+    public List<Shape> validatePOS(Map<String, List<String>> params) {
         List<Shape> ret = new ArrayList<Shape>();
-        if (params == null)
+        if (params == null) {
             return ret;
+        }
         List<String> values = params.get(POS);
-        if (values == null)
+        if (values == null) {
             return ret;
-        for (String v : values)
-        {
+        }
+        ShapeFormat fmt = new ShapeFormat();
+        for (String v : values) {
             log.debug("validatePos: " + v);
-            String[] tokens = v.split(" ");
-            if ( CIRCLE.equalsIgnoreCase(tokens[0]) )
-            {
-                if (tokens.length != 4)
-                    throw new IllegalArgumentException("POS invalid CIRCLE: " + v);
-                try
-                {
-                    double ra = Double.parseDouble(tokens[1]);
-                    double dec = Double.parseDouble(tokens[2]);
-                    double rad = Double.parseDouble(tokens[3]);
-                    ret.add(new CoordCircle(ra, dec, rad));
-                }
-                catch(NumberFormatException ex)
-                {
-                    throw new IllegalArgumentException("POS number in: " + v);
-                }
-            }
-            else if (RANGE.equalsIgnoreCase(tokens[0]))
-            {
-                if (tokens.length != 5)
-                    throw new IllegalArgumentException("POS invalid RANGE: " + v);
-                try
-                {
-                    String[] rra = new String[] { tokens[1], tokens[2] };
-                    String[] rde = new String[] { tokens[3], tokens[4] };
-                    Range<String> s1 = parseStringRange(rra);
-                    Range<String> s2 = parseStringRange(rde);
-                    Range<Double> ra = parseDoubleRange("POS", s1);
-                    Range<Double> dec = parseDoubleRange("POS", s2);
-                    ret.add(new CoordRange(ra, dec));
-                }
-                catch(NumberFormatException ex)
-                {
-                    throw new IllegalArgumentException("POS number in: " + v);
-                }
-            }
-            else if (POLYGON.equalsIgnoreCase(tokens[0]))
-            {
-                int len = tokens.length - 1;
-                if (len < 6)
-                    throw new IllegalArgumentException("POS invalid POLYGON (not enough coordinate values): " + v);
-                if (len % 2 != 0)
-                    throw new IllegalArgumentException("POS invalid POLYGON (odd number of coordinate values): " + v);
-                CoordPolygon poly = new CoordPolygon();
-                for (int i=1; i<=len; i+=2)
-                {
-                    try
-                    {
-                        Double d1 = new Double(tokens[i]);
-                        Double d2 = new Double(tokens[i+1]);
-                        poly.getVertices().add(new CoordPolygon.Vertex(d1, d2));
-                    }
-                    catch(NumberFormatException ex)
-                    {
-                        throw new IllegalArgumentException("POS invalid POLYGON ("+ex+"): " + v);
-                    }
-                }
-                ret.add(poly);
-            }
-            else
-                throw new IllegalArgumentException("POS invalid shape: " + v);
+            Shape shape = fmt.parse(v);
+            ret.add(shape);
         }
-        
+
         return ret;
     }
-    
-    public List<Range<Double>> validateBAND(Map<String,List<String>> params)
-    {
-        List<Range<Double>> ret = new ArrayList<Range<Double>>();
-        if (params == null)
+
+    public List<DoubleInterval> validateBAND(Map<String, List<String>> params) {
+        List<DoubleInterval> ret = new ArrayList<DoubleInterval>();
+        if (params == null) {
             return ret;
+        }
         List<String> values = params.get(BAND);
-        if (values == null)
+        if (values == null) {
             return ret;
-        for (String v : values)
-        {
-            log.debug("validateBAND: " + v);
-            Range<String> sr = parseStringRange(v, true);
-            ret.add( parseDoubleRange(BAND, sr) );
         }
-        
+        DoubleIntervalFormat fmt = new DoubleIntervalFormat();
+        for (String v : values) {
+            String vv = scalar2interval(v);
+            log.debug("validateBAND: " + v + " aka " + vv);
+            DoubleInterval di = fmt.parse(vv);
+            ret.add(di);
+        }
+
         return ret;
     }
-    
-    public List<Range<Double>> validateTIME(Map<String,List<String>> params)
-    {
-        List<Range<Double>> ret = new ArrayList<Range<Double>>();
-        if (params == null)
+
+    public List<DoubleInterval> validateTIME(Map<String, List<String>> params) {
+        List<DoubleInterval> ret = new ArrayList<DoubleInterval>();
+        if (params == null) {
             return ret;
+        }
         List<String> values = params.get(TIME);
-        if (values == null)
+        if (values == null) {
             return ret;
-        for (String v : values)
-        {
-            log.debug("validateTIME: " + v);
-            Range<String> sr = parseStringRange(v, true);
-            ret.add( parseDoubleRange(TIME, sr) );
         }
-        
+        DoubleIntervalFormat fmt = new DoubleIntervalFormat();
+        for (String v : values) {
+            String vv = scalar2interval(v);
+            log.debug("validateBAND: " + v + " aka " + vv);
+            DoubleInterval di = fmt.parse(vv);
+            ret.add(di);
+        }
+
         return ret;
     }
-    
-    public List<String> validatePOL(Map<String,List<String>> params)
-    {
+
+    public List<String> validatePOL(Map<String, List<String>> params) {
         return validateString(POL, params, POL_STATES);
     }
-    
-    public List<Range<Double>> validateFOV(Map<String,List<String>> params)
-    {
+
+    public List<DoubleInterval> validateFOV(Map<String, List<String>> params) {
         return validateNumeric(FOV, params);
     }
-    public List<Range<Double>> validateSPATRES(Map<String,List<String>> params)
-    {
+
+    public List<DoubleInterval> validateSPATRES(Map<String, List<String>> params) {
         return validateNumeric(SPATRES, params);
     }
-    public List<Range<Double>> validateEXPTIME(Map<String,List<String>> params)
-    {
+
+    public List<DoubleInterval> validateEXPTIME(Map<String, List<String>> params) {
         return validateNumeric(EXPTIME, params);
     }
 
-    public List<String> validateID(Map<String,List<String>> params)
-    {
+    public List<String> validateID(Map<String, List<String>> params) {
         return validateString(ID, params, null);
     }
 
-    public List<String> validateCOLLECTION(Map<String, List<String>> params)
-    {
+    public List<String> validateCOLLECTION(Map<String, List<String>> params) {
         return validateString(COLLECTION, params, null);
     }
 
-    public List<String> validateFACILITY(Map<String, List<String>> params)
-    {
+    public List<String> validateFACILITY(Map<String, List<String>> params) {
         return validateString(FACILITY, params, null);
     }
 
-    public List<String> validateINSTRUMENT(Map<String, List<String>> params)
-    {
+    public List<String> validateINSTRUMENT(Map<String, List<String>> params) {
         return validateString(INSTRUMENT, params, null);
     }
 
-    public List<String> validateDPTYPE(Map<String, List<String>> params)
-    {
+    public List<String> validateDPTYPE(Map<String, List<String>> params) {
         return validateString(DPTYPE, params, ALLOWED_DPTYPES);
     }
 
-    public List<Integer> validateCALIB(Map<String, List<String>> params)
-    {
+    public List<Integer> validateCALIB(Map<String, List<String>> params) {
         return validateInteger(CALIB, params);
     }
 
-    public List<String> validateTARGET(Map<String, List<String>> params)
-    {
+    public List<String> validateTARGET(Map<String, List<String>> params) {
         return validateString(TARGET, params, null);
     }
 
-    public List<Range<Double>> validateTIMERES(Map<String, List<String>> params)
-    {
+    public List<DoubleInterval> validateTIMERES(Map<String, List<String>> params) {
         return validateNumeric(TIMERES, params);
     }
 
-    public List<Range<Double>> validateSPECRP(Map<String, List<String>> params)
-    {
+    public List<DoubleInterval> validateSPECRP(Map<String, List<String>> params) {
         return validateNumeric(SPECRP, params);
     }
 
-    public List<String> validateFORMAT(Map<String, List<String>> params)
-    {
+    public List<String> validateFORMAT(Map<String, List<String>> params) {
         return validateString(FORMAT, params, null);
     }
 
-    public List<String> validateString(String paramName, Map<String,List<String>> params, Collection<String> allowedValues)
-    {
+    public List<String> validateString(String paramName, Map<String, List<String>> params, Collection<String> allowedValues) {
         List<String> ret = new ArrayList<String>();
-        if (params == null)
+        if (params == null) {
             return ret;
+        }
         List<String> values = params.get(paramName);
-        if (values == null)
+        if (values == null) {
             return ret;
-        for (String s : values)
-        {
+        }
+        for (String s : values) {
             log.debug("validateString " + paramName + ": " + s);
-            if (allowedValues == null)
+            if (allowedValues == null) {
                 ret.add(s);
-            else if (allowedValues.contains(s))
+            } else if (allowedValues.contains(s)) {
                 ret.add(s);
-            else
+            } else {
                 throw new IllegalArgumentException(paramName + " invalid value: " + s);
+            }
         }
         return ret;
     }
 
-    List<Integer> validateInteger(String paramName, Map<String,List<String>> params)
-    {
-       List<Integer> ret = new ArrayList<Integer>();
-        if (params == null)
+    List<Integer> validateInteger(String paramName, Map<String, List<String>> params) {
+        List<Integer> ret = new ArrayList<Integer>();
+        if (params == null) {
             return ret;
+        }
         List<String> values = params.get(paramName);
-        if (values == null)
+        if (values == null) {
             return ret;
-        for (String v : values)
-        {
-            log.debug("validateNumeric " + paramName + ": "  + v);
-            try
-            {
+        }
+        for (String v : values) {
+            log.debug("validateNumeric " + paramName + ": " + v);
+            try {
                 ret.add(new Integer(v));
-            }
-            catch(NumberFormatException ex)
-            {
+            } catch (NumberFormatException ex) {
                 throw new IllegalArgumentException(paramName + " invalid value: " + v);
             }
-            finally { }
         }
 
         return ret;
     }
-    
-    List<Range<Double>> validateNumeric(String paramName, Map<String,List<String>> params)
-    {
-        List<Range<Double>> ret = new ArrayList<Range<Double>>();
-        if (params == null)
+
+    List<DoubleInterval> validateNumeric(String paramName, Map<String, List<String>> params) {
+        List<DoubleInterval> ret = new ArrayList<DoubleInterval>();
+        if (params == null) {
             return ret;
+        }
         List<String> values = params.get(paramName);
-        if (values == null)
+        if (values == null) {
             return ret;
-        for (String v : values)
-        {
-            log.debug("validateNumeric " + paramName + ": "  + v);
-            Range<String> sr = parseStringRange(v);
-            ret.add( parseDoubleRange(paramName, sr) );
         }
-        
+        DoubleIntervalFormat fmt = new DoubleIntervalFormat();
+        for (String v : values) {
+            String vv = scalar2interval(v);
+            log.debug("validateNumeric " + paramName + ": " + v + " aka " + vv);
+            DoubleInterval di = fmt.parse(vv);
+            ret.add(di);
+        }
+
         return ret;
-    }
-
-    static Range<Double> parseDoubleRange(String pname, Range<String> sr)
-    {
-        try
-        {
-            Double lb = null;
-            Double ub = null;
-            if (sr.getLower() != null)
-                lb = new Double(sr.getLower());
-            if (sr.getUpper() != null)
-                ub = new Double(sr.getUpper());
-            // subsequent code treats null bound as unspecified (aka -inf or inf)
-            if (lb.isInfinite())
-                lb = null;
-            if (ub.isInfinite())
-                ub = null;
-            return new Range<Double>(lb, ub);
-        }
-        catch(NumberFormatException ex)
-        {
-            throw new IllegalArgumentException(pname + " cannot parse to double: " + sr);
-        }
-    }
-
-    private Range<String> parseStringRange(String v) {
-        return parseStringRange(v, false);
-    }
-    
-    private Range<String> parseStringRange(String v, boolean allowScalar)
-    {
-        String[] vals = v.split(" ");
-        if (allowScalar && vals.length == 1) {
-            String vv = vals[0];
-            vals = new String[] { vv, vv } ;
-        }
-        if (vals.length != 2) {
-            throw new IllegalArgumentException("invalid range (must have 2 values): " + v);
-        }
-        return parseStringRange(vals);
-    }
-    
-    private static Range<String> parseStringRange(String[] vals)
-    {
-        // make this directly parseable by java.lang.Double
-        for (int i=0; i<2; i++)
-        {
-            if (vals[i].equalsIgnoreCase("-inf"))
-                vals[i] = "-Infinity";
-            else if (vals[i].equalsIgnoreCase("+inf"))
-                vals[i] = "Infinity";
-        }
-        return new Range(vals[0], vals[1]);
     }
 }

@@ -75,7 +75,10 @@ package ca.nrc.cadc.dali;
  */
 public class LongInterval extends Interval<Long> {
 
-    public LongInterval(Long lower, Long upper) {
+    public LongInterval(long lower, long upper) {
         super(lower, upper);
+        if (upper < lower) {
+            throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
+        }
     }
 }

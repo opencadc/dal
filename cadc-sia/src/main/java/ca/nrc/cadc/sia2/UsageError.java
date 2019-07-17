@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.sia2;
 
@@ -73,11 +73,10 @@ package ca.nrc.cadc.sia2;
  *
  * @author pdowler
  */
-public class UsageError extends Throwable
-{
-    public UsageError(String message)
-    {
+public class UsageError extends Throwable {
+
+    public UsageError(String message) {
         super(message);
     }
-    
+
 }

@@ -75,7 +75,10 @@ package ca.nrc.cadc.dali;
  */
 public class DoubleInterval extends Interval<Double> {
 
-    public DoubleInterval(Double lower, Double upper) {
+    public DoubleInterval(double lower, double upper) {
         super(lower, upper);
+        if (upper < lower) {
+            throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
+        }
     }
 }

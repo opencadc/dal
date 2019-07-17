@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.sia2.impl;
 
@@ -79,23 +79,22 @@ import org.apache.log4j.Logger;
 /**
  * Sample UWS JobManager that uses in-memory persistence and runs sync
  * jobs (only) in the request thread.
- * 
+ *
  * @author pdowler
  */
-public class QueryJobManager extends SimpleJobManager
-{
+public class QueryJobManager extends SimpleJobManager {
+
     private static final Logger log = Logger.getLogger(QueryJobManager.class);
 
     private static final Long MAX_EXEC_DURATION = new Long(600L);
-    private static final Long MAX_DESTRUCTION = new Long(1L+MAX_EXEC_DURATION);
+    private static final Long MAX_DESTRUCTION = new Long(1L + MAX_EXEC_DURATION);
     private static final Long MAX_QUOTE = new Long(600L); // same as exec since we don't queue
 
-    public QueryJobManager()
-    {
+    public QueryJobManager() {
         super();
         // persist UWS jobs to PostgreSQL
         MemoryJobPersistence jobPersist = new MemoryJobPersistence();
-        
+
         // exec jobs in request thread using custom SiaRunner
         JobExecutor jobExec = new SyncJobExecutor(jobPersist, SiaRunner.class);
 

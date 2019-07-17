@@ -85,9 +85,6 @@ public class DoubleIntervalFormatTest
 
     public DoubleIntervalFormatTest() { }
     
-    /**
-     * Test of format and parse method, of class ByteArrayFormat.
-     */
     @Test
     public void testValue()
     {
@@ -100,6 +97,62 @@ public class DoubleIntervalFormatTest
             String result = format.format(expected);
             Assert.assertEquals("no extra whitespace", result.trim(), result);
             DoubleInterval actual = format.parse(result);
+
+            Assert.assertEquals(expected, actual);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testScalar()
+    {
+        log.debug("testScalar");
+        try
+        {
+            DoubleIntervalFormat format = new DoubleIntervalFormat();
+            DoubleInterval expected = new DoubleInterval(2.0, 2.0);
+            
+            String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
+            DoubleInterval actual = format.parse(result);
+
+            Assert.assertEquals(expected, actual);
+        }
+        catch(Exception unexpected)
+        {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testOpen()
+    {
+        log.debug("testOpen");
+        try
+        {
+            DoubleIntervalFormat format = new DoubleIntervalFormat();
+            DoubleInterval expected = new DoubleInterval(0.0, Double.POSITIVE_INFINITY);
+            
+            String result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
+            Assert.assertTrue(result.toLowerCase().contains("+inf"));
+            Assert.assertFalse(result.toLowerCase().contains("infinity"));
+            DoubleInterval actual = format.parse(result);
+
+            Assert.assertEquals(expected, actual);
+            
+            expected = new DoubleInterval(Double.NEGATIVE_INFINITY, 0.0);
+            
+            result = format.format(expected);
+            Assert.assertEquals("no extra whitespace", result.trim(), result);
+            Assert.assertTrue(result.toLowerCase().contains("-inf"));
+            Assert.assertFalse(result.toLowerCase().contains("infinity"));
+            actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);
         }

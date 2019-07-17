@@ -68,8 +68,10 @@
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
+import ca.nrc.cadc.dali.Range;
 import ca.nrc.cadc.dali.Shape;
 import ca.nrc.cadc.util.Log4jInit;
 import org.apache.log4j.Level;
@@ -127,6 +129,27 @@ public class ShapeFormatTest {
             Shape actual = format.parse(result);
 
             Circle ac = (Circle) actual;
+            Assert.assertEquals(expected, ac);
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testRange() {
+        log.debug("testRange");
+        try {
+            ShapeFormat format = new ShapeFormat();
+            Range expected = new Range(new DoubleInterval(0.0, 180.0), new DoubleInterval(-10.0, 10.0));
+
+            String result = format.format(expected);
+            log.info("testRange: " + result);
+            String t = result.trim();
+            Assert.assertEquals("no extra whitespace", t, result);
+            Shape actual = format.parse(result);
+
+            Range ac = (Range) actual;
             Assert.assertEquals(expected, ac);
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);

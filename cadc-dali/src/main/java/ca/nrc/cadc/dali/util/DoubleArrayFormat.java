@@ -76,7 +76,8 @@ import java.util.Iterator;
  *
  */
 public class DoubleArrayFormat implements Format<double[]> {
-
+    private final DoubleFormat fmt = new DoubleFormat();
+    
     /**
      * Takes an double[] and returns the standard String representation.
      * If the double[] is null an empty String is returned.
@@ -112,7 +113,8 @@ public class DoubleArrayFormat implements Format<double[]> {
 
         StringBuilder sb = new StringBuilder();
         while (iter.hasNext()) {
-            sb.append(iter.next().toString());
+            Double d = iter.next();
+            sb.append(fmt.format(d));
             sb.append(" ");
         }
         return sb.toString().trim();
@@ -131,7 +133,7 @@ public class DoubleArrayFormat implements Format<double[]> {
             String[] tokens = s.split(" ");
             double[] array = new double[tokens.length];
             for (int i = 0; i < tokens.length; i++) {
-                array[i] = Double.parseDouble(tokens[i]);
+                array[i] = fmt.parse(tokens[i]);
             }
             return array;
         }

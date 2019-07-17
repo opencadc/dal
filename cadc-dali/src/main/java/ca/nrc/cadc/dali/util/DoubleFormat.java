@@ -82,9 +82,18 @@ public class DoubleFormat implements Format<Double> {
      * @param object Double to format
      * @return String representation of the Double
      */
+    @Override
     public String format(Double object) {
         if (object == null) {
             return "";
+        }
+        if (object.isInfinite()) {
+            // IVOA-VOTable compliant
+            if (object < 0.0) {
+                return "-Inf";
+            } else {
+                return "+Inf";
+            }
         }
         return object.toString();
     }
@@ -98,6 +107,12 @@ public class DoubleFormat implements Format<Double> {
     public Double parse(String s) {
         if (s == null || s.isEmpty()) {
             return null;
+        }
+        if (s.equalsIgnoreCase("-inf")) {
+            return Double.NEGATIVE_INFINITY;
+        }
+        if (s.equalsIgnoreCase("+inf")) {
+            return Double.POSITIVE_INFINITY;
         }
         return Double.valueOf(s);
     }

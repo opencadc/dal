@@ -78,6 +78,8 @@ public class Interval<T extends Number> {
     private T upper;
 
     public Interval(T lower, T upper) {
+        DaliUtil.assertNotNull("lower", upper);
+        DaliUtil.assertNotNull("upper", upper);
         this.lower = lower;
         this.upper = upper;
     }

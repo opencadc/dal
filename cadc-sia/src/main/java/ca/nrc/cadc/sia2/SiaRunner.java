@@ -65,18 +65,14 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.sia2;
 
-import ca.nrc.cadc.auth.AuthMethod;
-import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.dali.MaxRecValidator;
 import ca.nrc.cadc.dali.ParamExtractor;
 import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 import ca.nrc.cadc.net.HttpPost;
-import ca.nrc.cadc.reg.Standards;
-import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.rest.SyncOutput;
 import ca.nrc.cadc.sia2.impl.ServiceAvailability;
 import ca.nrc.cadc.uws.ErrorSummary;
@@ -97,18 +93,18 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 /**
- * Standard JobRunner implementation for SIA-2.0 services. This implementation 
+ * Standard JobRunner implementation for SIA-2.0 services. This implementation
  * makes the following assumptions:
  *
  * <ul>
  * <li>hard-coded to generate an ADQL query on the ivoa.ObsCore table
  * <li>no support for authenticated calls, use of CDP, etc (TODO)
  * </ul>
- * 
+ *
  * @author pdowler
  */
-public class SiaRunner implements JobRunner
-{
+public class SiaRunner implements JobRunner {
+
     private static Logger log = Logger.getLogger(SiaRunner.class);
 
     private static final Integer DEF_MAXREC = 1000;
@@ -119,25 +115,21 @@ public class SiaRunner implements JobRunner
     private SyncOutput syncOutput;
     private JobLogInfo logInfo;
 
-    public void setJob(Job job)
-    {
+    public void setJob(Job job) {
         this.job = job;
     }
 
-    public void setJobUpdater(JobUpdater ju)
-    {
+    public void setJobUpdater(JobUpdater ju) {
         jobUpdater = ju;
     }
 
-    public void setSyncOutput(SyncOutput so)
-    {
+    public void setSyncOutput(SyncOutput so) {
         syncOutput = so;
     }
 
-    public void run()
-    {
+    public void run() {
         log.debug("RUN SiaRunner: " + job.ownerSubject);
-        
+
         logInfo = new JobLogInfo(job);
 
         String startMessage = logInfo.start();
@@ -153,14 +145,11 @@ public class SiaRunner implements JobRunner
         log.info(endMessage);
     }
 
-    private void doit()
-    {
+    private void doit() {
         URL url = null;
-        try
-        {
+        try {
             ExecutionPhase ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
-            if ( !ExecutionPhase.EXECUTING.equals(ep) )
-            {
+            if (!ExecutionPhase.EXECUTING.equals(ep)) {
                 String message = job.getID() + ": QUEUED -> EXECUTING [FAILED] -- DONE";
                 logInfo.setSuccess(false);
                 logInfo.setMessage(message);
@@ -173,20 +162,20 @@ public class SiaRunner implements JobRunner
             mv.setDefaultValue(DEF_MAXREC);
             mv.setMaxValue(MAX_MAXREC);
             Integer maxrec = mv.validate();
-            
+
             ParamExtractor pe = new ParamExtractor(SiaValidator.QUERY_PARAMS);
-            Map<String,List<String>> queryParams = pe.getParameters(job.getParameterList());
-            
+            Map<String, List<String>> queryParams = pe.getParameters(job.getParameterList());
+
             // Get the ADQL request parameters.
             AdqlQueryGenerator queryGenerator = new AdqlQueryGenerator(queryParams);
             Map<String, Object> parameters = queryGenerator.getParameterMap();
             parameters.put("FORMAT", VOTableWriter.CONTENT_TYPE);
-            if (maxrec != null)
+            if (maxrec != null) {
                 parameters.put("MAXREC", maxrec);
+            }
 
             // the implementation assumes that the /tap/sync service follows the 
             // POST-redirect-GET (PrG) pattern; cadcUWS SyncServlet does
-
             URL tapSyncURL = new URL(ServiceAvailability.getTapBaseURL().toExternalForm() + "/sync");
 
             // POST ADQL query to TAP but do not follow redirect to execute it.
@@ -194,11 +183,10 @@ public class SiaRunner implements JobRunner
             post.run();
 
             // Create an ErrorSummary and throw RuntimeException if the POST failed.
-            if (post.getThrowable() != null)
-            {
-                throw new RuntimeException("sync TAP query (" + tapSyncURL.toExternalForm() +
-                                           ") failed because " +
-                                           post.getThrowable().getMessage());
+            if (post.getThrowable() != null) {
+                throw new RuntimeException("sync TAP query (" + tapSyncURL.toExternalForm()
+                        + ") failed because "
+                        + post.getThrowable().getMessage());
             }
 
             // redirect the caller to the G part of the /tap/sync PrG pattern
@@ -206,43 +194,34 @@ public class SiaRunner implements JobRunner
             log.debug("redirectURL " + url);
             syncOutput.setCode(303);
             syncOutput.setHeader("Location", url.toExternalForm());
-            
+
             // Mark the Job as completed adding the URL to the query results.
             List<Result> results = new ArrayList<>();
             results.add(new Result("result", new URI(url.toExternalForm())));
             jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.COMPLETED, results, new Date());
-        }
-        catch (Throwable t)
-        {
+        } catch (Throwable t) {
             logInfo.setSuccess(false);
             logInfo.setMessage(t.getMessage());
             log.debug("FAIL", t);
-            
+
             // temporary hack to convert IllegalArgumentException into UsageError: message
-            if (t instanceof IllegalArgumentException)
-            {
+            if (t instanceof IllegalArgumentException) {
                 t = new UsageError(t.getMessage());
             }
-            try
-            {
+            try {
                 VOTableWriter writer = new VOTableWriter();
                 syncOutput.setHeader("Content-Type", VOTableWriter.CONTENT_TYPE);
                 // TODO: chose suitable response code here (assume bad input for now)
                 syncOutput.setCode(400);
                 writer.write(t, syncOutput.getOutputStream());
-            }
-            catch (IOException ioe)
-            {
+            } catch (IOException ioe) {
                 log.debug("Error writing error document " + ioe.getMessage());
             }
             ErrorSummary errorSummary = new ErrorSummary(t.getMessage(), ErrorType.FATAL, url);
-            try
-            {
+            try {
                 jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.ERROR,
-                    errorSummary, new Date());
-            }
-            catch(Throwable oops)
-            {
+                        errorSummary, new Date());
+            } catch (Throwable oops) {
                 log.debug("failed to set final error status after " + t, oops);
             }
         }

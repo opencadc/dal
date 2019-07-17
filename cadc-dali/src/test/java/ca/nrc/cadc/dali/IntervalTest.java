@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2014.                            (c) 2014.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,70 +62,71 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
-*/
+ */
 
-package ca.nrc.cadc.sia2;
+package ca.nrc.cadc.dali;
 
-import java.util.ArrayList;
-import java.util.List;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class CoordPolygon implements Shape
-{
-    private List<Vertex> vertices = new ArrayList<Vertex>();
-    
-    public CoordPolygon() { }
+public class IntervalTest {
 
-    public List<Vertex> getVertices()
-    {
-        return vertices;
-    }
+    private static final Logger log = Logger.getLogger(IntervalTest.class);
 
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName()).append("[");
-        for (Vertex v : vertices)
-        {
-            sb.append(v).append(",");
-        }
-        sb.setCharAt(sb.length() - 1, ']');
-        return sb.toString();
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
     }
     
+    public IntervalTest() {
+    }
+
+    @Test
+    public void testDoubleIntervalCtor() {
+        try {
+            new DoubleInterval(1.2, 3.4);
+
+            new DoubleInterval(0.0, Double.POSITIVE_INFINITY);
+
+            new DoubleInterval(Double.NEGATIVE_INFINITY, 0.0);
+
+            try {
+                new DoubleInterval(1.0, -1.0);
+                Assert.fail("expected IllegalArgumentException");
+            } catch (IllegalArgumentException expected) {
+                log.info("expected exception: " + expected);
+            }
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
     
-    public static class Vertex
-    {
-        private double longitude;
-        private double latitude;
-        public Vertex(Double longitude, double latitude)
-        {
-            this.longitude = longitude;
-            this.latitude = latitude;
-        }
+    @Test
+    public void testLongIntervalCtor() {
+        try {
+            new LongInterval(1L, 3L);
 
-        public double getLongitude()
-        {
-            return longitude;
-        }
+            new LongInterval(0L, Long.MAX_VALUE);
 
-        public double getLatitude()
-        {
-            return latitude;
-        }
+            new LongInterval(Long.MIN_VALUE, 0L);
 
-        @Override
-        public String toString()
-        {
-            return "(" + longitude + "," + latitude + ")"; 
+            try {
+                new LongInterval(1L, -1L);
+                Assert.fail("expected IllegalArgumentException");
+            } catch (IllegalArgumentException expected) {
+                log.info("expected exception: " + expected);
+            }
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
-        
     }
 }

@@ -18,7 +18,7 @@ script:
   
   # checkstyle on latest platform only
   - if [[ $TRAVIS_JDK_VERSION == 'oraclejdk8' ]]; then
-      for i in cadc-dali cadc-datalink-server cadc-soda-server; do
+      for i in cadc-dali cadc-datalink-server cadc-sia cadc-soda-server; do
          cd $i;
          gradle checkstyleMain || break -1;
          cd ..;
