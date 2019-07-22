@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2014.                            (c) 2014.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,42 +62,42 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.sia2;
+package org.opencadc.soda.server;
+
+import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.dali.Shape;
+import ca.nrc.cadc.rest.SyncOutput;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 
 /**
- *
+ * This is a placeholder for a SODA plugin that streams output directly. It is NOT
+ * SUPPORTED by the current AbstractSodaJobRunner and here to guide future development.
+ * 
+ * <p>This API would be simple enough for streaming output of SODA-sync. It could be used
+ * by a SODA-async implementation if that implementation also had a result plugin (like
+ * the ResultStore implementation that plugs into the QueryRunner in cadc-tap-server).
+ * 
  * @author pdowler
  */
-public class CoordRange implements Shape
-{
-    private Range<Double> longitudeRange;
-    private Range<Double> latitudeRange;
-    
-    public CoordRange(Range<Double> longitudeRange, Range<Double> latitudeRange)
-    {
-        this.longitudeRange = longitudeRange;
-        this.latitudeRange = latitudeRange;
-    }
-
-    public Range<Double> getLongitudeRange()
-    {
-        return longitudeRange;
-    }
-
-    public Range<Double> getLatitudeRange()
-    {
-        return latitudeRange;
-    }
-
-    @Override
-    public String toString()
-    {
-        return this.getClass().getSimpleName() 
-                + "[" + longitudeRange + "," + latitudeRange + "]";
-    }
+public interface StreamingSodaPlugin {
+    /**
+     * Perform cutout operation and write output.
+     * 
+     * @param uri the ID value that identifies the data (file)
+     * @param pos optional position cutout (may be null)
+     * @param band optional energy cutout (may be null)
+     * @param time optional time cutout (may be null)
+     * @param pol optional polarization cutout (may be null)
+     * @param out wrapper for setting output properties (HTTP headers) and opening the OutputStream
+     * @throws IOException failure to read or write data
+     */
+    void write(URI uri, 
+            Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol,
+            SyncOutput out) 
+        throws IOException;
 }

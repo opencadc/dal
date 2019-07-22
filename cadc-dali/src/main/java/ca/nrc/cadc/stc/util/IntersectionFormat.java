@@ -65,7 +65,8 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.stc.util;
 
 import ca.nrc.cadc.stc.Intersection;
@@ -78,11 +79,11 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- *Class to parse a STC-S phrase to a Intersection object, and Intersection
+ * Class to parse a STC-S phrase to a Intersection object, and Intersection
  * a Box object to a STC-S phrase.
  */
-public class IntersectionFormat extends RegionFormat implements Format<Intersection>
-{
+public class IntersectionFormat extends RegionFormat implements Format<Intersection> {
+
     /**
      * Parses a String to a Intersection.
      *
@@ -90,33 +91,35 @@ public class IntersectionFormat extends RegionFormat implements Format<Intersect
      * @return Intersection value of the String.
      */
     public Intersection parse(String phrase)
-        throws StcsParsingException
-    {
+            throws StcsParsingException {
         parseRegion(phrase);
-        
+
         // Get the string within the opening and closing parentheses.
         int open = phrase.indexOf("(");
         int close = phrase.lastIndexOf(")");
-        if (open == -1 || close == -1)
+        if (open == -1 || close == -1) {
             throw new StcsParsingException("Intersection arguments must be enclosed in parentheses: " + phrase);
+        }
         String union = phrase.substring(open + 1, close).trim();
 
         int index = 0;
         List<Region> regions = null;
         String subPhrase = getNextRegion(union, index);
-        if (subPhrase == null)
+        if (subPhrase == null) {
             throw new StcsParsingException("Intersection must contain a Region: " + phrase);
-        while (subPhrase != null)
-        {
-            if (regions == null)
+        }
+        while (subPhrase != null) {
+            if (regions == null) {
                 regions = new ArrayList<Region>();
+            }
             regions.add(STC.parseRegion(subPhrase));
             index = index + subPhrase.length();
             subPhrase = getNextRegion(union, index);
         }
 
-        if (regions == null || regions.size() < 2)
+        if (regions == null || regions.size() < 2) {
             throw new StcsParsingException("Intersection must contain 2 or more Regions: " + phrase);
+        }
 
         return new Intersection(frame, refpos, flavor, regions);
     }
@@ -128,16 +131,15 @@ public class IntersectionFormat extends RegionFormat implements Format<Intersect
      * @param intersection Intersection to format
      * @return String representation of the Box.
      */
-    public String format(Intersection intersection)
-    {
-        if (!(intersection instanceof Intersection))
+    public String format(Intersection intersection) {
+        if (!(intersection instanceof Intersection)) {
             throw new IllegalArgumentException("Expected Intersection, was " + intersection.getClass().getName());
+        }
 
         StringBuilder sb = new StringBuilder();
         sb.append(formatRegion(intersection));
         sb.append(" ( ");
-        for (Region r : intersection.getRegions())
-        {
+        for (Region r : intersection.getRegions()) {
             sb.append(STC.format(r));
             sb.append(" ");
         }
@@ -145,16 +147,14 @@ public class IntersectionFormat extends RegionFormat implements Format<Intersect
         return sb.toString().trim();
     }
 
-    private String getNextRegion(String phrase, int index)
-    {
+    private String getNextRegion(String phrase, int index) {
         // Uppercase phrase.
         String upperPhrase = phrase.toUpperCase();
 
         // Search the phrase for a Region.
         Regions[] values = Regions.values();
         int[] indexes = new int[values.length];
-        for (int i = 0; i < indexes.length; i++)
-        {
+        for (int i = 0; i < indexes.length; i++) {
             indexes[i] = upperPhrase.indexOf(values[i].name(), index);
         }
 
@@ -165,25 +165,24 @@ public class IntersectionFormat extends RegionFormat implements Format<Intersect
         // Assign end the second positive index.
         int start = -1;
         int end = -1;
-        for (int i = 0; i < indexes.length; i++)
-        {
-            if (indexes[i] == -1)
+        for (int i = 0; i < indexes.length; i++) {
+            if (indexes[i] == -1) {
                 continue;
-            if (start == -1)
-            {
+            }
+            if (start == -1) {
                 start = indexes[i];
                 continue;
             }
-            if (end == -1)
-            {
+            if (end == -1) {
                 end = indexes[i];
                 break;
             }
         }
-        if (start != -1 && end == -1)
+        if (start != -1 && end == -1) {
             return phrase.substring(start);
-        else if (start != -1 && end != -1)
+        } else if (start != -1 && end != -1) {
             return phrase.substring(start, end);
+        }
         return null;
     }
 

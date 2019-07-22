@@ -65,7 +65,8 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.stc.util;
 
 import ca.nrc.cadc.stc.StcsParsingException;
@@ -73,10 +74,10 @@ import ca.nrc.cadc.stc.StcsParsingException;
 /**
  * Format interface to parse a String to a type, and format a type to a String.
  */
-public interface Format<T>
-{
+public interface Format<T> {
+
     T parse(String s)
-        throws StcsParsingException;
+            throws StcsParsingException;
 
     String format(T t);
 }

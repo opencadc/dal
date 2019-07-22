@@ -66,14 +66,15 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 /**
  * Formats and parses a String.
  *
  */
-public class StringFormat implements Format<String>
-{
+public class StringFormat implements Format<String> {
+
     /**
      * Takes the passed in String and it.
      * If the String is null an empty String is returned.
@@ -81,10 +82,8 @@ public class StringFormat implements Format<String>
      * @param object String to format
      * @return the String
      */
-    public String format(String object)
-    {
-        if (object == null)
-        {
+    public String format(String object) {
+        if (object == null) {
             return "";
         }
         return object;
@@ -96,10 +95,8 @@ public class StringFormat implements Format<String>
      * @param s the String to parse.
      * @return the String.
      */
-    public String parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public String parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
         return s;

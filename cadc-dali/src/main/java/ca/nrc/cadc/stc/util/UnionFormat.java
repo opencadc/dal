@@ -65,7 +65,8 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.stc.util;
 
 import ca.nrc.cadc.stc.Region;
@@ -81,8 +82,8 @@ import java.util.List;
  * Class to parse a STC-S phrase to a Union object, and format a Union object
  * to a STC-S phrase.
  */
-public class UnionFormat extends RegionFormat implements Format<Union>
-{
+public class UnionFormat extends RegionFormat implements Format<Union> {
+
     /**
      * Parses a String to a Union.
      *
@@ -90,27 +91,27 @@ public class UnionFormat extends RegionFormat implements Format<Union>
      * @return Union value of the String.
      */
     public Union parse(String phrase)
-        throws StcsParsingException
-    {
+            throws StcsParsingException {
         parseRegion(phrase);
-        
+
         // Get the string within the opening and closing parentheses.
         int open = phrase.indexOf("(");
         int close = phrase.lastIndexOf(")");
-        if (open == -1 || close == -1)
+        if (open == -1 || close == -1) {
             throw new StcsParsingException("Union arguments must be enclosed in parentheses: " + phrase);
+        }
         String union = phrase.substring(open + 1, close).trim();
 
         List<String> phrases = getRegions(union);
         List<Region> regions = new ArrayList<Region>(phrases.size());
-        for (String s : phrases)
-        {
+        for (String s : phrases) {
             regions.add(STC.parse(s));
         }
 
         // Must be two or more regions in a Union.
-        if (regions.size() < 2)
+        if (regions.size() < 2) {
             throw new StcsParsingException("Union must contain 2 or more regions: " + phrase);
+        }
 
         return new Union(frame, refpos, flavor, regions);
     }
@@ -122,13 +123,11 @@ public class UnionFormat extends RegionFormat implements Format<Union>
      * @param union Union to format
      * @return String representation of the Union.
      */
-    public String format(Union union)
-    {
+    public String format(Union union) {
         StringBuilder sb = new StringBuilder();
         sb.append(formatRegion(union));
         sb.append(" ( ");
-        for (Region r : union.getRegions())
-        {
+        for (Region r : union.getRegions()) {
             sb.append(STC.format(r));
             sb.append(" ");
         }
@@ -136,8 +135,7 @@ public class UnionFormat extends RegionFormat implements Format<Union>
         return sb.toString().trim();
     }
 
-    private List<String> getRegions(String subPhrase)
-    {
+    private List<String> getRegions(String subPhrase) {
         // Uppercase phrase.
         String upperPhrase = subPhrase.toUpperCase();
 
@@ -147,14 +145,14 @@ public class UnionFormat extends RegionFormat implements Format<Union>
         int index = -1;
         int start = 0;
         int end = 0;
-        while (start != -1)
-        {
+        while (start != -1) {
             index = findRegion(upperPhrase, index);
             end = index;
-            if (start != -1 && end > start)
+            if (start != -1 && end > start) {
                 phrases.add(subPhrase.substring(start, end));
-            else if (start != -1 && end == -1)
+            } else if (start != -1 && end == -1) {
                 phrases.add(subPhrase.substring(start));
+            }
             start = index;
             index = index + 1;
         }
@@ -162,27 +160,25 @@ public class UnionFormat extends RegionFormat implements Format<Union>
         return phrases;
     }
 
-    private int findRegion(String s, int start)
-    {
+    private int findRegion(String s, int start) {
         String upper = s.toUpperCase();
         Regions[] candidates = Regions.values();
         int[] indexes = new int[candidates.length];
-        for (int i = 0; i < candidates.length; i++)
+        for (int i = 0; i < candidates.length; i++) {
             indexes[i] = upper.indexOf(candidates[i].name(), start);
+        }
 
         // Sort in ascending order.
         Arrays.sort(indexes);
 
         int index = -1;
-        for (int i = 0; i < indexes.length; i++)
-        {
-            if (indexes[i] != -1)
-            {
+        for (int i = 0; i < indexes.length; i++) {
+            if (indexes[i] != -1) {
                 index = indexes[i];
                 break;
             }
         }
         return index;
     }
-    
+
 }

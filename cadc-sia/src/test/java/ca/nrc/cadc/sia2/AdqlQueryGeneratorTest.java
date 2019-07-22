@@ -234,7 +234,7 @@ public class AdqlQueryGeneratorTest
         try
         {
             Map<String,List<String>> params = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
-            params.put("POS", Arrays.asList("CIRCLE 12.3 45.6 0.2", "RANGE -10 -8 +20 +22", "POLYGON 10 10 12 10 11 11"));
+            params.put("POS", Arrays.asList("CIRCLE 12.3 45.6 0.2", "RANGE +20 +22 -10 -8", "POLYGON 10 10 12 10 11 11"));
             params.put("BAND", Arrays.asList("500e-9 700e-9", "200e-9 400e-9"));
             params.put("TIME", Arrays.asList("54321.0 55432.1", "56789.0 +Inf"));
             params.put("POL", Arrays.asList("I", "Q", "U"));
@@ -295,7 +295,7 @@ public class AdqlQueryGeneratorTest
         try
         {
             Map<String,List<String>> params = new TreeMap<String,List<String>>(new CaseInsensitiveStringComparator());
-            params.put("POS", Arrays.asList("RANGE -Inf +Inf -2 2", "RANGE 10 20 -Inf +Inf", "RANGE 1 2 3 4"));
+            params.put("POS", Arrays.asList("RANGE 0 360 -2 2", "RANGE 10 20 -90 90", "RANGE 1 2 3 4"));
            
             AdqlQueryGenerator gen = new AdqlQueryGenerator(params);
             String adql = gen.getQuery();

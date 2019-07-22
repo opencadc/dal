@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali;
 
@@ -78,71 +78,65 @@ import java.util.TreeSet;
 import org.apache.log4j.Logger;
 
 /**
- * Request Validator. This class extracts and validates the REQUEST and VERSION parameters.
+ * Mandatory REQUEST parameter validation. This class extracts and validates the REQUEST and VERSION parameters.
  *
+ * @deprecated 
  */
-public class RequestValidator
-{
+@Deprecated
+public class RequestValidator {
+
     private static final Logger log = Logger.getLogger(RequestValidator.class);
-    
+
     private String request;
     private String version;
     private Set<String> values = new TreeSet<String>(new CaseInsensitiveStringComparator());
-    
-    public RequestValidator(List<String> requestValues) 
-    { 
+
+    public RequestValidator(List<String> requestValues) {
         this.values.addAll(requestValues);
     }
 
-    private void clear()
-    {
+    private void clear() {
         this.request = null;
         this.version = null;
     }
 
-    public Set<String> getAllowedValues()
-    {
+    public Set<String> getAllowedValues() {
         return values;
     }
-    
-    
-    public void validate(List<Parameter> paramList)
-    {
+
+    public void validate(List<Parameter> paramList) {
         clear();
-        if (paramList == null || paramList.isEmpty())
-        {
+        if (paramList == null || paramList.isEmpty()) {
             throw new IllegalArgumentException("Missing required parameter: REQUEST");
         }
 
         //  REQUEST
         String req = ParameterUtil.findParameterValue("REQUEST", paramList);
-        if (req == null || req.trim().isEmpty())
-        {
+        if (req == null || req.trim().isEmpty()) {
             throw new IllegalArgumentException("REQUEST parameter missing required value");
         }
         this.request = req.trim();
-        if ( !values.contains(request))
+        if (!values.contains(request)) {
             throw new IllegalArgumentException("illegal REQUEST value: " + request);
+        }
         log.debug("REQUEST: " + request);
 
         //  VERSION
         String ver = ParameterUtil.findParameterValue("VERSION", paramList);
-        if (ver != null)
-        {
-            if (ver.isEmpty())
+        if (ver != null) {
+            if (ver.isEmpty()) {
                 throw new IllegalArgumentException("VERSION parameter specified without a value");
+            }
             this.version = ver.trim();
         }
         log.debug("VERSION: " + version);
     }
 
-    public String getRequest()
-    {
+    public String getRequest() {
         return request;
     }
 
-    public String getVersion()
-    {
+    public String getVersion() {
         return version;
     }
 

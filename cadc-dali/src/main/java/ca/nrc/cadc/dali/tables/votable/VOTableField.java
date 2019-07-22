@@ -65,14 +65,13 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import ca.nrc.cadc.dali.util.Format;
 import java.util.ArrayList;
 import java.util.List;
-
-import ca.nrc.cadc.dali.util.Format;
 
 /**
  * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
@@ -80,8 +79,8 @@ import ca.nrc.cadc.dali.util.Format;
  *
  * @author pdowler
  */
-public class VOTableField
-{
+public class VOTableField {
+
     private String name;
     private String datatype;
 
@@ -96,26 +95,23 @@ public class VOTableField
     public String description;
 
     // TODO: add precision support and use it to configure numeric format objects
-
     public String id;
     public String ref;
 
-    private List<String> values = new ArrayList<String>();
+    private final List<String> values = new ArrayList<String>();
 
-    protected VOTableField() { }
+    protected VOTableField() {
+    }
 
-    public VOTableField(String name, String datatype)
-    {
+    public VOTableField(String name, String datatype) {
         this(name, datatype, null);
     }
 
-    public VOTableField(String name, String datatype, String arraysize)
-    {
+    public VOTableField(String name, String datatype, String arraysize) {
         this(name, datatype, arraysize, null);
     }
 
-    public VOTableField(String name, String datatype, String arraysize, Format<Object> format)
-    {
+    public VOTableField(String name, String datatype, String arraysize, Format<Object> format) {
         this.name = name;
         this.datatype = datatype;
         this.arraysize = arraysize;
@@ -123,57 +119,50 @@ public class VOTableField
         validateArraysize();
     }
 
-    private void validateArraysize()
-    {
+    private void validateArraysize() {
         this.arrayShape = VOTableUtil.getArrayShape(arraysize);
     }
-    
-    public String getName()
-    {
+
+    public String getName() {
         return name;
     }
 
-    public String getDatatype()
-    {
+    public String getDatatype() {
         return datatype;
     }
 
-    public String getArraysize()
-    {
+    public String getArraysize() {
         return arraysize;
     }
 
-    public Format<Object> getFormat()
-    {
+    public Format<Object> getFormat() {
         return format;
     }
 
-    public int[] getArrayShape()
-    {
+    public int[] getArrayShape() {
         return arrayShape;
     }
 
-    public List<String> getValues()
-    {
+    public List<String> getValues() {
         return values;
     }
 
-    public void setFormat(Format<Object> format)
-    {
+    public void setFormat(Format<Object> format) {
         this.format = format;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.getClass().getSimpleName()).append("[");
         sb.append(name).append(",");
         sb.append(datatype);
-        if (arraysize != null)
+        if (arraysize != null) {
             sb.append(",").append(arraysize);
-        if (xtype != null)
+        }
+        if (xtype != null) {
             sb.append(",").append(xtype);
+        }
         sb.append("]");
         return sb.toString();
     }

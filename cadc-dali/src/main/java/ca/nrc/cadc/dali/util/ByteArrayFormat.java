@@ -66,14 +66,15 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 /**
  * Formats and parses a byte[].
  *
  */
-public class ByteArrayFormat implements Format<byte[]>
-{
+public class ByteArrayFormat implements Format<byte[]> {
+
     /**
      * Takes a byte[] and returns the default String representation.
      * If the byte[] is null an empty String is returned.
@@ -81,16 +82,13 @@ public class ByteArrayFormat implements Format<byte[]>
      * @param object byte[] to format
      * @return String representation of the byte[].
      */
-    public String format(byte[] object)
-    {
-        if (object == null)
-        {
+    public String format(byte[] object) {
+        if (object == null) {
             return "";
         }
 
         StringBuilder sb = new StringBuilder();
-        for (byte b : object)
-        {
+        for (byte b : object) {
             sb.append(Byte.toString(b));
             sb.append(" ");
         }
@@ -103,22 +101,17 @@ public class ByteArrayFormat implements Format<byte[]>
      * @param s the String to parse.
      * @return byte[] value of the String.
      */
-    public byte[] parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public byte[] parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
-        }
-        else
-        {
+        } else {
             String[] tokens = s.split(" ");
             byte[] array = new byte[tokens.length];
-            for (int i = 0; i < tokens.length; i++)
-            {
+            for (int i = 0; i < tokens.length; i++) {
                 array[i] = Byte.parseByte(tokens[i]);
             }
             return array;
         }
     }
-    
+
 }

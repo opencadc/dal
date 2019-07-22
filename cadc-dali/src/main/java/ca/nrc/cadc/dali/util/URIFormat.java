@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
 
@@ -76,28 +76,22 @@ import java.net.URISyntaxException;
  *
  * @author pdowler
  */
-public class URIFormat implements Format<URI>
-{
+public class URIFormat implements Format<URI> {
 
-    public String format(URI t)
-    {
-        if (t == null)
+    public String format(URI t) {
+        if (t == null) {
             return "";
+        }
         return t.toASCIIString();
     }
 
-    public URI parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public URI parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
-        try
-        {
+        try {
             return new URI(s);
-        }
-        catch(URISyntaxException ex)
-        {
+        } catch (URISyntaxException ex) {
             throw new IllegalArgumentException("invalid uri: " + s, ex);
         }
     }

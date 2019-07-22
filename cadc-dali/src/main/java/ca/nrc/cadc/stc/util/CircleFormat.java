@@ -65,18 +65,19 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.stc.util;
 
 import ca.nrc.cadc.stc.Circle;
 import ca.nrc.cadc.stc.StcsParsingException;
 
 /**
- * Class to parse a STC-S phrase to a Circle object, and format a Circle object 
+ * Class to parse a STC-S phrase to a Circle object, and format a Circle object
  * to a STC-S phrase.
  */
-public class CircleFormat extends RegionFormat implements Format<Circle>
-{
+public class CircleFormat extends RegionFormat implements Format<Circle> {
+
     /**
      * Parses a String to a Circle.
      *
@@ -84,46 +85,42 @@ public class CircleFormat extends RegionFormat implements Format<Circle>
      * @return Circle value of the String.
      */
     public Circle parse(String phrase)
-        throws StcsParsingException
-    {
+            throws StcsParsingException {
         parseRegion(phrase);
 
         // CoordPair x.
         Double x = null;
-        if (currentWord == null)
-        {
-            if (words.hasNextDouble())
+        if (currentWord == null) {
+            if (words.hasNextDouble()) {
                 x = words.nextDouble();
-            else if (words.hasNext())
+            } else if (words.hasNext()) {
                 throw new StcsParsingException("Invalid CoordPair element " + words.next());
-            else
+            } else {
                 throw new StcsParsingException("Unexpected end to STC-S phrase before CoordPair element");
-        }
-        else
-        {
-            try
-            {
-                x = Double.valueOf(currentWord);
             }
-            catch (NumberFormatException e)
-            {
+        } else {
+            try {
+                x = Double.valueOf(currentWord);
+            } catch (NumberFormatException e) {
                 throw new StcsParsingException("Invalid CoordPair " + currentWord + " in " + phrase);
             }
         }
 
         // CoordPair y.
         double y;
-        if (words.hasNextDouble())
+        if (words.hasNextDouble()) {
             y = words.nextDouble();
-        else
+        } else {
             throw new StcsParsingException("Coordpair not found in " + phrase);
+        }
 
         // radius
         double radius;
-        if (words.hasNextDouble())
+        if (words.hasNextDouble()) {
             radius = words.nextDouble();
-        else
+        } else {
             throw new StcsParsingException("Radius not found in " + phrase);
+        }
 
         return new Circle(frame, refpos, flavor, x, y, radius);
     }
@@ -135,8 +132,7 @@ public class CircleFormat extends RegionFormat implements Format<Circle>
      * @param circle Circle to format
      * @return String representation of the Circle.
      */
-    public String format(Circle circle)
-    {
+    public String format(Circle circle) {
         StringBuilder sb = new StringBuilder();
         sb.append(formatRegion(circle));
         sb.append(" ");
@@ -145,5 +141,5 @@ public class CircleFormat extends RegionFormat implements Format<Circle>
         sb.append(circle.getRadius());
         return sb.toString().trim();
     }
-    
+
 }

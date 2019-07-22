@@ -66,14 +66,15 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 /**
  * Formats a Integer into a String.
  *
  */
-public class IntegerFormat implements Format<Integer>
-{
+public class IntegerFormat implements Format<Integer> {
+
     /**
      * Takes the passed in Integer and returns the String representation of that Integer.
      * If the Integer is null an empty String is returned.
@@ -81,10 +82,8 @@ public class IntegerFormat implements Format<Integer>
      * @param object Integer to format
      * @return String representation of the Integer
      */
-    public String format(Integer object)
-    {
-        if (object == null)
-        {
+    public String format(Integer object) {
+        if (object == null) {
             return "";
         }
         return object.toString();
@@ -96,13 +95,11 @@ public class IntegerFormat implements Format<Integer>
      * @param s the String to parse.
      * @return Integer value of the String.
      */
-    public Integer parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public Integer parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
         }
         return Integer.valueOf(s);
     }
-    
+
 }

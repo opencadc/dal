@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2014.                            (c) 2014.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,10 +65,16 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.sia2;
 
+import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Point;
+import ca.nrc.cadc.dali.Polygon;
+import ca.nrc.cadc.dali.Range;
+import ca.nrc.cadc.dali.Shape;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,14 +82,14 @@ import org.apache.log4j.Logger;
 
 /**
  * Generate TAP query of the ivoa.ObsCore table from the SIAv2 query parameters.
- * 
+ *
  * @author jburke
  */
-public class AdqlQueryGenerator
-{
+public class AdqlQueryGenerator {
+
     private static Logger log = Logger.getLogger(AdqlQueryGenerator.class);
-    
-    private Map<String,List<String>> queryParams;
+
+    private Map<String, List<String>> queryParams;
 
     /**
      * The input SIA query parameters as structured by the ParamExtractor in cadcDALI.
@@ -91,18 +97,16 @@ public class AdqlQueryGenerator
      * @param query query input parameters
      * @see ca.nrc.cadc.dali.ParamExtractor
      */
-    public AdqlQueryGenerator(Map<String,List<String>> query)
-    {
+    public AdqlQueryGenerator(Map<String, List<String>> query) {
         this.queryParams = query;
     }
 
     /**
      * Map with the REQUEST, LANG, and QUERY parameters.
-     * 
+     *
      * @return map of parameter names and values
      */
-    public Map<String,Object> getParameterMap()
-    {
+    public Map<String, Object> getParameterMap() {
         Map<String, Object> map = new HashMap<String, Object>();
         map.put("LANG", "ADQL");
         String adql = getQuery();
@@ -111,54 +115,54 @@ public class AdqlQueryGenerator
         return map;
     }
 
-    protected String getQuery()
-    {
+    protected String getQuery() {
         StringBuilder query = new StringBuilder();
         query.append("SELECT * FROM ivoa.ObsCore WHERE dataproduct_type IN ( 'image', 'cube' )");
-        
+
         SiaValidator sia = new SiaValidator();
         List<Shape> pos = sia.validatePOS(queryParams);
-        if ( !pos.isEmpty())
-        {
+        if (!pos.isEmpty()) {
             boolean needOr = false;
-            if (pos.size() > 1)
+            if (pos.size() > 1) {
                 query.append(" AND (");
-            else
+            } else {
                 query.append(" AND ");
-            for (Shape s : pos)
-            {
-                if (needOr)
+            }
+            for (Shape s : pos) {
+                if (needOr) {
                     query.append(" OR ");
+                }
                 query.append("(");
-                
+
                 query.append("INTERSECTS(");
-                if (s instanceof CoordCircle)
-                {
-                    CoordCircle c = (CoordCircle) s;
+                if (s instanceof Circle) {
+                    Circle c = (Circle) s;
                     query.append("CIRCLE('ICRS',");
-                    query.append(c.getLongitude());
+                    query.append(c.getCenter().getLongitude());
                     query.append(",");
-                    query.append(c.getLatitude());
+                    query.append(c.getCenter().getLatitude());
                     query.append(",");
                     query.append(c.getRadius());
                     query.append(")");
-                }
-                else if (s instanceof CoordRange)
-                {
-                    CoordRange r = (CoordRange) s;
+                } else if (s instanceof Range) {
+                    Range r = (Range) s;
                     query.append("RANGE_S2D(");
                     double ralb = 0.0;
                     double raub = 360.0;
                     double declb = -90.0;
                     double decub = 90.0;
-                    if (r.getLongitudeRange().getLower() != null)
-                        ralb = r.getLongitudeRange().getLower();
-                    if (r.getLongitudeRange().getUpper() != null)
-                        raub = r.getLongitudeRange().getUpper();
-                    if (r.getLatitudeRange().getLower() != null)
-                        declb = r.getLatitudeRange().getLower();
-                    if (r.getLatitudeRange().getUpper() != null)
-                        decub = r.getLatitudeRange().getUpper();
+                    if (r.getLongitude().getLower() != null) {
+                        ralb = r.getLongitude().getLower();
+                    }
+                    if (r.getLongitude().getUpper() != null) {
+                        raub = r.getLongitude().getUpper();
+                    }
+                    if (r.getLatitude().getLower() != null) {
+                        declb = r.getLatitude().getLower();
+                    }
+                    if (r.getLatitude().getUpper() != null) {
+                        decub = r.getLatitude().getUpper();
+                    }
                     query.append(ralb);
                     query.append(",");
                     query.append(raub);
@@ -167,16 +171,14 @@ public class AdqlQueryGenerator
                     query.append(",");
                     query.append(decub);
                     query.append(")");
-                }
-                else if (s instanceof CoordPolygon)
-                {
-                    CoordPolygon p = (CoordPolygon) s;
+                } else if (s instanceof Polygon) {
+                    Polygon p = (Polygon) s;
                     query.append("POLYGON('ICRS',");
                     boolean needComma = false;
-                    for (CoordPolygon.Vertex v : p.getVertices())
-                    {
-                        if (needComma)
+                    for (Point v : p.getVertices()) {
+                        if (needComma) {
                             query.append(",");
+                        }
                         query.append(v.getLongitude()).append(",").append(v.getLatitude());
                         needComma = true;
                     }
@@ -186,19 +188,19 @@ public class AdqlQueryGenerator
                 query.append(")");
                 needOr = true;
             }
-            if (pos.size() > 1)
+            if (pos.size() > 1) {
                 query.append(")");
+            }
         }
-        
-        List<Range<Double>> bands = sia.validateBAND(queryParams);
+
+        List<DoubleInterval> bands = sia.validateBAND(queryParams);
         addNumericRangeConstraint(query, "em_min", "em_max", bands);
-        
-        List<Range<Double>> times = sia.validateTIME(queryParams);
+
+        List<DoubleInterval> times = sia.validateTIME(queryParams);
         addNumericRangeConstraint(query, "t_min", "t_max", times);
-        
+
         List<String> pols = sia.validatePOL(queryParams);
-        if (!pols.isEmpty())
-        {
+        if (!pols.isEmpty()) {
             // for a single pattern-matching LIKE statement, we need to sort the POL values in canoncial order
             // and stick in wildcard % whenever there is a gap
             // use caom2 PolarizationState for now, possibly copy/move that to an OpenCADC module
@@ -207,32 +209,34 @@ public class AdqlQueryGenerator
             //{
             //    polStates.add( PolarizationState.valueOf(p));
             //}
-            
-            if (pols.size() > 1)
+
+            if (pols.size() > 1) {
                 query.append(" AND (");
-            else
+            } else {
                 query.append(" AND ");
+            }
             boolean needOr = false;
-            for (String p : pols)
-            {
-                if (needOr)
+            for (String p : pols) {
+                if (needOr) {
                     query.append(" OR ");
+                }
                 query.append("(");
                 query.append("pol_states LIKE '%").append(p).append("%'");
                 query.append(")");
                 needOr = true;
             }
-            if (pols.size() > 1)
+            if (pols.size() > 1) {
                 query.append(")");
+            }
         }
-        
-        List<Range<Double>> fovs = sia.validateFOV(queryParams);
+
+        List<DoubleInterval> fovs = sia.validateFOV(queryParams);
         addNumericRangeConstraint(query, "s_fov", "s_fov", fovs);
-        
-        List<Range<Double>> ress = sia.validateSPATRES(queryParams);
+
+        List<DoubleInterval> ress = sia.validateSPATRES(queryParams);
         addNumericRangeConstraint(query, "s_resolution", "s_resolution", ress);
-        
-        List<Range<Double>> exptimes = sia.validateEXPTIME(queryParams);
+
+        List<DoubleInterval> exptimes = sia.validateEXPTIME(queryParams);
         addNumericRangeConstraint(query, "t_exptime", "t_exptime", exptimes);
 
         List<String> ids = sia.validateID(queryParams);
@@ -256,10 +260,10 @@ public class AdqlQueryGenerator
         List<String> targets = sia.validateTARGET(queryParams);
         addStringListConstraint(query, "target_name", targets);
 
-        List<Range<Double>> timeress = sia.validateTIMERES(queryParams);
+        List<DoubleInterval> timeress = sia.validateTIMERES(queryParams);
         addNumericRangeConstraint(query, "t_resolution", "t_resolution", timeress);
 
-        List<Range<Double>> specrps = sia.validateSPECRP(queryParams);
+        List<DoubleInterval> specrps = sia.validateSPECRP(queryParams);
         addNumericRangeConstraint(query, "em_res_power", "em_res_power", specrps);
 
         List<String> formats = sia.validateFORMAT(queryParams);
@@ -268,126 +272,54 @@ public class AdqlQueryGenerator
         return query.toString();
     }
 
-    private void addIntegerRangeConstraint(StringBuilder query, String lbCol, String ubCol, List<Range<Integer>> ranges)
-    {
-        if (!ranges.isEmpty())
-        {
-            if (ranges.size() > 1)
+    private void addNumericRangeConstraint(StringBuilder query, String lbCol, String ubCol, List<DoubleInterval> ranges) {
+        if (!ranges.isEmpty()) {
+            if (ranges.size() > 1) {
                 query.append(" AND (");
-            else
+            } else {
                 query.append(" AND ");
+            }
             boolean needOr = false;
-            for (Range<Integer> r : ranges)
-            {
-                if (needOr)
+            for (DoubleInterval r : ranges) {
+                if (needOr) {
                     query.append(" OR ");
+                }
                 query.append("(");
-                if (lbCol.equals(ubCol) && r.getLower() != null && r.getUpper() != null) // nicer syntax, maybe better optimised in DB
+                if (lbCol.equals(ubCol) && !r.getLower().isInfinite() && !r.getUpper().isInfinite()) {
+                    // nicer syntax, maybe better optimised in DB
                     query.append(lbCol).append(" BETWEEN ").append(r.getLower()).append(" AND ").append(r.getUpper());
-                else
-                {
-                    if (r.getUpper() != null)
+                } else {
+                    if (!r.getUpper().isInfinite()) {
                         query.append(lbCol).append(" <= ").append(r.getUpper());
-                    if (r.getLower() != null && r.getUpper() != null)
+                    }
+                    if (!r.getLower().isInfinite() && !r.getUpper().isInfinite()) {
                         query.append(" AND ");
-                    if (r.getLower() != null)
+                    }
+                    if (!r.getLower().isInfinite()) {
                         query.append(r.getLower()).append(" <= ").append(ubCol);
+                    }
                 }
                 query.append(")");
                 needOr = true;
             }
-            if (ranges.size() > 1)
+            if (ranges.size() > 1) {
                 query.append(")");
-        }
-    }
-
-    private void addNumericRangeConstraint(StringBuilder query, String lbCol, String ubCol, List<Range<Double>> ranges)
-    {
-        if (!ranges.isEmpty())
-        {
-            if (ranges.size() > 1)
-                query.append(" AND (");
-            else
-                query.append(" AND ");
-            boolean needOr = false;
-            for (Range<Double> r : ranges)
-            {
-                if (needOr)
-                    query.append(" OR ");
-                query.append("(");
-                if (lbCol.equals(ubCol) && r.getLower() != null && r.getUpper() != null) // nicer syntax, maybe better optimised in DB
-                    query.append(lbCol).append(" BETWEEN ").append(r.getLower()).append(" AND ").append(r.getUpper());
-                else
-                {
-                    if (r.getUpper() != null)
-                        query.append(lbCol).append(" <= ").append(r.getUpper());
-                    if (r.getLower() != null && r.getUpper() != null)
-                        query.append(" AND ");
-                    if (r.getLower() != null)
-                        query.append(r.getLower()).append(" <= ").append(ubCol);
-                }
-                query.append(")");
-                needOr = true;
             }
-            if (ranges.size() > 1)
-                query.append(")");
         }
     }
 
-    private void addFooRangeConstraint(StringBuilder query, String lbCol, String ubCol, List<Range<Double>> ranges)
-    {
-        if (!ranges.isEmpty())
-        {
-            if (ranges.size() > 1)
-                query.append(" AND (");
-            else
-                query.append(" AND ");
-            boolean needOr = false;
-            for (Range<Double> r : ranges)
-            {
-                if (needOr)
-                    query.append(" OR ");
-                query.append("(");
-                if (lbCol.equals(ubCol) && r.getLower() != null && r.getUpper() != null) // nicer syntax, maybe better optimised in DB
-                    query.append(lbCol).append(" BETWEEN ").append(r.getLower()).append(" AND ").append(r.getUpper());
-                else
-                {
-                    if (r.getUpper() != null)
-                        query.append(lbCol).append(" <= ").append(r.getUpper());
-                    if (r.getLower() != null && r.getUpper() != null)
-                        query.append(" AND ");
-                    if (r.getLower() != null)
-                        query.append(r.getLower()).append(" <= ").append(ubCol);
-                }
-                query.append(")");
-                needOr = true;
-            }
-            if (ranges.size() > 1)
-                query.append(")");
-        }
-    }
-
-    private void addIntegerListConstraint(StringBuilder query, String column, List<Integer> values)
-    {
-        if (!values.isEmpty())
-        {
+    private void addIntegerListConstraint(StringBuilder query, String column, List<Integer> values) {
+        if (!values.isEmpty()) {
             query.append(" AND ").append(column);
-            if (values.size() == 1)
-            {
+            if (values.size() == 1) {
                 query.append(" = ").append(values.get(0));
-            }
-            else
-            {
+            } else {
                 query.append(" IN ( ");
                 boolean first = true;
-                for (Integer value : values)
-                {
-                    if (first)
-                    {
+                for (Integer value : values) {
+                    if (first) {
                         first = false;
-                    }
-                    else
-                    {
+                    } else {
                         query.append(",");
                     }
                     query.append(value);
@@ -396,28 +328,19 @@ public class AdqlQueryGenerator
             }
         }
     }
-    
-    private void addStringListConstraint(StringBuilder query, String column, List<String> values)
-    {
-        if (!values.isEmpty())
-        {
+
+    private void addStringListConstraint(StringBuilder query, String column, List<String> values) {
+        if (!values.isEmpty()) {
             query.append(" AND ").append(column);
-            if (values.size() == 1)
-            {
+            if (values.size() == 1) {
                 query.append(" = '").append(values.get(0)).append("'");
-            }
-            else
-            {
+            } else {
                 query.append(" IN ( ");
                 boolean first = true;
-                for (String value : values)
-                {
-                    if (first)
-                    {
+                for (String value : values) {
+                    if (first) {
                         first = false;
-                    }
-                    else
-                    {
+                    } else {
                         query.append(",");
                     }
                     query.append("'").append(value).append("'");

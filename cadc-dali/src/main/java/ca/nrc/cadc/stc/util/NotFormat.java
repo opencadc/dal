@@ -65,7 +65,8 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.stc.util;
 
 import ca.nrc.cadc.stc.Not;
@@ -77,8 +78,8 @@ import ca.nrc.cadc.stc.StcsParsingException;
  * Class to parse a STC-S phrase to a Not object, and format a Not object to a
  * STC-S phrase.
  */
-public class NotFormat extends RegionFormat implements Format<Not>
-{
+public class NotFormat extends RegionFormat implements Format<Not> {
+
     /**
      * Parses a String to a Not.
      *
@@ -86,17 +87,18 @@ public class NotFormat extends RegionFormat implements Format<Not>
      * @return Not value of the String.
      */
     public Not parse(String phrase)
-        throws StcsParsingException
-    {
+            throws StcsParsingException {
         // Get the string within the opening and closing parentheses.
         int open = phrase.indexOf("(");
         int close = phrase.lastIndexOf(")");
-        if (open == -1 || close == -1)
+        if (open == -1 || close == -1) {
             throw new StcsParsingException("Not arguments must be enclosed in parentheses: " + phrase);
+        }
         String not = phrase.substring(open + 1, close).trim();
 
-        if (not.isEmpty())
+        if (not.isEmpty()) {
             throw new StcsParsingException("Not must contain a Region: " + phrase);
+        }
 
         // Get the Region for this operator.
         Region region = STC.parse(not);
@@ -111,8 +113,7 @@ public class NotFormat extends RegionFormat implements Format<Not>
      * @param not Not to format
      * @return String representation of the Not.
      */
-    public String format(Not not)
-    {
+    public String format(Not not) {
         StringBuilder sb = new StringBuilder();
         sb.append(formatRegion(not));
         sb.append(" ( ");

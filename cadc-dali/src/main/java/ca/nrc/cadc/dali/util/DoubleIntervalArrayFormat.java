@@ -63,10 +63,9 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
-
 
 import ca.nrc.cadc.dali.DoubleInterval;
 import java.util.Iterator;
@@ -77,44 +76,44 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class DoubleIntervalArrayFormat  implements Format<DoubleInterval[]>
-{
+public class DoubleIntervalArrayFormat implements Format<DoubleInterval[]> {
+
     private static final Logger log = Logger.getLogger(DoubleIntervalArrayFormat.class);
 
     private DoubleArrayFormat fmt = new DoubleArrayFormat();
-    
-    public DoubleIntervalArrayFormat() { }
+
+    public DoubleIntervalArrayFormat() {
+    }
 
     @Override
-    public DoubleInterval[] parse(String s)
-    {
-        if (s == null)
+    public DoubleInterval[] parse(String s) {
+        if (s == null) {
             return null;
-        
+        }
+
         DoubleArrayFormat daf = new DoubleArrayFormat();
         double[] vv = daf.parse(s);
-        int len = vv.length/2;
+        int len = vv.length / 2;
         DoubleInterval[] ret = new DoubleInterval[len];
-        try
-        {
-            for (int i=0; i<vv.length; i+= 2)
-                ret[i/2] = new DoubleInterval(vv[i], vv[i+1]);
-        }
-        catch(ArrayIndexOutOfBoundsException ex)
-        {
+        try {
+            for (int i = 0; i < vv.length; i += 2) {
+                ret[i / 2] = new DoubleInterval(vv[i], vv[i + 1]);
+            }
+        } catch (ArrayIndexOutOfBoundsException ex) {
             throw new IllegalArgumentException("invalid array length for array of interval: " + vv.length);
         }
         return ret;
     }
 
     @Override
-    public String format(final DoubleInterval[] t)
-    {
-        if (t == null)
+    public String format(final DoubleInterval[] t) {
+        if (t == null) {
             return "";
+        }
         return fmt.format(new Iterator<Double>() {
             private int num = 0;
             private int numDI = 0;
+
             @Override
             public boolean hasNext() {
                 return (numDI < t.length);
@@ -122,17 +121,18 @@ public class DoubleIntervalArrayFormat  implements Format<DoubleInterval[]>
 
             @Override
             public Double next() {
-                if (!hasNext())
+                if (!hasNext()) {
                     throw new NoSuchElementException();
-                
+                }
+
                 DoubleInterval di = t[numDI];
-                
+
                 if (num == 0) {
                     num++;
                     return di.getLower();
-                    
+
                 }
-                
+
                 numDI++;
                 num = 0;
                 return di.getUpper();

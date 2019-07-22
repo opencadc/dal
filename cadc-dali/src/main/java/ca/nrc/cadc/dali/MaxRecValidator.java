@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,7 +65,7 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali;
 
@@ -79,11 +79,11 @@ import org.apache.log4j.Logger;
  * <code>ca.nrc.cadc.tap.impl.MaxRecValidatorImpl</code> to set the default and
  * maximum allowed values for their service. The values set here are null, which
  * means no limit.
- * 
+ *
  * @author jburke
  */
-public class MaxRecValidator
-{
+public class MaxRecValidator {
+
     private static Logger log = Logger.getLogger(MaxRecValidator.class);
 
     /**
@@ -109,68 +109,58 @@ public class MaxRecValidator
      */
     protected boolean sync;
 
-    public MaxRecValidator() { }
+    public MaxRecValidator() {
+    }
 
-    public void setDefaultValue(Integer defaultValue)
-    {
+    public void setDefaultValue(Integer defaultValue) {
         this.defaultValue = defaultValue;
     }
 
-    public void setMaxValue(Integer maxValue)
-    {
+    public void setMaxValue(Integer maxValue) {
         this.maxValue = maxValue;
     }
 
-    public void setJob(Job job)
-    {
+    public void setJob(Job job) {
         this.job = job;
     }
 
-    public void setSynchronousMode(boolean sync)
-    {
+    public void setSynchronousMode(boolean sync) {
         this.sync = sync;
     }
 
     /**
      * Checks the parameter list for a parameter named MAXREC.
-     * <p>
-     * If the MAXREC parameter is found, attempts to parse and return the value
+     * 
+     * <p>If the MAXREC parameter is found, attempts to parse and return the value
      * of MAXREC as an integer. If the parsing fails, or if the value of MAXREC is
      * negative, an IllegalArgumentException is thrown.
-     * <p>
-     * If the MAXREC parameter is not found in the List of parameters,
+     * 
+     * <p>If the MAXREC parameter is not found in the List of parameters,
      * a null signifying no limit is returned.
-     * <p>
      *
      * @return Integer value of MAXREC or null for no limit
      */
-    public Integer validate()
-    {
-        if (job == null)
+    public Integer validate() {
+        if (job == null) {
             throw new IllegalArgumentException("BUG: job cannot be null");
-        
+        }
+
         String value = ParameterUtil.findParameterValue("MAXREC", job.getParameterList());
 
-        if (value == null || value.trim().length() == 0)
-        {
+        if (value == null || value.trim().length() == 0) {
             return defaultValue;
         }
 
-        try
-        {
+        try {
             Integer ret = new Integer(value);
-            if (ret < 0)
-            {
+            if (ret < 0) {
                 throw new IllegalArgumentException("Invalid MAXREC: " + value);
             }
-            if (maxValue != null && maxValue < ret)
-            {
+            if (maxValue != null && maxValue < ret) {
                 return maxValue;
             }
             return ret;
-        }
-        catch (NumberFormatException nfe)
-        {
+        } catch (NumberFormatException nfe) {
             throw new IllegalArgumentException("Invalid MAXREC: " + value);
         }
     }

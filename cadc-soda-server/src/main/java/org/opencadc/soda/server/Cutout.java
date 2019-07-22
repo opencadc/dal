@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2014.                            (c) 2014.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,43 +62,38 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.sia2;
+package org.opencadc.soda.server;
 
 /**
  *
  * @author pdowler
  */
-public class Range<T>
-{
-    private T lower;
-    private T upper;
+public class Cutout<T> {
+
+    /**
+     * Parameter name.
+     */
+    public String name;
     
-    public Range(T lower, T upper)
-    {
-        this.lower = lower;
-        this.upper = upper;
+    /** 
+     * Raw parameter value.
+     */
+    public String value;
+    
+    /**
+     * Parsed DALI value.
+     */
+    public T cut;
+
+    Cutout() {
     }
 
-    public T getLower()
-    {
-        return lower;
+    Cutout(String name, String value, T cut) {
+        this.name = name;
+        this.value = value;
+        this.cut = cut;
     }
-
-    public T getUpper()
-    {
-        return upper;
-    }
-
-    @Override
-    public String toString()
-    {
-        return this.getClass().getSimpleName() + "[" + lower + "," + upper + "]";
-    }
-    
-    
 }

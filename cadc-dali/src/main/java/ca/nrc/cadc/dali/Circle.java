@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,54 +65,44 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali;
-
-
-import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class Circle 
-{
-    private static final Logger log = Logger.getLogger(Circle.class);
-
+public class Circle implements Shape {
     private Point center;
     private double radius;
-    
-    public Circle(Point center, double radius) 
-    { 
+
+    public Circle(Point center, double radius) {
         DaliUtil.assertNotNull("center", center);
         DaliUtil.assertValidRange("radius", radius, 0.0, 360.0);
         this.center = center;
         this.radius = radius;
     }
-    
+
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "Circle[" + center + "," + radius + "]";
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
-        if (obj == null)
+    public boolean equals(Object obj) {
+        if (obj == null) {
             return false;
+        }
         Circle rhs = (Circle) obj;
-        return this.center.equals(rhs.getCenter()) && this.radius == rhs.radius; 
+        return this.center.equals(rhs.getCenter()) && this.radius == rhs.radius;
     }
-    
-    public Point getCenter()
-    {
+
+    public Point getCenter() {
         return center;
     }
 
-    public double getRadius()
-    {
+    public double getRadius() {
         return radius;
     }
 }

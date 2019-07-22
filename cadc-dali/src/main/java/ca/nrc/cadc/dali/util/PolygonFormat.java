@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
 
@@ -77,50 +77,49 @@ import org.apache.log4j.Logger;
 
 /**
  * DALI-1.1 polygon formatter.
- * 
+ *
  * @author pdowler
  */
-public class PolygonFormat implements Format<Polygon>
-{
+public class PolygonFormat implements Format<Polygon> {
+
     private static final Logger log = Logger.getLogger(PolygonFormat.class);
 
     private final DoubleArrayFormat fmt = new DoubleArrayFormat();
-            
-    public PolygonFormat() { }
 
-    public Polygon parse(String s)
-    {
-        if (s == null)
+    public PolygonFormat() {
+    }
+
+    public Polygon parse(String s) {
+        if (s == null) {
             return null;
-        
+        }
+
         DoubleArrayFormat daf = new DoubleArrayFormat();
         double[] dd = daf.parse(s);
-        
-        try
-        {
-            if (dd.length < 6)
+
+        try {
+            if (dd.length < 6) {
                 throw new IndexOutOfBoundsException();
+            }
             Polygon poly = new Polygon();
-            for (int i=0; i<dd.length; i += 2)
-            {
-                Point v = new Point(dd[i], dd[i+1]);
+            for (int i = 0; i < dd.length; i += 2) {
+                Point v = new Point(dd[i], dd[i + 1]);
                 poly.getVertices().add(v);
             }
             return poly;
-        }
-        catch(IndexOutOfBoundsException ex)
-        {
+        } catch (IndexOutOfBoundsException ex) {
             throw new IllegalArgumentException("invalid polygon: " + s);
         }
     }
 
-    public String format(final Polygon poly)
-    {
-        if (poly == null)
+    public String format(final Polygon poly) {
+        if (poly == null) {
             return "";
+        }
         return fmt.format(new Iterator<Double>() {
             private int num = 0;
             private int numP = 0;
+
             @Override
             public boolean hasNext() {
                 return (numP < poly.getVertices().size());
@@ -128,21 +127,22 @@ public class PolygonFormat implements Format<Polygon>
 
             @Override
             public Double next() {
-                if (!hasNext())
+                if (!hasNext()) {
                     throw new NoSuchElementException();
-                
+                }
+
                 Point p = poly.getVertices().get(numP);
-                
+
                 if (num == 0) {
                     num++;
                     return p.getLongitude();
                 }
-                
+
                 numP++;
                 num = 0;
                 return p.getLatitude();
             }
-            
+
             // java7 support
             @Override
             public void remove() {
@@ -150,5 +150,5 @@ public class PolygonFormat implements Format<Polygon>
             }
         });
     }
-    
+
 }

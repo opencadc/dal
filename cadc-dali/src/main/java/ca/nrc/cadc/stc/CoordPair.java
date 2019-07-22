@@ -66,17 +66,18 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.stc;
 
 /**
  * Class to represent a CoordPair containing a x and y coordinates
  * which describe a point in space.
- * 
+ *
  */
-public class CoordPair
-{
-    private double x;
-    private double y;
+public class CoordPair {
+
+    private double xcoord;
+    private double ycoord;
 
     /**
      * Construct a CoordPair from the given coordinates.
@@ -84,10 +85,9 @@ public class CoordPair
      * @param x the x coordinate of the point.
      * @param y the y coordinate of the point.
      */
-    public CoordPair(final double x, final double y)
-    {
-        this.x = x;
-        this.y = y;
+    public CoordPair(final double x, final double y) {
+        this.xcoord = x;
+        this.ycoord = y;
     }
 
     /**
@@ -96,12 +96,11 @@ public class CoordPair
      * @return String representation of the CoordPair.
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(x);
+        sb.append(xcoord);
         sb.append(" ");
-        sb.append(y);
+        sb.append(ycoord);
         return sb.toString();
     }
 
@@ -110,9 +109,8 @@ public class CoordPair
      *
      * @return the x coordinate.
      */
-    public double getX()
-    {
-        return x;
+    public double getX() {
+        return xcoord;
     }
 
     /**
@@ -120,9 +118,8 @@ public class CoordPair
      *
      * @return the y coordinate.
      */
-    public double getY()
-    {
-        return y;
+    public double getY() {
+        return ycoord;
     }
 
 }

@@ -13,11 +13,12 @@ script:
   - cd cadc-dali; gradle build install javadoc || exit -1; cd ..
   - cd cadc-dali-pg; gradle build install javadoc || exit -1; cd ..
   - cd cadc-datalink-server; gradle build install javadoc || exit -1; cd ..
+  - cd cadc-soda-server; gradle build install javadoc || exit -1; cd ..
   - cd cadc-sia; gradle build install javadoc || exit -1; cd ..
   
   # checkstyle on latest platform only
   - if [[ $TRAVIS_JDK_VERSION == 'oraclejdk8' ]]; then
-      for i in cadc-datalink-server; do
+      for i in cadc-dali cadc-datalink-server cadc-sia cadc-soda-server; do
          cd $i;
          gradle checkstyleMain || break -1;
          cd ..;

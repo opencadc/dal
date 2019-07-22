@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,53 +65,44 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali;
-
-
-import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class Point 
-{
-    private static final Logger log = Logger.getLogger(Point.class);
+public class Point implements Shape {
+    private final double longitude;
+    private final double latitude;
 
-    private final double longitude, latitude;
-            
-    public Point(double longitude, double latitude) 
-    { 
+    public Point(double longitude, double latitude) {
         DaliUtil.assertValidRange("longitude", longitude, 0.0, 360.0);
         DaliUtil.assertValidRange("latitude", latitude, -90.0, 90.0);
         this.longitude = longitude;
         this.latitude = latitude;
     }
-    
+
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "Point[" + longitude + "," + latitude + "]";
     }
 
     @Override
-    public boolean equals(Object obj)
-    {
-        if (obj == null)
+    public boolean equals(Object obj) {
+        if (obj == null) {
             return false;
+        }
         Point rhs = (Point) obj;
-        return this.longitude == rhs.longitude && this.latitude == rhs.latitude; 
+        return this.longitude == rhs.longitude && this.latitude == rhs.latitude;
     }
 
-    public double getLongitude()
-    {
+    public double getLongitude() {
         return longitude;
     }
 
-    public double getLatitude()
-    {
+    public double getLatitude() {
         return latitude;
     }
 }

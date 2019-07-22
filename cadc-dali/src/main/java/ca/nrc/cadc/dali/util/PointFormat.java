@@ -65,10 +65,9 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
-
 
 import ca.nrc.cadc.dali.Point;
 import java.util.Iterator;
@@ -77,36 +76,39 @@ import org.apache.log4j.Logger;
 
 /**
  * DALI-1.1 point formatter.
- * 
+ *
  * @author pdowler
  */
-public class PointFormat implements Format<Point>
-{
+public class PointFormat implements Format<Point> {
+
     private static final Logger log = Logger.getLogger(PointFormat.class);
 
     private DoubleArrayFormat fmt = new DoubleArrayFormat();
-    
-    public PointFormat() { }
 
-    public Point parse(String s)
-    {
-        if (s == null)
+    public PointFormat() {
+    }
+
+    public Point parse(String s) {
+        if (s == null) {
             return null;
-        
+        }
+
         DoubleArrayFormat daf = new DoubleArrayFormat();
         double[] vv = daf.parse(s);
-        if (vv.length != 2)
+        if (vv.length != 2) {
             throw new IllegalArgumentException();
-    
+        }
+
         return new Point(vv[0], vv[1]);
     }
 
-    public String format(final Point t)
-    {
-        if (t == null)
+    public String format(final Point t) {
+        if (t == null) {
             return "";
+        }
         return fmt.format(new Iterator<Double>() {
             private int num = 0;
+
             @Override
             public boolean hasNext() {
                 return (num < 2);
@@ -114,14 +116,16 @@ public class PointFormat implements Format<Point>
 
             @Override
             public Double next() {
-                if (!hasNext())
+                if (!hasNext()) {
                     throw new NoSuchElementException();
+                }
                 num++;
-                if (num == 1)
+                if (num == 1) {
                     return t.getLongitude();
+                }
                 return t.getLatitude();
             }
-            
+
             // java7 support
             @Override
             public void remove() {
@@ -129,6 +133,5 @@ public class PointFormat implements Format<Point>
             }
         });
     }
-    
-    
+
 }

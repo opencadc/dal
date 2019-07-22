@@ -77,8 +77,8 @@ import java.util.List;
  * is an ordered list of one or more Coordinate Pairs.
  *
  */
-public class Polygon extends Region
-{
+public class Polygon extends Region {
+
     public static final String NAME = Polygon.class.getSimpleName();
 
     private List<CoordPair> coordPairs;
@@ -90,20 +90,20 @@ public class Polygon extends Region
      * Coordinate Pairs.
      *
      * @param frame the frame describing the Polygon. Allowed values for frame are
-     *              from <code>ca.nrc.cadc.stc.Frame</code>.
+     *      from <code>ca.nrc.cadc.stc.Frame</code>.
      * @param refpos the reference position describing the Polygon. Allowed values
-     *               for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
+     *      for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
      * @param flavor the flavor describing the Polygon. Allowed values for flavor are
-     *               from <code>ca.nrc.cadc.stc.Flavor</code>.
+     *      from <code>ca.nrc.cadc.stc.Flavor</code>.
      * @param coordPairs coordPairs the List of CoordPairs.
      */
-    public Polygon(Frame frame, ReferencePosition refpos, Flavor flavor, List<CoordPair> coordPairs)
-    {
+    public Polygon(Frame frame, ReferencePosition refpos, Flavor flavor, List<CoordPair> coordPairs) {
         super(NAME, frame, refpos, flavor);
         this.coordPairs = coordPairs;
 
-        if (coordPairs ==  null || coordPairs.size() < 3)
+        if (coordPairs == null || coordPairs.size() < 3) {
             throw new IllegalArgumentException("Polygon requires at least 3 CoordPairs");
+        }
     }
 
     /**
@@ -111,15 +111,14 @@ public class Polygon extends Region
      *
      * @param box
      */
-    public static Polygon getPolygon(Box box)
-    {
-        double x  = box.getCoordPair().getX();
+    public static Polygon getPolygon(Box box) {
+        double x = box.getCoordPair().getX();
         double y = box.getCoordPair().getY();
         double hw = box.getWidth() / 2.0;
         double hh = box.getHeight() / 2.0;
 
-        double hwTop = hw / Math.cos(Math.toRadians(y+hh));
-        double hwBottom = hw / Math.cos(Math.toRadians(y-hh));
+        double hwTop = hw / Math.cos(Math.toRadians(y + hh));
+        double hwBottom = hw / Math.cos(Math.toRadians(y - hh));
 
         CoordPair corner;
         List<CoordPair> corners = new ArrayList<CoordPair>(4);
@@ -140,8 +139,7 @@ public class Polygon extends Region
      *
      * @return List of CoordPairs.
      */
-    public List<CoordPair> getCoordPairs()
-    {
+    public List<CoordPair> getCoordPairs() {
         return coordPairs;
     }
 

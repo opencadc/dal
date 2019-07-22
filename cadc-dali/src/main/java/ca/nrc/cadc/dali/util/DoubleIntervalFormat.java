@@ -76,36 +76,39 @@ import org.apache.log4j.Logger;
 
 /**
  * DALI-1.1 floating point interval formatter.
- * 
+ *
  * @author pdowler
  */
-public class DoubleIntervalFormat implements Format<DoubleInterval>
-{
+public class DoubleIntervalFormat implements Format<DoubleInterval> {
+
     private static final Logger log = Logger.getLogger(DoubleIntervalFormat.class);
 
     private DoubleArrayFormat fmt = new DoubleArrayFormat();
-    
-    public DoubleIntervalFormat() { }
 
-    public DoubleInterval parse(String s)
-    {
-        if (s == null)
+    public DoubleIntervalFormat() {
+    }
+
+    public DoubleInterval parse(String s) {
+        if (s == null) {
             return null;
-        
+        }
+
         DoubleArrayFormat daf = new DoubleArrayFormat();
         double[] vv = daf.parse(s);
-        if (vv.length != 2)
+        if (vv.length != 2) {
             throw new IllegalArgumentException();
-    
+        }
+
         return new DoubleInterval(vv[0], vv[1]);
     }
 
-    public String format(final DoubleInterval t)
-    {
-        if (t == null)
+    public String format(final DoubleInterval t) {
+        if (t == null) {
             return "";
+        }
         return fmt.format(new Iterator<Double>() {
             private int num = 0;
+
             @Override
             public boolean hasNext() {
                 return (num < 2);
@@ -113,14 +116,16 @@ public class DoubleIntervalFormat implements Format<DoubleInterval>
 
             @Override
             public Double next() {
-                if (!hasNext())
+                if (!hasNext()) {
                     throw new NoSuchElementException();
+                }
                 num++;
-                if (num == 1)
+                if (num == 1) {
                     return t.getLower();
+                }
                 return t.getUpper();
             }
-            
+
             // java7 support
             @Override
             public void remove() {

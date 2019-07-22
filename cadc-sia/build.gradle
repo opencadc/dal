@@ -3,6 +3,7 @@ plugins {
     id 'maven'
     id 'maven-publish'
     id 'com.jfrog.bintray' version '1.8.4'
+    id 'checkstyle'
 }
 
 repositories {
@@ -33,3 +34,4 @@ dependencies {
     testCompile 'xerces:xercesImpl:[2.0,)'
 }
 
+apply from: '../opencadc.gradle'

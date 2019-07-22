@@ -63,10 +63,9 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.votable;
-
 
 import org.apache.log4j.Logger;
 
@@ -74,40 +73,40 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public abstract class VOTableUtil 
-{
+public abstract class VOTableUtil {
+
     private static final Logger log = Logger.getLogger(VOTableUtil.class);
 
-    private VOTableUtil() { }
-    
-    public static int[] getArrayShape(String arraysize)
-    {
-        if (arraysize == null || arraysize.equals("1")) // interpretation TBD
+    private VOTableUtil() {
+    }
+
+    public static int[] getArrayShape(String arraysize) {
+        if (arraysize == null) {
             return null;
-        
+        }
+
         String[] sa = arraysize.split("x");
         int[] arrayShape = new int[sa.length];
-        for (int i = 0; i<sa.length; i++)
-        {
+        for (int i = 0; i < sa.length; i++) {
             String s = sa[i];
             int starIndex = s.indexOf('*');
             boolean variableSize = (starIndex >= 0);
-            if (variableSize && i != sa.length-1)
+            if (variableSize && i != sa.length - 1) {
                 throw new IllegalArgumentException("invalid arraysize: " + arraysize + " found * in position " + i);
-            String dim = s;
-            if (starIndex == 0)
-                dim = "";
-            else if (variableSize)
-                dim = s.substring(0, starIndex);
-            try
-            {
-                if (dim.length() > 0)
-                    arrayShape[i] = Integer.parseInt(dim);
-                else
-                    arrayShape[i] = -1; // better than default 0?
             }
-            catch(NumberFormatException ex)
-            {
+            String dim = s;
+            if (starIndex == 0) {
+                dim = "";
+            } else if (variableSize) {
+                dim = s.substring(0, starIndex);
+            }
+            try {
+                if (dim.length() > 0) {
+                    arrayShape[i] = Integer.parseInt(dim);
+                } else {
+                    arrayShape[i] = -1; // better than default 0?
+                }
+            } catch (NumberFormatException ex) {
                 throw new IllegalArgumentException("invalid arraysize: " + arraysize + " found: " + dim + " expected: integer");
             }
         }

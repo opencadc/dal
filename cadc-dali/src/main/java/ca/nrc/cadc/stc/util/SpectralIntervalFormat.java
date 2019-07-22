@@ -65,7 +65,8 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.stc.util;
 
 import ca.nrc.cadc.stc.SpectralInterval;
@@ -76,8 +77,8 @@ import ca.nrc.cadc.stc.StcsParsingException;
  * Class to parse a STC-S phrase to a SpectralInterval object, and format
  * a SpectralInterval object to a STC-S phrase.
  */
-public class SpectralIntervalFormat implements Format<SpectralInterval>
-{
+public class SpectralIntervalFormat implements Format<SpectralInterval> {
+
     /**
      * Parses a String to a SpectralInterval.
      *
@@ -85,45 +86,42 @@ public class SpectralIntervalFormat implements Format<SpectralInterval>
      * @return SpectralInterval value of the String.
      */
     public SpectralInterval parse(String phrase)
-        throws StcsParsingException
-    {
-        if (phrase == null || phrase.length() == 0)
+            throws StcsParsingException {
+        if (phrase == null || phrase.length() == 0) {
             return null;
+        }
         phrase = phrase.trim();
 
         String[] tokens = phrase.split("\\s+");
-        if (tokens.length != 4)
+        if (tokens.length != 4) {
             throw new StcsParsingException("Expected 4 words in " + phrase);
+        }
 
-        if (!tokens[0].equalsIgnoreCase(SpectralInterval.NAME))
+        if (!tokens[0].equalsIgnoreCase(SpectralInterval.NAME)) {
             throw new StcsParsingException("Expected SpectralInterval, was " + tokens[0]);
+        }
 
         double lolimit;
         double hilimit;
-        try
-        {
+        try {
             lolimit = Double.parseDouble(tokens[1]);
+        } catch (NumberFormatException e) {
+            throw new StcsParsingException("Unable to parse loLimit " + tokens[1]
+                    + " to number because " + e.getMessage());
         }
-        catch (NumberFormatException e)
-        {
-            throw new StcsParsingException("Unable to parse loLimit " + tokens[1] +
-                                           " to number because " + e.getMessage());
-        }
-        try
-        {
+        try {
             hilimit = Double.parseDouble(tokens[2]);
-        }
-        catch (NumberFormatException e)
-        {
-            throw new StcsParsingException("Unable to parse hiLimit " + tokens[2] +
-                                           " to number because " + e.getMessage());
+        } catch (NumberFormatException e) {
+            throw new StcsParsingException("Unable to parse hiLimit " + tokens[2]
+                    + " to number because " + e.getMessage());
         }
 
-        if (!SpectralUnit.contains(tokens[3]))
+        if (!SpectralUnit.contains(tokens[3])) {
             throw new StcsParsingException("Not a valid SpectralUnit " + tokens[3]);
+        }
 
         SpectralUnit unit = SpectralUnit.valueOf(tokens[3]);
-        
+
         return new SpectralInterval(lolimit, hilimit, unit);
     }
 
@@ -134,8 +132,7 @@ public class SpectralIntervalFormat implements Format<SpectralInterval>
      * @param spectralInterval SpectralInterval to format
      * @return String representation of the SpectralInterval.
      */
-    public String format(SpectralInterval spectralInterval)
-    {
+    public String format(SpectralInterval spectralInterval) {
         StringBuilder sb = new StringBuilder();
         sb.append(SpectralInterval.NAME);
         sb.append(" ");

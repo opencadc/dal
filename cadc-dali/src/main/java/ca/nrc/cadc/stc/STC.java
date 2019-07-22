@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.stc;
 
 import ca.nrc.cadc.stc.util.BoxFormat;
@@ -82,8 +83,8 @@ import ca.nrc.cadc.stc.util.UnionFormat;
  * and to build a STC-S phrase from a Region.
  *
  */
-public class STC
-{
+public class STC {
+
     /**
      * Parse a STC-S phrase to a Region. If the phrase is null or empty, null
      * is returned.
@@ -93,10 +94,10 @@ public class STC
      * @throws StcsParsingException if unable to parse the phrase.
      */
     public static Region parseRegion(String phrase)
-        throws StcsParsingException
-    {
-        if (phrase == null || phrase.trim().isEmpty())
+            throws StcsParsingException {
+        if (phrase == null || phrase.trim().isEmpty()) {
             return null;
+        }
 
         // Find index of first whitespace in phrase.
         phrase = phrase.trim();
@@ -104,43 +105,37 @@ public class STC
 
         // Parse out the first word which should be the region.
         String region;
-        if (index == -1)
+        if (index == -1) {
             region = phrase;
-        else
+        } else {
             region = phrase.substring(0, index);
+        }
 
-        if (region.equalsIgnoreCase(Box.NAME))
-        {
+        if (region.equalsIgnoreCase(Box.NAME)) {
             BoxFormat format = new BoxFormat();
             return format.parse(phrase);
         }
-        if (region.equalsIgnoreCase(Circle.NAME))
-        {
+        if (region.equalsIgnoreCase(Circle.NAME)) {
             CircleFormat format = new CircleFormat();
             return format.parse(phrase);
         }
-        if (region.equalsIgnoreCase(Not.NAME))
-        {
+        if (region.equalsIgnoreCase(Not.NAME)) {
             NotFormat format = new NotFormat();
             return format.parse(phrase);
         }
-        if (region.equalsIgnoreCase(Polygon.NAME))
-        {
+        if (region.equalsIgnoreCase(Polygon.NAME)) {
             PolygonFormat format = new PolygonFormat();
             return format.parse(phrase);
         }
-        if (region.equalsIgnoreCase(Position.NAME))
-        {
+        if (region.equalsIgnoreCase(Position.NAME)) {
             PositionFormat format = new PositionFormat();
             return format.parse(phrase);
         }
-        if (region.equalsIgnoreCase(Union.NAME))
-        {
+        if (region.equalsIgnoreCase(Union.NAME)) {
             UnionFormat format = new UnionFormat();
             return format.parse(phrase);
         }
-        if (region.equalsIgnoreCase(Intersection.NAME))
-        {
+        if (region.equalsIgnoreCase(Intersection.NAME)) {
             IntersectionFormat format = new IntersectionFormat();
             return format.parse(phrase);
         }
@@ -156,10 +151,10 @@ public class STC
      * @throws StcsParsingException if unable to parse the phrase.
      */
     public static SpectralInterval parseSpectralInterval(String phrase)
-        throws StcsParsingException
-    {
-        if (phrase == null || phrase.trim().isEmpty())
+            throws StcsParsingException {
+        if (phrase == null || phrase.trim().isEmpty()) {
             return null;
+        }
 
         // Find index of first whitespace in phrase.
         phrase = phrase.trim();
@@ -176,10 +171,10 @@ public class STC
      * @throws StcsParsingException if unable to parse the phrase.
      */
     public static AstroCoordArea parseAstroCoordArea(String phrase)
-        throws StcsParsingException
-    {
-        if (phrase == null || phrase.trim().isEmpty())
+            throws StcsParsingException {
+        if (phrase == null || phrase.trim().isEmpty()) {
             return null;
+        }
 
         // Find index of first whitespace in phrase.
         phrase = phrase.trim();
@@ -190,20 +185,15 @@ public class STC
         String currentWord = words[index];
 
         Region region = null;
-        if (Regions.contains(currentWord.toUpperCase()))
-        {
+        if (Regions.contains(currentWord.toUpperCase())) {
             StringBuilder sb = new StringBuilder();
             sb.append(currentWord);
             sb.append(" ");
-            for (index = 1; index < words.length; index++)
-            {
+            for (index = 1; index < words.length; index++) {
                 currentWord = words[index];
-                if (currentWord.equalsIgnoreCase(SpectralInterval.NAME))
-                {
+                if (currentWord.equalsIgnoreCase(SpectralInterval.NAME)) {
                     break;
-                }
-                else
-                {
+                } else {
                     sb.append(currentWord);
                     sb.append(" ");
                     currentWord = null;
@@ -213,11 +203,9 @@ public class STC
         }
 
         SpectralInterval spectralInterval = null;
-        if (currentWord != null)
-        {
+        if (currentWord != null) {
             StringBuilder sb = new StringBuilder();
-            for (int i = index; i < words.length; i++)
-            {
+            for (int i = index; i < words.length; i++) {
                 sb.append(words[i]);
                 sb.append(" ");
             }
@@ -225,17 +213,16 @@ public class STC
         }
         return new AstroCoordArea(region, spectralInterval);
     }
-    
+
     /**
-     * Parses a STC-S phrase to a Region.
-     * 
-     * @deprecated, use <code>parseAstroCoordArea</code>.
-     * This method will be changed to return an AstroCoordArea instead
-     * of a Region.
+     * Parses a STC-S phrase to a Region. This method will be changed to return an 
+     * AstroCoordArea instead of a Region.
+     *
+     * @deprecated
      */
+    @Deprecated
     public static Region parse(String phrase)
-        throws StcsParsingException
-    {
+            throws StcsParsingException {
         return parseRegion(phrase);
     }
 
@@ -246,43 +233,36 @@ public class STC
      * @param region the Region to format.
      * @return STC-S String representation of the Region.
      */
-    public static String format(Region region)
-    {
-        if (region == null)
+    public static String format(Region region) {
+        if (region == null) {
             return "";
-        
-        if (region instanceof Box)
-        {
+        }
+
+        if (region instanceof Box) {
             BoxFormat format = new BoxFormat();
             return format.format((Box) region);
         }
-        if (region instanceof Circle)
-        {
+        if (region instanceof Circle) {
             CircleFormat format = new CircleFormat();
             return format.format((Circle) region);
         }
-        if (region instanceof Not)
-        {
+        if (region instanceof Not) {
             NotFormat format = new NotFormat();
             return format.format((Not) region);
         }
-        if (region instanceof Polygon)
-        {
+        if (region instanceof Polygon) {
             PolygonFormat format = new PolygonFormat();
             return format.format((Polygon) region);
         }
-        if (region instanceof Position)
-        {
+        if (region instanceof Position) {
             PositionFormat format = new PositionFormat();
             return format.format((Position) region);
         }
-        if (region instanceof Union)
-        {
+        if (region instanceof Union) {
             UnionFormat format = new UnionFormat();
             return format.format((Union) region);
         }
-        if (region instanceof Intersection)
-        {
+        if (region instanceof Intersection) {
             IntersectionFormat format = new IntersectionFormat();
             return format.format((Intersection) region);
         }
@@ -296,11 +276,11 @@ public class STC
      * @param spectralInterval the SpectralInterval to format.
      * @return STC-S String representation of the SpectralInterval.
      */
-    public static String format(SpectralInterval spectralInterval)
-    {
-        if (spectralInterval == null)
+    public static String format(SpectralInterval spectralInterval) {
+        if (spectralInterval == null) {
             return "";
-        
+        }
+
         SpectralIntervalFormat format = new SpectralIntervalFormat();
         return format.format(spectralInterval);
     }
@@ -312,25 +292,22 @@ public class STC
      * @param astroCoordArea the AstroCoordArea to format.
      * @return STC-S String representation of the AstroCoordArea.
      */
-    public static String format(AstroCoordArea astroCoordArea)
-    {
-        if (astroCoordArea == null)
+    public static String format(AstroCoordArea astroCoordArea) {
+        if (astroCoordArea == null) {
             return "";
+        }
 
         StringBuilder sb = new StringBuilder();
-        if (astroCoordArea.getRegion() != null)
-        {
+        if (astroCoordArea.getRegion() != null) {
             sb.append(format(astroCoordArea.getRegion()));
         }
-        if (astroCoordArea.getRegion() != null && astroCoordArea.getSpectralInterval() != null)
-        {
+        if (astroCoordArea.getRegion() != null && astroCoordArea.getSpectralInterval() != null) {
             sb.append(" ");
         }
-        if (astroCoordArea.getSpectralInterval() != null)
-        {
+        if (astroCoordArea.getSpectralInterval() != null) {
             sb.append(format(astroCoordArea.getSpectralInterval()));
         }
         return sb.toString();
     }
-    
+
 }

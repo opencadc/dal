@@ -66,14 +66,15 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 /**
  * Formats and parses a Double.
  *
  */
-public class DoubleFormat implements Format<Double>
-{
+public class DoubleFormat implements Format<Double> {
+
     /**
      * Takes the passed in Double and returns the String representation of that Double.
      * If the Double is null an empty String is returned.
@@ -81,26 +82,37 @@ public class DoubleFormat implements Format<Double>
      * @param object Double to format
      * @return String representation of the Double
      */
-    public String format(Double object)
-    {
-        if (object == null)
-        {
+    @Override
+    public String format(Double object) {
+        if (object == null) {
             return "";
+        }
+        if (object.isInfinite()) {
+            // IVOA-VOTable compliant
+            if (object < 0.0) {
+                return "-Inf";
+            } else {
+                return "+Inf";
+            }
         }
         return object.toString();
     }
 
     /**
      * Parses a String to a Double.
-     * 
+     *
      * @param s the String to parse.
      * @return Double value of the String.
      */
-    public Double parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public Double parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
+        }
+        if (s.equalsIgnoreCase("-inf")) {
+            return Double.NEGATIVE_INFINITY;
+        }
+        if (s.equalsIgnoreCase("+inf")) {
+            return Double.POSITIVE_INFINITY;
         }
         return Double.valueOf(s);
     }

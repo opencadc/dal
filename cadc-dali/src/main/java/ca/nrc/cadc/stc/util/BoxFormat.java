@@ -65,7 +65,8 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.stc.util;
 
 import ca.nrc.cadc.stc.Box;
@@ -74,10 +75,10 @@ import ca.nrc.cadc.stc.StcsParsingException;
 /**
  * Class to parse a STC-S phrase to a Box object, and format a Box object to a
  * STC-S phrase.
- * 
+ *
  */
-public class BoxFormat extends RegionFormat implements Format<Box>
-{
+public class BoxFormat extends RegionFormat implements Format<Box> {
+
     /**
      * Parses a String to a Box.
      *
@@ -85,53 +86,50 @@ public class BoxFormat extends RegionFormat implements Format<Box>
      * @return Box value of the String.
      */
     public Box parse(String phrase)
-        throws StcsParsingException
-    {
+            throws StcsParsingException {
         parseRegion(phrase);
 
         // CoordPair x.
         Double x = null;
-        if (currentWord == null)
-        {
-            if (words.hasNextDouble())
+        if (currentWord == null) {
+            if (words.hasNextDouble()) {
                 x = words.nextDouble();
-            else if (words.hasNext())
+            } else if (words.hasNext()) {
                 throw new StcsParsingException("Invalid CoordPair element " + words.next());
-            else
+            } else {
                 throw new StcsParsingException("Unexpected end to STC-S phrase before CoordPair element");
-        }
-        else
-        {
-            try
-            {
-                x = Double.valueOf(currentWord);
             }
-            catch (NumberFormatException e)
-            {
+        } else {
+            try {
+                x = Double.valueOf(currentWord);
+            } catch (NumberFormatException e) {
                 throw new StcsParsingException("Invalid CoordPair " + currentWord + " in " + phrase);
             }
         }
 
         // CoordPair y.
         Double y;
-        if (words.hasNextDouble())
+        if (words.hasNextDouble()) {
             y = words.nextDouble();
-        else
+        } else {
             throw new StcsParsingException("Coordpair not found in " + phrase);
+        }
 
         // width
         double width;
-        if (words.hasNextDouble())
+        if (words.hasNextDouble()) {
             width = words.nextDouble();
-        else
+        } else {
             throw new StcsParsingException("Width not found in " + phrase);
+        }
 
         // height
         double height;
-        if (words.hasNextDouble())
+        if (words.hasNextDouble()) {
             height = words.nextDouble();
-        else
+        } else {
             throw new StcsParsingException("Height not found in " + phrase);
+        }
 
         return new Box(frame, refpos, flavor, x, y, width, height);
     }
@@ -143,13 +141,11 @@ public class BoxFormat extends RegionFormat implements Format<Box>
      * @param box Box to format
      * @return String representation of the Box.
      */
-    public String format(Box box)
-    {
+    public String format(Box box) {
         StringBuilder sb = new StringBuilder();
         sb.append(formatRegion(box));
         sb.append(" ");
-        if (box.getCoordPair() != null)
-        {
+        if (box.getCoordPair() != null) {
             sb.append(box.getCoordPair());
             sb.append(" ");
         }

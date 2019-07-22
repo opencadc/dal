@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2014.                            (c) 2014.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,70 +62,46 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.sia2;
+package org.opencadc.soda.server;
 
-import java.util.ArrayList;
+import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.dali.Shape;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
 import java.util.List;
 
 /**
- *
+ * SODA plugin that delegates to a back end storage system. This API is defined
+ * to layer the SODA API on top of a back end storage system. It is a natural fit
+ * for implementing SODA-async (because it generates one or more result URLs), but 
+ * it can be used with a back end storage system that can stream an on-the-fly cutout. 
+ * For the latter, the generated URL would be an opaque URL to that back end storage
+ * system with the cutout operation embedded.
+ * 
+ * <p>See StreamingSodaPlugin for details about what an alternative might look like.
+ * 
  * @author pdowler
  */
-public class CoordPolygon implements Shape
-{
-    private List<Vertex> vertices = new ArrayList<Vertex>();
-    
-    public CoordPolygon() { }
-
-    public List<Vertex> getVertices()
-    {
-        return vertices;
-    }
-
-    @Override
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName()).append("[");
-        for (Vertex v : vertices)
-        {
-            sb.append(v).append(",");
-        }
-        sb.setCharAt(sb.length() - 1, ']');
-        return sb.toString();
-    }
-    
-    
-    public static class Vertex
-    {
-        private double longitude;
-        private double latitude;
-        public Vertex(Double longitude, double latitude)
-        {
-            this.longitude = longitude;
-            this.latitude = latitude;
-        }
-
-        public double getLongitude()
-        {
-            return longitude;
-        }
-
-        public double getLatitude()
-        {
-            return latitude;
-        }
-
-        @Override
-        public String toString()
-        {
-            return "(" + longitude + "," + latitude + ")"; 
-        }
-        
-    }
+public interface SodaPlugin {
+    /**
+     * Convert a cutout request to a specific data (file) to a URL for the result. 
+     * The URL could be to an on-the-fly cutout backend (for SODA-sync) or the plugin
+     * method could retrieve data, perform the cutout operation, store the result 
+     * in temporary storage, and return a URL to the result (SODA-async).
+     * 
+     * @param serialNum number that increments for each call to the plugin within a single request
+     * @param uri the ID value that identifies the data (file)
+     * @param pos optional position cutout (may be null)
+     * @param band optional energy cutout (may be null)
+     * @param time optional time cutout (may be null)
+     * @param pol optional polarization cutout (may be null)
+     * @return a URL to the result of the operation
+     * @throws IOException failure to read or write data
+     */
+    URL toURL(int serialNum, URI uri, Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol)
+            throws IOException;
 }

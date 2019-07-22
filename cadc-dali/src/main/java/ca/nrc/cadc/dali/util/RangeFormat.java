@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2014.                            (c) 2014.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,48 +62,76 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.sia2;
+package ca.nrc.cadc.dali.util;
+
+import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Range;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  *
  * @author pdowler
  */
-public class CoordCircle implements Shape
-{
-    private double longitude;
-    private double latitude;
-    private double radius;
+public class RangeFormat implements Format<Range> {
+    private final DoubleIntervalArrayFormat diaf = new DoubleIntervalArrayFormat();
+    private final DoubleArrayFormat fmt = new DoubleArrayFormat();
     
-    public CoordCircle(double longitude, double latitude, double radius)
-    {
-        this.longitude = longitude;
-        this.latitude = latitude;
-        this.radius = radius;
+    public RangeFormat() { 
     }
 
-    public double getLongitude()
-    {
-        return longitude;
-    }
-
-    public double getLatitude()
-    {
-        return latitude;
-    }
-
-    public double getRadius()
-    {
-        return radius;
-    }
-    
     @Override
-    public String toString()
-    {
-        return this.getClass().getSimpleName() + "[" + longitude + "," + latitude + "," + radius + "]";
+    public Range parse(String s) {
+        DoubleInterval[] dis = diaf.parse(s);
+        if (dis.length != 2) {
+            throw new IllegalArgumentException("invalid range: found " + dis.length + " intervals");
+        }
+        return new Range(dis[0], dis[1]);
     }
+
+    @Override
+    public String format(final Range t) {
+        if (t == null) {
+            return "";
+        }
+        return fmt.format(new Iterator<Double>() {
+            private int num = 0;
+
+            @Override
+            public boolean hasNext() {
+                return (num < 4);
+            }
+
+            @Override
+            public Double next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                num++;
+                switch (num) {
+                    case 1:
+                        return t.getLongitude().getLower();
+                    case 2:
+                        return t.getLongitude().getUpper();
+                    case 3:
+                        return t.getLatitude().getLower();
+                    case 4:
+                        return t.getLatitude().getUpper();
+                    default:
+                        throw new RuntimeException("BUG: range coordinate iteration reached " + num);
+                }
+            }
+
+            // java7 support
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        });
+    }
+    
+    
 }

@@ -65,42 +65,43 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
-
 
 import ca.nrc.cadc.dali.LongInterval;
 import org.apache.log4j.Logger;
 
 /**
  * DALI-1.1 fixed point interval formatter.
- * 
+ *
  * @author pdowler
  */
-public class LongIntervalFormat implements Format<LongInterval>
-{
+public class LongIntervalFormat implements Format<LongInterval> {
+
     private static final Logger log = Logger.getLogger(LongIntervalFormat.class);
 
-    public LongIntervalFormat() { }
+    public LongIntervalFormat() {
+    }
 
-    public LongInterval parse(String s)
-    {
-        if (s == null)
+    public LongInterval parse(String s) {
+        if (s == null) {
             return null;
-        
+        }
+
         LongArrayFormat laf = new LongArrayFormat();
         long[] vv = laf.parse(s);
-        if (vv.length != 2)
+        if (vv.length != 2) {
             throw new IllegalArgumentException();
+        }
 
         return new LongInterval(vv[0], vv[1]);
     }
 
-    public String format(LongInterval t)
-    {
-        if (t == null)
+    public String format(LongInterval t) {
+        if (t == null) {
             return "";
+        }
         return t.getLower() + " " + t.getUpper();
     }
 }

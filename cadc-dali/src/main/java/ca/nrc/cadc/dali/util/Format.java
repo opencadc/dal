@@ -65,15 +65,15 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
 
 /**
  * Format interface.
  */
-public interface Format<T>
-{
+public interface Format<T> {
+
     T parse(String s);
 
     String format(T t);

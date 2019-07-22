@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.stc;
 
 import java.util.List;
@@ -75,8 +76,8 @@ import java.util.List;
  * is the Region that is contained in either or both of them.
  *
  */
-public class Union extends Region
-{
+public class Union extends Region {
+
     public static final String NAME = Union.class.getSimpleName();
 
     private List<Region> regions;
@@ -87,20 +88,20 @@ public class Union extends Region
      * contain at least two Regions.
      *
      * @param frame the frame describing the Union. Allowed values for frame are
-     *              from <code>ca.nrc.cadc.stc.Frame</code>.
+     *      from <code>ca.nrc.cadc.stc.Frame</code>.
      * @param refpos the reference position describing the Union. Allowed values
-     *               for refpos are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
+     *      for refpos are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
      * @param flavor the flavor describing the Union. Allowed values for flavor are
-     *               from <code>ca.nrc.cadc.stc.Flavor</code>.
+     *      from <code>ca.nrc.cadc.stc.Flavor</code>.
      * @param regions the regions of the Intersection.
      */
-    public Union(Frame frame, ReferencePosition refpos, Flavor flavor, List<Region> regions)
-    {
+    public Union(Frame frame, ReferencePosition refpos, Flavor flavor, List<Region> regions) {
         super(NAME, frame, refpos, flavor);
         this.regions = regions;
 
-        if (regions == null || regions.size() < 2)
+        if (regions == null || regions.size() < 2) {
             throw new IllegalArgumentException("Union requires 2 or more Regions");
+        }
     }
 
     /**
@@ -108,8 +109,7 @@ public class Union extends Region
      *
      * @return List of Regions.
      */
-    public List<Region> getRegions()
-    {
+    public List<Region> getRegions() {
         return regions;
     }
 

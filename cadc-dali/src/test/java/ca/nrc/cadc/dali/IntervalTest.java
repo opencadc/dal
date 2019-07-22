@@ -3,12 +3,12 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
 *  All rights reserved                  Tous droits réservés
-*                                       
+*
 *  NRC disclaims any warranties,        Le CNRC dénie toute garantie
 *  expressed, implied, or               énoncée, implicite ou légale,
 *  statutory, of any kind with          de quelque nature que ce
@@ -31,10 +31,10 @@
 *  software without specific prior      de ce logiciel sans autorisation
 *  written permission.                  préalable et particulière
 *                                       par écrit.
-*                                       
+*
 *  This file is part of the             Ce fichier fait partie du projet
 *  OpenCADC project.                    OpenCADC.
-*                                       
+*
 *  OpenCADC is free software:           OpenCADC est un logiciel libre ;
 *  you can redistribute it and/or       vous pouvez le redistribuer ou le
 *  modify it under the terms of         modifier suivant les termes de
@@ -44,7 +44,7 @@
 *  either version 3 of the              : soit la version 3 de cette
 *  License, or (at your option)         licence, soit (à votre gré)
 *  any later version.                   toute version ultérieure.
-*                                       
+*
 *  OpenCADC is distributed in the       OpenCADC est distribué
 *  hope that it will be useful,         dans l’espoir qu’il vous
 *  but WITHOUT ANY WARRANTY;            sera utile, mais SANS AUCUNE
@@ -54,7 +54,7 @@
 *  PURPOSE.  See the GNU Affero         PARTICULIER. Consultez la Licence
 *  General Public License for           Générale Publique GNU Affero
 *  more details.                        pour plus de détails.
-*                                       
+*
 *  You should have received             Vous devriez avoir reçu une
 *  a copy of the GNU Affero             copie de la Licence Générale
 *  General Public License along         Publique GNU Affero avec
@@ -62,49 +62,71 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
-*
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali;
 
-import javax.sql.DataSource;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * Interface for classes that support the UPLOAD parameter. A service must
- * provide an implementation called <code>ca.nrc.cadc.tamp.UploadManagerImpl</code>. 
- * The simplest approach is to extend one of the provided classes that implement
- * this interface.
- * 
+ *
  * @author pdowler
  */
-public interface UploadManager 
-{
-    /**
-     * The parameter name as defined in the TAP 1.0 specification.
-     */
-    public static final String UPLOAD = "UPLOAD";
+public class IntervalTest {
+
+    private static final Logger log = Logger.getLogger(IntervalTest.class);
+
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
+    }
     
-    /**
-     * The schema where uploaded tables are created as specified in the
-     * TAP 1.0 specification.
-     */
-    public static final String SCHEMA = "TAP_UPLOAD";
+    public IntervalTest() {
+    }
+
+    @Test
+    public void testDoubleIntervalCtor() {
+        try {
+            new DoubleInterval(1.2, 3.4);
+
+            new DoubleInterval(0.0, Double.POSITIVE_INFINITY);
+
+            new DoubleInterval(Double.NEGATIVE_INFINITY, 0.0);
+
+            try {
+                new DoubleInterval(1.0, -1.0);
+                Assert.fail("expected IllegalArgumentException");
+            } catch (IllegalArgumentException expected) {
+                log.info("expected exception: " + expected);
+            }
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
     
-    /**
-     * The caller specifies the datasource to use for creating tables.
-     * @param ds
-     */
-    public void setDataSource(DataSource ds);
-    
-    /**
-     * Find and process all UPLOAD requests.
-     * 
-     * @param paramList list of all parameters passed to the service
-     * @param jobID the UWS jobID
-     * @return map of service generated upload table name to user-specified table metadata
-     */
-    // TODO refactor out TAP references
-//    public Map<String, TableDesc> upload(List<Parameter> paramList, String jobID);
+    @Test
+    public void testLongIntervalCtor() {
+        try {
+            new LongInterval(1L, 3L);
+
+            new LongInterval(0L, Long.MAX_VALUE);
+
+            new LongInterval(Long.MIN_VALUE, 0L);
+
+            try {
+                new LongInterval(1L, -1L);
+                Assert.fail("expected IllegalArgumentException");
+            } catch (IllegalArgumentException expected) {
+                log.info("expected exception: " + expected);
+            }
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
 }

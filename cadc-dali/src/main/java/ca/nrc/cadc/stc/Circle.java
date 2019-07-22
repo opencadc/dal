@@ -66,54 +66,52 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.stc;
 
 /**
  * Class to represent a STC-S Circle.
  *
  */
-public class Circle extends Region
-{
+public class Circle extends Region {
+
     public static final String NAME = Circle.class.getSimpleName();
-    
+
     private CoordPair coordPair;
     private double radius;
 
     /**
      * Construct a Circle with the given coordinate system and coordinates.
      *
-     * @param frame the frame describing the Circle. Allowed values for frame are
-     *              from <code>ca.nrc.cadc.stc.Frame</code>.
-     * @param refpos the reference position describing the Circle. Allowed values
-     *               for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
-     * @param flavor the flavor describing the Circle. Allowed values for flavor are
-     *               from <code>ca.nrc.cadc.stc.Flavor</code>.
-     * @param x the x coordinate describing the center point of the Circle.
-     * @param y the y coordinate describing the center point of the Circle.
-     * @param r the radius of the Circle.
+     * @param frame the frame describing the Circle. Allowed values for frame 
+     *      are from <code>ca.nrc.cadc.stc.Frame</code>.
+     * @param refpos the reference position describing the Circle. Allowed values 
+     *      for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
+     * @param flavor the flavor describing the Circle. Allowed values for flavor 
+     *      are from <code>ca.nrc.cadc.stc.Flavor</code>.
+     * @param longitude the x coordinate describing the center point of the Circle.
+     * @param latitude the y coordinate describing the center point of the Circle.
+     * @param radius the radius of the Circle.
      */
-    public Circle(Frame frame, ReferencePosition refpos, Flavor flavor, double x, double y, double r)
-    {
+    public Circle(Frame frame, ReferencePosition refpos, Flavor flavor, double longitude, double latitude, double radius) {
         super(NAME, frame, refpos, flavor);
-        this.coordPair = new CoordPair(x, y);
-        this.radius = r;
+        this.coordPair = new CoordPair(longitude, latitude);
+        this.radius = radius;
     }
 
     /**
      *
      * @return the CoordPair describing the center points of the Circle.
      */
-    public CoordPair getCoordPair()
-    {
+    public CoordPair getCoordPair() {
         return coordPair;
     }
 
     /**
-     * 
+     *
      * @return the radius of the Circle
      */
-    public double getRadius()
-    {
+    public double getRadius() {
         return radius;
     }
 

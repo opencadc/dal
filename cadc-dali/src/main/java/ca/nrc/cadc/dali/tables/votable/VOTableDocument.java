@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.votable;
 
@@ -75,44 +75,40 @@ import java.util.List;
 /**
  * @author pdowler
  */
-public class VOTableDocument
-{
+public class VOTableDocument {
+
     private List<VOTableResource> resources = new ArrayList<VOTableResource>();
 
-    public VOTableDocument() { }
+    public VOTableDocument() {
+    }
 
-    public List<VOTableResource> getResources()
-    {
+    public List<VOTableResource> getResources() {
         return resources;
     }
 
-    public VOTableResource getResourceByType(String type)
-    {
-        for (VOTableResource r : resources)
-        {
-            if (r.getType().equals(type))
+    public VOTableResource getResourceByType(String type) {
+        for (VOTableResource r : resources) {
+            if (r.getType().equals(type)) {
                 return r;
+            }
         }
         return null;
     }
 
-    public VOTableResource getResourceByID(String id)
-    {
-        for (VOTableResource r : resources)
-        {
-            if (r.id != null && r.id.equals(id))
+    public VOTableResource getResourceByID(String id) {
+        for (VOTableResource r : resources) {
+            if (r.id != null && r.id.equals(id)) {
                 return r;
+            }
         }
         return null;
     }
 
-    public VOTableGroup getGroupByID(String id)
-    {
+    public VOTableGroup getGroupByID(String id) {
         throw new UnsupportedOperationException();
     }
 
-    public VOTableField getFieldByID(String id)
-    {
+    public VOTableField getFieldByID(String id) {
         throw new UnsupportedOperationException();
     }
 }

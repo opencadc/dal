@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.votable;
 
@@ -76,61 +76,52 @@ import java.util.List;
  *
  * @author pdowler
  */
-public class VOTableParam extends VOTableField
-{
+public class VOTableParam extends VOTableField {
+
     private String value;
-    
+
     private List<String> options = new ArrayList<String>();
     private String min;
     private String max;
 
-    protected VOTableParam() { }
+    protected VOTableParam() {
+    }
 
-    public VOTableParam(String name, String datatype, String value)
-    {
+    public VOTableParam(String name, String datatype, String value) {
         this(name, datatype, null, value);
     }
 
-    public VOTableParam(String name, String datatype, String arraysize, String value)
-    {
+    public VOTableParam(String name, String datatype, String arraysize, String value) {
         super(name, datatype, arraysize, null);
         this.value = value;
     }
 
-    public String getValue()
-    {
+    public String getValue() {
         return value;
     }
 
-    public boolean hasValues()
-    {
+    public boolean hasValues() {
         return (min != null || max != null || !options.isEmpty());
     }
-    
-    public List<String> getOptions()
-    {
+
+    public List<String> getOptions() {
         return options;
     }
 
-    public String getMin()
-    {
+    public String getMin() {
         return min;
     }
 
-    public String getMax()
-    {
+    public String getMax() {
         return max;
     }
 
-    public void setMin(String min)
-    {
+    public void setMin(String min) {
         this.min = min;
     }
 
-    public void setMax(String max)
-    {
+    public void setMax(String max) {
         this.max = max;
     }
-    
-    
+
 }

@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
@@ -77,201 +78,129 @@ import org.apache.log4j.Logger;
  *
  * @author jburke
  */
-public class FormatFactory
-{
+public class FormatFactory {
+
     private static final Logger log = Logger.getLogger(FormatFactory.class);
-    
+
     /**
      *
      * @param field
      * @return
      */
-    public Format getFormat(VOTableField field)
-    {
+    public Format getFormat(VOTableField field) {
         String datatype = field.getDatatype();
         Format ret = new DefaultFormat();
 
-        if (datatype == null)
+        if (datatype == null) {
             ret = new DefaultFormat();
-        else if (datatype.equalsIgnoreCase("boolean"))
-        {
+        } else if (datatype.equalsIgnoreCase("boolean")) {
             ret = new BooleanFormat();
-        }
-        else if (datatype.equalsIgnoreCase("bit"))
-        {
-            if (isArray(field))
-            {
+        } else if (datatype.equalsIgnoreCase("bit")) {
+            if (isArray(field)) {
                 ret = new ByteArrayFormat();
-            }
-            else
-            {
+            } else {
                 ret = new ByteFormat();
             }
-        }
-        else if (datatype.equalsIgnoreCase("unsignedByte"))
-        {
-            if (isArray(field))
-            {
+        } else if (datatype.equalsIgnoreCase("unsignedByte")) {
+            if (isArray(field)) {
                 ret = new ByteArrayFormat();
-            }
-            else
-            {
+            } else {
                 ret = new ByteFormat();
             }
-        }
-        else if (datatype.equalsIgnoreCase("short"))
-        {
-            if (isArray(field))
-            {
-                if ("interval".equalsIgnoreCase(field.xtype))
-                {
+        } else if (datatype.equalsIgnoreCase("short")) {
+            if (isArray(field)) {
+                if ("interval".equalsIgnoreCase(field.xtype)) {
                     ret = new LongIntervalFormat();
-                }
-                else
+                } else {
                     ret = new ShortArrayFormat();
-            }
-            else
-            {
+                }
+            } else {
                 ret = new ShortFormat();
             }
-        }
-        else if (datatype.equalsIgnoreCase("int"))
-        {
-            if (isArray(field))
-            {
-                if ("interval".equalsIgnoreCase(field.xtype))
-                {
+        } else if (datatype.equalsIgnoreCase("int")) {
+            if (isArray(field)) {
+                if ("interval".equalsIgnoreCase(field.xtype)) {
                     ret = new LongIntervalFormat();
-                }
-                else
+                } else {
                     ret = new IntArrayFormat();
-            }
-            else
-            {
+                }
+            } else {
                 ret = new IntegerFormat();
             }
-        }
-        else if (datatype.equalsIgnoreCase("long"))
-        {
-            if (isArray(field))
-            {
-                if ("interval".equalsIgnoreCase(field.xtype))
-                {
+        } else if (datatype.equalsIgnoreCase("long")) {
+            if (isArray(field)) {
+                if ("interval".equalsIgnoreCase(field.xtype)) {
                     ret = new LongIntervalFormat();
-                }
-                else
+                } else {
                     ret = new LongArrayFormat();
-            }
-            else
-            {
+                }
+            } else {
                 ret = new LongFormat();
             }
-        }
-        else if (datatype.equalsIgnoreCase("unicodeChar"))
-        {
+        } else if (datatype.equalsIgnoreCase("unicodeChar")) {
             ret = new StringFormat();
-        }
-        else if (datatype.equalsIgnoreCase("float"))
-        {
-            if (isArray(field))
-            {
-                if ("point".equalsIgnoreCase(field.xtype))
-                {
+        } else if (datatype.equalsIgnoreCase("float")) {
+            if (isArray(field)) {
+                if ("point".equalsIgnoreCase(field.xtype)) {
                     ret = new PointFormat();
-                }
-                else if ("circle".equalsIgnoreCase(field.xtype))
-                {
+                } else if ("circle".equalsIgnoreCase(field.xtype)) {
                     ret = new CircleFormat();
-                }
-                else if ("polygon".equalsIgnoreCase(field.xtype))
-                {
+                } else if ("polygon".equalsIgnoreCase(field.xtype)) {
                     ret = new PolygonFormat();
-                }
-                else if ("interval".equalsIgnoreCase(field.xtype))
-                {
+                } else if ("interval".equalsIgnoreCase(field.xtype)) {
                     ret = new DoubleIntervalFormat();
-                }
-                else if (field.getArrayShape().length == 1)
+                } else if (field.getArrayShape().length == 1) {
                     ret = new FloatArrayFormat();
-            }
-            else
-            {
+                }
+            } else {
                 ret = new FloatFormat();
             }
-        }
-        else if (datatype.equalsIgnoreCase("double"))
-        {
-            if (isArray(field))
-            {
-                if ("point".equalsIgnoreCase(field.xtype))
-                {
+        } else if (datatype.equalsIgnoreCase("double")) {
+            if (isArray(field)) {
+                if ("point".equalsIgnoreCase(field.xtype)) {
                     ret = new PointFormat();
-                }
-                else if ("circle".equalsIgnoreCase(field.xtype))
-                {
+                } else if ("circle".equalsIgnoreCase(field.xtype)) {
                     ret = new CircleFormat();
-                }
-                else if ("polygon".equalsIgnoreCase(field.xtype))
-                {
+                } else if ("polygon".equalsIgnoreCase(field.xtype)) {
                     ret = new PolygonFormat();
-                }
-                else if ("interval".equalsIgnoreCase(field.xtype))
-                {
-                    if (field.getArrayShape().length == 1 && field.getArrayShape()[0] == 2) // don't check value = 2?
+                } else if ("interval".equalsIgnoreCase(field.xtype)) {
+                    if (field.getArrayShape().length == 1 && field.getArrayShape()[0] == 2) {
                         ret = new DoubleIntervalFormat();
-                    else if (field.getArrayShape().length == 2 && field.getArrayShape()[0] == 2)
+                    } else if (field.getArrayShape().length == 2 && field.getArrayShape()[0] == 2) {
                         ret = new DoubleIntervalArrayFormat();
-                }
-                else  if (field.getArrayShape().length == 1)
+                    }
+                } else if (field.getArrayShape().length == 1) {
                     ret = new DoubleArrayFormat();
-                else  if (field.getArrayShape().length == 2)
+                } else if (field.getArrayShape().length == 2) {
                     ret = new DoubleArray2DFormat(field.getArrayShape());
-            }
-            else
-            {
+                }
+            } else {
                 ret = new DoubleFormat();
             }
-        }
-        else if (datatype.equalsIgnoreCase("floatComplex"))
-        {
+        } else if (datatype.equalsIgnoreCase("floatComplex")) {
             throw new UnsupportedOperationException("floatComplex datatype not supported for column " + field.getName());
-        }
-        else if (datatype.equalsIgnoreCase("doubleComplex"))
-        {
+        } else if (datatype.equalsIgnoreCase("doubleComplex")) {
             throw new UnsupportedOperationException("doubleComplex datatype not supported for column " + field.getName());
-        }
-        else if (datatype.equalsIgnoreCase("char"))
-        {
-            if (isArray(field))
-            {
-                if ("timestamp".equalsIgnoreCase(field.xtype)) // DALI-1.1
-                {
+        } else if (datatype.equalsIgnoreCase("char")) {
+            if (isArray(field)) {
+                if ("timestamp".equalsIgnoreCase(field.xtype)) { // DALI-1.1
                     ret = new UTCTimestampFormat();
-                }
-                else if ("adql:timestamp".equalsIgnoreCase(field.xtype))
-                {
+                } else if ("adql:timestamp".equalsIgnoreCase(field.xtype)) {
                     ret = new UTCTimestampFormat();
-                }
-                else if ("adql:point".equalsIgnoreCase(field.xtype))
-                {
+                } else if ("adql:point".equalsIgnoreCase(field.xtype)) {
                     ret = new STCPositionFormat();
-                }
-                else if ("adql:region".equalsIgnoreCase(field.xtype))
-                {
+                } else if ("adql:region".equalsIgnoreCase(field.xtype)) {
                     ret = new STCRegionFormat();
-                }
-                else if ("uuid".equalsIgnoreCase(field.xtype)) // custom
-                {
+                } else if ("uuid".equalsIgnoreCase(field.xtype)) { // custom
                     ret = new UUIDFormat();
                 }
             }
         }
-        log.debug(field + " formatter: " +  ret.getClass().getName());
+        log.debug(field + " formatter: " + ret.getClass().getName());
         return ret;
     }
 
-    private static boolean isArray(VOTableField field)
-    {
+    private static boolean isArray(VOTableField field) {
         return field.getArrayShape() != null;
     }
 

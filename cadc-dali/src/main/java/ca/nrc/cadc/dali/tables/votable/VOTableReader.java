@@ -65,10 +65,15 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import ca.nrc.cadc.dali.tables.ListTableData;
+import ca.nrc.cadc.dali.tables.TableData;
+import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.util.FormatFactory;
+import ca.nrc.cadc.util.StringUtil;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,7 +86,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
-
 import org.apache.log4j.Logger;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
@@ -91,18 +95,12 @@ import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.input.sax.XMLReaderSAX2Factory;
 
-import ca.nrc.cadc.dali.tables.ListTableData;
-import ca.nrc.cadc.dali.tables.TableData;
-import ca.nrc.cadc.dali.util.Format;
-import ca.nrc.cadc.dali.util.FormatFactory;
-import ca.nrc.cadc.util.StringUtil;
-
 /**
  *
  * @author pdowler
  */
-public class VOTableReader
-{
+public class VOTableReader {
+
     private static final Logger log = Logger.getLogger(VOTableReader.class);
 
     protected static final String PARSER = "org.apache.xerces.parsers.SAXParser";
@@ -117,8 +115,7 @@ public class VOTableReader
 
     private FormatFactory formatFactory;
 
-    static
-    {
+    static {
         votable11SchemaUrl = getSchemaURL(VOTABLE_11_SCHEMA);
         log.debug("votable11SchemaUrl: " + votable11SchemaUrl);
 
@@ -129,22 +126,20 @@ public class VOTableReader
         log.debug("votable13SchemaUrl: " + votable13SchemaUrl);
     }
 
-    static String getSchemaURL(String name)
-    {
+    static String getSchemaURL(String name) {
         URL url = VOTableReader.class.getClassLoader().getResource(name);
-        if (url == null)
-        {
+        if (url == null) {
             throw new MissingResourceException("schema not found", VOTableReader.class.getName(), name);
         }
         return url.toString();
     }
+    
     private SAXBuilder docBuilder;
 
     /**
      * Creates a VOTableReader that validates the VOTable.
      */
-    public VOTableReader()
-    {
+    public VOTableReader() {
         this(true);
     }
 
@@ -153,26 +148,21 @@ public class VOTableReader
      *
      * @param enableSchemaValidation validate the VOTable if true.
      */
-    public VOTableReader(boolean enableSchemaValidation)
-    {
+    public VOTableReader(boolean enableSchemaValidation) {
         Map<String, String> schemaMap = null;
-        if (enableSchemaValidation)
-        {
+        if (enableSchemaValidation) {
             schemaMap = new HashMap<String, String>();
             schemaMap.put(ca.nrc.cadc.dali.tables.votable.VOTableWriter.VOTABLE_11_NS_URI, votable11SchemaUrl);
             schemaMap.put(ca.nrc.cadc.dali.tables.votable.VOTableWriter.VOTABLE_12_NS_URI, votable12SchemaUrl);
             schemaMap.put(ca.nrc.cadc.dali.tables.votable.VOTableWriter.VOTABLE_13_NS_URI, votable13SchemaUrl);
             log.debug("schema validation enabled");
-        }
-        else
-        {
+        } else {
             log.debug("schema validation disabled");
         }
         this.docBuilder = createBuilder(schemaMap);
     }
 
-    public void setFormatFactory(FormatFactory formatFactory)
-    {
+    public void setFormatFactory(FormatFactory formatFactory) {
         this.formatFactory = formatFactory;
     }
 
@@ -184,8 +174,7 @@ public class VOTableReader
      * @throws IOException if unable to read the VOTable.
      */
     public VOTableDocument read(String xml)
-        throws IOException
-    {
+            throws IOException {
         Reader reader = new StringReader(xml);
         return read(reader);
     }
@@ -198,8 +187,7 @@ public class VOTableReader
      * @throws IOException is problem reading the InputStream.
      */
     public VOTableDocument read(InputStream istream)
-        throws IOException
-    {
+            throws IOException {
         Reader reader = new BufferedReader(new InputStreamReader(istream, "UTF-8"));
         return read(reader);
     }
@@ -212,31 +200,20 @@ public class VOTableReader
      * @throws IOException if problem reading from the reader.
      */
     public VOTableDocument read(Reader reader)
-        throws IOException
-    {
-        try
-        {
-            if (formatFactory == null)
-                this.formatFactory = new FormatFactory();
-            return readImpl(reader);
+            throws IOException {
+        if (formatFactory == null) {
+            this.formatFactory = new FormatFactory();
         }
-        finally
-        {
-
-        }
+        return readImpl(reader);
     }
 
     protected VOTableDocument readImpl(Reader reader)
-        throws IOException
-    {
+            throws IOException {
         // Parse the input document.
         Document document;
-        try
-        {
+        try {
             document = docBuilder.build(reader);
-        }
-        catch (JDOMException e)
-        {
+        } catch (JDOMException e) {
             throw new IOException("Unable to parse " + e.getMessage());
         }
 
@@ -252,26 +229,28 @@ public class VOTableReader
 
         // RESOURCE elements
         List<Element> resources = root.getChildren("RESOURCE", namespace);
-        for (Element resource : resources)
-        {
+        for (Element resource : resources) {
             Attribute typeAttr = resource.getAttribute("type");
             VOTableResource votResource = new VOTableResource(typeAttr.getValue());
             votable.getResources().add(votResource);
 
             // Get the RESOURCE utype attribute.
             Attribute utypeAttr = resource.getAttribute("utype");
-            if (utypeAttr != null)
+            if (utypeAttr != null) {
                 votResource.utype = utypeAttr.getValue();
-            
+            }
+
             // Get the RESOURCE name attribute.
             Attribute nameAttr = resource.getAttribute("name");
-            if (nameAttr != null)
+            if (nameAttr != null) {
                 votResource.setName(nameAttr.getValue());
+            }
 
             // GET the RESOURCE ID attribute
             Attribute idAttr = resource.getAttribute("ID");
-            if (idAttr != null)
+            if (idAttr != null) {
                 votResource.id = idAttr.getValue();
+            }
 
             // INFO elements
             List<Element> infos = resource.getChildren("INFO", namespace);
@@ -290,8 +269,7 @@ public class VOTableReader
 
             // TABLE element.
             Element table = resource.getChild("TABLE", namespace);
-            if (table != null)
-            {
+            if (table != null) {
                 VOTableTable vot = new VOTableTable();
                 votResource.setTable(vot);
 
@@ -311,8 +289,7 @@ public class VOTableReader
 
                 // DATA element.
                 Element data = table.getChild("DATA", namespace);
-                if (data != null)
-                {
+                if (data != null) {
                     // TABLEDATA element.
                     Element tableData = data.getChild("TABLEDATA", namespace);
                     vot.setTableData(getTableData(tableData, namespace, vot.getFields()));
@@ -329,21 +306,19 @@ public class VOTableReader
      * @param namespace document namespace.
      * @return List of Info objects.
      */
-    protected List<VOTableInfo> getInfos(List<Element> elements, Namespace namespace)
-    {
+    protected List<VOTableInfo> getInfos(List<Element> elements, Namespace namespace) {
         ArrayList<VOTableInfo> infos = new ArrayList<VOTableInfo>();
-        for (Element element : elements)
-        {
-            String name=  element.getAttributeValue("name");
+        for (Element element : elements) {
+            String name = element.getAttributeValue("name");
             String value = element.getAttributeValue("value");
-            if (name != null && !name.trim().isEmpty() &&
-                value != null && !value.trim().isEmpty())
-            {
+            if (name != null && !name.trim().isEmpty()
+                    && value != null && !value.trim().isEmpty()) {
                 VOTableInfo i = new VOTableInfo(name, value);
                 String s = element.getText();
                 log.debug("INFO content: " + s);
-                if (StringUtil.hasText(s))
+                if (StringUtil.hasText(s)) {
                     i.content = s;
+                }
                 infos.add(i);
             }
         }
@@ -357,11 +332,9 @@ public class VOTableReader
      * @param namespace document namespace.
      * @return List of Info objects.
      */
-    protected List<VOTableGroup> getGroups(List<Element> elements, Namespace namespace)
-    {
+    protected List<VOTableGroup> getGroups(List<Element> elements, Namespace namespace) {
         ArrayList<VOTableGroup> ret = new ArrayList<VOTableGroup>();
-        for (Element element : elements)
-        {
+        for (Element element : elements) {
             String name = element.getAttributeValue("name");
             VOTableGroup vg = new VOTableGroup(name);
 
@@ -387,11 +360,9 @@ public class VOTableReader
      * @param namespace document namespace.
      * @return List of TableParam objects.
      */
-    protected List<VOTableParam> getParams(List<Element> elements, Namespace namespace)
-    {
+    protected List<VOTableParam> getParams(List<Element> elements, Namespace namespace) {
         ArrayList<VOTableParam> params = new ArrayList<VOTableParam>();
-        for (Element element : elements)
-        {
+        for (Element element : elements) {
             String name = element.getAttributeValue("name");
             String datatype = element.getAttributeValue("datatype");
             String arraysize = element.getAttributeValue("arraysize");
@@ -410,11 +381,9 @@ public class VOTableReader
      * @param namespace document namespace.
      * @return List of TableField objects.
      */
-    protected List<VOTableField> getFields(List<Element> elements, Namespace namespace)
-    {
+    protected List<VOTableField> getFields(List<Element> elements, Namespace namespace) {
         ArrayList<VOTableField> fields = new ArrayList<VOTableField>();
-        for (Element element : elements)
-        {
+        for (Element element : elements) {
             String name = element.getAttributeValue("name");
             String datatype = element.getAttributeValue("datatype");
             String arraysize = element.getAttributeValue("arraysize");
@@ -432,8 +401,7 @@ public class VOTableReader
      * @param element source Element.
      * @param namespace document namespace.
      */
-    protected void updateTableField(VOTableField tableField, Element element, Namespace namespace)
-    {
+    protected void updateTableField(VOTableField tableField, Element element, Namespace namespace) {
         tableField.id = element.getAttributeValue("ID");
         tableField.ucd = element.getAttributeValue("ucd");
         tableField.unit = element.getAttributeValue("unit");
@@ -443,20 +411,16 @@ public class VOTableReader
 
         // DESCRIPTION element for the FIELD.
         Element description = element.getChild("DESCRIPTION", namespace);
-        if (description != null)
-        {
+        if (description != null) {
             tableField.description = description.getText();
         }
 
         // VALUES element for the PARAM.
         Element values = element.getChild("VALUES", namespace);
-        if (values != null)
-        {
+        if (values != null) {
             List<Element> options = values.getChildren("OPTION", namespace);
-            if (!options.isEmpty())
-            {
-                for (Element option : options)
-                {
+            if (!options.isEmpty()) {
+                for (Element option : options) {
                     tableField.getValues().add(option.getAttributeValue("value"));
                 }
             }
@@ -470,25 +434,22 @@ public class VOTableReader
      * @param namespace document namespace.
      * @return TableData object containing rows of data.
      */
-    TableData getTableData(Element element, Namespace namespace, List<VOTableField> fields)
-    {
+    TableData getTableData(Element element, Namespace namespace, List<VOTableField> fields) {
         ListTableData tableData = new ListTableData();
 
-        if (element != null)
-        {
+        if (element != null) {
             List<Element> trs = element.getChildren("TR", namespace);
-            for (Element tr : trs)
-            {
+            for (Element tr : trs) {
                 List<Object> row = new ArrayList<Object>();
                 List<Element> tds = tr.getChildren("TD", namespace);
-                for (int i = 0; i < tds.size(); i++)
-                {
+                for (int i = 0; i < tds.size(); i++) {
                     Element td = tds.get(i);
                     VOTableField field = fields.get(i);
                     Format format = formatFactory.getFormat(field);
                     String text = td.getTextTrim();
-                    if (text != null && text.length() == 0)
+                    if (text != null && text.length() == 0) {
                         text = null;
+                    }
                     Object o = format.parse(text);
                     row.add(o);
                 }
@@ -500,21 +461,19 @@ public class VOTableReader
 
     /**
      * Create a XML parser using the schemaMap schemas for validation.
+     *
      * @param schemaMap Map of schema namespace to location.
      * @return XML parser.
      */
-    protected SAXBuilder createBuilder(Map<String, String> schemaMap)
-    {
+    protected SAXBuilder createBuilder(Map<String, String> schemaMap) {
         long start = System.currentTimeMillis();
         boolean schemaVal = (schemaMap != null);
         String schemaResource;
         String space = " ";
         StringBuilder sbSchemaLocations = new StringBuilder();
-        if (schemaVal)
-        {
+        if (schemaVal) {
             log.debug("schemaMap.size(): " + schemaMap.size());
-            for (String schemaNSKey : schemaMap.keySet())
-            {
+            for (String schemaNSKey : schemaMap.keySet()) {
                 schemaResource = schemaMap.get(schemaNSKey);
                 sbSchemaLocations.append(schemaNSKey).append(space).append(schemaResource).append(space);
             }
@@ -524,14 +483,12 @@ public class VOTableReader
 
         XMLReaderSAX2Factory factory = new XMLReaderSAX2Factory(schemaVal, PARSER);
         SAXBuilder builder = new SAXBuilder(factory);
-        if (schemaVal)
-        {
+        if (schemaVal) {
             builder.setFeature("http://xml.org/sax/features/validation", true);
             builder.setFeature("http://apache.org/xml/features/validation/schema", true);
-            if (schemaMap.size() > 0)
-            {
+            if (schemaMap.size() > 0) {
                 builder.setProperty("http://apache.org/xml/properties/schema/external-schemaLocation",
-                    sbSchemaLocations.toString());
+                        sbSchemaLocations.toString());
             }
         }
         long finish = System.currentTimeMillis();

@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables.votable;
 
@@ -77,38 +77,34 @@ import java.util.List;
  *
  * @author pdowler
  */
-public class VOTableTable 
-{
+public class VOTableTable {
+
     private List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
     private List<VOTableParam> params = new ArrayList<VOTableParam>();
     private List<VOTableField> fields = new ArrayList<VOTableField>();
 
     private TableData tableData;
-    
-    public VOTableTable() { }
 
-    public List<VOTableInfo> getInfos()
-    {
+    public VOTableTable() {
+    }
+
+    public List<VOTableInfo> getInfos() {
         return infos;
     }
 
-    public List<VOTableParam> getParams()
-    {
+    public List<VOTableParam> getParams() {
         return params;
     }
 
-    public List<VOTableField> getFields()
-    {
+    public List<VOTableField> getFields() {
         return fields;
     }
 
-    public TableData getTableData()
-    {
+    public TableData getTableData() {
         return tableData;
     }
 
-    public void setTableData(TableData tableData)
-    {
+    public void setTableData(TableData tableData) {
         this.tableData = tableData;
     }
 }

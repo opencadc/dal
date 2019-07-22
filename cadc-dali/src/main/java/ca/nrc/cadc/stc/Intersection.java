@@ -66,6 +66,7 @@
  *
  ************************************************************************
  */
+
 package ca.nrc.cadc.stc;
 
 import java.util.List;
@@ -75,10 +76,10 @@ import java.util.List;
  * Region that is common to two or Regions.
  *
  */
-public class Intersection extends Region
-{
+public class Intersection extends Region {
+
     public static final String NAME = Intersection.class.getSimpleName();
-    
+
     private List<Region> regions;
 
     /**
@@ -87,20 +88,20 @@ public class Intersection extends Region
      * contain at least two Regions.
      *
      * @param frame the frame describing the Intersection. Allowed values for frame are
-     *              from <code>ca.nrc.cadc.stc.Frame</code>.
+     *      from <code>ca.nrc.cadc.stc.Frame</code>.
      * @param refpos the reference position describing the Intersection. Allowed values
-     *               for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
+     *      for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
      * @param flavor the flavor describing the Intersection. Allowed values for flavor are
-     *               from <code>ca.nrc.cadc.stc.Flavor</code>.
+     *      from <code>ca.nrc.cadc.stc.Flavor</code>.
      * @param regions the regions of the Intersection.
      */
-    public Intersection(Frame frame, ReferencePosition refpos, Flavor flavor, List<Region> regions)
-    {
+    public Intersection(Frame frame, ReferencePosition refpos, Flavor flavor, List<Region> regions) {
         super(NAME, frame, refpos, flavor);
         this.regions = regions;
 
-        if (regions == null || regions.size() < 2)
+        if (regions == null || regions.size() < 2) {
             throw new IllegalArgumentException("Intersection requires 2 or more Regions");
+        }
     }
 
     /**
@@ -108,8 +109,7 @@ public class Intersection extends Region
      *
      * @return List of Regions.
      */
-    public List<Region> getRegions()
-    {
+    public List<Region> getRegions() {
         return regions;
     }
 

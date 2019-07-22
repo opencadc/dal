@@ -71,12 +71,12 @@ package ca.nrc.cadc.stc;
 
 /**
  * Class to represent a STC-S Box.
- * 
+ *
  */
-public class Box extends Region
-{
+public class Box extends Region {
+
     public static final String NAME = Box.class.getSimpleName();
-    
+
     private CoordPair coordPair;
     private double width;
     private double height;
@@ -84,19 +84,15 @@ public class Box extends Region
     /**
      * Construct a Box with the given coordinate descriptions and coordinates.
      *
-     * @param frame the frame describing the Box. Allowed values for frame are
-     *              from <code>ca.nrc.cadc.stc.Frame</code>.
-     * @param refpos the reference position describing the Box. Allowed values
-     *               for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
-     * @param flavor the flavor describing the Box. Allowed values for flavor are
-     *               from <code>ca.nrc.cadc.stc.Flavor</code>.
-     * @param x the x coordinate describing the center point of the Box.
+     * @param frame the frame describing the Box. Allowed values for frame are from <code>ca.nrc.cadc.stc.Frame</code>.
+     * @param refpos the reference position describing the Box. Allowed values for reference position are from <code>ca.nrc.cadc.stc.ReferencePosition</code>.
+     * @param flavor the flavor describing the Box. Allowed values for flavor are from <code>ca.nrc.cadc.stc.Flavor</code>.
+     * @param x the x coordinate describing the center point of the Box. 
      * @param y the y coordinate describing the center point o the Box.
      * @param w the width of the Box.
      * @param h the height of the Box.
      */
-    public Box(Frame frame, ReferencePosition refpos, Flavor flavor, double x, double y, double w, double h)
-    {
+    public Box(Frame frame, ReferencePosition refpos, Flavor flavor, double x, double y, double w, double h) {
         super(NAME, frame, refpos, flavor);
         this.coordPair = new CoordPair(x, y);
         this.width = w;
@@ -108,8 +104,7 @@ public class Box extends Region
      *
      * @return the center point of this Box.
      */
-    public CoordPair getCoordPair()
-    {
+    public CoordPair getCoordPair() {
         return coordPair;
     }
 
@@ -118,8 +113,7 @@ public class Box extends Region
      *
      * @return the width of this Box.
      */
-    public double getWidth()
-    {
+    public double getWidth() {
         return width;
     }
 
@@ -128,8 +122,7 @@ public class Box extends Region
      *
      * @return the height of this Box.
      */
-    public double getHeight()
-    {
+    public double getHeight() {
         return height;
     }
 

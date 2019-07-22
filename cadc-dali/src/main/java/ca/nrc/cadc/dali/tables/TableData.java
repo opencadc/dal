@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.tables;
 
@@ -76,18 +76,18 @@ import java.util.List;
  * Interface to the content of a table. The table data model provides a way to
  * set this object and the writer implementations use this interface to iterate
  * over the rows during output. Implementations of this class simply provide the
- * values for the rows; this can be dynamically generated or streamed from another 
+ * values for the rows; this can be dynamically generated or streamed from another
  * source of rows (eg. a java.sql.ResultSet).
  * <p>
- * In the current implementation of table data models, you would create a 
+ * In the current implementation of table data models, you would create a
  * VOTableDocument, a VOTableResource with type="results", and a VOTableTable with
  * the VOTableField(s) and your own TableData implementation.
  * </p>
- * 
+ *
  * @author pdowler
  */
-public interface TableData
-{
+public interface TableData {
+
     /**
      * An iterator over the rows in the table. Each row is returned by one call
      * to Iterator.next() as a List of Object(s).

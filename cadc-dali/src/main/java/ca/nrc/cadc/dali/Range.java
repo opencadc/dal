@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2014.                            (c) 2014.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,18 +62,56 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
 */
 
-package ca.nrc.cadc.sia2;
+package ca.nrc.cadc.dali;
 
 /**
- *
+ * Range (DALI-1.2).
+ * 
  * @author pdowler
  */
-public interface Shape 
-{
+public class Range implements Shape {
+    private final DoubleInterval longitude;
+    private final DoubleInterval latitude;
+    
+    public Range(DoubleInterval longitude, DoubleInterval latitude) {
+        DaliUtil.assertNotNull("longitude", longitude);
+        DaliUtil.assertNotNull("latitude", latitude);
+        DaliUtil.assertValidRange("longitude", longitude.getLower(), 0.0, 360.0);
+        DaliUtil.assertValidRange("longitude", longitude.getUpper(), 0.0, 360.0);
+        DaliUtil.assertValidRange("latitude", latitude.getLower(), -90.0, 90.0);
+        DaliUtil.assertValidRange("latitude", latitude.getUpper(), -90.0, 90.0);
+        this.longitude = longitude;
+        this.latitude = latitude;
+    }
 
+    public DoubleInterval getLongitude() {
+        return longitude;
+    }
+
+    public DoubleInterval getLatitude() {
+        return latitude;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        Range rhs = (Range) obj;
+        return (longitude.equals(rhs.longitude) && latitude.equals(rhs.latitude));
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Range.class.getSimpleName()).append("[");
+        sb.append(longitude).append(",");
+        sb.append(latitude).append("]");
+        return sb.toString();
+    }
+    
+    
 }

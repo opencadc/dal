@@ -65,10 +65,9 @@
 *  $Revision: 5 $
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
-
 
 import java.util.UUID;
 import org.apache.log4j.Logger;
@@ -77,31 +76,29 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class UUIDFormat implements Format<UUID>
-{
+public class UUIDFormat implements Format<UUID> {
+
     private static final Logger log = Logger.getLogger(UUIDFormat.class);
 
-    public UUIDFormat() { }
+    public UUIDFormat() {
+    }
 
-    public UUID parse(String s)
-    {
-        if (s == null)
+    public UUID parse(String s) {
+        if (s == null) {
             return null;
-        try
-        {
-            return UUID.fromString(s);
         }
-        catch(IllegalArgumentException ex)
-        {
+        try {
+            return UUID.fromString(s);
+        } catch (IllegalArgumentException ex) {
             // ex doesn't say what string it got
             throw new IllegalArgumentException("invalid UUID: " + s);
         }
     }
 
-    public String format(UUID t)
-    {
-        if (t == null)
+    public String format(UUID t) {
+        if (t == null) {
             return "";
+        }
         return t.toString();
     }
 }

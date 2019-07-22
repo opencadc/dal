@@ -73,25 +73,22 @@ package ca.nrc.cadc.dali.util;
  *
  * @author pdowler
  */
-public class FloatArrayFormat  implements Format<float[]>
-{
+public class FloatArrayFormat implements Format<float[]> {
+
     /**
-     * Takes an float[]  and returns the default String representation.
+     * Takes an float[] and returns the default String representation.
      * If the float[] is null an empty String is returned.
      *
      * @param object float[]to format.
      * @return String representation of the float[].
      */
-    public String format(float[] object)
-    {
-        if (object == null)
-        {
+    public String format(float[] object) {
+        if (object == null) {
             return "";
         }
 
         StringBuilder sb = new StringBuilder();
-        for (float f : object)
-        {
+        for (float f : object) {
             sb.append(Float.toString(f));
             sb.append(" ");
         }
@@ -104,18 +101,13 @@ public class FloatArrayFormat  implements Format<float[]>
      * @param s the String to parse.
      * @return float[] value of the String.
      */
-    public float[] parse(String s)
-    {
-        if (s == null || s.isEmpty())
-        {
+    public float[] parse(String s) {
+        if (s == null || s.isEmpty()) {
             return null;
-        }
-        else
-        {
+        } else {
             String[] tokens = s.split(" ");
             float[] array = new float[tokens.length];
-            for (int i = 0; i < tokens.length; i++)
-            {
+            for (int i = 0; i < tokens.length; i++) {
                 array[i] = Float.parseFloat(tokens[i]);
             }
             return array;
