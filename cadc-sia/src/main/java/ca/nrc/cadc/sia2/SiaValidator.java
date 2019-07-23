@@ -137,7 +137,7 @@ public class SiaValidator {
         if (values == null) {
             return ret;
         }
-        ShapeFormat fmt = new ShapeFormat();
+        ShapeFormat fmt = new ShapeFormat(true);
         for (String v : values) {
             log.debug("validatePos: " + v);
             Shape shape = fmt.parse(v);
@@ -297,7 +297,7 @@ public class SiaValidator {
         }
         DoubleIntervalFormat fmt = new DoubleIntervalFormat();
         for (String v : values) {
-            String vv = scalar2interval(v);
+            String vv = v; //scalar2interval(v);
             log.debug("validateNumeric " + paramName + ": " + v + " aka " + vv);
             DoubleInterval di = fmt.parse(vv);
             ret.add(di);
