@@ -63,7 +63,7 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
 
@@ -78,14 +78,15 @@ import org.apache.log4j.Logger;
  * @author pdowler
  */
 public class RangeFormat implements Format<Range> {
+
     private static final Logger log = Logger.getLogger(RangeFormat.class);
-    
+
     private final DoubleIntervalArrayFormat diaf = new DoubleIntervalArrayFormat();
     private final DoubleArrayFormat fmt = new DoubleArrayFormat();
-    
+
     private final boolean sia2;
-    
-    public RangeFormat() { 
+
+    public RangeFormat() {
         this.sia2 = false;
     }
 
@@ -95,7 +96,7 @@ public class RangeFormat implements Format<Range> {
     public RangeFormat(boolean supportSIA2) {
         this.sia2 = supportSIA2;
     }
-    
+
     @Override
     public Range parse(String s) {
         DoubleInterval[] dis = diaf.parse(s);
@@ -105,19 +106,19 @@ public class RangeFormat implements Format<Range> {
         if (sia2) {
             // clip infinite to coordinate limits
             double long1 = dis[0].getLower();
-            if (dis[0].getLower().isInfinite()){
+            if (dis[0].getLower().isInfinite()) {
                 long1 = 0.0;
             }
             double long2 = dis[0].getUpper();
-            if (dis[0].getUpper().isInfinite()){
+            if (dis[0].getUpper().isInfinite()) {
                 long2 = 360.0;
             }
             double lat1 = dis[1].getLower();
-            if (dis[1].getLower().isInfinite()){
+            if (dis[1].getLower().isInfinite()) {
                 lat1 = -90.0;
             }
             double lat2 = dis[1].getUpper();
-            if (dis[1].getUpper().isInfinite()){
+            if (dis[1].getUpper().isInfinite()) {
                 lat2 = 90.0;
             }
             return new Range(new DoubleInterval(long1, long2), new DoubleInterval(lat1, lat2));

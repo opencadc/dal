@@ -68,7 +68,6 @@
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.Circle;
-import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.Range;
@@ -85,9 +84,10 @@ public class ShapeFormat implements Format<Shape> {
     private static final Logger log = Logger.getLogger(ShapeFormat.class);
 
     private boolean sia2 = false;
+
     public ShapeFormat() {
     }
-    
+
     public ShapeFormat(boolean supportSIA2) {
         this.sia2 = supportSIA2;
     }
