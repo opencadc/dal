@@ -84,7 +84,12 @@ public class ShapeFormat implements Format<Shape> {
 
     private static final Logger log = Logger.getLogger(ShapeFormat.class);
 
+    private boolean sia2 = false;
     public ShapeFormat() {
+    }
+    
+    public ShapeFormat(boolean supportSIA2) {
+        this.sia2 = supportSIA2;
     }
 
     @Override
@@ -104,7 +109,7 @@ public class ShapeFormat implements Format<Shape> {
             CircleFormat fmt = new CircleFormat();
             return fmt.parse(parts[1]);
         } else if (Range.class.getSimpleName().equalsIgnoreCase(parts[0])) {
-            RangeFormat fmt = new RangeFormat();
+            RangeFormat fmt = new RangeFormat(sia2);
             return fmt.parse(parts[1]);
         } else if (Polygon.class.getSimpleName().equalsIgnoreCase(parts[0])) {
             PolygonFormat fmt = new PolygonFormat();

@@ -71,23 +71,56 @@ import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.Range;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
 public class RangeFormat implements Format<Range> {
+    private static final Logger log = Logger.getLogger(RangeFormat.class);
+    
     private final DoubleIntervalArrayFormat diaf = new DoubleIntervalArrayFormat();
     private final DoubleArrayFormat fmt = new DoubleArrayFormat();
     
+    private final boolean sia2;
+    
     public RangeFormat() { 
+        this.sia2 = false;
     }
 
+    /**
+     * @param supportSIA2 if true, parse function allows ranges to use -Inf and +inf
+     */
+    public RangeFormat(boolean supportSIA2) {
+        this.sia2 = supportSIA2;
+    }
+    
     @Override
     public Range parse(String s) {
         DoubleInterval[] dis = diaf.parse(s);
         if (dis.length != 2) {
             throw new IllegalArgumentException("invalid range: found " + dis.length + " intervals");
+        }
+        if (sia2) {
+            // clip infinite to coordinate limits
+            double long1 = dis[0].getLower();
+            if (dis[0].getLower().isInfinite()){
+                long1 = 0.0;
+            }
+            double long2 = dis[0].getUpper();
+            if (dis[0].getUpper().isInfinite()){
+                long2 = 360.0;
+            }
+            double lat1 = dis[1].getLower();
+            if (dis[1].getLower().isInfinite()){
+                lat1 = -90.0;
+            }
+            double lat2 = dis[1].getUpper();
+            if (dis[1].getUpper().isInfinite()){
+                lat2 = 90.0;
+            }
+            return new Range(new DoubleInterval(long1, long2), new DoubleInterval(lat1, lat2));
         }
         return new Range(dis[0], dis[1]);
     }
@@ -110,16 +143,21 @@ public class RangeFormat implements Format<Range> {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
+                double d;
                 num++;
                 switch (num) {
                     case 1:
-                        return t.getLongitude().getLower();
+                        d = t.getLongitude().getLower();
+                        return d;
                     case 2:
-                        return t.getLongitude().getUpper();
+                        d = t.getLongitude().getUpper();
+                        return d;
                     case 3:
-                        return t.getLatitude().getLower();
+                        d = t.getLatitude().getLower();
+                        return d;
                     case 4:
-                        return t.getLatitude().getUpper();
+                        d = t.getLatitude().getUpper();
+                        return d;
                     default:
                         throw new RuntimeException("BUG: range coordinate iteration reached " + num);
                 }
@@ -132,6 +170,4 @@ public class RangeFormat implements Format<Range> {
             }
         });
     }
-    
-    
 }

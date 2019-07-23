@@ -158,6 +158,33 @@ public class ShapeFormatTest {
     }
     
     @Test
+    public void testRangeSIA2Parse() {
+        log.debug("testRangeSIA2Parse");
+        try {
+            ShapeFormat format = new ShapeFormat(false);
+            String input = "range -Inf +inf -inf +Inf"; // SIA-2.0 POS parameter section 2.1.1
+            log.info("testRangeSIA2Parse: " + input);
+            try {
+                Shape actual = format.parse(input);
+                Assert.fail("expected IllegalArgumentException - got " + actual);
+            } catch (IllegalArgumentException expected) {
+                log.info("caught expected exception: " + expected);
+            }
+            
+            // enable sia2 mode
+            format = new ShapeFormat(true);
+            Shape actual = format.parse(input);
+
+            Range expected = new Range(new DoubleInterval(0.0, 360.0), new DoubleInterval(-90.0, 90.0));
+            Range ac = (Range) actual;
+            Assert.assertEquals(expected, ac);
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
     public void testPolygon() {
         log.debug("testPolygon");
         try {
