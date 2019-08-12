@@ -74,6 +74,7 @@ import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.util.StringUtil;
+import ca.nrc.cadc.xml.XmlUtil;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -159,7 +160,7 @@ public class VOTableReader {
         } else {
             log.debug("schema validation disabled");
         }
-        this.docBuilder = createBuilder(schemaMap);
+        this.docBuilder = XmlUtil.createBuilder(schemaMap);
     }
 
     public void setFormatFactory(FormatFactory formatFactory) {
@@ -458,42 +459,4 @@ public class VOTableReader {
         }
         return tableData;
     }
-
-    /**
-     * Create a XML parser using the schemaMap schemas for validation.
-     *
-     * @param schemaMap Map of schema namespace to location.
-     * @return XML parser.
-     */
-    protected SAXBuilder createBuilder(Map<String, String> schemaMap) {
-        long start = System.currentTimeMillis();
-        boolean schemaVal = (schemaMap != null);
-        String schemaResource;
-        String space = " ";
-        StringBuilder sbSchemaLocations = new StringBuilder();
-        if (schemaVal) {
-            log.debug("schemaMap.size(): " + schemaMap.size());
-            for (String schemaNSKey : schemaMap.keySet()) {
-                schemaResource = schemaMap.get(schemaNSKey);
-                sbSchemaLocations.append(schemaNSKey).append(space).append(schemaResource).append(space);
-            }
-            // enable xerces grammar caching
-            System.setProperty("org.apache.xerces.xni.parser.XMLParserConfiguration", GRAMMAR_POOL);
-        }
-
-        XMLReaderSAX2Factory factory = new XMLReaderSAX2Factory(schemaVal, PARSER);
-        SAXBuilder builder = new SAXBuilder(factory);
-        if (schemaVal) {
-            builder.setFeature("http://xml.org/sax/features/validation", true);
-            builder.setFeature("http://apache.org/xml/features/validation/schema", true);
-            if (schemaMap.size() > 0) {
-                builder.setProperty("http://apache.org/xml/properties/schema/external-schemaLocation",
-                        sbSchemaLocations.toString());
-            }
-        }
-        long finish = System.currentTimeMillis();
-        log.debug("SAXBuilder in " + (finish - start) + "ms");
-        return builder;
-    }
-
 }
