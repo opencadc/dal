@@ -416,8 +416,6 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
     // Build a String containing the nested Exception messages.
     private String getThrownExceptions(Throwable thrown) {
         StringBuilder sb = new StringBuilder();
-        sb.append(thrown.getClass().getSimpleName());
-        sb.append(": ");
         if (thrown.getMessage() == null) {
             sb.append("");
         } else {
@@ -426,8 +424,6 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         while (thrown.getCause() != null) {
             thrown = thrown.getCause();
             sb.append(" ");
-            sb.append(thrown.getClass().getSimpleName());
-            sb.append(": ");
             if (thrown.getMessage() == null) {
                 sb.append("");
             } else {
