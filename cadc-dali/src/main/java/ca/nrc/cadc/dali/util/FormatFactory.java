@@ -185,6 +185,8 @@ public class FormatFactory {
             if (isArray(field)) {
                 if ("timestamp".equalsIgnoreCase(field.xtype)) { // DALI-1.1
                     ret = new UTCTimestampFormat();
+                } else if (field.xtype != null && field.xtype.endsWith("shape")) { // DALI-1.2 prototype, ignore prefix
+                    ret = new ShapeFormat();
                 } else if ("adql:timestamp".equalsIgnoreCase(field.xtype)) {
                     ret = new UTCTimestampFormat();
                 } else if ("adql:point".equalsIgnoreCase(field.xtype)) {
