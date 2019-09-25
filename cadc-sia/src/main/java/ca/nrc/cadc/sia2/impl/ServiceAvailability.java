@@ -166,9 +166,12 @@ public class ServiceAvailability implements AvailabilityPlugin {
 
         AuthMethod am = AuthenticationUtil.getAuthMethod(AuthenticationUtil.getCurrentSubject());
         try {
+
+            // Attempt to load the URI as a resource URI from the Registry.
             return regClient.getServiceURL(configuredTapURI, Standards.TAP_10,
                                            (am == null) ? AuthMethod.ANON : am);
         } catch (IllegalArgumentException iae) {
+            // Fallback and assume the URI is an absolute one.
             return configuredTapURI.toURL();
         }
     }
