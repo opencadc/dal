@@ -74,7 +74,6 @@ import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.sia2.SiaRunner;
-import ca.nrc.cadc.util.MultiValuedProperties;
 import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.vosi.AvailabilityPlugin;
 import ca.nrc.cadc.vosi.AvailabilityStatus;
@@ -85,8 +84,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
@@ -199,11 +196,7 @@ public class ServiceAvailability implements AvailabilityPlugin {
         final PropertiesReader propertiesReader = new PropertiesReader(CONFIG_FILE_NAME);
 
         if (propertiesReader.canRead()) {
-            final MultiValuedProperties multiValuedProperties = propertiesReader.getAllProperties();
-            final List<String> props = (multiValuedProperties == null)
-                                       ? new ArrayList<String>() : multiValuedProperties.getProperty(
-                    CONFIG_TAP_URI_KEY);
-            return props.isEmpty() ? null : props.get(0);
+            return propertiesReader.getFirstPropertyValue(CONFIG_TAP_URI_KEY);
         } else {
             URL url = SiaRunner.class.getResource(CONFIG_FILE_NAME);
             if (url == null) {
