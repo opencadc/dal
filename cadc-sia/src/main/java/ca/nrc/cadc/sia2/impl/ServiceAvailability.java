@@ -149,10 +149,6 @@ public class ServiceAvailability implements AvailabilityPlugin {
         //no-op
     }
 
-    private static boolean isIVOURI(final URI uri) {
-        return uri.getScheme().equals("ivo");
-    }
-
     /**
      * Obtain the base TAP URL to use. This method will read in an optionally configured 'tapURI' property and if it
      * appears to be a URL, then assume an unregistered TAP service was configured and treat it as the base URL,
@@ -167,7 +163,7 @@ public class ServiceAvailability implements AvailabilityPlugin {
         URI configuredTapURI = URI.create(ServiceAvailability.getTapURI());
 
         AuthMethod am = AuthenticationUtil.getAuthMethod(AuthenticationUtil.getCurrentSubject());
-        if (ServiceAvailability.isIVOURI(configuredTapURI)) {
+        if (configuredTapURI.getScheme().equals("ivo")) {
             // Attempt to load the URI as a resource URI from the Registry.
             return regClient.getServiceURL(configuredTapURI, Standards.TAP_10,
                                            (am == null) ? AuthMethod.ANON : am);
