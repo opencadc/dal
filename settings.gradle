@@ -1,0 +1,2 @@
+rootProject.name = 'dal'
+include 'cadc-dali', 'cadc-dali-pg', 'cadc-datalink-server', 'cadc-sia', 'cadc-soda-server'
