@@ -93,11 +93,12 @@ public interface StreamingSodaPlugin {
      * @param band optional energy cutout (may be null)
      * @param time optional time cutout (may be null)
      * @param pol optional polarization cutout (may be null)
+     * @param custom optional custom axis cutout (may be null)
      * @param out wrapper for setting output properties (HTTP headers) and opening the OutputStream
      * @throws IOException failure to read or write data
      */
     void write(URI uri, 
-            Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol,
+            Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol, Cutout<Interval> custom,
             SyncOutput out) 
         throws IOException;
 }

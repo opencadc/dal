@@ -99,9 +99,10 @@ public interface SodaPlugin {
      * @param band optional energy cutout (may be null)
      * @param time optional time cutout (may be null)
      * @param pol optional polarization cutout (may be null)
+     * @param custom optional custom axis cutout (may be null)
      * @return a URL to the result of the operation
      * @throws IOException failure to read or write data
      */
-    URL toURL(int serialNum, URI uri, Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol)
+    URL toURL(int serialNum, URI uri, Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol, Cutout<Interval> custom)
             throws IOException;
 }

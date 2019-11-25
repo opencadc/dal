@@ -94,7 +94,8 @@ public class ParamExtractor {
     }
 
     /**
-     * Get a map of parameter name to value(s).
+     * Get a map of parameter name to value(s). This map includes params that match the configured
+     * accept list.
      *
      * @param paramList
      * @return list of 1+ values or null
@@ -107,6 +108,29 @@ public class ParamExtractor {
 
         for (Parameter p : paramList) {
             if (names.contains(p.getName())) {
+                String pname = p.getName();
+                List<String> values = ret.get(pname);
+                values.add(p.getValue());
+            }
+        }
+        return ret;
+    }
+    
+    /**
+     * Get a map of parameter name to value(s). This map includes extra params that do not match the configured
+     * accept list.
+     *
+     * @param paramList
+     * @return list of 1+ values or null
+     */
+    public Map<String, List<String>> getExtraParameters(List<Parameter> paramList) {
+        Map<String, List<String>> ret = new TreeMap<String, List<String>>(new CaseInsensitiveStringComparator());
+        for (String n : names) {
+            ret.put(n, new ArrayList<String>());
+        }
+
+        for (Parameter p : paramList) {
+            if (!names.contains(p.getName())) {
                 String pname = p.getName();
                 List<String> values = ret.get(pname);
                 values.add(p.getValue());
