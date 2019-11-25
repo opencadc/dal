@@ -103,7 +103,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
     public static final String CONTENT_TYPE = "application/x-votable+xml";
 
     // VOTable Version number.
-    public static final String VOTABLE_VERSION = "1.3";
+    public static final String VOTABLE_VERSION = "1.4";
 
     // Uri to the XML schema.
     public static final String XSI_SCHEMA = "http://www.w3.org/2001/XMLSchema-instance";

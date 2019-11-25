@@ -65,7 +65,7 @@
 *  $Revision: 5 $
 *
 ************************************************************************
- */
+*/
 
 package ca.nrc.cadc.sia2.impl;
 
@@ -74,23 +74,23 @@ import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.sia2.SiaRunner;
-import ca.nrc.cadc.util.MultiValuedProperties;
+import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.vosi.AvailabilityPlugin;
 import ca.nrc.cadc.vosi.AvailabilityStatus;
 import ca.nrc.cadc.vosi.avail.CheckException;
 import ca.nrc.cadc.vosi.avail.CheckWebService;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
+
 import org.apache.log4j.Logger;
 
+
 /**
- *
  * @author Sailor Zhang
  */
 public class ServiceAvailability implements AvailabilityPlugin {
@@ -155,6 +155,7 @@ public class ServiceAvailability implements AvailabilityPlugin {
      * otherwise attempt to use it as a URI and look the URL up in the Registry.
      *
      * @return URL Base URL of the TAP service to use.
+     *
      * @throws MalformedURLException If a URL cannot be created from the specified string.
      */
     public static URL getTapBaseURL() throws MalformedURLException {
@@ -162,10 +163,14 @@ public class ServiceAvailability implements AvailabilityPlugin {
         URI configuredTapURI = URI.create(ServiceAvailability.getTapURI());
 
         AuthMethod am = AuthenticationUtil.getAuthMethod(AuthenticationUtil.getCurrentSubject());
-        URL serviceURL = regClient.getServiceURL(configuredTapURI, Standards.TAP_10,
-                (am == null) ? AuthMethod.ANON : am);
-
-        return (serviceURL == null) ? configuredTapURI.toURL() : serviceURL;
+        if (configuredTapURI.getScheme().equals("ivo")) {
+            // Attempt to load the URI as a resource URI from the Registry.
+            return regClient.getServiceURL(configuredTapURI, Standards.TAP_10,
+                                           (am == null) ? AuthMethod.ANON : am);
+        } else {
+            // Fallback and assume the URI is an absolute one.
+            return configuredTapURI.toURL();
+        }
     }
 
     public static String getTapURI() {
@@ -178,7 +183,7 @@ public class ServiceAvailability implements AvailabilityPlugin {
                 }
             } catch (IOException ex) {
                 final String message = String.format("failed to read config file '%s' from classpath.",
-                        CONFIG_FILE_NAME);
+                                                     CONFIG_FILE_NAME);
                 log.error(message, ex);
                 throw new RuntimeException(message, ex);
             }
@@ -187,18 +192,13 @@ public class ServiceAvailability implements AvailabilityPlugin {
     }
 
     private static String getTapURIProperty() throws IOException {
-        URL url = SiaRunner.class.getResource(CONFIG_FILE_NAME);
-        if (url == null) {
-            url = SiaRunner.class.getResource("/" + CONFIG_FILE_NAME);
-        }
+        // Try to get from a file on disk first.
+        final PropertiesReader propertiesReader = new PropertiesReader(CONFIG_FILE_NAME);
 
-        if (url == null) {
-            final PropertiesReader propertiesReader = new PropertiesReader(CONFIG_FILE_NAME);
-            final MultiValuedProperties multiValuedProperties = propertiesReader.getAllProperties();
-            final List<String> props = (multiValuedProperties == null)
-                    ? new ArrayList<String>() : multiValuedProperties.getProperty(CONFIG_TAP_URI_KEY);
-            return props.isEmpty() ? null : props.get(0);
+        if (propertiesReader.canRead()) {
+            return propertiesReader.getFirstPropertyValue(CONFIG_TAP_URI_KEY);
         } else {
+            URL url = FileUtil.getURLFromResource(CONFIG_FILE_NAME, ServiceAvailability.class);
             Properties props = new Properties();
             props.load(url.openStream());
             return props.getProperty(CONFIG_TAP_URI_KEY);
