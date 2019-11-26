@@ -387,7 +387,7 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                     Interval i = fmt.parse(s);
                     ret.add(new Cutout<Interval>(name, s, i));
                 } catch (IllegalArgumentException ex) {
-                    throw new IllegalArgumentException("invalid " + PARAM_TIME + ": " + s);
+                    throw new IllegalArgumentException("invalid " + name + ": " + s);
                 }
             }
         }
