@@ -126,7 +126,7 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
     static final String RESULT_FAIL = "fail";
 
     static final List<String> SODA_PARAMS = Arrays.asList(
-            PARAM_ID, PARAM_POS, PARAM_CIRC, PARAM_POLY, PARAM_BAND, PARAM_TIME, PARAM_POL
+        PARAM_ID, PARAM_POS, PARAM_CIRC, PARAM_POLY, PARAM_BAND, PARAM_TIME, PARAM_POL, PARAM_RUNID
     );
 
     private JobUpdater jobUpdater;
@@ -190,6 +190,7 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
             List<Cutout<Interval>> bandCut = getEnergyCuts(params);
             List<Cutout<Interval>> timeCut = getTimeCuts(params);
             Cutout<List<String>> polCut = getPolarizationCuts(params);
+            List<Cutout<Interval>> customCut = getCustomCuts(pex.getExtraParameters(job.getParameterList()));
 
             // single-valued for sync execution
             StringBuilder esb = new StringBuilder();
@@ -252,12 +253,14 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                 for (Cutout<Shape> pos : posCut) {
                     for (Cutout<Interval> band : bandCut) {
                         for (Cutout<Interval> time : timeCut) {
-                            URL url = doit.toURL(serialNum, id, pos, band, time, polCut);
-                            log.debug("cutout URL: " + url.toExternalForm());
-                            try {
-                                jobResults.add(new Result(RESULT_OK + "-" + serialNum++, url.toURI()));
-                            } catch (URISyntaxException ex) {
-                                throw new RuntimeException("BUG: result URL is invalid URI: " + url.toExternalForm(), ex);
+                            for (Cutout<Interval> cust : customCut) {
+                                URL url = doit.toURL(serialNum, id, pos, band, time, polCut, cust);
+                                log.debug("cutout URL: " + url.toExternalForm());
+                                try {
+                                    jobResults.add(new Result(RESULT_OK + "-" + serialNum++, url.toURI()));
+                                } catch (URISyntaxException ex) {
+                                    throw new RuntimeException("BUG: result URL is invalid URI: " + url.toExternalForm(), ex);
+                                }
                             }
                         }
                     }
@@ -372,12 +375,30 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
 
         return posCut;
     }
+    
+    List<Cutout<Interval>> getCustomCuts(Map<String, List<String>> params) {
+        List<Cutout<Interval>> ret = new ArrayList<>();
+        DoubleIntervalFormat fmt = new DoubleIntervalFormat();
+        for (Map.Entry<String,List<String>> me : params.entrySet()) {
+            String name = me.getKey();
+            List<String> vals = me.getValue();
+            for (String s : vals) {
+                try {
+                    Interval i = fmt.parse(s);
+                    ret.add(new Cutout<Interval>(name, s, i));
+                } catch (IllegalArgumentException ex) {
+                    throw new IllegalArgumentException("invalid " + name + ": " + s);
+                }
+            }
+        }
+        return ret;
+    }
 
     private void handleError(int code, String msg)
             throws IOException {
         logInfo.setMessage(msg);
         if (syncOutput != null) {
-            syncOutput.setResponseCode(code);
+            syncOutput.setCode(code);
             syncOutput.setHeader("Content-Type", "text/plain");
             PrintWriter w = new PrintWriter(syncOutput.getOutputStream());
             w.println(msg);

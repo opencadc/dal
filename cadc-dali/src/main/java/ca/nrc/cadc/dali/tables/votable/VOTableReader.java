@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2019.                            (c) 2019.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -94,7 +94,6 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
-import org.jdom2.input.sax.XMLReaderSAX2Factory;
 
 /**
  *
@@ -109,10 +108,12 @@ public class VOTableReader {
     protected static final String VOTABLE_11_SCHEMA = "VOTable-v1.1.xsd";
     protected static final String VOTABLE_12_SCHEMA = "VOTable-v1.2.xsd";
     protected static final String VOTABLE_13_SCHEMA = "VOTable-v1.3.xsd";
-
+    protected static final String VOTABLE_14_SCHEMA = "VOTable-v1.4.xsd";
+    
     private static final String votable11SchemaUrl;
     private static final String votable12SchemaUrl;
     private static final String votable13SchemaUrl;
+    private static final String votable14SchemaUrl;
 
     private FormatFactory formatFactory;
 
@@ -125,6 +126,9 @@ public class VOTableReader {
 
         votable13SchemaUrl = getSchemaURL(VOTABLE_13_SCHEMA);
         log.debug("votable13SchemaUrl: " + votable13SchemaUrl);
+        
+        votable14SchemaUrl = getSchemaURL(VOTABLE_14_SCHEMA);
+        log.debug("votable14SchemaUrl: " + votable14SchemaUrl);
     }
 
     static String getSchemaURL(String name) {
@@ -155,7 +159,8 @@ public class VOTableReader {
             schemaMap = new HashMap<String, String>();
             schemaMap.put(ca.nrc.cadc.dali.tables.votable.VOTableWriter.VOTABLE_11_NS_URI, votable11SchemaUrl);
             schemaMap.put(ca.nrc.cadc.dali.tables.votable.VOTableWriter.VOTABLE_12_NS_URI, votable12SchemaUrl);
-            schemaMap.put(ca.nrc.cadc.dali.tables.votable.VOTableWriter.VOTABLE_13_NS_URI, votable13SchemaUrl);
+            // yes: targetNamespace is 1.3 but version=1.4
+            schemaMap.put(ca.nrc.cadc.dali.tables.votable.VOTableWriter.VOTABLE_13_NS_URI, votable14SchemaUrl);
             log.debug("schema validation enabled");
         } else {
             log.debug("schema validation disabled");
