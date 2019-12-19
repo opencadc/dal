@@ -73,6 +73,7 @@ import ca.nrc.cadc.rest.SyncOutput;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is a placeholder for a SODA plugin that streams output directly. It is NOT
@@ -93,12 +94,14 @@ public interface StreamingSodaPlugin {
      * @param band optional energy cutout (may be null)
      * @param time optional time cutout (may be null)
      * @param pol optional polarization cutout (may be null)
-     * @param custom optional custom axis cutout (may be null)
+     * @param cust non-standard params that specify cutout on custom 1D axis (may be null)
+     * @param customParams non-standard parameters and values that are not custom cutouts (may be empty)
      * @param out wrapper for setting output properties (HTTP headers) and opening the OutputStream
      * @throws IOException failure to read or write data
      */
     void write(URI uri, 
-            Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol, Cutout<Interval> custom,
+            Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol, 
+            Cutout<Interval> cust, Map<String, List<String>> customParams,
             SyncOutput out) 
         throws IOException;
 }
