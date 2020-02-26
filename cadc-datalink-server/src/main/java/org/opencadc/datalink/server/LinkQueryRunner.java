@@ -77,6 +77,7 @@ import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableTable;
 import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 import ca.nrc.cadc.log.WebServiceLogInfo;
+import ca.nrc.cadc.net.ContentType;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.rest.SyncOutput;
 import ca.nrc.cadc.util.ThrowableUtil;
@@ -109,6 +110,9 @@ public abstract class LinkQueryRunner implements JobRunner {
 
     private static final Logger log = Logger.getLogger(LinkQueryRunner.class);
 
+    public static final ContentType DEFAULT_FORMAT = new ContentType(VOTableWriter.CONTENT_TYPE + ";content=datalink");
+    public static final ContentType MANIFEST_FORMAT = new ContentType(ManifestWriter.CONTENT_TYPE);
+    
     private static final int MAXREC = 100;
     private static final String GETDOWNLOAD = "downloads-only";
 
@@ -168,10 +172,13 @@ public abstract class LinkQueryRunner implements JobRunner {
             log.debug(job.getID() + ": QUEUED -> EXECUTING [OK]");
 
             String request = ParameterUtil.findParameterValue("REQUEST", job.getParameterList());
-            String fmt = ParameterUtil.findParameterValue("RESPONSEFORMAT", job.getParameterList());
-
+            String sfmt = ParameterUtil.findParameterValue("RESPONSEFORMAT", job.getParameterList());
+            ContentType fmt = DEFAULT_FORMAT;
+            if (sfmt != null) {
+                fmt = new ContentType(sfmt);
+            }
             boolean downloadOnly = false;
-            if (ManifestWriter.CONTENT_TYPE.equals(fmt) || GETDOWNLOAD.equalsIgnoreCase(request)) {
+            if (fmt.equals(MANIFEST_FORMAT) || GETDOWNLOAD.equalsIgnoreCase(request)) {
                 downloadOnly = true;
             }
 
@@ -232,14 +239,13 @@ public abstract class LinkQueryRunner implements JobRunner {
             }
 
             TableWriter<VOTableDocument> writer;
-
-            if (fmt == null || VOTableWriter.CONTENT_TYPE.equals(fmt)) {
+            
+            if (fmt.equals(DEFAULT_FORMAT) || fmt.getBaseType().equals(VOTableWriter.CONTENT_TYPE)) {
                 writer = new VOTableWriter();
-                String contentType = VOTableWriter.CONTENT_TYPE + ";content=datalink";
-                syncOutput.setHeader("Content-Type", contentType);
-            } else if (ManifestWriter.CONTENT_TYPE.equals(fmt)) {
+                syncOutput.setHeader("Content-Type", DEFAULT_FORMAT.getValue());
+            } else if (fmt.equals(MANIFEST_FORMAT)) {
                 writer = new ManifestWriter(0, 1, 3); // these values rely on column order in DataLink.iterator
-                syncOutput.setHeader("Content-Type", ManifestWriter.CONTENT_TYPE);
+                syncOutput.setHeader("Content-Type", MANIFEST_FORMAT.getValue());
             } else {
                 throw new UnsupportedOperationException("unknown format: " + fmt);
             }

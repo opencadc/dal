@@ -408,7 +408,7 @@ public class SiaValidatorTest {
     public void testValidatePOL() {
         String[] testParams = new String[]{"POL", "pol", "PoL"};
         String[] testValues = new String[]{
-            "I", "Q", "U", "V", "RR", "LL", "RL", "LR", "XX", "YY", "XY", "YX"
+            "I", "Q", "U", "V", "RR", "LL", "RL", "LR", "XX", "YY", "XY", "YX", "POLI", "POLA"
         };
         int[] len = new int[]{1, 4, testValues.length};
         try {

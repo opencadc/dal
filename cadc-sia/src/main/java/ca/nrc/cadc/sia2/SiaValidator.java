@@ -112,7 +112,12 @@ public class SiaValidator {
             CALIB, TARGET, TIMERES, SPECRP, FORMAT);
 
     // pol_states values are always upper case so use List
-    static final List<String> POL_STATES = Arrays.asList("I", "Q", "U", "V", "RR", "LL", "RL", "LR", "XX", "YY", "XY", "YX");
+    static final List<String> POL_STATES = Arrays.asList(
+            "I", "Q", "U", "V", 
+            "RR", "LL", "RL", "LR", 
+            "XX", "YY", "XY", "YX",
+            "POLI", "POLA"
+    );
 
     // allowed data product types are image and cube
     static final List<String> ALLOWED_DPTYPES = Arrays.asList("cube", "image");
