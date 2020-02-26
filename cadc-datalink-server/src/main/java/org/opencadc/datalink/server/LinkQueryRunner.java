@@ -174,7 +174,7 @@ public abstract class LinkQueryRunner implements JobRunner {
             String request = ParameterUtil.findParameterValue("REQUEST", job.getParameterList());
             String sfmt = ParameterUtil.findParameterValue("RESPONSEFORMAT", job.getParameterList());
             ContentType fmt = DEFAULT_FORMAT;
-            if (fmt != null) {
+            if (sfmt != null) {
                 fmt = new ContentType(sfmt);
             }
             boolean downloadOnly = false;
