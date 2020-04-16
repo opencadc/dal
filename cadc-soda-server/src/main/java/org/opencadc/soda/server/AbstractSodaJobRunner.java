@@ -80,6 +80,7 @@ import ca.nrc.cadc.dali.util.PolygonFormat;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.rest.SyncOutput;
+import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.uws.ErrorSummary;
 import ca.nrc.cadc.uws.ErrorType;
 import ca.nrc.cadc.uws.ExecutionPhase;
@@ -90,6 +91,7 @@ import ca.nrc.cadc.uws.server.JobPersistenceException;
 import ca.nrc.cadc.uws.server.JobRunner;
 import ca.nrc.cadc.uws.server.JobUpdater;
 import ca.nrc.cadc.uws.util.JobLogInfo;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -98,9 +100,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -130,6 +134,8 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
         PARAM_ID, PARAM_POS, PARAM_CIRC, PARAM_POLY, PARAM_BAND, PARAM_TIME, PARAM_POL, PARAM_RUNID
     );
 
+    private final Set<String> customCutoutParams = new TreeSet<String>(new CaseInsensitiveStringComparator());
+    
     private JobUpdater jobUpdater;
     private SyncOutput syncOutput;
     protected Job job;
@@ -153,6 +159,12 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
         this.job = job;
     }
 
+    // subclass populates in ctor
+    protected final Set<String> getCustomCutoutParams() {
+        return customCutoutParams;
+    }
+
+    
     public void run() {
         logInfo = new JobLogInfo(job);
         log.info(logInfo.start());
@@ -188,12 +200,18 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
             List<String> idList = params.get(PARAM_ID);
 
             List<Cutout<Shape>> posCut = getSpatialCuts(params);
-            List<Cutout<Interval>> bandCut = getEnergyCuts(params);
-            List<Cutout<Interval>> timeCut = getTimeCuts(params);
+            List<Cutout<Interval>> bandCut = getIntervalCutouts(PARAM_BAND, params);
+            List<Cutout<Interval>> timeCut = getIntervalCutouts(PARAM_TIME, params);
             Cutout<List<String>> polCut = getPolarizationCuts(params);
-            
+            List<List<Cutout<Interval>>> customCuts = new ArrayList<>();
+            for (String ccp : customCutoutParams) {
+                List<Cutout<Interval>> cc = getIntervalCutouts(ccp, params);
+                if (!cc.isEmpty()) {
+                    customCuts.add(cc);
+                }
+            }
             Map<String, List<String>> customParams = pex.getExtraParameters(job.getParameterList());
-            List<Cutout<Interval>> customCut = getCustomCuts(customParams);
+            
             
 
             // single-valued for sync execution
@@ -211,7 +229,7 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                 if (timeCut.size() > 1) {
                     esb.append("found ").append(timeCut.size()).append(" TIME values, expected 0-1\n");
                 }
-
+                
                 if (esb.length() > 0) {
                     throw new IllegalArgumentException("sync: " + esb.toString());
                 }
@@ -257,7 +275,7 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                 for (Cutout<Shape> pos : posCut) {
                     for (Cutout<Interval> band : bandCut) {
                         for (Cutout<Interval> time : timeCut) {
-                            for (Cutout<Interval> cust : customCut) {
+                            for (List<Cutout<Interval>> cust : customCuts) {
                                 URL url = doit.toURL(serialNum, id, pos, band, time, polCut, cust, customParams);
                                 log.debug("cutout URL: " + url.toExternalForm());
                                 try {
@@ -295,32 +313,16 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
         }
     }
 
-    List<Cutout<Interval>> getEnergyCuts(Map<String, List<String>> params) {
-        List<String> vals = params.get(PARAM_BAND);
+    private List<Cutout<Interval>> getIntervalCutouts(String paramName, Map<String, List<String>> params) {
+        List<String> vals = params.get(paramName);
         DoubleIntervalFormat fmt = new DoubleIntervalFormat();
         List<Cutout<Interval>> ret = new ArrayList<Cutout<Interval>>();
         for (String s : vals) {
             try {
                 Interval i = fmt.parse(s);
-                ret.add(new Cutout<Interval>(PARAM_BAND, s, i));
+                ret.add(new Cutout<Interval>(paramName, s, i));
             } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("invalid " + PARAM_BAND + ": " + s);
-            }
-        }
-
-        return ret;
-    }
-
-    List<Cutout<Interval>> getTimeCuts(Map<String, List<String>> params) {
-        List<String> vals = params.get(PARAM_TIME);
-        DoubleIntervalFormat fmt = new DoubleIntervalFormat();
-        List<Cutout<Interval>> ret = new ArrayList<Cutout<Interval>>();
-        for (String s : vals) {
-            try {
-                Interval i = fmt.parse(s);
-                ret.add(new Cutout<Interval>(PARAM_TIME, s, i));
-            } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("invalid " + PARAM_TIME + ": " + s);
+                throw new IllegalArgumentException("invalid " + paramName + ": " + s);
             }
         }
 
@@ -380,35 +382,6 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
         return posCut;
     }
     
-    // custom cutout is something of the form key=A B where A and B are numbers and A <= B
-    // generate custom cutout specs from the extra params and remove the params
-    // if cutout spec generated
-    List<Cutout<Interval>> getCustomCuts(Map<String, List<String>> params) {
-        List<Cutout<Interval>> ret = new ArrayList<>();
-        DoubleIntervalFormat fmt = new DoubleIntervalFormat();
-        Iterator<Map.Entry<String,List<String>>> iter = params.entrySet().iterator();
-        while (iter.hasNext()) {
-            Map.Entry<String,List<String>> me = iter.next();
-            String name = me.getKey();
-            List<String> vals = me.getValue();
-            Iterator<String> si = vals.iterator();
-            while (si.hasNext()) {
-                String s = si.next();
-                try {
-                    Interval i = fmt.parse(s);
-                    ret.add(new Cutout<Interval>(name, s, i));
-                    si.remove();
-                } catch (IllegalArgumentException ex) {
-                    log.debug("getCustomCuts: invalid " + name + ": " + s + " -- not a custom axis cutout");
-                }
-            }
-            if (vals.isEmpty()) {
-                iter.remove();
-            }
-        }
-        return ret;
-    }
-
     private void handleError(int code, String msg)
             throws IOException {
         logInfo.setMessage(msg);

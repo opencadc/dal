@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,6 +69,7 @@ package org.opencadc.soda.server;
 
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Shape;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -78,10 +79,10 @@ import java.util.Map;
 /**
  * SODA plugin that delegates to a back end storage system. This API is defined
  * to layer the SODA API on top of a back end storage system. It is a natural fit
- * for implementing SODA-async (because it generates one or more result URLs), but 
- * it can be used with a back end storage system that can stream an on-the-fly cutout. 
- * For the latter, the generated URL would be an opaque URL to that back end storage
- * system with the cutout operation embedded.
+ * for implementing SODA-async (because it generates a result URL), but it can be 
+ * used by SOSDA-sync to redirect to a back end storage system that can stream an 
+ * on-the-fly cutout. For the latter, the generated URL would be an opaque URL to 
+ * that back end storage system with the cutout operation embedded.
  * 
  * <p>See StreamingSodaPlugin for details about what an alternative might look like.
  * 
@@ -100,12 +101,13 @@ public interface SodaPlugin {
      * @param band optional energy cutout (may be null)
      * @param time optional time cutout (may be null)
      * @param pol optional polarization cutout (may be null)
-     * @param cust non-standard params that specify cutout on custom 1D axis (may be null)
-     * @param customParams non-standard parameters and values that are not custom cutouts (may be empty)
+     * @param customCutouts list of orthogonal cutouts of custom axes (may be empty)
+     * @param customParams custom parameters and values (may be empty)
      * @return a URL to the result of the operation
      * @throws IOException failure to read or write data
      */
-    URL toURL(int serialNum, URI uri, Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol, 
-                Cutout<Interval> cust, Map<String, List<String>> customParams)
-            throws IOException;
+    URL toURL(int serialNum, URI uri, Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, 
+            Cutout<List<String>> pol, List<Cutout<Interval>> customCutouts, 
+            Map<String, List<String>> customParams)
+        throws IOException;
 }
