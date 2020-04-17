@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,40 +67,83 @@
 
 package org.opencadc.soda.server;
 
+import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.util.Log4jInit;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
+
 /**
  *
  * @author pdowler
  */
-public class Cutout<T> {
+public class AbstractSodaRunnerTest {
+    private static final Logger log = Logger.getLogger(AbstractSodaRunnerTest.class);
 
-    /**
-     * Parameter name.
-     */
-    public String name;
-    
-    /** 
-     * Raw parameter value.
-     */
-    public String value;
-    
-    /**
-     * Parsed DALI value.
-     */
-    public T cut;
-
-    Cutout() {
-    }
-
-    Cutout(String name, String value, T cut) {
-        this.name = name;
-        this.value = value;
-        this.cut = cut;
-    }
-
-    @Override
-    public String toString() {
-        return "Cutout[" + name + "=" + value + "]";
+    static {
+        Log4jInit.setLevel("org.opencadc.soda", Level.INFO);
     }
     
+    public AbstractSodaRunnerTest() { 
+    }
     
+    @Test
+    public void testOrthoCustomCuts() {
+        
+        try {
+            List<Cutout<Interval>> foos = new ArrayList<>();
+            foos.add(new Cutout<Interval>("foo", "1.0 2.0", new Interval<Double>(1.0, 2.0)));
+            
+            
+            List<Cutout<Interval>> bars = new ArrayList<>();
+            bars.add(new Cutout<Interval>("bar", "1.0 2.0", new Interval<Double>(1.0, 2.0)));
+            
+            List<List<Cutout<Interval>>> cuts = new ArrayList<>();
+            cuts.add(foos);
+            cuts.add(bars);
+            
+            for (List<Cutout<Interval>> cc : cuts) {
+                for (Cutout<Interval> c : cc) {
+                    log.info("in: " + c);
+                }
+            }
+            
+            List<List<Cutout<Interval>>> flat = AbstractSodaJobRunner.flatten(cuts);
+            Assert.assertNotNull(flat);
+            Assert.assertEquals("num flat combos", 1, flat.size());
+            for (List<Cutout<Interval>> f : flat) {
+                StringBuilder sb = new StringBuilder();
+                for (Cutout<Interval> c : f) {
+                    sb.append(c).append(" ");
+                }
+                log.info("out: " + sb);
+            }
+            
+            foos.add(new Cutout<Interval>("foo", "3.0 4.0", new Interval<Double>(3.0, 4.0)));
+            
+            try {
+                List<List<Cutout<Interval>>> ortho = AbstractSodaJobRunner.flatten(cuts);
+                Assert.fail("expected flatten to fail, got: " + ortho.size() + " combinations");
+            } catch (IllegalStateException expected) {
+                log.info("caught expected exception: " + expected);
+            }
+            
+            bars.add(new Cutout<Interval>("bar", "3.0 4.0", new Interval<Double>(3.0, 4.0)));
+            try {
+                List<List<Cutout<Interval>>> ortho = AbstractSodaJobRunner.flatten(cuts);
+                Assert.fail("expected flatten to fail, got: " + ortho.size() + " combinations");
+            } catch (IllegalStateException expected) {
+                log.info("caught expected exception: " + expected);
+            }
+            
+        } catch (Exception ex) {
+            log.error("unexpected failure", ex);
+            throw ex;
+        }
+    }
 }

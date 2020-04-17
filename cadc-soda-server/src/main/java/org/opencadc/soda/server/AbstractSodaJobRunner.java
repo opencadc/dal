@@ -213,13 +213,12 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
             Map<String, List<String>> customParams = pex.getExtraParameters(job.getParameterList());
             
             
-
-            // single-valued for sync execution
+            // check single-valued param limits
             StringBuilder esb = new StringBuilder();
+            if (idList.size() != 1) {
+                esb.append("found ").append(idList.size()).append(" ID values, expected 1\n");
+            }
             if (syncOutput != null) {
-                if (idList.size() != 1) {
-                    esb.append("found ").append(idList.size()).append(" ID values, expected 1\n");
-                }
                 if (posCut.size() > 1) {
                     esb.append("found ").append(posCut.size()).append(" POS/CIRCLE/POLY values, expected 0-1\n");
                 }
@@ -229,10 +228,18 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                 if (timeCut.size() > 1) {
                     esb.append("found ").append(timeCut.size()).append(" TIME values, expected 0-1\n");
                 }
-                
-                if (esb.length() > 0) {
-                    throw new IllegalArgumentException("sync: " + esb.toString());
+            }
+            // limit custom  cuts to one value each in sync and async mode because
+            for (List<Cutout<Interval>> c : customCuts) {
+                Cutout<Interval> f = c.get(0);
+                if (c.size() > 1) {
+                    esb.append("found ").append(c.size()).append(" ").append(f.name).append(" values, expected 0-1");
                 }
+            }
+            List<List<Cutout<Interval>>> orthogonalCustomCuts = flatten(customCuts);
+            
+            if (esb.length() > 0) {
+                throw new IllegalArgumentException("sync: " + esb.toString());
             }
 
             if (idList.isEmpty()) {
@@ -262,6 +269,7 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
             if (timeCut.isEmpty()) {
                 timeCut.add(new Cutout<Interval>());
             }
+            
 
             String runID = job.getRunID();
             if (runID == null) {
@@ -275,7 +283,7 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                 for (Cutout<Shape> pos : posCut) {
                     for (Cutout<Interval> band : bandCut) {
                         for (Cutout<Interval> time : timeCut) {
-                            for (List<Cutout<Interval>> cust : customCuts) {
+                            for (List<Cutout<Interval>> cust : orthogonalCustomCuts) {
                                 URL url = doit.toURL(serialNum, id, pos, band, time, polCut, cust, customParams);
                                 log.debug("cutout URL: " + url.toExternalForm());
                                 try {
@@ -311,6 +319,28 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
         } catch (TransientException ex) {
             handleError(503, ex.getMessage());
         }
+    }
+    
+    // TODO: implement this and use it instead of flatten to process custom cutout params
+    static List<List<Cutout<Interval>>> ortho(List<List<Cutout<Interval>>> cuts) {
+        throw new UnsupportedOperationException("not implemented");
+    }
+    
+    static List<List<Cutout<Interval>>> flatten(List<List<Cutout<Interval>>> cuts) {
+        List<List<Cutout<Interval>>> ret = new ArrayList<>();
+        List<Cutout<Interval>> combo = new ArrayList<>();
+        for (List<Cutout<Interval>> c : cuts) {
+            Cutout<Interval> f = c.get(0);
+            if (c.size() == 1) {
+                combo.add(f);
+            } else {
+                throw new IllegalStateException("BUG: flatten called with multiple values for " + f.name);
+            }
+        }
+        if (!combo.isEmpty()) {
+            ret.add(combo);
+        }
+        return ret;
     }
 
     private List<Cutout<Interval>> getIntervalCutouts(String paramName, Map<String, List<String>> params) {
