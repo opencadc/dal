@@ -99,11 +99,15 @@ public class AbstractSodaRunnerTest {
             List<Cutout<Interval>> foos = new ArrayList<>();
             foos.add(new Cutout<Interval>("foo", "1.0 2.0", new Interval<Double>(1.0, 2.0)));
             
-            
             List<Cutout<Interval>> bars = new ArrayList<>();
             bars.add(new Cutout<Interval>("bar", "1.0 2.0", new Interval<Double>(1.0, 2.0)));
             
             List<List<Cutout<Interval>>> cuts = new ArrayList<>();
+            
+            List<List<Cutout<Interval>>> empty = AbstractSodaJobRunner.flatten(cuts);
+            Assert.assertNotNull(empty);
+            Assert.assertEquals("num empty combos", 0, empty.size());
+            
             cuts.add(foos);
             cuts.add(bars);
             
