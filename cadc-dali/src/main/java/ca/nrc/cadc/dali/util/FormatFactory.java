@@ -195,6 +195,8 @@ public class FormatFactory {
                     ret = new STCRegionFormat();
                 } else if ("uuid".equalsIgnoreCase(field.xtype)) { // custom
                     ret = new UUIDFormat();
+                } else if ("uri".equalsIgnoreCase(field.xtype)) { // custom
+                    ret = new URIFormat();
                 }
             }
         }
