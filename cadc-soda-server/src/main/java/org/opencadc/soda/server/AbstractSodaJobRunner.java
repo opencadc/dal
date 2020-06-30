@@ -239,7 +239,7 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                     esb.append("found ").append(c.size()).append(" ").append(f.name).append(" values, expected 0-1");
                 }
             }
-            List<List<Cutout<Interval>>> orthogonalCustomCuts = flatten(customCuts);
+            final List<List<Cutout<Interval>>> orthogonalCustomCuts = flatten(customCuts);
             
             if (esb.length() > 0) {
                 throw new IllegalArgumentException("sync: " + esb.toString());
