@@ -194,7 +194,10 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
             log.debug(job.getID() + ": QUEUED -> EXECUTING [OK]");
 
             // validate params
-            ParamExtractor pex = new ParamExtractor(SODA_PARAMS);
+            List<String> pnames = new ArrayList<>();
+            pnames.addAll(SODA_PARAMS);
+            pnames.addAll(customCutoutParams);
+            ParamExtractor pex = new ParamExtractor(pnames);
             Map<String, List<String>> params = pex.getParameters(job.getParameterList());
             log.debug("soda params: " + SODA_PARAMS.size() + " map params: " + params.size());
             List<String> idList = params.get(PARAM_ID);
@@ -236,7 +239,7 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                     esb.append("found ").append(c.size()).append(" ").append(f.name).append(" values, expected 0-1");
                 }
             }
-            List<List<Cutout<Interval>>> orthogonalCustomCuts = flatten(customCuts);
+            final List<List<Cutout<Interval>>> orthogonalCustomCuts = flatten(customCuts);
             
             if (esb.length() > 0) {
                 throw new IllegalArgumentException("sync: " + esb.toString());
@@ -268,6 +271,9 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
             }
             if (timeCut.isEmpty()) {
                 timeCut.add(new Cutout<Interval>());
+            }
+            if (orthogonalCustomCuts.isEmpty()) {
+                orthogonalCustomCuts.add(new ArrayList<Cutout<Interval>>());
             }
             
 
@@ -313,11 +319,13 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
         } catch (JobNotFoundException ex) {
             handleError(400, ex.getMessage());
         } catch (IllegalStateException ex) {
-            handleError(500, ex.getMessage());
+            handleError(500, ex.getMessage(), ex);
         } catch (JobPersistenceException ex) {
-            handleError(500, ex.getMessage());
+            handleError(500, ex.getMessage(), ex);
         } catch (TransientException ex) {
-            handleError(503, ex.getMessage());
+            handleError(503, ex.getMessage(), ex);
+        } catch (Throwable unexpected) {
+            handleError(500, "unexpected failure: " + unexpected, unexpected);
         }
     }
     
@@ -412,9 +420,16 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
         return posCut;
     }
     
-    private void handleError(int code, String msg)
-            throws IOException {
+    private void handleError(int code, String msg) throws IOException {
+        handleError(code, msg, null);
+    }
+    
+    private void handleError(int code, String msg, Throwable t) throws IOException {
         logInfo.setMessage(msg);
+        if (t != null) {
+            log.error("internal exception", t);
+        }
+        
         if (syncOutput != null) {
             syncOutput.setCode(code);
             syncOutput.setHeader("Content-Type", "text/plain");
