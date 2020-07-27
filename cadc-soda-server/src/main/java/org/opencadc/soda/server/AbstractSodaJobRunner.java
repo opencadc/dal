@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -125,13 +125,14 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
     static final String PARAM_TIME = "TIME";
     static final String PARAM_POL = "POL";
     static final String PARAM_RUNID = "RUNID";
+    protected static final String PARAM_LABEL = "LABEL";
 
     static final String RESULT_OK = "ok";
     static final String RESULT_WARN = "warn";
     static final String RESULT_FAIL = "fail";
 
     static final List<String> SODA_PARAMS = Arrays.asList(
-        PARAM_ID, PARAM_POS, PARAM_CIRC, PARAM_POLY, PARAM_BAND, PARAM_TIME, PARAM_POL, PARAM_RUNID
+        PARAM_ID, PARAM_POS, PARAM_CIRC, PARAM_POLY, PARAM_BAND, PARAM_TIME, PARAM_POL, PARAM_RUNID, PARAM_LABEL
     );
 
     private final Set<String> customCutoutParams = new TreeSet<String>(new CaseInsensitiveStringComparator());
@@ -214,7 +215,6 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                 }
             }
             Map<String, List<String>> customParams = pex.getExtraParameters(job.getParameterList());
-            
             
             // check single-valued param limits
             StringBuilder esb = new StringBuilder();
