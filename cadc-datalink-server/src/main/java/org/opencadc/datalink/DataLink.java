@@ -88,8 +88,11 @@ public class DataLink {
      */
     public enum Term { // TODO: re-use the VocabularyTerm code once extracted from caom2
         THIS("#this"),
-        
+
+        @Deprecated
         DATALINK("#datalink"), // recursive
+
+        ALT("#alt"), // Alternative link
         
         PROGENITOR("#progenitor"),
         DERIVATION("#derivation"),
