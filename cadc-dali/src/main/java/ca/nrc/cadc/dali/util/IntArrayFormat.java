@@ -104,7 +104,7 @@ public class IntArrayFormat implements Format<int[]> {
         if (s == null || s.isEmpty()) {
             return null;
         } else {
-            String[] tokens = s.split(" ");
+            String[] tokens = s.split(" +");
             int[] array = new int[tokens.length];
             for (int i = 0; i < tokens.length; i++) {
                 array[i] = Integer.parseInt(tokens[i]);

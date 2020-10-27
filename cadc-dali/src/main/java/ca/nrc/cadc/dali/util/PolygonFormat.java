@@ -94,21 +94,23 @@ public class PolygonFormat implements Format<Polygon> {
             return null;
         }
 
-        DoubleArrayFormat daf = new DoubleArrayFormat();
-        double[] dd = daf.parse(s);
+        double[] dd = fmt.parse(s);
 
         try {
-            if (dd.length < 6) {
-                throw new IndexOutOfBoundsException();
-            }
             Polygon poly = new Polygon();
             for (int i = 0; i < dd.length; i += 2) {
+                if (Double.isNaN(dd[i]) || Double.isNaN(dd[i + 1])) {
+                    throw new IllegalArgumentException("invalid polygon (NaN coordinate value): " + s);
+                }
                 Point v = new Point(dd[i], dd[i + 1]);
                 poly.getVertices().add(v);
             }
+            if (poly.getVertices().size() < 3) {
+                throw new IllegalArgumentException("invalid polygon (not enough points): " + s);
+            }
             return poly;
         } catch (IndexOutOfBoundsException ex) {
-            throw new IllegalArgumentException("invalid polygon: " + s);
+            throw new IllegalArgumentException("invalid polygon (odd number of coordinate values): " + s);
         }
     }
 

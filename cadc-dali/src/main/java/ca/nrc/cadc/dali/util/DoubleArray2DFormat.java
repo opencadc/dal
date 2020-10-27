@@ -137,7 +137,7 @@ public class DoubleArray2DFormat implements Format<double[][]> {
         if (s == null || s.isEmpty()) {
             return null;
         } else {
-            String[] tokens = s.split(" ");
+            String[] tokens = s.split(" +");
             int n1 = arrayshape[0];
             //int n2 = arrayshape[1];
             //if (arrayshape[1] == -1) // variable
