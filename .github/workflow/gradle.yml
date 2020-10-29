@@ -1,0 +1,32 @@
+name: Java+Docker CI
+
+on: 
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+        
+    - name: build and test cadc-dali
+      run: cd cadc-dali && gradle --info clean build javadoc checkstyleMain install
+      
+    - name: build and test cadc-dali-pg
+      run: cd cadc-dali-pg && gradle --info clean build javadoc checkstyleMain install
+      
+    - name: build and test cadc-sia
+      run: cd cadc-sia && gradle --info clean build javadoc checkstyleMain install
+      
+    - name: build and test cadc-soda-server
+      run: cd cadc-soda-server && gradle --info clean build javadoc checkstyleMain install
+      
+    - name: build and test cadc-data-ops-fits
+      run: cd cadc-data-ops-fits && gradle --info clean build javadoc checkstyleMain install
