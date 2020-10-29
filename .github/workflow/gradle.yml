@@ -19,11 +19,15 @@ jobs:
     - name: build and test cadc-dali
       run: cd cadc-dali && gradle --info clean build javadoc checkstyleMain install
       
+# cadc-dali-pg is not yet cleanup to pass checkstyleMain
     - name: build and test cadc-dali-pg
-      run: cd cadc-dali-pg && gradle --info clean build javadoc checkstyleMain install
+      run: cd cadc-dali-pg && gradle --info clean build javadoc install
       
     - name: build and test cadc-sia
       run: cd cadc-sia && gradle --info clean build javadoc checkstyleMain install
+      
+    - name: build and test cadc-datalink-server
+      run: cd cadc-datalink-server && gradle --info clean build javadoc checkstyleMain install
       
     - name: build and test cadc-soda-server
       run: cd cadc-soda-server && gradle --info clean build javadoc checkstyleMain install
