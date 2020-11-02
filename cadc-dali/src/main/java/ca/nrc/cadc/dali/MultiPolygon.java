@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,95 +62,33 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
-package ca.nrc.cadc.dali.util;
+package ca.nrc.cadc.dali;
 
-import ca.nrc.cadc.dali.Point;
-import ca.nrc.cadc.dali.Polygon;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.log4j.Logger;
 
 /**
- * DALI-1.1 polygon formatter.
  *
  * @author pdowler
  */
-public class PolygonFormat implements Format<Polygon> {
+public class MultiPolygon {
+    private static final Logger log = Logger.getLogger(MultiPolygon.class);
 
-    private static final Logger log = Logger.getLogger(PolygonFormat.class);
-
-    private final DoubleArrayFormat fmt = new DoubleArrayFormat();
-
-    public PolygonFormat() {
+    private final List<Polygon> polygons = new ArrayList<>();
+    
+    public MultiPolygon() { 
     }
 
-    public Polygon parse(String s) {
-        if (s == null) {
-            return null;
-        }
-
-        double[] dd = fmt.parse(s);
-
-        try {
-            Polygon poly = new Polygon();
-            for (int i = 0; i < dd.length; i += 2) {
-                if (Double.isNaN(dd[i]) || Double.isNaN(dd[i + 1])) {
-                    throw new IllegalArgumentException("invalid polygon (NaN coordinate value): " + s);
-                }
-                Point v = new Point(dd[i], dd[i + 1]);
-                poly.getVertices().add(v);
-            }
-            if (poly.getVertices().size() < 3) {
-                throw new IllegalArgumentException("invalid polygon (not enough points): " + s);
-            }
-            return poly;
-        } catch (IndexOutOfBoundsException ex) {
-            throw new IllegalArgumentException("invalid polygon (odd number of coordinate values): " + s);
-        }
+    public List<Polygon> getPolygons() {
+        return polygons;
     }
 
-    public String format(final Polygon poly) {
-        if (poly == null) {
-            return "";
-        }
-        return fmt.format(new Iterator<Double>() {
-            private int num = 0;
-            private int numP = 0;
-
-            @Override
-            public boolean hasNext() {
-                return (numP < poly.getVertices().size());
-            }
-
-            @Override
-            public Double next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-
-                Point p = poly.getVertices().get(numP);
-
-                if (num == 0) {
-                    num++;
-                    return p.getLongitude();
-                }
-
-                numP++;
-                num = 0;
-                return p.getLatitude();
-            }
-
-            // java7 support
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        });
+    @Override
+    public String toString() {
+        return MultiPolygon.class.getSimpleName() + "[" + polygons.size() + "]";
     }
-
 }

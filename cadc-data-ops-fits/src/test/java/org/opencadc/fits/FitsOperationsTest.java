@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,95 +62,91 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
-package ca.nrc.cadc.dali.util;
+package org.opencadc.fits;
 
-import ca.nrc.cadc.dali.Point;
-import ca.nrc.cadc.dali.Polygon;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import java.io.File;
+import java.io.FileInputStream;
+import java.net.URI;
+import java.util.List;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.util.Cursor;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * DALI-1.1 polygon formatter.
  *
  * @author pdowler
  */
-public class PolygonFormat implements Format<Polygon> {
+public class FitsOperationsTest {
+    private static final Logger log = Logger.getLogger(FitsOperationsTest.class);
 
-    private static final Logger log = Logger.getLogger(PolygonFormat.class);
-
-    private final DoubleArrayFormat fmt = new DoubleArrayFormat();
-
-    public PolygonFormat() {
+    static {
+        Log4jInit.setLevel("org.opencadc.fits", Level.DEBUG);
     }
-
-    public Polygon parse(String s) {
-        if (s == null) {
-            return null;
-        }
-
-        double[] dd = fmt.parse(s);
-
+     
+    public FitsOperationsTest() { 
+    }
+    
+    @Test
+    public void testGetPrimaryHeader() {
         try {
-            Polygon poly = new Polygon();
-            for (int i = 0; i < dd.length; i += 2) {
-                if (Double.isNaN(dd[i]) || Double.isNaN(dd[i + 1])) {
-                    throw new IllegalArgumentException("invalid polygon (NaN coordinate value): " + s);
-                }
-                Point v = new Point(dd[i], dd[i + 1]);
-                poly.getVertices().add(v);
+            // setup
+            File testFile = FileUtil.getFileFromResource("sample-mef.fits", FitsOperationsTest.class);
+            
+            
+            FitsOperations fop = new FitsOperations(testFile);
+            Header h = fop.getPrimaryHeader();
+            //h.dumpHeader(System.out);
+            Cursor<String,HeaderCard> iter = h.iterator();
+            for (int i = 0; i <= 5; i++) {
+                HeaderCard hc = iter.next();
+                log.info(hc.getKey() + " = " + hc.getValue());
             }
-            if (poly.getVertices().size() < 3) {
-                throw new IllegalArgumentException("invalid polygon (not enough points): " + s);
-            }
-            return poly;
-        } catch (IndexOutOfBoundsException ex) {
-            throw new IllegalArgumentException("invalid polygon (odd number of coordinate values): " + s);
+            log.info("...");
+            
+            long nbytes = h.getDataSize();
+            log.info("data size: " + nbytes);
+            
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
     }
-
-    public String format(final Polygon poly) {
-        if (poly == null) {
-            return "";
+    
+    @Test
+    public void testGetHeaders() {
+        try {
+            // setup
+            File testFile = FileUtil.getFileFromResource("sample-mef.fits", FitsOperationsTest.class);
+            
+            
+            FitsOperations fop = new FitsOperations(testFile);
+            List<Header> hdrs = fop.getHeaders();
+            
+            for (int i = 0; i < hdrs.size(); i++) {
+                Header h = hdrs.get(i);
+                log.info("** header: " + i);
+                Cursor<String,HeaderCard> iter = h.iterator();
+                for (int c = 0; c <= 5; c++) {
+                    HeaderCard hc = iter.next();
+                    log.info(hc.getKey() + " = " + hc.getValue());
+                }
+                long nbytes = h.getDataSize();
+                log.info("** data size: " + nbytes);
+                log.info("...");
+            }
+            
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
-        return fmt.format(new Iterator<Double>() {
-            private int num = 0;
-            private int numP = 0;
-
-            @Override
-            public boolean hasNext() {
-                return (numP < poly.getVertices().size());
-            }
-
-            @Override
-            public Double next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-
-                Point p = poly.getVertices().get(numP);
-
-                if (num == 0) {
-                    num++;
-                    return p.getLongitude();
-                }
-
-                numP++;
-                num = 0;
-                return p.getLatitude();
-            }
-
-            // java7 support
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        });
     }
-
 }

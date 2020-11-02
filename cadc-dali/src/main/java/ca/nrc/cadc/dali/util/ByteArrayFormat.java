@@ -105,7 +105,7 @@ public class ByteArrayFormat implements Format<byte[]> {
         if (s == null || s.isEmpty()) {
             return null;
         } else {
-            String[] tokens = s.split(" ");
+            String[] tokens = s.split(" +");
             byte[] array = new byte[tokens.length];
             for (int i = 0; i < tokens.length; i++) {
                 array[i] = Byte.parseByte(tokens[i]);

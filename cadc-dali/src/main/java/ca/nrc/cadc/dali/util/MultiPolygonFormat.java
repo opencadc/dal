@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,95 +62,110 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
 package ca.nrc.cadc.dali.util;
 
+import ca.nrc.cadc.dali.MultiPolygon;
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import org.apache.log4j.Logger;
 
 /**
- * DALI-1.1 polygon formatter.
  *
  * @author pdowler
  */
-public class PolygonFormat implements Format<Polygon> {
+public class MultiPolygonFormat implements Format<MultiPolygon> {
+    private static final Logger log = Logger.getLogger(MultiPolygonFormat.class);
 
-    private static final Logger log = Logger.getLogger(PolygonFormat.class);
-
+    private final PolygonFormat pf = new PolygonFormat();
     private final DoubleArrayFormat fmt = new DoubleArrayFormat();
-
-    public PolygonFormat() {
+    
+    public MultiPolygonFormat() { 
     }
 
-    public Polygon parse(String s) {
+    @Override
+    public MultiPolygon parse(String s) {
         if (s == null) {
             return null;
         }
-
+        s = s.trim();
+        if (s.isEmpty()) {
+            return null;
+        }
+        
+        return parseSingleNaN(s); // format is single NaN
+    }
+    
+    MultiPolygon parseSingleNaN(String s) {
+        String[] comps = s.toLowerCase().split("nan");
+        log.warn("MultiPolygonFormat.parse: " + comps.length);
+        MultiPolygon ret = new MultiPolygon();
+        for (String c : comps) {
+            c = c.trim();
+            if (c.isEmpty()) {
+                throw new IllegalArgumentException("invalid polygon (interpretting 'NaN NaN' as a NaN coordinate value): " + s);
+            }
+            log.warn("MultiPolygonFormat.parse: '" + c + "'");
+            Polygon p = pf.parse(c);
+            ret.getPolygons().add(p);
+        }
+        
+        return ret;
+    }
+    
+    MultiPolygon parseDoubleNaN(String s) {
         double[] dd = fmt.parse(s);
 
+        MultiPolygon ret = new MultiPolygon();
+        Polygon poly = new Polygon();
         try {
-            Polygon poly = new Polygon();
             for (int i = 0; i < dd.length; i += 2) {
-                if (Double.isNaN(dd[i]) || Double.isNaN(dd[i + 1])) {
-                    throw new IllegalArgumentException("invalid polygon (NaN coordinate value): " + s);
+                if (Double.isNaN(dd[i])) {
+                    if (Double.isNaN(dd[i + 1])) {
+                        if (poly.getVertices().size() < 3) {
+                            throw new IllegalArgumentException("invalid multipolygon (not enough points before NaN NaN separator): " + s);
+                        }
+                        ret.getPolygons().add(poly);
+                        poly = new Polygon();
+                    } else {
+                        throw new IllegalArgumentException("invalid polygon (NaN coordinate value): " + s);
+                    }
+                } else {
+                    if (Double.isNaN(dd[i + 1])) {
+                        throw new IllegalArgumentException("invalid polygon (NaN coordinate value): " + s);
+                    }
+                    Point v = new Point(dd[i], dd[i + 1]);
+                    poly.getVertices().add(v);
                 }
-                Point v = new Point(dd[i], dd[i + 1]);
-                poly.getVertices().add(v);
             }
             if (poly.getVertices().size() < 3) {
-                throw new IllegalArgumentException("invalid polygon (not enough points): " + s);
+                throw new IllegalArgumentException("invalid multipolygon (not enough points in last polygon): " + s);
             }
-            return poly;
+            ret.getPolygons().add(poly);
         } catch (IndexOutOfBoundsException ex) {
             throw new IllegalArgumentException("invalid polygon (odd number of coordinate values): " + s);
         }
+        
+        return ret;
     }
 
-    public String format(final Polygon poly) {
-        if (poly == null) {
+    @Override
+    public String format(MultiPolygon mp) {
+        if (mp == null || mp.getPolygons().isEmpty()) {
             return "";
         }
-        return fmt.format(new Iterator<Double>() {
-            private int num = 0;
-            private int numP = 0;
-
-            @Override
-            public boolean hasNext() {
-                return (numP < poly.getVertices().size());
+        
+        StringBuilder sb = new StringBuilder();
+        Iterator<Polygon> i = mp.getPolygons().iterator();
+        while (i.hasNext()) {
+            sb.append(pf.format(i.next()));
+            if (i.hasNext()) {
+                sb.append(" NaN ");
             }
-
-            @Override
-            public Double next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-
-                Point p = poly.getVertices().get(numP);
-
-                if (num == 0) {
-                    num++;
-                    return p.getLongitude();
-                }
-
-                numP++;
-                num = 0;
-                return p.getLatitude();
-            }
-
-            // java7 support
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        });
+        }
+        return sb.toString();
     }
-
 }
