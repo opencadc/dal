@@ -15,6 +15,10 @@ repositories {
     jcenter()
 }
 
+sourceCompatibility = 1.8
+group = 'org.opencadc'
+version = '0.1.0'
+
 dependencies {
     // Log4J logging
     compile 'org.apache.logging.log4j:log4j-core:[2.13.0,3.0)'
