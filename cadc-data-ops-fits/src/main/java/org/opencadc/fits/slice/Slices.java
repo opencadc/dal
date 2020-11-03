@@ -270,14 +270,14 @@ public final class Slices {
         }
 
         /**
-         * Turns the pixel ranges into integer tuples.
+         * Turns the pixel ranges into Range tuples.
          *
-         * <p>Given [9][200:600, 300:1000]
+         * <p>Given [9][200:600, 300:1000, 1100:1200:3]
          * this method will return a list of iterables over integers:
-         * [Iterable{200..600}, Iterable{300..1000}]
+         * [Range{200,600,1}, Range{300,1000,1}, Range{1100,1200,3}]
          *
          * @param maxSize The max boundary.
-         * @return A list of iterable integers.
+         * @return A list of Range objects.
          */
         public List<Range> getRanges(final int maxSize) {
             return Arrays.stream(value.split(SEPARATOR))
