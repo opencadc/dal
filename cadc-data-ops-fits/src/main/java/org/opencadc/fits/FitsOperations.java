@@ -135,7 +135,7 @@ public class FitsOperations {
     /**
      * Slice out of this FITS file.
      *
-     * @param cutoutSpec    The String cutout specified in the format [EXTENSION[[PIXELSTART:PIXELEND...]
+     * @param cutoutSpec    The String cutout specified in the format {[EXTENSION][PIXELSTART:PIXELEND...]...}
      * @param outputStream  The Stream to write out to.
      * @throws ReadException    Any errors to report back to the caller.
      */

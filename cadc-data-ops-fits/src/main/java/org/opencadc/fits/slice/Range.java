@@ -118,7 +118,7 @@ public class Range {
             throw new IllegalArgumentException("Cannot have a step value of zero.");
         }
 
-        return () -> new Iterator<>() {
+        return () -> new Iterator<Integer>() {
             private int counter = lowerBound;
 
             /**

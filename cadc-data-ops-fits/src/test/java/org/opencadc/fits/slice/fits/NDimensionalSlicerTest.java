@@ -97,7 +97,7 @@ public class NDimensionalSlicerTest {
     }
 
     @Test
-    public void testSlice() throws Exception {
+    public void testMEFSlice() throws Exception {
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
         final Slices slices = Slices.fromString("[SCI,10][80:220,100:150][1][10:16,70:90][106][8:32,88:112][126]");
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
@@ -109,30 +109,14 @@ public class NDimensionalSlicerTest {
         final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-hst-mef-cutout", ".fits");
         LOGGER.debug("Writing out to " + outputPath);
 
-        final Fits expectedFits = new Fits(expectedFile);
-
         try (final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
             slicer.slice(file, slices, hstFileCutoutStream);
             hstFileCutoutStream.flush();
         }
 
+        final Fits expectedFits = new Fits(expectedFile);
         final Fits resultFits = new Fits(outputPath.toFile());
 
-        final BasicHDU<?>[] expectedHDUList = expectedFits.read();
-        final BasicHDU<?>[] resultHDUList = resultFits.read();
-
-        Assert.assertEquals("Wrong number of HDUs.", expectedHDUList.length, resultHDUList.length);
-
-        for (int expectedIndex = 0; expectedIndex < expectedHDUList.length; expectedIndex++) {
-            final BasicHDU<?> nextExpectedHDU = expectedHDUList[expectedIndex];
-            final BasicHDU<?> nextResultHDU = resultHDUList[expectedIndex];
-
-            try {
-                FitsTest.assertHDUEqual(nextExpectedHDU, nextResultHDU);
-            } catch (AssertionError assertionError) {
-                LOGGER.error("On Extension at index " + expectedIndex);
-                throw assertionError;
-            }
-        }
+        FitsTest.assertFitsEqual(expectedFits, resultFits);
     }
 }

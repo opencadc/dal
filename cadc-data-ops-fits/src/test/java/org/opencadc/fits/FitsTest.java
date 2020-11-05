@@ -68,20 +68,50 @@
 
 package org.opencadc.fits;
 
+import java.util.Arrays;
+
 import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.junit.Assert;
-
-import java.util.Arrays;
 
 
 public class FitsTest {
+    private static final Logger LOGGER = LogManager.getLogger(FitsTest.class);
+
+    static {
+        Configurator.setRootLevel(Level.DEBUG);
+    }
+
     private static final IFitsHeader[] HEADER_CARD_KEYS_TO_CHECK = new IFitsHeader[]{
             Standard.BITPIX, Standard.NAXIS, Standard.EXTNAME, Standard.EXTVER, Standard.BSCALE, Standard.BUNIT
     };
+
+    public static void assertFitsEqual(final Fits expected, final Fits result) throws Exception {
+        final BasicHDU<?>[] expectedHDUList = expected.read();
+        final BasicHDU<?>[] resultHDUList = result.read();
+
+        Assert.assertEquals("Wrong number of HDUs.", expectedHDUList.length, resultHDUList.length);
+
+        for (int expectedIndex = 0; expectedIndex < expectedHDUList.length; expectedIndex++) {
+            final BasicHDU<?> nextExpectedHDU = expectedHDUList[expectedIndex];
+            final BasicHDU<?> nextResultHDU = resultHDUList[expectedIndex];
+
+            try {
+                FitsTest.assertHDUEqual(nextExpectedHDU, nextResultHDU);
+            } catch (AssertionError assertionError) {
+                LOGGER.error("On Extension at index " + expectedIndex);
+                throw assertionError;
+            }
+        }
+    }
 
     public static void assertHDUEqual(final BasicHDU<?> expectedHDU, final BasicHDU<?> resultHDU) throws Exception {
         final Header expectedHeader = expectedHDU.getHeader();
