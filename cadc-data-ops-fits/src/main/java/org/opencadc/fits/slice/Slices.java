@@ -153,7 +153,7 @@ public final class Slices {
         public static ExtensionSliceValue fromString(final String value) {
             final List<String> stringValues = Arrays.stream(value.split("]"))
                                                     .map(s -> s.split("\\[")[1])
-                                                    .collect(Collectors.toUnmodifiableList());
+                                                    .collect(Collectors.toList());
 
             Integer index;
             String extensionName;
@@ -287,15 +287,15 @@ public final class Slices {
                              LOGGER.debug("Next tuple parsed: " + Arrays.toString(tuple));
                              final Range range;
                              if (tuple.length == 3) {
-                                 final Integer[] intTuples = Arrays.stream(tuple).map(Integer::parseInt).collect(
-                                         Collectors.toUnmodifiableList()).toArray(new Integer[0]);
+                                 final Integer[] intTuples = Arrays.stream(tuple).map(Integer::parseInt)
+                                                                   .toArray(Integer[]::new);
                                  range = new Range(intTuples[0], intTuples[1], intTuples[2]);
                              } else if (tuple.length == 2) {
                                  if (tuple[0].equals(ALL_DATA)) {
                                      range = new Range(0, maxSize, Integer.parseInt(tuple[1]));
                                  } else {
-                                     final Integer[] intTuples = Arrays.stream(tuple).map(Integer::parseInt).collect(
-                                             Collectors.toUnmodifiableList()).toArray(new Integer[0]);
+                                     final Integer[] intTuples = Arrays.stream(tuple).map(Integer::parseInt)
+                                                                       .toArray(Integer[]::new);
                                      range = new Range(intTuples[0], intTuples[1]);
                                  }
                                  return range;
@@ -309,7 +309,7 @@ public final class Slices {
 
                              return range;
                          })
-                         .collect(Collectors.toUnmodifiableList());
+                         .collect(Collectors.toList());
         }
     }
 }
