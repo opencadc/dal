@@ -69,13 +69,10 @@
 package org.opencadc.fits.slice.fits;
 
 import ca.nrc.cadc.util.FileUtil;
-import nom.tam.fits.BasicHDU;
+import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Fits;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.junit.Assert;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.opencadc.fits.FitsTest;
 import org.opencadc.fits.slice.NDimensionalSlicer;
@@ -89,11 +86,10 @@ import java.nio.file.Path;
 
 
 public class NDimensionalSlicerTest {
-    private static final Logger LOGGER = LogManager.getLogger(NDimensionalSlicer.class);
+    private static final Logger LOGGER = Logger.getLogger(NDimensionalSlicer.class);
 
     static {
-        Configurator.setLevel(NDimensionalSlicer.class.getCanonicalName(), Level.DEBUG);
-        Configurator.setLevel("org.opencadc", Level.DEBUG);
+        Log4jInit.setLevel("org.opencadc", Level.DEBUG);
     }
 
     @Test

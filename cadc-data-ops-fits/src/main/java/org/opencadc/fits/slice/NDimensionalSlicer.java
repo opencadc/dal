@@ -75,8 +75,7 @@ import nom.tam.fits.header.Standard;
 import nom.tam.image.ImageTiler;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.BufferedDataOutputStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -90,7 +89,7 @@ import java.util.List;
  * Slice out a portion of an image.
  */
 public class NDimensionalSlicer {
-    private static final Logger LOGGER = LogManager.getLogger(NDimensionalSlicer.class);
+    private static final Logger LOGGER = Logger.getLogger(NDimensionalSlicer.class);
 
 
     public NDimensionalSlicer() {

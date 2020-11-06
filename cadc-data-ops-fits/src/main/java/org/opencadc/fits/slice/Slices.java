@@ -68,11 +68,7 @@
 
 package org.opencadc.fits.slice;
 
-
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.log4j.Logger;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -84,12 +80,7 @@ import java.util.stream.Collectors;
  * Class to represent a full slice request.
  */
 public final class Slices {
-    private static final Logger LOGGER = LogManager.getLogger(Slices.class);
-
-    static {
-        Configurator.setLevel(Slices.class.getCanonicalName(), Level.DEBUG);
-    }
-
+    private static final Logger LOGGER = Logger.getLogger(Slices.class);
     private static final String PIXEL_RANGE_PATTERN_STRING = "\\[([\\d*]+:?\\d*,?\\s*)*\\]";
     private static final String ENTIRE_RANGE_PATTERN_STRING =
             "(\\s*\\[[\\w]*,?\\s*\\d*\\])?" + PIXEL_RANGE_PATTERN_STRING;
