@@ -75,6 +75,8 @@ import nom.tam.fits.header.Standard;
 import nom.tam.image.ImageTiler;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.BufferedDataOutputStream;
+import nom.tam.util.RandomAccessDataObject;
+import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Logger;
 
 import java.io.*;
@@ -95,14 +97,8 @@ public class NDimensionalSlicer {
     public NDimensionalSlicer() {
     }
 
-//    public void slice(RandomAccessDataObject randomAccessDataObject, Slices slices, OutputStream outputStream)
-//            throws FitsException, IOException {
-//        throw new UnsupportedOperationException("Not implemented.");
-//    }
-
     /**
-     * Perform a slice operation from the input stream.  Implementors will walk through the stream, skipping unwanted
-     * bytes.
+     * Perform a slice operation from the input File.  Implementors will walk through the File, skipping unwanted bytes.
      *
      * This implementation relies on the NOM TAM FITS API to be able to look up an HDU by its Extension Name
      * (<code>EXTNAME</code>) and, optionally, it's Extension Version (<code>EXTVER</code>).  This may affect an
@@ -114,20 +110,52 @@ public class NDimensionalSlicer {
      * @param fitsFile     The File to read bytes from.  This method will not close this file.
      * @param slices       The string value of the pixels to extract.
      * @param outputStream Where to write bytes to.  This method will not close this stream.
+     * @throws FitsException    Any FITS related errors from the NOM TAM Fits library.
+     * @throws IOException      Reading Writing errors.
      */
     public void slice(final File fitsFile, final Slices slices, final OutputStream outputStream)
             throws FitsException, IOException {
+        slice(new RandomAccessFileExt(fitsFile, "r"), slices, outputStream);
+    }
+
+    /**
+     * Perform a slice operation from the input RandomAccess.  Implementors will walk through the RandomAccess, skipping
+     * unwanted bytes.
+     *
+     * This implementation relies on the NOM TAM FITS API to be able to look up an HDU by its Extension Name
+     * (<code>EXTNAME</code>) and, optionally, it's Extension Version (<code>EXTVER</code>).  This may affect an
+     * underlying <code>Fits(InputStream)</code> unless the <code>InputStream</code> can handle resetting and marking.
+     *
+     * It is NOT the responsibility of this method to manage the given <code>OutputStream</code>.  The caller will
+     * need to close it and ensure it's open outside the bounds of this method.
+     *
+     * @param randomAccessDataObject         The RandomAccess object to read bytes from.  This method will not close
+     *                                       this file.
+     * @param slices       The string value of the pixels to extract.
+     * @param outputStream Where to write bytes to.  This method will not close this stream.
+     * @throws FitsException    Any FITS related errors from the NOM TAM Fits library.
+     * @throws IOException      Reading Writing errors.
+     */
+    public void slice(final RandomAccessDataObject randomAccessDataObject, final Slices slices,
+                      final OutputStream outputStream)
+            throws FitsException, IOException {
         final ArrayDataOutput output = new BufferedDataOutputStream(outputStream);
         final Slices.ExtensionSliceValue[] extensionSliceValues = slices.getExtensionSliceValues();
+
         LOGGER.debug("Parsed extension slice values: " + Arrays.toString(extensionSliceValues));
         final Fits fits;
 
         try {
-            fits = new Fits(fitsFile);
+            fits = new Fits(randomAccessDataObject);
         } catch (FitsException fitsException) {
             throw new IllegalStateException(fitsException.getMessage(), fitsException);
         }
 
+        slice(fits, extensionSliceValues, output);
+    }
+
+    private void slice(final Fits fits, final Slices.ExtensionSliceValue[] extensionSliceValues,
+                       final ArrayDataOutput output) throws FitsException, IOException {
         // Assume MEF if more than one extension was requested, so write a Primary HDU before anything else.
         if (extensionSliceValues.length > 1) {
             final BasicHDU<?> firstHDU = fits.getHDU(0);

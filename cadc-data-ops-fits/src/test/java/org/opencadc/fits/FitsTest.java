@@ -70,24 +70,23 @@ package org.opencadc.fits;
 
 import java.util.Arrays;
 
+import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.junit.Assert;
 
 
 public class FitsTest {
-    private static final Logger LOGGER = LogManager.getLogger(FitsTest.class);
+    private static final Logger LOGGER = Logger.getLogger(FitsTest.class);
 
     static {
-        Configurator.setRootLevel(Level.DEBUG);
+        Log4jInit.setLevel("org.opencadc", Level.DEBUG);
     }
 
     private static final IFitsHeader[] HEADER_CARD_KEYS_TO_CHECK = new IFitsHeader[]{

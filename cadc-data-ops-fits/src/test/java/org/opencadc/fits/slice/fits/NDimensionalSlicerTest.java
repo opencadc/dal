@@ -71,6 +71,8 @@ package org.opencadc.fits.slice.fits;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Fits;
+import nom.tam.util.RandomAccessDataObject;
+import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Test;
@@ -93,7 +95,7 @@ public class NDimensionalSlicerTest {
     }
 
     @Test
-    public void testMEFSlice() throws Exception {
+    public void testMEFFileSlice() throws Exception {
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
         final Slices slices = Slices.fromString("[SCI,10][80:220,100:150][1][10:16,70:90][106][8:32,88:112][126]");
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
@@ -107,6 +109,31 @@ public class NDimensionalSlicerTest {
 
         try (final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
             slicer.slice(file, slices, hstFileCutoutStream);
+            hstFileCutoutStream.flush();
+        }
+
+        final Fits expectedFits = new Fits(expectedFile);
+        final Fits resultFits = new Fits(outputPath.toFile());
+
+        FitsTest.assertFitsEqual(expectedFits, resultFits);
+    }
+
+    @Test
+    public void testMEFRandomAccessSlice() throws Exception {
+        final NDimensionalSlicer slicer = new NDimensionalSlicer();
+        final Slices slices = Slices.fromString("[SCI,10][80:220,100:150][1][10:16,70:90][106][8:32,88:112][126]");
+        final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
+                                                       NDimensionalSlicerTest.class);
+        final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
+        final String testWriteDir = configuredTestWriteDir == null ? "/tmp" : configuredTestWriteDir;
+        final File expectedFile = FileUtil.getFileFromResource("test-hst-mef-cutout.fits",
+                                                               NDimensionalSlicerTest.class);
+        final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-hst-mef-cutout", ".fits");
+        LOGGER.debug("Writing out to " + outputPath);
+
+        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
+             final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
+            slicer.slice(randomAccessDataObject, slices, hstFileCutoutStream);
             hstFileCutoutStream.flush();
         }
 

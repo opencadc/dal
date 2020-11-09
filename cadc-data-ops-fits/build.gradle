@@ -27,7 +27,7 @@ dependencies {
     compile 'org.opencadc:cadc-util:[1.2,2.0)'
 
     // NASA NOM-TAM fits library.
-    compile 'gov.nasa.gsfc.heasarc:nom-tam-fits:[1.15.3-SNAPSHOT,1.16.0)'
+    compile 'gov.nasa.gsfc.heasarc:nom-tam-fits:[1.15.3-pdowler,1.16.0)'
 
     // Use JUnit test framework
     testCompile 'junit:junit:[4.13,5.0)'
