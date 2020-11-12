@@ -81,7 +81,8 @@ import java.util.stream.Collectors;
  */
 public final class Slices {
     private static final Logger LOGGER = Logger.getLogger(Slices.class);
-    private static final String PIXEL_RANGE_PATTERN_STRING = "\\[([\\d*]+:?\\d*,?\\s*)*\\]";
+    private static final String VALID_SINGLE_RANGE_STRING = "[\\d*\\*]+:?\\d*";
+    private static final String PIXEL_RANGE_PATTERN_STRING = "\\[(" + VALID_SINGLE_RANGE_STRING + ",?\\s*)*\\]";
     private static final String ENTIRE_RANGE_PATTERN_STRING =
             "(\\s*\\[[\\w]*,?\\s*\\d*\\])?" + PIXEL_RANGE_PATTERN_STRING;
 
@@ -133,7 +134,7 @@ public final class Slices {
         private final static String ALL_DATA = "*";
         private final static String SEPARATOR = ",";
         private final static String PIXEL_VALUE_DELIMITER = ":";
-        private static final Pattern VALID_SINGLE_RANGE = Pattern.compile("[\\d*\\*]+:?\\d*");
+        private static final Pattern VALID_SINGLE_RANGE = Pattern.compile(VALID_SINGLE_RANGE_STRING);
 
         private final String value;
         private final String extensionName;
