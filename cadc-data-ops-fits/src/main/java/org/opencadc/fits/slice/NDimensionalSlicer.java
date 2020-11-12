@@ -208,6 +208,11 @@ public class NDimensionalSlicer {
                                               lengths, steps);
 
                         try {
+                            // The data contained in this HDU cannot be used to slice from.
+                            if (corners.length == 0) {
+                                throw new IOException("Sub-image not within image");
+                            }
+
                             LOGGER.debug("Tiling out " + Arrays.toString(lengths) + " at corner "
                                          + Arrays.toString(corners) + " from extension "
                                          + hdu.getTrimmedString(Standard.EXTNAME) + ","

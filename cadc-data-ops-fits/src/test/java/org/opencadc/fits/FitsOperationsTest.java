@@ -69,13 +69,19 @@ package org.opencadc.fits;
 
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
+
 import java.io.File;
-import java.io.FileInputStream;
-import java.net.URI;
+import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.util.List;
+
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.util.Cursor;
+import nom.tam.util.RandomAccessDataObject;
+import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -99,10 +105,11 @@ public class FitsOperationsTest {
     public void testGetPrimaryHeader() {
         try {
             // setup
-            File testFile = FileUtil.getFileFromResource("sample-mef.fits", FitsOperationsTest.class);
-            
-            
-            FitsOperations fop = new FitsOperations(testFile);
+            final RandomAccessDataObject randomAccessDataObject =
+                    new RandomAccessFileExt(FileUtil.getFileFromResource("sample-mef.fits",
+                                                                         FitsOperationsTest.class), "r");
+
+            FitsOperations fop = new FitsOperations(randomAccessDataObject);
             Header h = fop.getPrimaryHeader();
             //h.dumpHeader(System.out);
             Cursor<String,HeaderCard> iter = h.iterator();
@@ -125,10 +132,11 @@ public class FitsOperationsTest {
     public void testGetHeaders() {
         try {
             // setup
-            File testFile = FileUtil.getFileFromResource("sample-mef.fits", FitsOperationsTest.class);
+            final RandomAccessDataObject randomAccessDataObject =
+                    new RandomAccessFileExt(FileUtil.getFileFromResource("sample-mef.fits",
+                                                                         FitsOperationsTest.class), "r");
             
-            
-            FitsOperations fop = new FitsOperations(testFile);
+            FitsOperations fop = new FitsOperations(randomAccessDataObject);
             List<Header> hdrs = fop.getHeaders();
             
             for (int i = 0; i < hdrs.size(); i++) {
@@ -144,6 +152,45 @@ public class FitsOperationsTest {
                 log.info("...");
             }
             
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testSlice() {
+        try {
+            // setup
+            final RandomAccessDataObject randomAccessDataObject =
+                    new RandomAccessFileExt(FileUtil.getFileFromResource("test-hst-mef.fits",
+                                                                         FitsOperationsTest.class), "r");
+            final FitsOperations fop = new FitsOperations(randomAccessDataObject);
+            final File outputFile = Files.createTempFile("test-hst-mef-cutout-", ".fits").toFile();
+
+            // Extension 3 contains invalid Data.
+            try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile)) {
+                fop.slice("[3][106][126]", fileOutputStream);
+            }
+
+            final Fits resultsFits = new Fits(new RandomAccessFileExt(outputFile, "r"));
+            resultsFits.read();
+
+            Assert.assertEquals("Wrong HDU count.  Only extension 106 and 126 should be available.", 2,
+                                resultsFits.getNumberOfHDUs());
+
+            BasicHDU<?> hdu;
+            while ((hdu = resultsFits.readHDU()) != null) {
+                final Header h = hdu.getHeader();
+                final Cursor<String,HeaderCard> iter = h.iterator();
+                for (int c = 0; c <= 5; c++) {
+                    HeaderCard hc = iter.next();
+                    log.info(hc.getKey() + " = " + hc.getValue());
+                }
+                long nbytes = h.getDataSize();
+                log.info("** data size: " + nbytes);
+                log.info("...");
+            }
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);

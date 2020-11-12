@@ -77,6 +77,7 @@ import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
+import nom.tam.util.RandomAccessDataObject;
 import org.apache.log4j.Logger;
 import org.opencadc.fits.slice.NDimensionalSlicer;
 import org.opencadc.fits.slice.Slices;
@@ -89,9 +90,9 @@ import org.opencadc.fits.slice.Slices;
 public class FitsOperations {
     private static final Logger log = Logger.getLogger(FitsOperations.class);
 
-    private final File src;
+    private final RandomAccessDataObject src;
 
-    public FitsOperations(File src) {
+    public FitsOperations(RandomAccessDataObject src) {
         this.src = src;
     }
 
@@ -106,9 +107,9 @@ public class FitsOperations {
             BasicHDU<?> hdu = fits.readHDU();
             return hdu.getHeader();
         } catch (FitsException ex) {
-            throw new RuntimeException("invalid fits data: " + src.getAbsolutePath());
+            throw new RuntimeException("invalid fits data: " + src);
         } catch (IOException ex) {
-            throw new ReadException("failed to read " + src.getAbsolutePath(), ex);
+            throw new ReadException("failed to read " + src, ex);
         }
     }
     
@@ -126,9 +127,9 @@ public class FitsOperations {
             
             return ret;
         } catch (FitsException ex) {
-            throw new RuntimeException("invalid fits data: " + src.getAbsolutePath());
+            throw new RuntimeException("invalid fits data: " + src);
         } catch (IOException ex) {
-            throw new ReadException("failed to read " + src.getAbsolutePath(), ex);
+            throw new ReadException("failed to read " + src, ex);
         }
     }
 
@@ -144,9 +145,9 @@ public class FitsOperations {
             final NDimensionalSlicer slicer = new NDimensionalSlicer();
             slicer.slice(src, Slices.fromString(cutoutSpec), outputStream);
         } catch (FitsException ex) {
-            throw new RuntimeException("invalid fits data: " + src.getAbsolutePath() + ": " + ex.getMessage(), ex);
+            throw new RuntimeException("invalid fits data: " + src + ": " + ex.getMessage(), ex);
         } catch (IOException ex) {
-            throw new ReadException("failed to read " + src.getAbsolutePath() + ": " + ex.getMessage(), ex);
+            throw new ReadException("failed to read " + src + ": " + ex.getMessage(), ex);
         }
     }
 }
