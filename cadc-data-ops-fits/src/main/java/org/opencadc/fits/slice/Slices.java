@@ -126,7 +126,7 @@ public final class Slices {
 
 
     /**
-     * Represents a single extension and set of pixel ranges.
+     * Represents a single extension and set of pixel pixelRanges.
      */
     public static final class ExtensionSliceValue {
 
@@ -222,7 +222,9 @@ public final class Slices {
             return extensionName;
         }
 
-        public Integer getExtensionVersion() { return extensionVersion; }
+        public Integer getExtensionVersion() {
+            return extensionVersion;
+        }
 
         public Integer getExtensionIndex() {
             return extensionIndex;
@@ -261,7 +263,7 @@ public final class Slices {
         }
 
         /**
-         * Turns the pixel ranges into Range tuples.
+         * Turns the pixel pixelRanges into Range tuples.
          *
          * <p>Given [9][200:600, 300:1000, 1100:1200:3]
          * this method will return a list of iterables over integers:
@@ -270,35 +272,36 @@ public final class Slices {
          * @param maxSize The max boundary.
          * @return A list of Range objects.
          */
-        public List<Range> getRanges(final int maxSize) {
+        public List<PixelRange> getRanges(final int maxSize) {
             return Arrays.stream(value.split(SEPARATOR))
                          .filter(s -> VALID_SINGLE_RANGE.matcher(s.trim()).matches() || s.trim().contains(ALL_DATA))
                          .map(s -> s.split(PIXEL_VALUE_DELIMITER))
                          .map(tuple -> {
                              LOGGER.debug("Next tuple parsed: " + Arrays.toString(tuple));
-                             final Range range;
+                             final PixelRange pixelRange;
                              if (tuple.length == 3) {
                                  final Integer[] intTuples = Arrays.stream(tuple).map(Integer::parseInt)
                                                                    .toArray(Integer[]::new);
-                                 range = new Range(intTuples[0], intTuples[1], intTuples[2]);
+                                 pixelRange = new PixelRange(intTuples[0], intTuples[1], intTuples[2]);
                              } else if (tuple.length == 2) {
                                  if (tuple[0].equals(ALL_DATA)) {
-                                     range = new Range(0, maxSize, Integer.parseInt(tuple[1]));
+                                     pixelRange = new PixelRange(0, maxSize, Integer.parseInt(tuple[1]));
                                  } else {
                                      final Integer[] intTuples = Arrays.stream(tuple).map(Integer::parseInt)
                                                                        .toArray(Integer[]::new);
-                                     range = new Range(intTuples[0], intTuples[1]);
+                                     pixelRange = new PixelRange(intTuples[0], intTuples[1]);
                                  }
-                                 return range;
+                                 return pixelRange;
                              } else if (tuple.length == 1) {
                                  final String tupleValue = tuple[0];
-                                 range = tupleValue.equals(ALL_DATA) ? new Range(maxSize)
-                                                                     : new Range(Integer.parseInt(tupleValue));
+                                 pixelRange = tupleValue.equals(ALL_DATA)
+                                              ? new PixelRange(0, maxSize)
+                                              : new PixelRange(0, Integer.parseInt(tupleValue));
                              } else {
                                  throw new IllegalArgumentException("No usable values found from '%s'.");
                              }
 
-                             return range;
+                             return pixelRange;
                          })
                          .collect(Collectors.toList());
         }

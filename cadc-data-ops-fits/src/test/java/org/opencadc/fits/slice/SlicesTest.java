@@ -91,7 +91,7 @@ public class SlicesTest {
         Assert.assertTrue("Should have ranges.", testSubject.hasRanges());
         Assert.assertEquals("Wrong number of lengths.", 1, testSubject.getExtensionSliceValues().length);
 
-        final Iterable<Integer> rangeOne = new Range(1000).expand();
+        final Iterable<Integer> rangeOne = new PixelRange(0, 1000).expand();
         final Iterable<Integer> result = testSubject.getExtensionSliceValues()[0].getRanges(1000).get(0).expand();
 
         final List<Integer> expectedTuples = new ArrayList<>();
@@ -113,7 +113,7 @@ public class SlicesTest {
         Assert.assertTrue("Should have ranges.", testSubject.hasRanges());
         Assert.assertEquals("Wrong number of lengths.", 2, testSubject.getExtensionSliceValues().length);
 
-        final Iterable<Integer> rangeOne = new Range(100, 650).expand();
+        final Iterable<Integer> rangeOne = new PixelRange(100, 650).expand();
         final Iterable<Integer> result = testSubject.getExtensionSliceValues()[0].getRanges(1000).get(0).expand();
 
         final List<Integer> expectedTuples = new ArrayList<>();
@@ -127,7 +127,7 @@ public class SlicesTest {
 
         Assert.assertEquals("Wrong BiteValue One", expectedTuples, resultTuples);
 
-        final Iterable<Integer> rangeTwo = new Range(1000).expand();
+        final Iterable<Integer> rangeTwo = new PixelRange(0, 1000).expand();
         final Iterable<Integer> resultTwo = testSubject.getExtensionSliceValues()[1].getRanges(1000).get(0).expand();
 
         final List<Integer> expectedTuplesTwo = new ArrayList<>();
@@ -151,7 +151,7 @@ public class SlicesTest {
 
         final Slices.ExtensionSliceValue[] allValues = testSubject.getExtensionSliceValues();
 
-        final Iterable<Integer> expectedRangeOne = new Range(0, 2200, 4).expand();
+        final Iterable<Integer> expectedRangeOne = new PixelRange(0, 2200, 4).expand();
         final Iterable<Integer> resultRangeOne = allValues[0].getRanges(2200).get(0).expand();
 
         final List<Integer> expectedTuplesOne = new ArrayList<>();
@@ -165,7 +165,7 @@ public class SlicesTest {
 
         Assert.assertEquals("Wrong BiteValue One", expectedTuplesOne, resultTuples);
 
-        final Iterable<Integer> rangeTwo = new Range(500).expand();
+        final Iterable<Integer> rangeTwo = new PixelRange(0, 500).expand();
         final Slices.ExtensionSliceValue extensionSliceValueTwo = testSubject.getExtensionSliceValues()[1];
         final Iterable<Integer> resultTwo = extensionSliceValueTwo.getRanges(500).get(0).expand();
 

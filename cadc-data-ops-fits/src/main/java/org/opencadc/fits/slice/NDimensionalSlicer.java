@@ -355,18 +355,18 @@ public class NDimensionalSlicer {
         // Pad the bounds with the full dimensions as necessary.
         for (int i = 0; i < dimensionLength; i++) {
             final int maxRegionSize = dimensions[i];
-            final List<Range> ranges = extensionSliceValue.getRanges(maxRegionSize);
-            final int rangeSize = ranges.size();
-            final Range range;
+            final List<PixelRange> pixelRanges = extensionSliceValue.getRanges(maxRegionSize);
+            final int rangeSize = pixelRanges.size();
+            final PixelRange pixelRange;
             if (rangeSize > i) {
-                range = ranges.get(i);
+                pixelRange = pixelRanges.get(i);
             } else {
-                range = new Range(0, maxRegionSize);
+                pixelRange = new PixelRange(0, maxRegionSize);
             }
 
-            final int rangeLowBound = range.getLowerBound();
-            final int rangeUpBound = range.getUpperBound();
-            final int rangeStep = range.getStep();
+            final int rangeLowBound = pixelRange.getLowerBound();
+            final int rangeUpBound = pixelRange.getUpperBound();
+            final int rangeStep = pixelRange.getStep();
 
             final int lowerBound = rangeLowBound > 0 ? rangeLowBound - 1 : rangeLowBound;
             LOGGER.debug("Set lowerBound to " + lowerBound + " from rangeLowBound " + rangeLowBound);

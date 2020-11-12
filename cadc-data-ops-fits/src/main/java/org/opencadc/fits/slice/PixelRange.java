@@ -75,26 +75,24 @@ import java.util.Iterator;
  * Represents a Range of integer values.  Can be expanded to an entire array, but only on demand.  This uses concepts
  * from Python's numpy project to be able to have a start (lowerBound), stop (upperBound), and a striding value (step).
  */
-public class Range {
+public class PixelRange {
 
     private final int lowerBound;
     private final int upperBound;
-    private final int step;
+    private int step;
 
 
-    public Range(final int lowerBound, final int upperBound, final int step) {
+    public PixelRange(final int lowerBound, final int upperBound, final int step) {
+        this(lowerBound, upperBound);
+        setStep(step);
+    }
+
+    public PixelRange(int lowerBound, int upperBound) {
         this.lowerBound = lowerBound;
         this.upperBound = upperBound;
-        this.step = step;
+        setStep(1);
     }
 
-    public Range(int lowerBound, int upperBound) {
-        this(lowerBound, upperBound, 1);
-    }
-
-    public Range(int upperBound) {
-        this(0, upperBound, 1);
-    }
 
     public int getLowerBound() {
         return lowerBound;
@@ -108,10 +106,14 @@ public class Range {
         return step;
     }
 
+    public void setStep(final int step) {
+        this.step = step;
+    }
+
     /**
      * Create a range of integers specified by the start and stop values, skipping every step value.
      *
-     * @return  Iterable integers.  Never null.
+     * @return Iterable integers.  Never null.
      */
     public Iterable<Integer> expand() {
         if (step == 0) {
@@ -123,7 +125,7 @@ public class Range {
 
             /**
              * Ensure the counter still falls into the valid range.
-             * @return  True if there are more integers to be had.  False otherwise.
+             * @return True if there are more integers to be had.  False otherwise.
              */
             @Override
             public boolean hasNext() {
