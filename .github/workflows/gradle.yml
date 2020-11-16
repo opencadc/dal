@@ -36,6 +36,7 @@ jobs:
       run: |
         git clone https://github.com/pdowler/nom-tam-fits.git
         cd nom-tam-fits
+        mvn --version
         mvn -DskipTests -Dfindbugs.skip=true package install
       
     - name: build and test cadc-data-ops-fits
