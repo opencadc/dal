@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up JDK 1.8
       uses: actions/setup-java@v1
       with:
@@ -31,6 +31,9 @@ jobs:
       
     - name: build and test cadc-soda-server
       run: cd cadc-soda-server && gradle --info clean build javadoc checkstyleMain install
+      
+    - name: local build of nom-tam-fits fork
+      run: git clone https://github.com/pdowler/nom-tam-fits.git && cd nom-tam-fits && mvn -DskipTests package install
       
     - name: build and test cadc-data-ops-fits
       run: cd cadc-data-ops-fits && gradle --info clean build javadoc checkstyleMain install
