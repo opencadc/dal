@@ -34,6 +34,7 @@ jobs:
       
     - name: local build of nom-tam-fits fork
       run: |
+        cd ..
         git clone --single-branch --branch random-access https://github.com/pdowler/nom-tam-fits.git
         cd nom-tam-fits
         git branch
