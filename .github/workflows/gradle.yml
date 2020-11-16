@@ -36,7 +36,7 @@ jobs:
       run: |
         git clone https://github.com/pdowler/nom-tam-fits.git
         cd nom-tam-fits
-        apt-get install maven=3.5.4
+        sudo apt-get install maven=3.5.4
         mvn --version
         mvn -DskipTests -Dfindbugs.skip=true package install
       
