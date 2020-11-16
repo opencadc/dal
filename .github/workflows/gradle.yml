@@ -38,7 +38,7 @@ jobs:
         cd nom-tam-fits
         git branch
         mvn --version
-        mvn -Dmaven.test.skip=true -Dfindbugs.skip=true package install
+        mvn -DskipTests -Dmaven.test.skip=true -Dfindbugs.skip=true package install
       
     - name: build and test cadc-data-ops-fits
       run: cd cadc-data-ops-fits && gradle --info clean build javadoc checkstyleMain install
