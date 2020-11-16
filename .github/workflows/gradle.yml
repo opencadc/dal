@@ -37,8 +37,7 @@ jobs:
         git clone --single-branch --branch random-access https://github.com/pdowler/nom-tam-fits.git
         cd nom-tam-fits
         git branch
-        mvn --version
-        mvn -DskipTests -Dmaven.test.skip=true -Dfindbugs.skip=true package install
+        gradle assemble install
       
     - name: build and test cadc-data-ops-fits
       run: cd cadc-data-ops-fits && gradle --info clean build javadoc checkstyleMain install
