@@ -34,11 +34,11 @@ jobs:
       
     - name: local build of nom-tam-fits fork
       run: |
-        git clone https://github.com/pdowler/nom-tam-fits.git
+        git clone --single-branch --branch random-access https://github.com/pdowler/nom-tam-fits.git
         cd nom-tam-fits
-        sudo apt-get install maven=3.5.4
+        git branch
         mvn --version
-        mvn -DskipTests -Dfindbugs.skip=true package install
+        mvn -Dmaven.test.skip=true -Dfindbugs.skip=true package install
       
     - name: build and test cadc-data-ops-fits
       run: cd cadc-data-ops-fits && gradle --info clean build javadoc checkstyleMain install
