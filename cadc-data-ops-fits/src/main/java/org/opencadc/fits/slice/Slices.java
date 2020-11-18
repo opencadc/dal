@@ -81,10 +81,10 @@ import java.util.stream.Collectors;
  */
 public final class Slices {
     private static final Logger LOGGER = Logger.getLogger(Slices.class);
-    private static final String VALID_SINGLE_RANGE_STRING = "[\\d*\\*]+:?\\d*";
-    private static final String PIXEL_RANGE_PATTERN_STRING = "\\[(" + VALID_SINGLE_RANGE_STRING + ",?\\s*)*\\]";
-    private static final String ENTIRE_RANGE_PATTERN_STRING =
-            "(\\s*\\[[\\w]*,?\\s*\\d*\\])?" + PIXEL_RANGE_PATTERN_STRING;
+    private static final String VALID_SINGLE_RANGE_STRING = "\\*?(\\d+:\\d+)?(:\\d*)?";
+    private static final String PIXEL_RANGE_PATTERN_STRING = "(\\[(" + VALID_SINGLE_RANGE_STRING + ",?\\s*)*\\])?";
+    private static final String ENTIRE_RANGE_PATTERN_STRING = "\\[([\\w]*,?\\s*\\d*)\\]?"
+                                                              + PIXEL_RANGE_PATTERN_STRING;
 
     private final ExtensionSliceValue[] extensionSliceValues;
 
@@ -132,7 +132,7 @@ public final class Slices {
     public static final class ExtensionSliceValue {
 
         private final static String ALL_DATA = "*";
-        private final static String SEPARATOR = ",";
+        private final static String EXTENSION_NAME_VERSION_SEPARATOR = ",";
         private final static String PIXEL_VALUE_DELIMITER = ":";
         private static final Pattern VALID_SINGLE_RANGE = Pattern.compile(VALID_SINGLE_RANGE_STRING);
 
@@ -157,7 +157,7 @@ public final class Slices {
             // Parse out the requested Extension values (either name and version, just name, or just an index).
             if (stringValues.size() == 2) {
                 final String extension = stringValues.get(0).trim();
-                final String[] extensionParts = extension.split(SEPARATOR);
+                final String[] extensionParts = extension.split(EXTENSION_NAME_VERSION_SEPARATOR);
 
                 if (extensionParts.length == 2) {
                     extensionName = extensionParts[0];
@@ -192,6 +192,18 @@ public final class Slices {
                     index = 0;
                     extensionName = null;
                     version = null;
+                } else if (stringInputValue.contains(EXTENSION_NAME_VERSION_SEPARATOR)) {
+                    final String[] extensionParts = stringInputValue.split(EXTENSION_NAME_VERSION_SEPARATOR);
+                    extensionName = extensionParts[0];
+                    version = Integer.parseInt(extensionParts[1]);
+                    index = null;
+
+                    // EXTNAME and EXTVER are 1-based.
+                    if (version == 0) {
+                        version = 1;
+                    }
+
+                    values = ALL_DATA;
                 } else {
                     try {
                         index = Integer.parseInt(stringInputValue);
@@ -274,7 +286,7 @@ public final class Slices {
          * @return A list of Range objects.
          */
         public List<PixelRange> getRanges(final int maxSize) {
-            return Arrays.stream(value.split(SEPARATOR))
+            return Arrays.stream(value.split(EXTENSION_NAME_VERSION_SEPARATOR))
                          .filter(s -> VALID_SINGLE_RANGE.matcher(s.trim()).matches() || s.trim().contains(ALL_DATA))
                          .map(s -> s.split(PIXEL_VALUE_DELIMITER))
                          .map(tuple -> {

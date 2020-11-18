@@ -90,7 +90,8 @@ public class FitsTest {
     }
 
     private static final IFitsHeader[] HEADER_CARD_KEYS_TO_CHECK = new IFitsHeader[]{
-            Standard.BITPIX, Standard.NAXIS, Standard.EXTNAME, Standard.EXTVER, Standard.BSCALE, Standard.BUNIT
+            Standard.BITPIX, Standard.NAXIS, Standard.EXTNAME, Standard.XTENSION, Standard.SIMPLE, Standard.EXTVER,
+            Standard.BSCALE, Standard.BUNIT
     };
 
     public static void assertFitsEqual(final Fits expected, final Fits result) throws Exception {

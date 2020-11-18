@@ -176,7 +176,7 @@ public class FitsOperationsTest {
             final Fits resultsFits = new Fits(new RandomAccessFileExt(outputFile, "r"));
             resultsFits.read();
 
-            Assert.assertEquals("Wrong HDU count.  Only extension 106 and 126 should be available.", 2,
+            Assert.assertEquals("Wrong HDU count.  Only extension 106 and 126 should be available.", 3,
                                 resultsFits.getNumberOfHDUs());
 
             BasicHDU<?> hdu;

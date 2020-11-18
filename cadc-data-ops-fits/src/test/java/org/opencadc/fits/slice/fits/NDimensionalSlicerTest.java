@@ -85,6 +85,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 
 public class NDimensionalSlicerTest {
@@ -116,6 +117,7 @@ public class NDimensionalSlicerTest {
         final Fits resultFits = new Fits(outputPath.toFile());
 
         FitsTest.assertFitsEqual(expectedFits, resultFits);
+        Files.deleteIfExists(outputPath);
     }
 
     @Test
@@ -141,5 +143,60 @@ public class NDimensionalSlicerTest {
         final Fits resultFits = new Fits(outputPath.toFile());
 
         FitsTest.assertFitsEqual(expectedFits, resultFits);
+        Files.deleteIfExists(outputPath);
+    }
+
+    /**
+     * Two slices from a simple FITS file.
+     */
+    @Test
+    public void testSimpleToMEF() throws Exception {
+        final NDimensionalSlicer slicer = new NDimensionalSlicer();
+        final Slices slices = Slices.fromString("[0][25:125][0][300:375]");
+        final File file = FileUtil.getFileFromResource("test-simple-iris.fits",
+                                                       NDimensionalSlicerTest.class);
+        final File expectedFile = FileUtil.getFileFromResource("test-mef-iris-cutout.fits",
+                                                               NDimensionalSlicerTest.class);
+        final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
+        final String testWriteDir = configuredTestWriteDir == null ? "/tmp" : configuredTestWriteDir;
+        final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-simple-iris-cutout", ".fits");
+
+        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
+             final OutputStream outputStream = new FileOutputStream(outputPath.toFile())) {
+            slicer.slice(randomAccessDataObject, slices, outputStream);
+            outputStream.flush();
+        }
+
+        final Fits expectedFits = new Fits(expectedFile);
+        final Fits resultFits = new Fits(outputPath.toFile());
+
+        FitsTest.assertFitsEqual(expectedFits, resultFits);
+        Files.deleteIfExists(outputPath);
+    }
+
+    @Test
+    public void testMEFToSimple() throws Exception {
+        final NDimensionalSlicer slicer = new NDimensionalSlicer();
+        final Slices slices = Slices.fromString("[SCI,13]");
+        final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
+                                                       NDimensionalSlicerTest.class);
+        final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
+        final String testWriteDir = configuredTestWriteDir == null ? "/tmp" : configuredTestWriteDir;
+        final File expectedFile = FileUtil.getFileFromResource("test-simple-hst-cutout.fits",
+                                                               NDimensionalSlicerTest.class);
+        final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-simple-hst-cutout", ".fits");
+        LOGGER.debug("Writing out to " + outputPath);
+
+        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
+             final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
+            slicer.slice(randomAccessDataObject, slices, hstFileCutoutStream);
+            hstFileCutoutStream.flush();
+        }
+
+        final Fits expectedFits = new Fits(expectedFile);
+        final Fits resultFits = new Fits(outputPath.toFile());
+
+        FitsTest.assertFitsEqual(expectedFits, resultFits);
+        Files.deleteIfExists(outputPath);
     }
 }

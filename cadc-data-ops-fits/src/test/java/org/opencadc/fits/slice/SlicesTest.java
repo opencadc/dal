@@ -86,6 +86,16 @@ public class SlicesTest {
     }
 
     @Test
+    public void testExtensionNameExtensionVersion() throws Exception {
+        final Slices testSubject = Slices.fromString("[SCI,13]");
+        Assert.assertTrue("Should have a range.", testSubject.hasRanges());
+        Assert.assertEquals("Wrong extension name.", "SCI",
+                            testSubject.getExtensionSliceValues()[0].getExtensionName());
+        Assert.assertEquals("Wrong extension name.", Integer.valueOf(13),
+                            testSubject.getExtensionSliceValues()[0].getExtensionVersion());
+    }
+
+    @Test
     public void testFullLength() throws Exception {
         final Slices testSubject = Slices.fromString("[0][*]");
         Assert.assertTrue("Should have ranges.", testSubject.hasRanges());

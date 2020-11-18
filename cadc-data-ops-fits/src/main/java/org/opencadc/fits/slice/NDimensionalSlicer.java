@@ -68,6 +68,7 @@
 
 package org.opencadc.fits.slice;
 
+import ca.nrc.cadc.util.ArrayUtil;
 import ca.nrc.cadc.util.StringUtil;
 import nom.tam.fits.*;
 import nom.tam.fits.header.DataDescription;
@@ -84,7 +85,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -143,39 +146,76 @@ public class NDimensionalSlicer {
         final Slices.ExtensionSliceValue[] extensionSliceValues = slices.getExtensionSliceValues();
 
         LOGGER.debug("Parsed extension slice values: " + Arrays.toString(extensionSliceValues));
-        final Fits fits;
 
-        try {
-            fits = new Fits(randomAccessDataObject);
-        } catch (FitsException fitsException) {
-            throw new IllegalStateException(fitsException.getMessage(), fitsException);
-        }
-
-        slice(fits, extensionSliceValues, output);
+        slice(randomAccessDataObject, extensionSliceValues, output);
     }
 
-    private void slice(final Fits fits, final Slices.ExtensionSliceValue[] extensionSliceValues,
-                       final ArrayDataOutput output) throws FitsException, IOException {
-        // Assume MEF if more than one extension was requested, so write a Primary HDU before anything else.
-        if (extensionSliceValues.length > 1) {
-            final BasicHDU<?> firstHDU = fits.getHDU(0);
-            final Header headerCopy = ImageHDU.manufactureHeader(firstHDU.getData());
-            final Header primaryHeader = firstHDU.getHeader();
+    private void slice(final RandomAccessDataObject randomAccessDataObject,
+                       final Slices.ExtensionSliceValue[] requestedExtensionSliceValues, final ArrayDataOutput output)
+            throws FitsException, IOException {
+        if (ArrayUtil.isEmpty(requestedExtensionSliceValues)) {
+            throw new IllegalStateException("No cutout specified.");
+        }
 
+        final Fits fits = new Fits(randomAccessDataObject);
+
+        // Reduce the requested extensions to only those that overlap.
+        final Slices.ExtensionSliceValue[] extensionSliceValues = getOverlap(fits, requestedExtensionSliceValues);
+
+        if (ArrayUtil.isEmpty(extensionSliceValues)) {
+            throw new FitsException("No overlap found.");
+        } else {
+            LOGGER.debug("Found " + extensionSliceValues.length + " overlapping slices.");
+        }
+
+        // This count is available because the getOverlap call above will read through and cache the HDUs.
+        final int hduCount = fits.getNumberOfHDUs();
+
+        // Read the primary header first.
+        final BasicHDU<?> firstHDU = fits.getHDU(0);
+        final Header primaryHeader = firstHDU.getHeader();
+        final boolean mefOutput = extensionSliceValues.length > 1;
+        final boolean mefInput = hduCount > 1;
+
+        LOGGER.debug("\nMEF Output: " + mefOutput + "\nMEF Input: " + mefInput);
+
+        // The caller is expecting more than one extension.
+        boolean firstHDUAlreadyWritten = false;
+        if (mefInput && mefOutput) {
+            final Header headerCopy = ImageHDU.manufactureHeader(firstHDU.getData());
+            final boolean primaryHDUHasData = hasData(firstHDU);
             copyHeader(primaryHeader, headerCopy);
 
-            final HeaderCard nextEndCard = headerCopy.findCard(DataDescription.NEXTEND);
+            // If the primary HDU contains data, then the MEF output will contain just XTENSION HDUs each with
+            // data.
+            if (primaryHDUHasData) {
+                headerCopy.deleteKey(Standard.SIMPLE);
 
-            // Adjust the NEXTEND appropriately.
-            if (nextEndCard == null) {
-                headerCopy.addValue(DataDescription.NEXTEND, Integer.toString(extensionSliceValues.length));
+                final HeaderCard xtensionCard = headerCopy.findCard(Standard.XTENSION);
+
+                if (xtensionCard == null) {
+                    headerCopy.addValue(Standard.XTENSION, Standard.XTENSION_IMAGE);
+                }
             } else {
-                nextEndCard.setValue(Integer.toString(extensionSliceValues.length));
+                // We're cutting from a Simple FITS file, or an MEF with no data in the primary HDU.  Either way,
+                // the header gets modified.
+
+                final HeaderCard nextEndCard = headerCopy.findCard(DataDescription.NEXTEND);
+
+                // Adjust the NEXTEND appropriately.
+                if (nextEndCard == null) {
+                    headerCopy.addValue(DataDescription.NEXTEND, Integer.toString(extensionSliceValues.length));
+                } else {
+                    nextEndCard.setValue(Integer.toString(extensionSliceValues.length));
+                }
             }
 
             headerCopy.write(output);
             output.flush();
+
+            firstHDUAlreadyWritten = true;
         }
+        // Output a simple FITS file otherwise.
 
         // Iterate the requested cutouts.  Lookup the HDU for each one and use the NOM TAM Tiler to pull out an
         // array of primitives.
@@ -184,11 +224,12 @@ public class NDimensionalSlicer {
             try {
                 final String sliceValueExtensionName = extensionSliceValue.getExtensionName();
 
+                final Fits contextFits = new Fits(randomAccessDataObject);
                 final BasicHDU<?> hdu;
                 if (StringUtil.hasText(sliceValueExtensionName)) {
-                    hdu = fits.getHDU(sliceValueExtensionName, extensionSliceValue.getExtensionVersion());
+                    hdu = contextFits.getHDU(sliceValueExtensionName, extensionSliceValue.getExtensionVersion());
                 } else if (extensionSliceValue.getExtensionIndex() != null) {
-                    hdu = fits.getHDU(extensionSliceValue.getExtensionIndex());
+                    hdu = contextFits.getHDU(extensionSliceValue.getExtensionIndex());
                 } else {
                     throw new IllegalStateException("No extension to pick from.");
                 }
@@ -199,7 +240,12 @@ public class NDimensionalSlicer {
                         final ImageHDU imageHDU = (ImageHDU) hdu;
                         final Header header = imageHDU.getHeader();
                         final int[] dimensions = imageHDU.getAxes();
-                        final int dimensionLength = (dimensions == null) ? 0 : dimensions.length;
+
+                        if (dimensions == null) {
+                            throw new FitsException("Sub-image not within image");
+                        }
+
+                        final int dimensionLength = dimensions.length;
                         final int[] corners = new int[dimensionLength];
                         final int[] lengths = new int[dimensionLength];
                         final int[] steps = new int[dimensionLength];
@@ -210,7 +256,7 @@ public class NDimensionalSlicer {
                         try {
                             // The data contained in this HDU cannot be used to slice from.
                             if (corners.length == 0) {
-                                throw new IOException("Sub-image not within image");
+                                throw new FitsException("Sub-image not within image");
                             }
 
                             LOGGER.debug("Tiling out " + Arrays.toString(lengths) + " at corner "
@@ -227,16 +273,36 @@ public class NDimensionalSlicer {
                             // CRPIX values are not set automatically.  Adjust them here.
                             for (int i = 0; i < dimensionLength; i++) {
                                 final HeaderCard crpixCard = headerCopy.findCard(Standard.CRPIXn.n(i + 1));
+                                // Need to run backwards (reverse order) to match the dimensions.
+                                final double nextValue = corners[corners.length - i - 1];
                                 if (crpixCard != null) {
-                                    crpixCard.setValue(Double.parseDouble(crpixCard.getValue())
-                                                       - ((double) (corners[i])));
+                                    crpixCard.setValue(Double.parseDouble(crpixCard.getValue()) - nextValue);
                                 } else {
-                                    headerCopy.addValue(Standard.CRPIXn.n(i + 1), (double) (corners[i]));
+                                    headerCopy.addValue(Standard.CRPIXn.n(i + 1), nextValue);
                                 }
+                            }
+
+                            if (mefOutput && firstHDUAlreadyWritten) {
+                                headerCopy.setXtension(Standard.XTENSION_IMAGE);
+                                final HeaderCard pcountHeaderCard = headerCopy.findCard(Standard.PCOUNT);
+                                final HeaderCard gcountHeaderCard = headerCopy.findCard(Standard.GCOUNT);
+
+                                if (pcountHeaderCard == null) {
+                                    headerCopy.addValue(Standard.PCOUNT, 0);
+                                }
+
+                                if (gcountHeaderCard == null) {
+                                    headerCopy.addValue(Standard.GCOUNT, 0);
+                                }
+                            } else {
+                                // MEF input to simple output.
+                                headerCopy.setSimple(true);
                             }
 
                             headerCopy.write(output);
                             imageData.write(output);
+
+                            firstHDUAlreadyWritten = true;
                         } catch (IOException ioException) {
                             // No overlap means it gets skipped.
                             if (!ioException.getMessage().equals("Sub-image not within image")) {
@@ -269,6 +335,71 @@ public class NDimensionalSlicer {
                     LOGGER.warn("Tried to flush output.", e);
                 }
             }
+        }
+    }
+
+    /**
+     * Populate the corners and lengths of the tile to pull.  This method will fill the <code>corners</code>,
+     * <code>lengths</code>, and <code>steps</code> arrays to be used by the FITS Tiler.
+     *
+     * @param dimensionLength       The full size of the dimension.  Used to fill in values that are not specified.
+     * @param dimensions            The dimension values to pad with.
+     * @param header                The Header to set NAXIS values for as they are calculated.
+     * @param extensionSliceValue   The requested cutout.
+     * @param corners               The corners array to indicate starting pixel points.
+     * @param lengths               The lengths of each dimension to cutout.
+     * @param steps                 For striding, these values will be something other than 1.
+     */
+    private void fillCornersAndLengths(final int dimensionLength, final int[] dimensions, final Header header,
+                                       final Slices.ExtensionSliceValue extensionSliceValue, final int[] corners,
+                                       final int[] lengths, final int[] steps) {
+
+        LOGGER.debug("Full dimensions are " + Arrays.toString(dimensions));
+
+        // Pad the bounds with the full dimensions as necessary.
+        for (int i = 0; i < dimensionLength; i++) {
+            // Need to pull values in reverse order as the dimensions (axes) are delivered in reverse order.
+            final int maxRegionSize = dimensions[dimensionLength - i - 1];
+            final List<PixelRange> pixelRanges = extensionSliceValue.getRanges(maxRegionSize);
+            final int rangeSize = pixelRanges.size();
+            final PixelRange pixelRange;
+            if (rangeSize > i) {
+                pixelRange = pixelRanges.get(i);
+            } else {
+                pixelRange = new PixelRange(0, maxRegionSize);
+            }
+
+            final int rangeLowBound = pixelRange.getLowerBound();
+            final int rangeUpBound = pixelRange.getUpperBound();
+            final int rangeStep = pixelRange.getStep();
+
+            final int lowerBound = rangeLowBound > 0 ? rangeLowBound - 1 : rangeLowBound;
+            LOGGER.debug("Set lowerBound to " + lowerBound + " from rangeLowBound " + rangeLowBound);
+            final int upperBound;
+            final int step;
+
+            if (lowerBound > rangeUpBound) {
+                upperBound = rangeUpBound - 2;
+                step = rangeStep * -1;
+            } else {
+                upperBound = rangeUpBound;
+                step = rangeStep;
+            }
+
+            final int nextLength = Math.min((upperBound - lowerBound), maxRegionSize);
+            LOGGER.debug("Length is " + nextLength + " (" + upperBound + " - " + lowerBound + ")");
+
+            // Adjust the NAXISn header appropriately.
+            header.setNaxis(i + 1, nextLength);
+
+            // Need to set the values backwards (reverse order) to match the dimensions.
+            corners[corners.length - i - 1] = lowerBound;
+
+            // Need to set the values backwards (reverse order) to match the dimensions.
+            lengths[lengths.length - i - 1] = nextLength;
+
+            // Need to set the values backwards (reverse order) to match the dimensions.
+            steps[steps.length - i - 1] = step;
         }
     }
 
@@ -340,60 +471,49 @@ public class NDimensionalSlicer {
         destination.updateLines(source);
     }
 
-    /**
-     * Populate the corners and lengths of the tile to pull.  This method will fill the <code>corners</code>,
-     * <code>lengths</code>, and <code>steps</code> arrays to be used by the FITS Tiler.
-     *
-     * @param dimensionLength       The full size of the dimension.  Used to fill in values that are not specified.
-     * @param dimensions            The dimension values to pad with.
-     * @param header                The Header to set NAXIS values for as they are calculated.
-     * @param extensionSliceValue   The requested cutout.
-     * @param corners               The corners array to indicate starting pixel points.
-     * @param lengths               The lengths of each dimension to cutout.
-     * @param steps                 For striding, these values will be something other than 1.
-     */
-    private void fillCornersAndLengths(final int dimensionLength, final int[] dimensions, final Header header,
-                                       final Slices.ExtensionSliceValue extensionSliceValue, final int[] corners,
-                                       final int[] lengths, final int[] steps) {
-        LOGGER.debug("Full dimensions are " + Arrays.toString(dimensions));
+    private boolean hasData(final BasicHDU<?> hdu) {
+        final Data data = hdu.getData();
+        return (data != null) && (data.getSize() > 0L);
+    }
 
-        // Pad the bounds with the full dimensions as necessary.
-        for (int i = 0; i < dimensionLength; i++) {
-            final int maxRegionSize = dimensions[i];
-            final List<PixelRange> pixelRanges = extensionSliceValue.getRanges(maxRegionSize);
-            final int rangeSize = pixelRanges.size();
-            final PixelRange pixelRange;
-            if (rangeSize > i) {
-                pixelRange = pixelRanges.get(i);
-            } else {
-                pixelRange = new PixelRange(0, maxRegionSize);
-            }
+    private BasicHDU<?> getHDU(final Fits fits, final Slices.ExtensionSliceValue extensionSliceValue)
+            throws FitsException, IOException {
+        final String sliceValueExtensionName = extensionSliceValue.getExtensionName();
 
-            final int rangeLowBound = pixelRange.getLowerBound();
-            final int rangeUpBound = pixelRange.getUpperBound();
-            final int rangeStep = pixelRange.getStep();
-
-            final int lowerBound = rangeLowBound > 0 ? rangeLowBound - 1 : rangeLowBound;
-            LOGGER.debug("Set lowerBound to " + lowerBound + " from rangeLowBound " + rangeLowBound);
-            final int upperBound;
-            final int step;
-
-            if (lowerBound > rangeUpBound) {
-                upperBound = rangeUpBound - 2;
-                step = rangeStep * -1;
-            } else {
-                upperBound = rangeUpBound;
-                step = rangeStep;
-            }
-
-            corners[i] = lowerBound;
-
-            final int nextLength = Math.min((upperBound - lowerBound), maxRegionSize);
-            LOGGER.debug("Length is " + nextLength + " (" + upperBound + " - " + lowerBound + ")");
-
-            lengths[i] = nextLength;
-            header.setNaxis(i + 1, nextLength);
-            steps[i] = step;
+        if (StringUtil.hasText(sliceValueExtensionName)) {
+            return fits.getHDU(sliceValueExtensionName, extensionSliceValue.getExtensionVersion());
+        } else if (extensionSliceValue.getExtensionIndex() != null) {
+            return fits.getHDU(extensionSliceValue.getExtensionIndex());
+        } else {
+            throw new IllegalStateException("No extension to pick from.");
         }
+    }
+
+    private Slices.ExtensionSliceValue[] getOverlap(final Fits fits,
+                                                    final Slices.ExtensionSliceValue[] extensionSliceValues)
+            throws FitsException, IOException {
+
+        // A Set is used to eliminate duplicates from the inner loop below.
+        final Set<Slices.ExtensionSliceValue> extensionSliceValueList = new LinkedHashSet<>();
+
+        for (final Slices.ExtensionSliceValue extensionSliceValue : extensionSliceValues) {
+            final BasicHDU<?> hdu = getHDU(fits, extensionSliceValue);
+            if (hdu != null) {
+                final int[] dimensions = hdu.getAxes();
+
+                if (dimensions != null) {
+                    for (final int maxUpperBound : dimensions) {
+                        for (final PixelRange pixelRange : extensionSliceValue.getRanges(maxUpperBound)) {
+                            if (pixelRange.getLowerBound() < maxUpperBound) {
+                                extensionSliceValueList.add(extensionSliceValue);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return extensionSliceValueList.toArray(new Slices.ExtensionSliceValue[0]);
     }
 }
