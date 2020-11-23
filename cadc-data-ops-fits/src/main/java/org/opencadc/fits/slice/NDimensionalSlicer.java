@@ -224,12 +224,11 @@ public class NDimensionalSlicer {
             try {
                 final String sliceValueExtensionName = extensionSliceValue.getExtensionName();
 
-                final Fits contextFits = new Fits(randomAccessDataObject);
                 final BasicHDU<?> hdu;
                 if (StringUtil.hasText(sliceValueExtensionName)) {
-                    hdu = contextFits.getHDU(sliceValueExtensionName, extensionSliceValue.getExtensionVersion());
+                    hdu = fits.getHDU(sliceValueExtensionName, extensionSliceValue.getExtensionVersion());
                 } else if (extensionSliceValue.getExtensionIndex() != null) {
-                    hdu = contextFits.getHDU(extensionSliceValue.getExtensionIndex());
+                    hdu = fits.getHDU(extensionSliceValue.getExtensionIndex());
                 } else {
                     throw new IllegalStateException("No extension to pick from.");
                 }
