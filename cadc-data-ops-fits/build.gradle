@@ -20,16 +20,10 @@ group = 'org.opencadc'
 version = '0.1.0'
 
 dependencies {
-    // Log4J logging
     compile 'log4j:log4j:[1.2.0,)'
-
-    // CADC convenience functions
     compile 'org.opencadc:cadc-util:[1.2,2.0)'
-
-    // NASA NOM-TAM fits library.
-    compile 'gov.nasa.gsfc.heasarc:nom-tam-fits:[1.15.3-pdowler,1.16.0)'
-
-    // Use JUnit test framework
+    compile 'org.opencadc:nom-tam-fits:[1.16.0,)'
+    
     testCompile 'junit:junit:[4.13,5.0)'
 }
 
