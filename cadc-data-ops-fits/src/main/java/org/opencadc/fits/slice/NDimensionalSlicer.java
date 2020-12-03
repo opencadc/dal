@@ -70,17 +70,12 @@ package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.util.ArrayUtil;
 import ca.nrc.cadc.util.StringUtil;
-import nom.tam.fits.*;
-import nom.tam.fits.header.DataDescription;
-import nom.tam.fits.header.Standard;
-import nom.tam.image.ImageTiler;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.BufferedDataOutputStream;
-import nom.tam.util.RandomAccessDataObject;
-import nom.tam.util.RandomAccessFileExt;
-import org.apache.log4j.Logger;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -89,6 +84,23 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Data;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.ImageData;
+import nom.tam.fits.ImageHDU;
+import nom.tam.fits.header.DataDescription;
+import nom.tam.fits.header.Standard;
+import nom.tam.image.ImageTiler;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.BufferedDataOutputStream;
+import nom.tam.util.RandomAccessDataObject;
+import nom.tam.util.RandomAccessFileExt;
+import org.apache.log4j.Logger;
 
 /**
  * Slice out a portion of an image.
@@ -103,11 +115,11 @@ public class NDimensionalSlicer {
     /**
      * Perform a slice operation from the input File.  Implementors will walk through the File, skipping unwanted bytes.
      *
-     * This implementation relies on the NOM TAM FITS API to be able to look up an HDU by its Extension Name
+     * <p>This implementation relies on the NOM TAM FITS API to be able to look up an HDU by its Extension Name
      * (<code>EXTNAME</code>) and, optionally, it's Extension Version (<code>EXTVER</code>).  This may affect an
      * underlying <code>Fits(InputStream)</code> unless the <code>InputStream</code> can handle resetting and marking.
      *
-     * It is NOT the responsibility of this method to manage the given <code>OutputStream</code>.  The caller will
+     * <p>It is NOT the responsibility of this method to manage the given <code>OutputStream</code>.  The caller will
      * need to close it and ensure it's open outside the bounds of this method.
      *
      * @param fitsFile     The File to read bytes from.  This method will not close this file.
@@ -125,11 +137,11 @@ public class NDimensionalSlicer {
      * Perform a slice operation from the input RandomAccess.  Implementors will walk through the RandomAccess, skipping
      * unwanted bytes.
      *
-     * This implementation relies on the NOM TAM FITS API to be able to look up an HDU by its Extension Name
+     * <p>This implementation relies on the NOM TAM FITS API to be able to look up an HDU by its Extension Name
      * (<code>EXTNAME</code>) and, optionally, it's Extension Version (<code>EXTVER</code>).  This may affect an
      * underlying <code>Fits(InputStream)</code> unless the <code>InputStream</code> can handle resetting and marking.
      *
-     * It is NOT the responsibility of this method to manage the given <code>OutputStream</code>.  The caller will
+     * <p>It is NOT the responsibility of this method to manage the given <code>OutputStream</code>.  The caller will
      * need to close it and ensure it's open outside the bounds of this method.
      *
      * @param randomAccessDataObject         The RandomAccess object to read bytes from.  This method will not close
@@ -287,7 +299,7 @@ public class NDimensionalSlicer {
                                 headerCopy.setSimple(true);
                             }
 
-                            final ImageData imageData = new ImageData(imageTiler.getTile(corners, lengths));
+                            final Data imageData = new ImageData(imageTiler.getTile(corners, lengths));
 
                             headerCopy.write(output);
                             imageData.write(output);
@@ -485,10 +497,10 @@ public class NDimensionalSlicer {
      * Obtain the HDU whose Extension name (<code>EXTNAME</code>) and (optionally) Extension version
      * (<code>EXTVER</code>) values match.
      *
-     * If no <code>extensionVersion</code> is provided, then this will return the first HDU whose name
+     * <p>If no <code>extensionVersion</code> is provided, then this will return the first HDU whose name
      * (<code>EXTNAME</code>) matches the given <code>extensionName</code>.
      *
-     * This traverses one way through the file until the sought-after HDU is found.  This could leave this Fits in an
+     * <p>This traverses one way through the file until the sought-after HDU is found.  This could leave this Fits in an
      * inconsistent state as it will not start at the top.  The caller would need to create a new Fits every time they
      * want to find an HDU this way.
      *

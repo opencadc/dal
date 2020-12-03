@@ -68,13 +68,15 @@
 
 package org.opencadc.fits.slice;
 
-import org.apache.log4j.Logger;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.apache.log4j.Logger;
 
 /**
  * Class to represent a full slice request.
@@ -130,10 +132,9 @@ public final class Slices {
      * Represents a single extension and set of pixel pixelRanges.
      */
     public static final class ExtensionSliceValue {
-
-        private final static String ALL_DATA = "*";
-        private final static String EXTENSION_NAME_VERSION_SEPARATOR = ",";
-        private final static String PIXEL_VALUE_DELIMITER = ":";
+        private static final String ALL_DATA = "*";
+        private static final String EXTENSION_NAME_VERSION_SEPARATOR = ",";
+        private static final String PIXEL_VALUE_DELIMITER = ":";
         private static final Pattern VALID_SINGLE_RANGE = Pattern.compile(VALID_SINGLE_RANGE_STRING);
 
         private final String value;
@@ -245,12 +246,12 @@ public final class Slices {
 
         @Override
         public String toString() {
-            return "ExtensionSliceValue{" +
-                   "value='" + value + '\'' +
-                   ", extensionName='" + extensionName + '\'' +
-                   ", extensionVersion=" + extensionVersion +
-                   ", extensionIndex=" + extensionIndex +
-                   '}';
+            return "ExtensionSliceValue{"
+                   + "value='" + value + '\''
+                   + ", extensionName='" + extensionName + '\''
+                   + ", extensionVersion=" + extensionVersion
+                   + ", extensionIndex=" + extensionIndex
+                   + '}';
         }
 
         @Override
@@ -264,10 +265,9 @@ public final class Slices {
             }
 
             final ExtensionSliceValue that = (ExtensionSliceValue) o;
-            return value.equals(that.value) &&
-                   Objects.equals(extensionName, that.extensionName) &&
-                   Objects.equals(extensionVersion, that.extensionVersion) &&
-                   Objects.equals(extensionIndex, that.extensionIndex);
+            return value.equals(that.value) && Objects.equals(extensionName, that.extensionName)
+                   && Objects.equals(extensionVersion, that.extensionVersion)
+                   && Objects.equals(extensionIndex, that.extensionIndex);
         }
 
         @Override
