@@ -222,16 +222,7 @@ public class NDimensionalSlicer {
         for (Slices.ExtensionSliceValue extensionSliceValue : extensionSliceValues) {
             LOGGER.debug("Next extension slice value " + extensionSliceValue);
             try {
-                final String sliceValueExtensionName = extensionSliceValue.getExtensionName();
-
-                final BasicHDU<?> hdu;
-                if (StringUtil.hasText(sliceValueExtensionName)) {
-                    hdu = fits.getHDU(sliceValueExtensionName, extensionSliceValue.getExtensionVersion());
-                } else if (extensionSliceValue.getExtensionIndex() != null) {
-                    hdu = fits.getHDU(extensionSliceValue.getExtensionIndex());
-                } else {
-                    throw new IllegalStateException("No extension to pick from.");
-                }
+                final BasicHDU<?> hdu = getHDU(fits, extensionSliceValue);
 
                 // This is possible if the HDU cannot be found.
                 if (hdu != null) {
@@ -263,19 +254,17 @@ public class NDimensionalSlicer {
                                          + hdu.getTrimmedString(Standard.EXTNAME) + ","
                                          + header.getIntValue(Standard.EXTVER, 1));
                             final ImageTiler imageTiler = imageHDU.getTiler();
-                            final Object outputArray = imageTiler.getTile(corners, lengths);
-                            final Data imageData = new ImageData(outputArray);
                             final Header headerCopy = new Header();
 
                             copyHeader(header, headerCopy);
 
                             // CRPIX values are not set automatically.  Adjust them here.
                             for (int i = 0; i < dimensionLength; i++) {
-                                final HeaderCard crpixCard = headerCopy.findCard(Standard.CRPIXn.n(i + 1));
+                                final HeaderCard crPixCard = headerCopy.findCard(Standard.CRPIXn.n(i + 1));
                                 // Need to run backwards (reverse order) to match the dimensions.
                                 final double nextValue = corners[corners.length - i - 1];
-                                if (crpixCard != null) {
-                                    crpixCard.setValue(Double.parseDouble(crpixCard.getValue()) - nextValue);
+                                if (crPixCard != null) {
+                                    crPixCard.setValue(Double.parseDouble(crPixCard.getValue()) - nextValue);
                                 } else {
                                     headerCopy.addValue(Standard.CRPIXn.n(i + 1), nextValue);
                                 }
@@ -298,6 +287,8 @@ public class NDimensionalSlicer {
                                 headerCopy.setSimple(true);
                             }
 
+                            final ImageData imageData = new ImageData(imageTiler.getTile(corners, lengths));
+
                             headerCopy.write(output);
                             imageData.write(output);
 
@@ -316,8 +307,7 @@ public class NDimensionalSlicer {
                         try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                              final PrintStream printStream = new PrintStream(byteArrayOutputStream)) {
                             hdu.getHeader().dumpHeader(printStream);
-                            LOGGER.warn("Skipping matching extension \n\n "
-                                        + new String(byteArrayOutputStream.toByteArray())
+                            LOGGER.warn("Skipping matching extension \n\n " + byteArrayOutputStream.toString()
                                         + "\n\n as it's NOT an Image HDU.");
                         } catch (Exception e) {
                             LOGGER.warn(e.getMessage(), e);
@@ -464,10 +454,13 @@ public class NDimensionalSlicer {
                 } else if (valueType == Double.class) {
                     copyHeaderCard.setValue(Double.parseDouble(headerCard.getValue()));
                 }
-            }
-        }
 
-        destination.updateLines(source);
+            }
+
+            // A new HeaderCard must be created here to remove the reference from the previous one.
+            destination.updateLine(headerCardKey, new HeaderCard(headerCardKey, headerCard.getValue(),
+                                                                 headerCard.getComment()));
+        }
     }
 
     private boolean hasData(final BasicHDU<?> hdu) {
@@ -480,13 +473,80 @@ public class NDimensionalSlicer {
         final String sliceValueExtensionName = extensionSliceValue.getExtensionName();
 
         if (StringUtil.hasText(sliceValueExtensionName)) {
-            return fits.getHDU(sliceValueExtensionName, extensionSliceValue.getExtensionVersion());
+            return getHDU(fits, sliceValueExtensionName, extensionSliceValue.getExtensionVersion());
         } else if (extensionSliceValue.getExtensionIndex() != null) {
             return fits.getHDU(extensionSliceValue.getExtensionIndex());
         } else {
-            throw new IllegalStateException("No extension to pick from.");
+            return null;
         }
     }
+
+    /**
+     * Obtain the HDU whose Extension name (<code>EXTNAME</code>) and (optionally) Extension version
+     * (<code>EXTVER</code>) values match.
+     *
+     * If no <code>extensionVersion</code> is provided, then this will return the first HDU whose name
+     * (<code>EXTNAME</code>) matches the given <code>extensionName</code>.
+     *
+     * This traverses one way through the file until the sought-after HDU is found.  This could leave this Fits in an
+     * inconsistent state as it will not start at the top.  The caller would need to create a new Fits every time they
+     * want to find an HDU this way.
+     *
+     * @param extensionName
+     *            The name (<code>EXTNAME</code>) value of the HDU header to be read.  Required.
+     * @param extensionVersion
+     *            The version (<code>EXTVER</code>) value of the HDU header to match (if present).  Optional.
+     * @return The HDU matching the arguments, or null if it could not be found.
+     * @throws FitsException
+     *             if the header could not be read
+     * @throws IOException
+     *             if the underlying buffer threw an error
+     */
+    public BasicHDU<?> getHDU(Fits fits, String extensionName, Integer extensionVersion)
+            throws FitsException, IOException {
+        // Check the cache first.
+        int size = fits.getNumberOfHDUs();
+        for (int i = 0; i <= size; i++) {
+            final BasicHDU<?> nextHDU = fits.getHDU(i);
+            if (matchHDU(nextHDU, extensionName, extensionVersion)) {
+                return nextHDU;
+            }
+        }
+
+        // Read the rest of the HDUs next.
+        BasicHDU<?> hdu;
+        while ((hdu = fits.readHDU()) != null) {
+            if (matchHDU(hdu, extensionName, extensionVersion)) {
+                return hdu;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean matchHDU(final BasicHDU<?> hdu, String extensionName, Integer extensionVersion) {
+        final String extName = hdu.getTrimmedString(Standard.EXTNAME);
+
+        // Only carry on if this HDU has an EXTNAME value.
+        if (extName != null) {
+            // FITS dictates the default EXTVER is 1 if not present.
+            // https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html
+            //
+            final int extVer = hdu.getHeader().getIntValue(Standard.EXTVER, 1);
+
+            // Ensure the extension name matches as that's a requirement.  By default the extVer value will be 1,
+            // which will match if no extensionVersion was requested.  Otherwise, ensure the extVer matches the
+            // requested value.  Boxing extVer into a new Integer() alleviates a NullPointerException from possibly
+            // occurring.
+            return extName.equalsIgnoreCase(extensionName)
+                   && (((extensionVersion == null) && (extVer == 1))
+                       || (Integer.valueOf(extVer).equals(extensionVersion)));
+        }
+
+        return false;
+    }
+
+
 
     private Slices.ExtensionSliceValue[] getOverlap(final Fits fits,
                                                     final Slices.ExtensionSliceValue[] extensionSliceValues)

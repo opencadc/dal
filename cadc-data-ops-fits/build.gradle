@@ -23,7 +23,8 @@ dependencies {
     compile 'log4j:log4j:[1.2.0,)'
     compile 'org.opencadc:cadc-util:[1.2,2.0)'
     compile 'org.opencadc:nom-tam-fits:[1.16.0,)'
-    
+
+    // Use JUnit test framework
     testCompile 'junit:junit:[4.13,5.0)'
 }
 
