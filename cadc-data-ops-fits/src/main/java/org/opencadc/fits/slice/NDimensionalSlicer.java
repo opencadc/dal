@@ -125,8 +125,8 @@ public class NDimensionalSlicer {
      * @param fitsFile     The File to read bytes from.  This method will not close this file.
      * @param slices       The string value of the pixels to extract.
      * @param outputStream Where to write bytes to.  This method will not close this stream.
-     * @throws FitsException    Any FITS related errors from the NOM TAM Fits library.
-     * @throws IOException      Reading Writing errors.
+     * @throws FitsException Any FITS related errors from the NOM TAM Fits library.
+     * @throws IOException   Reading Writing errors.
      */
     public void slice(final File fitsFile, final Slices slices, final OutputStream outputStream)
             throws FitsException, IOException {
@@ -144,12 +144,12 @@ public class NDimensionalSlicer {
      * <p>It is NOT the responsibility of this method to manage the given <code>OutputStream</code>.  The caller will
      * need to close it and ensure it's open outside the bounds of this method.
      *
-     * @param randomAccessDataObject         The RandomAccess object to read bytes from.  This method will not close
-     *                                       this file.
-     * @param slices       The string value of the pixels to extract.
-     * @param outputStream Where to write bytes to.  This method will not close this stream.
-     * @throws FitsException    Any FITS related errors from the NOM TAM Fits library.
-     * @throws IOException      Reading Writing errors.
+     * @param randomAccessDataObject The RandomAccess object to read bytes from.  This method will not close
+     *                               this file.
+     * @param slices                 The string value of the pixels to extract.
+     * @param outputStream           Where to write bytes to.  This method will not close this stream.
+     * @throws FitsException Any FITS related errors from the NOM TAM Fits library.
+     * @throws IOException   Reading Writing errors.
      */
     public void slice(final RandomAccessDataObject randomAccessDataObject, final Slices slices,
                       final OutputStream outputStream)
@@ -169,6 +169,7 @@ public class NDimensionalSlicer {
             throw new IllegalStateException("No cutout specified.");
         }
 
+        // Single Fits object for the slice.  It maintains state about itself such as the current read offset.
         final Fits fits = new Fits(randomAccessDataObject);
 
         // Reduce the requested extensions to only those that overlap.
@@ -183,8 +184,18 @@ public class NDimensionalSlicer {
         // This count is available because the getOverlap call above will read through and cache the HDUs.
         final int hduCount = fits.getNumberOfHDUs();
 
+        // The count will indicate the number of reads into the file that were needed to get to the farthest requested
+        // HDU.  This DEBUG is here to help optimize the I/O.  All other getHDU() calls will use the cached list of HDUs
+        // in the Fits object and will not need a read.
+        LOGGER.debug("Number of reads: " + hduCount);
+
         // Read the primary header first.
-        final BasicHDU<?> firstHDU = fits.getHDU(0);
+        final BasicHDU<?> firstHDU = getHDU(fits, 0);
+
+        if (firstHDU == null) {
+            throw new FitsException("Invalid FITS file (No primary HDU).");
+        }
+
         final Header primaryHeader = firstHDU.getHeader();
         final boolean mefOutput = extensionSliceValues.length > 1;
         final boolean mefInput = hduCount > 1;
@@ -343,13 +354,13 @@ public class NDimensionalSlicer {
      * Populate the corners and lengths of the tile to pull.  This method will fill the <code>corners</code>,
      * <code>lengths</code>, and <code>steps</code> arrays to be used by the FITS Tiler.
      *
-     * @param dimensionLength       The full size of the dimension.  Used to fill in values that are not specified.
-     * @param dimensions            The dimension values to pad with.
-     * @param header                The Header to set NAXIS values for as they are calculated.
-     * @param extensionSliceValue   The requested cutout.
-     * @param corners               The corners array to indicate starting pixel points.
-     * @param lengths               The lengths of each dimension to cutout.
-     * @param steps                 For striding, these values will be something other than 1.
+     * @param dimensionLength     The full size of the dimension.  Used to fill in values that are not specified.
+     * @param dimensions          The dimension values to pad with.
+     * @param header              The Header to set NAXIS values for as they are calculated.
+     * @param extensionSliceValue The requested cutout.
+     * @param corners             The corners array to indicate starting pixel points.
+     * @param lengths             The lengths of each dimension to cutout.
+     * @param steps               For striding, these values will be something other than 1.
      */
     private void fillCornersAndLengths(final int dimensionLength, final int[] dimensions, final Header header,
                                        final Slices.ExtensionSliceValue extensionSliceValue, final int[] corners,
@@ -408,13 +419,13 @@ public class NDimensionalSlicer {
      * Make a copy of the header.  Adjusting the source one directly with an underlying File will result in the source
      * file being modified.
      *
-     * @param source        The source Header.
-     * @param destination   The Header to write to.
-     * @throws HeaderCardException  Any I/O with Header Cards.
+     * @param source      The source Header.
+     * @param destination The Header to write to.
+     * @throws HeaderCardException Any I/O with Header Cards.
      */
     private void copyHeader(final Header source, final Header destination) throws HeaderCardException {
         for (final Iterator<HeaderCard> headerCardIterator = source.iterator();
-             headerCardIterator.hasNext();) {
+             headerCardIterator.hasNext(); ) {
             final HeaderCard headerCard = headerCardIterator.next();
             final String headerCardKey = headerCard.getKey();
             LOGGER.debug("Checking next card " + headerCardKey + "(" + headerCard.getComment() + ")");
@@ -431,22 +442,22 @@ public class NDimensionalSlicer {
                 } else {
                     if (valueType == String.class) {
                         destination.addValue(headerCard.getKey(), headerCard.getValue(),
-                                            headerCard.getComment());
+                                             headerCard.getComment());
                     } else if (valueType == Boolean.class) {
                         destination.addValue(headerCard.getKey(), Boolean.parseBoolean(headerCard.getValue()),
-                                            headerCard.getComment());
+                                             headerCard.getComment());
                     } else if (valueType == Integer.class) {
                         destination.addValue(headerCard.getKey(), Integer.parseInt(headerCard.getValue()),
-                                            headerCard.getComment());
+                                             headerCard.getComment());
                     } else if (valueType == Long.class) {
                         destination.addValue(headerCard.getKey(), Long.parseLong(headerCard.getValue()),
-                                            headerCard.getComment());
+                                             headerCard.getComment());
                     } else if (valueType == Double.class) {
                         destination.addValue(headerCard.getKey(), Double.parseDouble(headerCard.getValue()),
-                                            headerCard.getComment());
+                                             headerCard.getComment());
                     } else if (valueType == BigDecimal.class || valueType == BigInteger.class) {
                         destination.addValue(headerCard.getKey(), new BigDecimal(headerCard.getValue()),
-                                            headerCard.getComment());
+                                             headerCard.getComment());
                     }
                 }
             } else {
@@ -480,6 +491,14 @@ public class NDimensionalSlicer {
         return (data != null) && (data.getSize() > 0L);
     }
 
+    /**
+     * Obtain an HDU whose index in the file matches the given one.  Index zero is the primary HDU.
+     * @param fits                  The Fits object.
+     * @param extensionSliceValue   A requested and parsed Slices.ExtensionSliceValue.
+     * @return  The HDU matching the index, or null if none found.
+     * @throws FitsException if the header could not be read
+     * @throws IOException   if the underlying buffer threw an error
+     */
     private BasicHDU<?> getHDU(final Fits fits, final Slices.ExtensionSliceValue extensionSliceValue)
             throws FitsException, IOException {
         final String sliceValueExtensionName = extensionSliceValue.getExtensionName();
@@ -487,8 +506,25 @@ public class NDimensionalSlicer {
         if (StringUtil.hasText(sliceValueExtensionName)) {
             return getHDU(fits, sliceValueExtensionName, extensionSliceValue.getExtensionVersion());
         } else if (extensionSliceValue.getExtensionIndex() != null) {
-            return fits.getHDU(extensionSliceValue.getExtensionIndex());
+            return getHDU(fits, extensionSliceValue.getExtensionIndex());
         } else {
+            return null;
+        }
+    }
+
+    /**
+     * Obtain an HDU whose index in the file matches the given one.  Index zero is the primary HDU.
+     *
+     * @param fits              The Fits object.
+     * @param extensionIndex    The index to look up.
+     * @return  The HDU matching the index, or null if none found.
+     * @throws FitsException if the header could not be read
+     * @throws IOException   if the underlying buffer threw an error
+     */
+    private BasicHDU<?> getHDU(final Fits fits, final Integer extensionIndex) throws FitsException, IOException {
+        try {
+            return fits.getHDU(extensionIndex);
+        } catch (IndexOutOfBoundsException indexOutOfBoundsException) {
             return null;
         }
     }
@@ -504,23 +540,19 @@ public class NDimensionalSlicer {
      * inconsistent state as it will not start at the top.  The caller would need to create a new Fits every time they
      * want to find an HDU this way.
      *
-     * @param extensionName
-     *            The name (<code>EXTNAME</code>) value of the HDU header to be read.  Required.
-     * @param extensionVersion
-     *            The version (<code>EXTVER</code>) value of the HDU header to match (if present).  Optional.
+     * @param extensionName    The name (<code>EXTNAME</code>) value of the HDU header to be read.  Required.
+     * @param extensionVersion The version (<code>EXTVER</code>) value of the HDU header to match (if present).  Optional.
      * @return The HDU matching the arguments, or null if it could not be found.
-     * @throws FitsException
-     *             if the header could not be read
-     * @throws IOException
-     *             if the underlying buffer threw an error
+     * @throws FitsException if the header could not be read
+     * @throws IOException   if the underlying buffer threw an error
      */
-    public BasicHDU<?> getHDU(Fits fits, String extensionName, Integer extensionVersion)
+    private BasicHDU<?> getHDU(final Fits fits, final String extensionName, final Integer extensionVersion)
             throws FitsException, IOException {
         // Check the cache first.
         int size = fits.getNumberOfHDUs();
         for (int i = 0; i <= size; i++) {
-            final BasicHDU<?> nextHDU = fits.getHDU(i);
-            if (matchHDU(nextHDU, extensionName, extensionVersion)) {
+            final BasicHDU<?> nextHDU = getHDU(fits, i);
+            if (nextHDU != null && matchHDU(nextHDU, extensionName, extensionVersion)) {
                 return nextHDU;
             }
         }
@@ -536,7 +568,7 @@ public class NDimensionalSlicer {
         return null;
     }
 
-    private boolean matchHDU(final BasicHDU<?> hdu, String extensionName, Integer extensionVersion) {
+    private boolean matchHDU(final BasicHDU<?> hdu, final String extensionName, final Integer extensionVersion) {
         final String extName = hdu.getTrimmedString(Standard.EXTNAME);
 
         // Only carry on if this HDU has an EXTNAME value.
@@ -557,8 +589,6 @@ public class NDimensionalSlicer {
 
         return false;
     }
-
-
 
     private Slices.ExtensionSliceValue[] getOverlap(final Fits fits,
                                                     final Slices.ExtensionSliceValue[] extensionSliceValues)
