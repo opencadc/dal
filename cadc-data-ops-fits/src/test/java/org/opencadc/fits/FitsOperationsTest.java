@@ -159,41 +159,38 @@ public class FitsOperationsTest {
     }
 
     @Test
-    public void testSlice() {
-        try {
-            // setup
-            final RandomAccessDataObject randomAccessDataObject =
-                    new RandomAccessFileExt(FileUtil.getFileFromResource("test-hst-mef.fits",
-                                                                         FitsOperationsTest.class), "r");
-            final FitsOperations fop = new FitsOperations(randomAccessDataObject);
-            final File outputFile = Files.createTempFile("test-hst-mef-cutout-", ".fits").toFile();
+    public void testSlice() throws Exception {
+        // setup
+        final RandomAccessDataObject randomAccessDataObject =
+                new RandomAccessFileExt(FileUtil.getFileFromResource("test-hst-mef.fits",
+                                                                     FitsOperationsTest.class), "r");
+        final FitsOperations fop = new FitsOperations(randomAccessDataObject);
+        final File outputFile = Files.createTempFile(
+                new File(System.getProperty("user.home") + File.separator + "Data/cutouts").toPath(),
+                "test-hst-mef-cutout-", ".fits").toFile();
 
-            // Extension 3 contains invalid Data.
-            try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile)) {
-                fop.slice("[3][106][126]", fileOutputStream);
+        // Extension 3 contains invalid Data.
+        try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile)) {
+            fop.slice("[3][106][126]", fileOutputStream);
+        }
+
+        final Fits resultsFits = new Fits(new RandomAccessFileExt(outputFile, "r"));
+        resultsFits.read();
+
+        Assert.assertEquals("Wrong HDU count.  Only extension 106 and 126 should be available.", 3,
+                            resultsFits.getNumberOfHDUs());
+
+        BasicHDU<?> hdu;
+        while ((hdu = resultsFits.readHDU()) != null) {
+            final Header h = hdu.getHeader();
+            final Cursor<String,HeaderCard> iter = h.iterator();
+            for (int c = 0; c <= 5; c++) {
+                HeaderCard hc = iter.next();
+                log.info(hc.getKey() + " = " + hc.getValue());
             }
-
-            final Fits resultsFits = new Fits(new RandomAccessFileExt(outputFile, "r"));
-            resultsFits.read();
-
-            Assert.assertEquals("Wrong HDU count.  Only extension 106 and 126 should be available.", 3,
-                                resultsFits.getNumberOfHDUs());
-
-            BasicHDU<?> hdu;
-            while ((hdu = resultsFits.readHDU()) != null) {
-                final Header h = hdu.getHeader();
-                final Cursor<String,HeaderCard> iter = h.iterator();
-                for (int c = 0; c <= 5; c++) {
-                    HeaderCard hc = iter.next();
-                    log.info(hc.getKey() + " = " + hc.getValue());
-                }
-                long nbytes = h.getDataSize();
-                log.info("** data size: " + nbytes);
-                log.info("...");
-            }
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
+            long nbytes = h.getDataSize();
+            log.info("** data size: " + nbytes);
+            log.info("...");
         }
     }
 }

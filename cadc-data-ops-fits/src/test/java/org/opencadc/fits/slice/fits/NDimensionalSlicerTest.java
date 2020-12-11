@@ -80,12 +80,12 @@ import org.opencadc.fits.FitsTest;
 import org.opencadc.fits.slice.NDimensionalSlicer;
 import org.opencadc.fits.slice.Slices;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 
 
 public class NDimensionalSlicerTest {
@@ -101,6 +101,8 @@ public class NDimensionalSlicerTest {
         final Slices slices = Slices.fromString("[SCI,10][80:220,100:150][1][10:16,70:90][106][8:32,88:112][126]");
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
                                                        NDimensionalSlicerTest.class);
+        file.setReadOnly();
+
         final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
         final String testWriteDir = configuredTestWriteDir == null ? "/tmp" : configuredTestWriteDir;
         final File expectedFile = FileUtil.getFileFromResource("test-hst-mef-cutout.fits",
@@ -108,9 +110,8 @@ public class NDimensionalSlicerTest {
         final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-hst-mef-cutout", ".fits");
         LOGGER.debug("Writing out to " + outputPath);
 
-        try (final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
-            slicer.slice(file, slices, hstFileCutoutStream);
-            hstFileCutoutStream.flush();
+        try (final OutputStream outputStream = new FileOutputStream(outputPath.toFile());) {
+            slicer.slice(file, slices, outputStream);
         }
 
         final Fits expectedFits = new Fits(expectedFile);
@@ -134,7 +135,8 @@ public class NDimensionalSlicerTest {
         LOGGER.debug("Writing out to " + outputPath);
 
         try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
-             final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
+             final OutputStream outputStream = new FileOutputStream(outputPath.toFile());
+             final OutputStream hstFileCutoutStream = new DataOutputStream(outputStream)) {
             slicer.slice(randomAccessDataObject, slices, hstFileCutoutStream);
             hstFileCutoutStream.flush();
         }

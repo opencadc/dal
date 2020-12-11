@@ -69,7 +69,6 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.util.ArrayUtil;
-import ca.nrc.cadc.util.StringUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -78,21 +77,15 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Data;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
+import ca.nrc.cadc.util.StringUtil;
+import nom.tam.fits.*;
 import nom.tam.fits.header.DataDescription;
 import nom.tam.fits.header.Standard;
 import nom.tam.image.ImageTiler;
@@ -170,19 +163,20 @@ public class NDimensionalSlicer {
         }
 
         // Single Fits object for the slice.  It maintains state about itself such as the current read offset.
-        final Fits fits = new Fits(randomAccessDataObject);
+        final Fits fitsInput = new Fits(randomAccessDataObject);
 
         // Reduce the requested extensions to only those that overlap.
-        final Slices.ExtensionSliceValue[] extensionSliceValues = getOverlap(fits, requestedExtensionSliceValues);
+        final Map<Integer, Slices.ExtensionSliceValue[]> overlapHDUs = getOverlap(fitsInput,
+                                                                                  requestedExtensionSliceValues);
 
-        if (ArrayUtil.isEmpty(extensionSliceValues)) {
+        if (overlapHDUs.isEmpty()) {
             throw new FitsException("No overlap found.");
         } else {
-            LOGGER.debug("Found " + extensionSliceValues.length + " overlapping slices.");
+            LOGGER.debug("Found " + overlapHDUs.size() + " overlapping slices.");
         }
 
         // This count is available because the getOverlap call above will read through and cache the HDUs.
-        final int hduCount = fits.getNumberOfHDUs();
+        final int hduCount = fitsInput.getNumberOfHDUs();
 
         // The count will indicate the number of reads into the file that were needed to get to the farthest requested
         // HDU.  This DEBUG is here to help optimize the I/O.  All other getHDU() calls will use the cached list of HDUs
@@ -190,24 +184,30 @@ public class NDimensionalSlicer {
         LOGGER.debug("Number of reads: " + hduCount);
 
         // Read the primary header first.
-        final BasicHDU<?> firstHDU = getHDU(fits, 0);
+        final BasicHDU<?> firstHDU = fitsInput.getHDU( 0);
 
         if (firstHDU == null) {
             throw new FitsException("Invalid FITS file (No primary HDU).");
         }
 
-        final Header primaryHeader = firstHDU.getHeader();
-        final boolean mefOutput = extensionSliceValues.length > 1;
+        // MEF output is expected if the number of requested HDUs, or the number of requested values is greater than
+        // one.
+        final boolean mefOutput = overlapHDUs.size() > 1
+                                  || overlapHDUs.values().stream().mapToInt(e -> e.length).sum() > 1;
+
         final boolean mefInput = hduCount > 1;
+
+        // Will write out to an ArrayDataOutput stream at the end.
+        final Fits fitsOutput = new Fits();
 
         LOGGER.debug("\nMEF Output: " + mefOutput + "\nMEF Input: " + mefInput);
 
         // The caller is expecting more than one extension.
         boolean firstHDUAlreadyWritten = false;
         if (mefInput && mefOutput) {
-            final Header headerCopy = ImageHDU.manufactureHeader(firstHDU.getData());
+            final Header primaryHeader = firstHDU.getHeader();
             final boolean primaryHDUHasData = hasData(firstHDU);
-            copyHeader(primaryHeader, headerCopy);
+            final Header headerCopy = copyHeader(primaryHeader);
 
             // If the primary HDU contains data, then the MEF output will contain just XTENSION HDUs each with
             // data.
@@ -219,22 +219,33 @@ public class NDimensionalSlicer {
                 if (xtensionCard == null) {
                     headerCopy.addValue(Standard.XTENSION, Standard.XTENSION_IMAGE);
                 }
+
+                headerCopy.deleteKey(Standard.EXTEND);
             } else {
                 // We're cutting from a Simple FITS file, or an MEF with no data in the primary HDU.  Either way,
                 // the header gets modified.
+                headerCopy.setSimple(true);
 
                 final HeaderCard nextEndCard = headerCopy.findCard(DataDescription.NEXTEND);
 
                 // Adjust the NEXTEND appropriately.
                 if (nextEndCard == null) {
-                    headerCopy.addValue(DataDescription.NEXTEND, Integer.toString(extensionSliceValues.length));
+                    headerCopy.addValue(DataDescription.NEXTEND, overlapHDUs.keySet().size());
                 } else {
-                    nextEndCard.setValue(Integer.toString(extensionSliceValues.length));
+                    nextEndCard.setValue(overlapHDUs.keySet().size());
+                }
+
+                final HeaderCard extendFlagCard = headerCopy.findCard(Standard.EXTEND);
+
+                // Adjust the EXTEND appropriately.
+                if (extendFlagCard == null) {
+                    headerCopy.addValue(Standard.EXTEND, true);
+                } else {
+                    extendFlagCard.setValue(true);
                 }
             }
 
-            headerCopy.write(output);
-            output.flush();
+            fitsOutput.addHDU(FitsFactory.hduFactory(headerCopy, new ImageData()));
 
             firstHDUAlreadyWritten = true;
         }
@@ -242,102 +253,86 @@ public class NDimensionalSlicer {
 
         // Iterate the requested cutouts.  Lookup the HDU for each one and use the NOM TAM Tiler to pull out an
         // array of primitives.
-        for (Slices.ExtensionSliceValue extensionSliceValue : extensionSliceValues) {
-            LOGGER.debug("Next extension slice value " + extensionSliceValue);
+        for (final Map.Entry<Integer, Slices.ExtensionSliceValue[]> overlap : overlapHDUs.entrySet()) {
+            final Integer nextHDUIndex = overlap.getKey();
+
+            LOGGER.debug("Next extension slice value at extension " + nextHDUIndex);
             try {
-                final BasicHDU<?> hdu = getHDU(fits, extensionSliceValue);
+                final BasicHDU<?> hdu = fitsInput.getHDU(nextHDUIndex);
+                final ImageHDU imageHDU = (ImageHDU) hdu;
+                final Header header = imageHDU.getHeader();
+                final int[] dimensions = imageHDU.getAxes();
 
-                // This is possible if the HDU cannot be found.
-                if (hdu != null) {
-                    if (hdu instanceof ImageHDU) {
-                        final ImageHDU imageHDU = (ImageHDU) hdu;
-                        final Header header = imageHDU.getHeader();
-                        final int[] dimensions = imageHDU.getAxes();
+                if (dimensions == null) {
+                    throw new FitsException("Sub-image not within image");
+                }
 
-                        if (dimensions == null) {
+                for (final Slices.ExtensionSliceValue extensionSliceValue : overlap.getValue()) {
+
+                    final int dimensionLength = dimensions.length;
+                    final int[] corners = new int[dimensionLength];
+                    final int[] lengths = new int[dimensionLength];
+                    final int[] steps = new int[dimensionLength];
+
+                    final Header headerCopy = copyHeader(header);
+
+                    fillCornersAndLengths(dimensionLength, dimensions, headerCopy, extensionSliceValue, corners,
+                                          lengths, steps);
+
+                    try {
+                        // The data contained in this HDU cannot be used to slice from.
+                        if (corners.length == 0) {
                             throw new FitsException("Sub-image not within image");
                         }
 
-                        final int dimensionLength = dimensions.length;
-                        final int[] corners = new int[dimensionLength];
-                        final int[] lengths = new int[dimensionLength];
-                        final int[] steps = new int[dimensionLength];
+                        LOGGER.debug("Tiling out " + Arrays.toString(lengths) + " at corner "
+                                     + Arrays.toString(corners) + " from extension "
+                                     + hdu.getTrimmedString(Standard.EXTNAME) + ","
+                                     + header.getIntValue(Standard.EXTVER, 1));
+                        final ImageTiler imageTiler = imageHDU.getTiler();
 
-                        fillCornersAndLengths(dimensionLength, dimensions, header, extensionSliceValue, corners,
-                                              lengths, steps);
-
-                        try {
-                            // The data contained in this HDU cannot be used to slice from.
-                            if (corners.length == 0) {
-                                throw new FitsException("Sub-image not within image");
-                            }
-
-                            LOGGER.debug("Tiling out " + Arrays.toString(lengths) + " at corner "
-                                         + Arrays.toString(corners) + " from extension "
-                                         + hdu.getTrimmedString(Standard.EXTNAME) + ","
-                                         + header.getIntValue(Standard.EXTVER, 1));
-                            final ImageTiler imageTiler = imageHDU.getTiler();
-                            final Header headerCopy = new Header();
-
-                            copyHeader(header, headerCopy);
-
-                            // CRPIX values are not set automatically.  Adjust them here.
-                            for (int i = 0; i < dimensionLength; i++) {
-                                final HeaderCard crPixCard = headerCopy.findCard(Standard.CRPIXn.n(i + 1));
-                                // Need to run backwards (reverse order) to match the dimensions.
-                                final double nextValue = corners[corners.length - i - 1];
-                                if (crPixCard != null) {
-                                    crPixCard.setValue(Double.parseDouble(crPixCard.getValue()) - nextValue);
-                                } else {
-                                    headerCopy.addValue(Standard.CRPIXn.n(i + 1), nextValue);
-                                }
-                            }
-
-                            if (mefOutput && firstHDUAlreadyWritten) {
-                                headerCopy.setXtension(Standard.XTENSION_IMAGE);
-                                final HeaderCard pcountHeaderCard = headerCopy.findCard(Standard.PCOUNT);
-                                final HeaderCard gcountHeaderCard = headerCopy.findCard(Standard.GCOUNT);
-
-                                if (pcountHeaderCard == null) {
-                                    headerCopy.addValue(Standard.PCOUNT, 0);
-                                }
-
-                                if (gcountHeaderCard == null) {
-                                    headerCopy.addValue(Standard.GCOUNT, 0);
-                                }
+                        // CRPIX values are not set automatically.  Adjust them here.
+                        for (int i = 0; i < dimensionLength; i++) {
+                            final HeaderCard crPixCard = headerCopy.findCard(Standard.CRPIXn.n(i + 1));
+                            // Need to run backwards (reverse order) to match the dimensions.
+                            final double nextValue = corners[corners.length - i - 1];
+                            if (crPixCard != null) {
+                                crPixCard.setValue(Double.parseDouble(crPixCard.getValue()) - nextValue);
                             } else {
-                                // MEF input to simple output.
-                                headerCopy.setSimple(true);
-                            }
-
-                            final Data imageData = new ImageData(imageTiler.getTile(corners, lengths));
-
-                            headerCopy.write(output);
-                            imageData.write(output);
-
-                            firstHDUAlreadyWritten = true;
-                        } catch (IOException ioException) {
-                            // No overlap means it gets skipped.
-                            if (!ioException.getMessage().equals("Sub-image not within image")) {
-                                throw new IllegalStateException(ioException.getMessage(), ioException);
-                            } else {
-                                LOGGER.warn("Skipping extension " + extensionSliceValue.toString() + " due to "
-                                            + ioException.getMessage() + ".");
+                                headerCopy.addValue(Standard.CRPIXn.n(i + 1), nextValue);
                             }
                         }
-                    } else {
-                        // Try to dump the header out to show that it matched
-                        try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                             final PrintStream printStream = new PrintStream(byteArrayOutputStream)) {
-                            hdu.getHeader().dumpHeader(printStream);
-                            LOGGER.warn("Skipping matching extension \n\n " + byteArrayOutputStream.toString()
-                                        + "\n\n as it's NOT an Image HDU.");
-                        } catch (Exception e) {
-                            LOGGER.warn(e.getMessage(), e);
+
+                        if (mefOutput && firstHDUAlreadyWritten) {
+                            headerCopy.setXtension(Standard.XTENSION_IMAGE);
+                            final HeaderCard pcountHeaderCard = headerCopy.findCard(Standard.PCOUNT);
+                            final HeaderCard gcountHeaderCard = headerCopy.findCard(Standard.GCOUNT);
+
+                            if (pcountHeaderCard == null) {
+                                headerCopy.addValue(Standard.PCOUNT, 0);
+                            }
+
+                            if (gcountHeaderCard == null) {
+                                headerCopy.addValue(Standard.GCOUNT, 0);
+                            }
+                        } else {
+                            // MEF input to simple output.
+                            headerCopy.setSimple(true);
+                        }
+
+                        fitsOutput.addHDU(FitsFactory.hduFactory(headerCopy,
+                                                                 new ImageData(imageTiler.getTile(corners, lengths))));
+
+                        firstHDUAlreadyWritten = true;
+                    } catch (IOException ioException) {
+                        // No overlap means it gets skipped.
+                        if (!ioException.getMessage().equals("Sub-image not within image")) {
+                            throw new IllegalStateException(ioException.getMessage(), ioException);
+                        } else {
+                            LOGGER.warn("Skipping extension " + extensionSliceValue.toString() + " due to "
+                                        + ioException.getMessage() + ".");
                         }
                     }
-                } else {
-                    LOGGER.warn("No such extension for requested cutout " + extensionSliceValue);
                 }
             } finally {
                 try {
@@ -348,6 +343,8 @@ public class NDimensionalSlicer {
                 }
             }
         }
+
+        fitsOutput.write(output);
     }
 
     /**
@@ -420,152 +417,52 @@ public class NDimensionalSlicer {
      * file being modified.
      *
      * @param source      The source Header.
-     * @param destination The Header to write to.
+     * @return Header object with reproduced cards.  Never null.
      * @throws HeaderCardException Any I/O with Header Cards.
      */
-    private void copyHeader(final Header source, final Header destination) throws HeaderCardException {
-        for (final Iterator<HeaderCard> headerCardIterator = source.iterator();
-             headerCardIterator.hasNext(); ) {
+    private Header copyHeader(final Header source) throws HeaderCardException {
+        final Header destination = new Header();
+        for (final Iterator<HeaderCard> headerCardIterator = source.iterator(); headerCardIterator.hasNext(); ) {
             final HeaderCard headerCard = headerCardIterator.next();
             final String headerCardKey = headerCard.getKey();
             LOGGER.debug("Checking next card " + headerCardKey + "(" + headerCard.getComment() + ")");
-            final HeaderCard copyHeaderCard = destination.findCard(headerCardKey);
             final Class<?> valueType = headerCard.valueType();
 
-            if (copyHeaderCard == null) {
-                LOGGER.debug("No " + headerCardKey + " found.  Adding it with value "
-                             + headerCard.getValue());
-                if (Standard.COMMENT.key().equals(headerCardKey)) {
-                    destination.insertComment(headerCard.getComment());
-                } else if (Standard.HISTORY.key().equals(headerCardKey)) {
-                    destination.insertHistory(headerCard.getComment());
-                } else {
-                    if (valueType == String.class) {
-                        destination.addValue(headerCard.getKey(), headerCard.getValue(),
-                                             headerCard.getComment());
-                    } else if (valueType == Boolean.class) {
-                        destination.addValue(headerCard.getKey(), Boolean.parseBoolean(headerCard.getValue()),
-                                             headerCard.getComment());
-                    } else if (valueType == Integer.class) {
-                        destination.addValue(headerCard.getKey(), Integer.parseInt(headerCard.getValue()),
-                                             headerCard.getComment());
-                    } else if (valueType == Long.class) {
-                        destination.addValue(headerCard.getKey(), Long.parseLong(headerCard.getValue()),
-                                             headerCard.getComment());
-                    } else if (valueType == Double.class) {
-                        destination.addValue(headerCard.getKey(), Double.parseDouble(headerCard.getValue()),
-                                             headerCard.getComment());
-                    } else if (valueType == BigDecimal.class || valueType == BigInteger.class) {
-                        destination.addValue(headerCard.getKey(), new BigDecimal(headerCard.getValue()),
-                                             headerCard.getComment());
-                    }
-                }
+            // Check for blank lines or just plain comments that are not standard FITS comments.
+            if (!StringUtil.hasText(headerCardKey)) {
+                destination.addValue(headerCardKey, (String) null, headerCard.getComment());
+            } else if (Standard.COMMENT.key().equals(headerCardKey)) {
+                destination.insertComment(headerCard.getComment());
+            } else if (Standard.HISTORY.key().equals(headerCardKey)) {
+                destination.insertHistory(headerCard.getComment());
             } else {
-                LOGGER.debug("Updating " + headerCardKey + " with value " + headerCard.getValue()
-                             + " (" + valueType + ")");
-
-                if (valueType == String.class) {
-                    copyHeaderCard.setValue(headerCard.getValue());
+                if (valueType == String.class || valueType == null) {
+                    destination.addValue(headerCard.getKey(), headerCard.getValue(), headerCard.getComment());
                 } else if (valueType == Boolean.class) {
-                    copyHeaderCard.setValue(Boolean.parseBoolean(headerCard.getValue()));
-                } else if (valueType == Integer.class) {
-                    copyHeaderCard.setValue(Integer.parseInt(headerCard.getValue()));
+                    destination.addValue(headerCard.getKey(), Boolean.parseBoolean(headerCard.getValue()),
+                                         headerCard.getComment());
+                } else if (valueType == Integer.class || valueType == BigInteger.class) {
+                    destination.addValue(headerCard.getKey(), new BigInteger(headerCard.getValue()),
+                                         headerCard.getComment());
                 } else if (valueType == Long.class) {
-                    copyHeaderCard.setValue(Long.parseLong(headerCard.getValue()));
-                } else if (valueType == BigDecimal.class || valueType == BigInteger.class) {
-                    copyHeaderCard.setValue(new BigDecimal(headerCard.getValue()));
+                    destination.addValue(headerCard.getKey(), Long.parseLong(headerCard.getValue()),
+                                         headerCard.getComment());
                 } else if (valueType == Double.class) {
-                    copyHeaderCard.setValue(Double.parseDouble(headerCard.getValue()));
+                    destination.addValue(headerCard.getKey(), Double.parseDouble(headerCard.getValue()),
+                                         headerCard.getComment());
+                } else if (valueType == BigDecimal.class) {
+                    destination.addValue(headerCard.getKey(), new BigDecimal(headerCard.getValue()),
+                                         headerCard.getComment());
                 }
-
             }
-
-            // A new HeaderCard must be created here to remove the reference from the previous one.
-            destination.updateLine(headerCardKey, new HeaderCard(headerCardKey, headerCard.getValue(),
-                                                                 headerCard.getComment()));
         }
+
+        return destination;
     }
 
     private boolean hasData(final BasicHDU<?> hdu) {
         final Data data = hdu.getData();
         return (data != null) && (data.getSize() > 0L);
-    }
-
-    /**
-     * Obtain an HDU whose index in the file matches the given one.  Index zero is the primary HDU.
-     * @param fits                  The Fits object.
-     * @param extensionSliceValue   A requested and parsed Slices.ExtensionSliceValue.
-     * @return  The HDU matching the index, or null if none found.
-     * @throws FitsException if the header could not be read
-     * @throws IOException   if the underlying buffer threw an error
-     */
-    private BasicHDU<?> getHDU(final Fits fits, final Slices.ExtensionSliceValue extensionSliceValue)
-            throws FitsException, IOException {
-        final String sliceValueExtensionName = extensionSliceValue.getExtensionName();
-
-        if (StringUtil.hasText(sliceValueExtensionName)) {
-            return getHDU(fits, sliceValueExtensionName, extensionSliceValue.getExtensionVersion());
-        } else if (extensionSliceValue.getExtensionIndex() != null) {
-            return getHDU(fits, extensionSliceValue.getExtensionIndex());
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Obtain an HDU whose index in the file matches the given one.  Index zero is the primary HDU.
-     *
-     * @param fits              The Fits object.
-     * @param extensionIndex    The index to look up.
-     * @return  The HDU matching the index, or null if none found.
-     * @throws FitsException if the header could not be read
-     * @throws IOException   if the underlying buffer threw an error
-     */
-    private BasicHDU<?> getHDU(final Fits fits, final Integer extensionIndex) throws FitsException, IOException {
-        try {
-            return fits.getHDU(extensionIndex);
-        } catch (IndexOutOfBoundsException indexOutOfBoundsException) {
-            return null;
-        }
-    }
-
-    /**
-     * Obtain the HDU whose Extension name (<code>EXTNAME</code>) and (optionally) Extension version
-     * (<code>EXTVER</code>) values match.
-     *
-     * <p>If no <code>extensionVersion</code> is provided, then this will return the first HDU whose name
-     * (<code>EXTNAME</code>) matches the given <code>extensionName</code>.
-     *
-     * <p>This traverses one way through the file until the sought-after HDU is found.  This could leave this Fits in an
-     * inconsistent state as it will not start at the top.  The caller would need to create a new Fits every time they
-     * want to find an HDU this way.
-     *
-     * @param extensionName    The name (<code>EXTNAME</code>) value of the HDU header to be read.  Required.
-     * @param extensionVersion The version (<code>EXTVER</code>) value of the HDU header to match (if present).  Optional.
-     * @return The HDU matching the arguments, or null if it could not be found.
-     * @throws FitsException if the header could not be read
-     * @throws IOException   if the underlying buffer threw an error
-     */
-    private BasicHDU<?> getHDU(final Fits fits, final String extensionName, final Integer extensionVersion)
-            throws FitsException, IOException {
-        // Check the cache first.
-        int size = fits.getNumberOfHDUs();
-        for (int i = 0; i <= size; i++) {
-            final BasicHDU<?> nextHDU = getHDU(fits, i);
-            if (nextHDU != null && matchHDU(nextHDU, extensionName, extensionVersion)) {
-                return nextHDU;
-            }
-        }
-
-        // Read the rest of the HDUs next.
-        BasicHDU<?> hdu;
-        while ((hdu = fits.readHDU()) != null) {
-            if (matchHDU(hdu, extensionName, extensionVersion)) {
-                return hdu;
-            }
-        }
-
-        return null;
     }
 
     private boolean matchHDU(final BasicHDU<?> hdu, final String extensionName, final Integer extensionVersion) {
@@ -590,24 +487,85 @@ public class NDimensionalSlicer {
         return false;
     }
 
-    private Slices.ExtensionSliceValue[] getOverlap(final Fits fits,
-                                                    final Slices.ExtensionSliceValue[] extensionSliceValues)
+    /**
+     * Obtain the overlapping indexes of matching HDUs.  This will return a unique list of Integers in file order,
+     * rather than the order that they were requested.  Since
+     *
+     * @param fits                  The Fits object to scan.
+     * @param extensionSliceValues  The requested values.
+     * @return  An Map of overlapping hduIndex->slice[], or empty Map.  Never null.
+     * @throws FitsException if the header could not be read
+     * @throws IOException   if the underlying buffer threw an error
+     */
+    private Map<Integer, Slices.ExtensionSliceValue[]> getOverlap(final Fits fits,
+                                                                  final Slices.ExtensionSliceValue[] extensionSliceValues)
             throws FitsException, IOException {
 
         // A Set is used to eliminate duplicates from the inner loop below.
-        final Set<Slices.ExtensionSliceValue> extensionSliceValueList = new LinkedHashSet<>();
+        final Map<Integer, Slices.ExtensionSliceValue[]> overlapHDUIndexesSlices = new LinkedHashMap<>();
 
-        for (final Slices.ExtensionSliceValue extensionSliceValue : extensionSliceValues) {
-            final BasicHDU<?> hdu = getHDU(fits, extensionSliceValue);
-            if (hdu != null) {
-                final int[] dimensions = hdu.getAxes();
+        // Walk through the cache first.
+        final int hduCount = fits.getNumberOfHDUs();
+        int matchCount = 0;
+        int hduIndex;
+        for (hduIndex = 0; hduIndex < hduCount; hduIndex++) {
+            final BasicHDU<?> hdu = fits.getHDU(hduIndex);
+            final Slices.ExtensionSliceValue[] overlapSlices = getOverlap(hdu, hduIndex, extensionSliceValues);
+            if (overlapSlices.length > 0) {
+                overlapHDUIndexesSlices.put(hduIndex, overlapSlices);
+                matchCount += overlapSlices.length;
+            }
+        }
 
-                if (dimensions != null) {
-                    for (final int maxUpperBound : dimensions) {
-                        for (final PixelRange pixelRange : extensionSliceValue.getRanges(maxUpperBound)) {
-                            if (pixelRange.getLowerBound() < maxUpperBound) {
-                                extensionSliceValueList.add(extensionSliceValue);
-                                break;
+        // Read in each HDU that is not in cache.  This will only read until it doesn't need to anymore.
+        BasicHDU<?> hdu;
+        while ((matchCount < extensionSliceValues.length) && ((hdu = fits.readHDU()) != null)) {
+            final Slices.ExtensionSliceValue[] overlapSlices = getOverlap(hdu, hduIndex, extensionSliceValues);
+            if (overlapSlices.length > 0) {
+                overlapHDUIndexesSlices.put(hduIndex, overlapSlices);
+                matchCount += overlapSlices.length;
+            }
+            hduIndex++;
+        }
+
+        return overlapHDUIndexesSlices;
+    }
+
+    private Slices.ExtensionSliceValue[] getOverlap(final BasicHDU<?> hdu, final int hduIndex,
+                                                    final Slices.ExtensionSliceValue[] extensionSliceValues)
+            throws FitsException {
+        final List<Slices.ExtensionSliceValue> overlappingSlices = new ArrayList<>();
+
+        if (hdu != null) {
+            if (!(hdu instanceof ImageHDU)) {
+                // Try to dump the header out to show that it matched
+                try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                     final PrintStream printStream = new PrintStream(byteArrayOutputStream)) {
+                    hdu.getHeader().dumpHeader(printStream);
+                    LOGGER.warn("Skipping matching extension \n\n " + byteArrayOutputStream.toString()
+                                + "\n\n as it's NOT an Image HDU.");
+                } catch (Exception e) {
+                    LOGGER.warn(e.getMessage(), e);
+                }
+            } else {
+                for (final Slices.ExtensionSliceValue extensionSliceValue : extensionSliceValues) {
+                    if (matchHDU(hdu, extensionSliceValue.getExtensionName(),
+                                 extensionSliceValue.getExtensionVersion())
+                        || ((extensionSliceValue.getExtensionIndex() != null)
+                            && (hduIndex == extensionSliceValue.getExtensionIndex()))) {
+
+                        // The HDU matches a requested one, now check if it overlaps at all.
+                        final int[] dimensions = hdu.getAxes();
+
+                        if (dimensions != null) {
+                            for (int i = 0; i < dimensions.length; i++) {
+                                final int maxUpperBound = dimensions[dimensions.length - i - 1];
+                                final List<PixelRange> pixelRanges = extensionSliceValue.getRanges(maxUpperBound);
+                                if ((pixelRanges.size() >= i)
+                                    && (pixelRanges.get(i).getLowerBound() < maxUpperBound)) {
+                                    overlappingSlices.add(extensionSliceValue);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -615,6 +573,6 @@ public class NDimensionalSlicer {
             }
         }
 
-        return extensionSliceValueList.toArray(new Slices.ExtensionSliceValue[0]);
+        return overlappingSlices.toArray(new Slices.ExtensionSliceValue[0]);
     }
 }
