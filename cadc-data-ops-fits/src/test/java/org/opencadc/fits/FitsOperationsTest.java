@@ -166,8 +166,9 @@ public class FitsOperationsTest {
                                                                      FitsOperationsTest.class), "r");
         final FitsOperations fop = new FitsOperations(randomAccessDataObject);
         final File outputFile = Files.createTempFile(
-                new File(System.getProperty("user.home") + File.separator + "Data/cutouts").toPath(),
+                new File(System.getProperty("user.home")).toPath(),
                 "test-hst-mef-cutout-", ".fits").toFile();
+        outputFile.deleteOnExit();
 
         // Extension 3 contains invalid Data.
         try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile)) {
