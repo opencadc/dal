@@ -69,6 +69,7 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.util.ArrayUtil;
+import ca.nrc.cadc.util.StringUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -84,8 +85,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import ca.nrc.cadc.util.StringUtil;
-import nom.tam.fits.*;
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Data;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.ImageData;
+import nom.tam.fits.ImageHDU;
 import nom.tam.fits.header.DataDescription;
 import nom.tam.fits.header.Standard;
 import nom.tam.image.ImageTiler;
@@ -184,7 +193,7 @@ public class NDimensionalSlicer {
         LOGGER.debug("Number of reads: " + hduCount);
 
         // Read the primary header first.
-        final BasicHDU<?> firstHDU = fitsInput.getHDU( 0);
+        final BasicHDU<?> firstHDU = fitsInput.getHDU(0);
 
         if (firstHDU == null) {
             throw new FitsException("Invalid FITS file (No primary HDU).");
