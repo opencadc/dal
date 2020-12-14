@@ -75,6 +75,7 @@ import nom.tam.util.RandomAccessDataObject;
 import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 import org.opencadc.fits.FitsTest;
 import org.opencadc.fits.slice.NDimensionalSlicer;
@@ -199,6 +200,29 @@ public class NDimensionalSlicerTest {
         final Fits resultFits = new Fits(outputPath.toFile());
 
         FitsTest.assertFitsEqual(expectedFits, resultFits);
+        Files.deleteIfExists(outputPath);
+    }
+
+    @Test
+    public void testNoSuchExtension() throws Exception {
+        final NDimensionalSlicer slicer = new NDimensionalSlicer();
+        final Slices slices = Slices.fromString("[BOGUS,367]");
+        final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
+                                                       NDimensionalSlicerTest.class);
+        final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
+        final String testWriteDir = configuredTestWriteDir == null ? "/tmp" : configuredTestWriteDir;
+        final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-simple-hst-cutout", ".fits");
+        LOGGER.debug("Writing out to " + outputPath);
+
+        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
+             final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
+            slicer.slice(randomAccessDataObject, slices, hstFileCutoutStream);
+            hstFileCutoutStream.flush();
+        } catch (IllegalArgumentException illegalArgumentException) {
+            Assert.assertTrue("Wrong message", illegalArgumentException.getMessage().contains(
+                    "One or more requested slices could not be found"));
+        }
+
         Files.deleteIfExists(outputPath);
     }
 }

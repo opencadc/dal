@@ -170,7 +170,7 @@ public class FitsOperationsTest {
                 "test-hst-mef-cutout-", ".fits").toFile();
         outputFile.deleteOnExit();
 
-        // Extension 3 contains invalid Data.
+        // Extension 3 contains non-image Data, but should still be included.
         try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile)) {
             fop.slice("[3][106][126]", fileOutputStream);
         }
@@ -178,7 +178,7 @@ public class FitsOperationsTest {
         final Fits resultsFits = new Fits(new RandomAccessFileExt(outputFile, "r"));
         resultsFits.read();
 
-        Assert.assertEquals("Wrong HDU count.  Only extension 106 and 126 should be available.", 3,
+        Assert.assertEquals("Wrong HDU count.  Extensions 3, 106, and 126 should be available.", 4,
                             resultsFits.getNumberOfHDUs());
 
         BasicHDU<?> hdu;

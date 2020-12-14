@@ -132,7 +132,7 @@ public final class Slices {
      * Represents a single extension and set of pixel pixelRanges.
      */
     public static final class ExtensionSliceValue {
-        private static final String ALL_DATA = "*";
+        public static final String ALL_DATA = "*";
         private static final String EXTENSION_NAME_VERSION_SEPARATOR = ",";
         private static final String PIXEL_VALUE_DELIMITER = ":";
         private static final Pattern VALID_SINGLE_RANGE = Pattern.compile(VALID_SINGLE_RANGE_STRING);
@@ -242,6 +242,14 @@ public final class Slices {
 
         public Integer getExtensionIndex() {
             return extensionIndex;
+        }
+
+        /**
+         * Obtain the original value specific, or ALL_DATA (*) if encompassing entire region.
+         * @return  String value.  Never null.
+         */
+        public String getValue() {
+            return value;
         }
 
         @Override
