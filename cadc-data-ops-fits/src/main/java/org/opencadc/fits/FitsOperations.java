@@ -70,13 +70,17 @@ package org.opencadc.fits;
 import ca.nrc.cadc.io.ReadException;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
+import nom.tam.util.RandomAccessDataObject;
 import org.apache.log4j.Logger;
+import org.opencadc.fits.slice.NDimensionalSlicer;
+import org.opencadc.fits.slice.Slices;
 
 /**
  * Operation on FITS files.
@@ -86,9 +90,9 @@ import org.apache.log4j.Logger;
 public class FitsOperations {
     private static final Logger log = Logger.getLogger(FitsOperations.class);
 
-    private final File src;
+    private final RandomAccessDataObject src;
 
-    public FitsOperations(File src) {
+    public FitsOperations(RandomAccessDataObject src) {
         this.src = src;
     }
 
@@ -100,14 +104,12 @@ public class FitsOperations {
         try {
             Fits fits = new Fits(src);
             
-            BasicHDU hdu = fits.readHDU();
-            Header ret = hdu.getHeader();
-            
-            return ret;
+            BasicHDU<?> hdu = fits.readHDU();
+            return hdu.getHeader();
         } catch (FitsException ex) {
-            throw new RuntimeException("invalid fits data: " + src.getAbsolutePath());
+            throw new RuntimeException("invalid fits data: " + src);
         } catch (IOException ex) {
-            throw new ReadException("failed to read " + src.getAbsolutePath(), ex);
+            throw new ReadException("failed to read " + src, ex);
         }
     }
     
@@ -116,7 +118,7 @@ public class FitsOperations {
             List<Header> ret = new ArrayList<>();
             
             Fits fits = new Fits(src);
-            BasicHDU hdu = fits.readHDU();
+            BasicHDU<?> hdu = fits.readHDU();
             while (hdu != null) {
                 Header h = hdu.getHeader();
                 ret.add(h);
@@ -125,9 +127,27 @@ public class FitsOperations {
             
             return ret;
         } catch (FitsException ex) {
-            throw new RuntimeException("invalid fits data: " + src.getAbsolutePath());
+            throw new RuntimeException("invalid fits data: " + src);
         } catch (IOException ex) {
-            throw new ReadException("failed to read " + src.getAbsolutePath(), ex);
+            throw new ReadException("failed to read " + src, ex);
+        }
+    }
+
+    /**
+     * Slice out of this FITS file.
+     *
+     * @param cutoutSpec    The String cutout specified in the format {[EXTENSION][PIXELSTART:PIXELEND...]...}
+     * @param outputStream  The Stream to write out to.
+     * @throws ReadException    Any errors to report back to the caller.
+     */
+    public void slice(final String cutoutSpec, final OutputStream outputStream) throws ReadException {
+        try {
+            final NDimensionalSlicer slicer = new NDimensionalSlicer();
+            slicer.slice(src, Slices.fromString(cutoutSpec), outputStream);
+        } catch (FitsException ex) {
+            throw new RuntimeException("invalid fits data: " + src + ": " + ex.getMessage(), ex);
+        } catch (IOException ex) {
+            throw new ReadException("failed to read " + src + ": " + ex.getMessage(), ex);
         }
     }
 }
