@@ -32,13 +32,5 @@ jobs:
     - name: build and test cadc-soda-server
       run: cd cadc-soda-server && gradle --info clean build javadoc checkstyleMain install
       
-    - name: local build of nom-tam-fits fork
-      run: |
-        cd ..
-        git clone --single-branch --branch master https://github.com/opencadc/nom-tam-fits.git
-        cd nom-tam-fits
-        git branch
-        gradle assemble install
-      
     - name: build and test cadc-data-ops-fits
       run: cd cadc-data-ops-fits && gradle --info clean build javadoc checkstyleMain install
