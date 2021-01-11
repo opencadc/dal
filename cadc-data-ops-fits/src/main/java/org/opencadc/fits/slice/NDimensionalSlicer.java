@@ -97,6 +97,7 @@ import nom.tam.fits.ImageHDU;
 import nom.tam.fits.header.DataDescription;
 import nom.tam.fits.header.Standard;
 import nom.tam.image.ImageTiler;
+import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.BufferedDataOutputStream;
 import nom.tam.util.RandomAccessDataObject;
@@ -267,7 +268,8 @@ public class NDimensionalSlicer {
             LOGGER.debug("Next extension slice value at extension " + nextHDUIndex);
             try {
                 final BasicHDU<?> hdu = fitsInput.getHDU(nextHDUIndex);
-                final ImageHDU imageHDU = (ImageHDU) hdu;
+                final ImageHDU imageHDU = (hdu instanceof CompressedImageHDU)
+                                          ? ((CompressedImageHDU) hdu).asImageHDU() : (ImageHDU) hdu;
                 final Header header = imageHDU.getHeader();
                 final int[] dimensions = imageHDU.getAxes();
 
@@ -568,7 +570,7 @@ public class NDimensionalSlicer {
                     // Entire extension requested, so it matters not that it may not be an Image HDU.
                     if (extensionSliceValue.getValue().equals(Slices.ExtensionSliceValue.ALL_DATA)) {
                         overlappingSlices.add(extensionSliceValue);
-                    } else if (!(hdu instanceof ImageHDU)) {
+                    } else if (!(hdu instanceof ImageHDU) && !(hdu instanceof CompressedImageHDU)) {
                         throw new UnsupportedOperationException(
                                 "Unable to slice from HDU (not an image extension):\n" + extensionSliceValue);
                     } else {
@@ -580,7 +582,7 @@ public class NDimensionalSlicer {
                             for (int i = 0; i < dimensions.length; i++) {
                                 final int maxUpperBound = dimensions[dimensions.length - i - 1];
                                 final List<PixelRange> pixelRanges = extensionSliceValue.getRanges(maxUpperBound);
-                                if ((pixelRanges.size() >= i)
+                                if ((pixelRanges.size() > i)
                                     && (pixelRanges.get(i).getLowerBound() < maxUpperBound)) {
                                     overlappingSlices.add(extensionSliceValue);
                                     break;
