@@ -65,15 +65,63 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.sia2;
+package ca.nrc.cadc.dali.util;
+
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
- * @deprecated use SiaParamValidator
  */
-@Deprecated
-public class SiaValidator extends SiaParamValidator {
-    public SiaValidator() { 
+public class StringListFormat implements Format<List<String>> {
+    private static final Logger log = Logger.getLogger(StringListFormat.class);
+
+    public static final String DELIMITER = "|";
+    
+    public StringListFormat() { 
     }
+
+    @Override
+    public List<String> parse(String str) {
+        List<String> ret = new ArrayList<>();
+        if (str == null) {
+            return ret;
+        }
+        str = str.trim();
+        if (str.isEmpty()) {
+            return ret;
+        }
+        if (str.startsWith(DELIMITER) && str.endsWith(DELIMITER)) {
+            str = str.substring(1, str.length() - 1);
+        } else {
+            throw new IllegalArgumentException("missing initial or final delimiter(s) (|): " + str);
+        }
+        
+        String[] ss = str.split("\\"+DELIMITER); // escape the delimiter
+        for (String s : ss) {
+            ret.add(s);
+        }
+        
+        return ret;
+    }
+
+    @Override
+    public String format(List<String> strs) {
+        if (strs == null || strs.isEmpty()) {
+            return "";
+        }
+        
+        // wrapped with DELIM
+        StringBuilder sb = new StringBuilder(DELIMITER);
+        for (String s : strs) {
+            sb.append(s).append(DELIMITER);
+        }
+        
+        return sb.toString();
+    }
+
+    
+    
 }

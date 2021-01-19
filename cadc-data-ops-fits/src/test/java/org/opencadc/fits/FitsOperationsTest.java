@@ -73,6 +73,7 @@ import ca.nrc.cadc.util.Log4jInit;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 
 import nom.tam.fits.BasicHDU;
@@ -86,6 +87,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.opencadc.soda.ExtensionSlice;
 
 /**
  *
@@ -172,7 +174,11 @@ public class FitsOperationsTest {
 
         // Extension 3 contains non-image Data, but should still be included.
         try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile)) {
-            fop.slice("[3][106][126]", fileOutputStream);
+            List<ExtensionSlice> cut = new ArrayList<>();
+            cut.add(new ExtensionSlice(3));
+            cut.add(new ExtensionSlice(106));
+            cut.add(new ExtensionSlice(126));
+            fop.cutoutToStream(cut, fileOutputStream);
         }
 
         final Fits resultsFits = new Fits(new RandomAccessFileExt(outputFile, "r"));

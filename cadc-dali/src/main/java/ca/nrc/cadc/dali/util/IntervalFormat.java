@@ -65,15 +65,69 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.sia2;
+package ca.nrc.cadc.dali.util;
+
+import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.dali.LongInterval;
+import org.apache.log4j.Logger;
 
 /**
- *
+ * Generic interval formatter. This can be used to format (output) any type of
+ * interval but does not support parsing.
+ * 
  * @author pdowler
- * @deprecated use SiaParamValidator
  */
-@Deprecated
-public class SiaValidator extends SiaParamValidator {
-    public SiaValidator() { 
+public class IntervalFormat implements Format<Interval> {
+    private static final Logger log = Logger.getLogger(IntervalFormat.class);
+
+    public IntervalFormat() { 
+    }
+
+    @Override
+    public Interval parse(String s) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String format(Interval t) {
+        if (t == null) {
+            return "";
+        }
+        
+        // try casting to known types first
+        if (t instanceof DoubleInterval) {
+            DoubleIntervalFormat f = new DoubleIntervalFormat();
+            return f.format((DoubleInterval) t);
+        }
+        if (t instanceof LongInterval) {
+            LongIntervalFormat f = new LongIntervalFormat();
+            return f.format((LongInterval) t);
+        }
+        
+        throw new UnsupportedOperationException("unexpected interval type: " + t.getClass().getName());
+        
+        /*
+        if (isFloatingPoint(t)) {
+            // float to double like this is lossy (adds non-zero insignificant figs)
+            DoubleInterval di = new DoubleInterval(t.getLower().doubleValue(), t.getUpper().doubleValue());
+            DoubleIntervalFormat f = new DoubleIntervalFormat();
+            return f.format(di);
+        }
+        
+        // else: fixed point
+        LongInterval li = new LongInterval(t.getLower().longValue(), t.getUpper().longValue());
+        LongIntervalFormat f = new LongIntervalFormat();
+        return f.format(li);
+        */
+    }
+    
+    // there are more types of fixed point so floating point is easier to detect
+    // TODO: might need BigDecimal someday??
+    private boolean isFloatingPoint(Interval i) {
+        Number n1 = i.getLower();
+        Number n2 = i.getUpper();
+        return (n1 instanceof Double || n1 instanceof Float
+                || n2 instanceof Double || n2 instanceof Float);
     }
 }

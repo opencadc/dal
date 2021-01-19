@@ -15,13 +15,13 @@ sourceCompatibility = 1.7
 
 group = 'org.opencadc'
 
-version = '1.1.9'
+version = '1.1.10'
 
 dependencies {
     compile 'log4j:log4j:[1.2.0,)'
     compile 'org.jdom:jdom2:[2.0,)'
 
-    compile 'org.opencadc:cadc-dali:[1.1,)'
+    compile 'org.opencadc:cadc-dali:[1.2.4,)'
     compile 'org.opencadc:cadc-log:[1.0,)'
     compile 'org.opencadc:cadc-registry:[1.5.0,)'
     compile 'org.opencadc:cadc-util:[1.2.23,)'

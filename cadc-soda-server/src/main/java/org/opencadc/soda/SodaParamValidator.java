@@ -65,15 +65,83 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.sia2;
+package org.opencadc.soda;
+
+import ca.nrc.cadc.dali.CommonParamValidator;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
- * @deprecated use SiaParamValidator
  */
-@Deprecated
-public class SiaValidator extends SiaParamValidator {
-    public SiaValidator() { 
+public class SodaParamValidator extends CommonParamValidator {
+    private static final Logger log = Logger.getLogger(SodaParamValidator.class);
+
+    // inherit POS, CIRCLE, POLYGON, BAND, TIME, POL, ID from dali.common.ParamValidator
+    
+    // SODA-specific params
+    
+    // prototype or extension params
+    
+    /**
+     * Metadata mode. Metadata mode can be combined with SUB to get metadata for
+     * part(s) of the data.
+     * META is single-valued. 
+     * Values: true|false (default: false).
+     */
+    public static final String META = "META";
+    
+    /**
+     * Subsection EXTraction. 
+     * SUB is multi-valued. 
+     * Values: CFITSIO-style [extension specifier][pixel range specifier].
+     */
+    public static final String SUB = "SUB";
+    
+    
+    public static final List<String> SODA_PARAMS = Arrays.asList(
+        ID, POS, CIRCLE, POLYGON, BAND, TIME, POL, RUNID, META, SUB
+    );
+    
+    public SodaParamValidator() { 
+    }
+
+    public boolean getMetaMode(Map<String, List<String>> params) {
+        List<String> vals = params.get(META);
+        if (vals == null || vals.isEmpty()) {
+            return false;
+        }
+        
+        String v = vals.get(0);
+        if (vals.size() > 1) {
+            log.debug("found " + vals.size() + " META values -- picking " + v);
+        }
+        if ("true".equals(v)) {
+            return true;
+        }
+        if ("false".equals(v)) {
+            return false;
+        }
+        throw new IllegalArgumentException("invalid META: " + v + " expected: true|false");
+    }
+
+    public List<ExtensionSlice> validateSUB(Map<String, List<String>> params) {
+        List<String> vals = params.get(SUB);
+        List<ExtensionSlice> ret = new ArrayList<>();
+        if (vals == null || vals.isEmpty()) {
+            return ret;
+        }
+        
+        ExtensionSliceFormat fmt  = new ExtensionSliceFormat();
+        for (String v : vals) {
+            ExtensionSlice es = fmt.parse(v);
+            ret.add(es);
+        }
+        
+        return ret;
     }
 }

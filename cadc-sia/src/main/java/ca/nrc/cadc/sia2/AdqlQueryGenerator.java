@@ -71,6 +71,7 @@ package ca.nrc.cadc.sia2;
 
 import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.Range;
@@ -119,7 +120,7 @@ public class AdqlQueryGenerator {
         StringBuilder query = new StringBuilder();
         query.append("SELECT * FROM ivoa.ObsCore WHERE dataproduct_type IN ( 'image', 'cube' )");
 
-        SiaValidator sia = new SiaValidator();
+        SiaParamValidator sia = new SiaParamValidator();
         List<Shape> pos = sia.validatePOS(queryParams);
         if (!pos.isEmpty()) {
             boolean needOr = false;
@@ -193,10 +194,10 @@ public class AdqlQueryGenerator {
             }
         }
 
-        List<DoubleInterval> bands = sia.validateBAND(queryParams);
+        List<Interval> bands = sia.validateBAND(queryParams);
         addNumericRangeConstraint(query, "em_min", "em_max", bands);
 
-        List<DoubleInterval> times = sia.validateTIME(queryParams);
+        List<Interval> times = sia.validateTIME(queryParams);
         addNumericRangeConstraint(query, "t_min", "t_max", times);
 
         List<String> pols = sia.validatePOL(queryParams);
@@ -230,13 +231,13 @@ public class AdqlQueryGenerator {
             }
         }
 
-        List<DoubleInterval> fovs = sia.validateFOV(queryParams);
+        List<Interval> fovs = sia.validateFOV(queryParams);
         addNumericRangeConstraint(query, "s_fov", "s_fov", fovs);
 
-        List<DoubleInterval> ress = sia.validateSPATRES(queryParams);
+        List<Interval> ress = sia.validateSPATRES(queryParams);
         addNumericRangeConstraint(query, "s_resolution", "s_resolution", ress);
 
-        List<DoubleInterval> exptimes = sia.validateEXPTIME(queryParams);
+        List<Interval> exptimes = sia.validateEXPTIME(queryParams);
         addNumericRangeConstraint(query, "t_exptime", "t_exptime", exptimes);
 
         List<String> ids = sia.validateID(queryParams);
@@ -260,10 +261,10 @@ public class AdqlQueryGenerator {
         List<String> targets = sia.validateTARGET(queryParams);
         addStringListConstraint(query, "target_name", targets);
 
-        List<DoubleInterval> timeress = sia.validateTIMERES(queryParams);
+        List<Interval> timeress = sia.validateTIMERES(queryParams);
         addNumericRangeConstraint(query, "t_resolution", "t_resolution", timeress);
 
-        List<DoubleInterval> specrps = sia.validateSPECRP(queryParams);
+        List<Interval> specrps = sia.validateSPECRP(queryParams);
         addNumericRangeConstraint(query, "em_res_power", "em_res_power", specrps);
 
         List<String> formats = sia.validateFORMAT(queryParams);
@@ -272,7 +273,7 @@ public class AdqlQueryGenerator {
         return query.toString();
     }
 
-    private void addNumericRangeConstraint(StringBuilder query, String lbCol, String ubCol, List<DoubleInterval> ranges) {
+    private void addNumericRangeConstraint(StringBuilder query, String lbCol, String ubCol, List<Interval> ranges) {
         if (!ranges.isEmpty()) {
             if (ranges.size() > 1) {
                 query.append(" AND (");
@@ -280,22 +281,22 @@ public class AdqlQueryGenerator {
                 query.append(" AND ");
             }
             boolean needOr = false;
-            for (DoubleInterval r : ranges) {
+            for (Interval r : ranges) {
                 if (needOr) {
                     query.append(" OR ");
                 }
                 query.append("(");
-                if (lbCol.equals(ubCol) && !r.getLower().isInfinite() && !r.getUpper().isInfinite()) {
-                    // nicer syntax, maybe better optimised in DB
+                if (lbCol.equals(ubCol) && !Double.isInfinite(r.getLower().doubleValue()) && !Double.isInfinite(r.getUpper().doubleValue())) {
+                    // nicer syntax, better optimised in DB?
                     query.append(lbCol).append(" BETWEEN ").append(r.getLower()).append(" AND ").append(r.getUpper());
                 } else {
-                    if (!r.getUpper().isInfinite()) {
+                    if (!Double.isInfinite(r.getUpper().doubleValue())) {
                         query.append(lbCol).append(" <= ").append(r.getUpper());
                     }
-                    if (!r.getLower().isInfinite() && !r.getUpper().isInfinite()) {
+                    if (!Double.isInfinite(r.getLower().doubleValue()) && !Double.isInfinite(r.getUpper().doubleValue())) {
                         query.append(" AND ");
                     }
-                    if (!r.getLower().isInfinite()) {
+                    if (!Double.isInfinite(r.getLower().doubleValue())) {
                         query.append(r.getLower()).append(" <= ").append(ubCol);
                     }
                 }

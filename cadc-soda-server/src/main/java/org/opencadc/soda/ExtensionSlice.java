@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2020.                            (c) 2020.
+*  (c) 2021.                            (c) 2021.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,15 +65,98 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.sia2;
+package org.opencadc.soda;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
- * @deprecated use SiaParamValidator
  */
-@Deprecated
-public class SiaValidator extends SiaParamValidator {
-    public SiaValidator() { 
+public class ExtensionSlice {
+    private static final Logger log = Logger.getLogger(ExtensionSlice.class);
+
+    public final String extensionName;
+    public final Integer extensionIndex;
+    private final List<PixelRange> pixelRanges = new ArrayList<>();
+    public final Integer extensionVersion;
+        
+    public ExtensionSlice(Integer extensionIndex) {
+        checkNull("extensionIndex", extensionIndex);
+        this.extensionIndex = extensionIndex;
+        this.extensionName = null;
+        this.extensionVersion = null;
+    }
+    
+    public ExtensionSlice(String extensionName) {
+        checkNull("extensionName", extensionName);
+        this.extensionName = extensionName;
+        this.extensionVersion = null;
+        this.extensionIndex = null;
+    }
+    
+    public ExtensionSlice(String extensionName, Integer extensionVersion) {
+        checkNull("extensionName", extensionName);
+        checkNull("extensionVersion", extensionVersion);
+        this.extensionName = extensionName;
+        this.extensionVersion = extensionVersion;
+        this.extensionIndex = null;
+    }
+
+    @Deprecated
+    public String getExtensionName() {
+        return extensionName;
+    }
+
+    @Deprecated
+    public Integer getExtensionIndex() {
+        return extensionIndex;
+    }
+
+    @Deprecated
+    public Integer getExtensionVersion() {
+        return extensionVersion;
+    }
+
+    
+    public List<PixelRange> getPixelRanges() {
+        return pixelRanges;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof ExtensionSlice)) {
+            return false;
+        }
+        return hashCode() == o.hashCode();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(extensionIndex, extensionName, extensionVersion, pixelRanges);
+    }
+
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.getClass().getSimpleName()).append("[");
+        if (extensionIndex != null) {
+            sb.append(extensionIndex);
+        } else {
+            sb.append(extensionName).append(",").append(extensionVersion);
+        }
+        sb.append(" ranges: ").append(pixelRanges.size());
+        sb.append("]");
+        return sb.toString();
+    }
+    
+    private void checkNull(String name, Object value) {
+        if (value == null) {
+            throw new IllegalArgumentException(name + " cannot be null");
+        }
     }
 }

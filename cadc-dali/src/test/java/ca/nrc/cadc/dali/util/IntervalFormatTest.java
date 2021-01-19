@@ -65,15 +65,86 @@
 ************************************************************************
 */
 
-package ca.nrc.cadc.sia2;
+package ca.nrc.cadc.dali.util;
+
+import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.dali.LongInterval;
+import ca.nrc.cadc.util.Log4jInit;
+import java.util.List;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
- * @deprecated use SiaParamValidator
  */
-@Deprecated
-public class SiaValidator extends SiaParamValidator {
-    public SiaValidator() { 
+public class IntervalFormatTest {
+    private static final Logger log = Logger.getLogger(IntervalFormatTest.class);
+
+    static {
+        Log4jInit.setLevel("ca", Level.INFO);
+    }
+    
+    public IntervalFormatTest() { 
+    }
+    
+    @Test
+    public void testNull() throws Exception {
+        StringListFormat format = new StringListFormat();
+
+        String result = format.format(null);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        List<String> actual = format.parse(result);
+        assertTrue("empty", actual.isEmpty());
+    }
+
+    @Test
+    public void testDouble() throws Exception {
+        IntervalFormat format = new IntervalFormat();
+
+        DoubleInterval expected = new DoubleInterval(1.1, 2.2);
+        String result = format.format(expected);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+
+        DoubleIntervalFormat df = new DoubleIntervalFormat();
+        DoubleInterval actual = df.parse(result);
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void testLong() throws Exception {
+        IntervalFormat format = new IntervalFormat();
+
+        LongInterval expected = new LongInterval(1L, 2L);
+        String result = format.format(expected);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+
+        LongIntervalFormat df = new LongIntervalFormat();
+        LongInterval actual = df.parse(result);
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void testFloat() throws Exception {
+        IntervalFormat format = new IntervalFormat();
+
+        Interval<Float> expected = new Interval<Float>(1.1f, 2.2f);
+        try {
+            String result = format.format(expected);
+            fail("expected UnsupportedOperationException, got: " + result);
+        } catch (UnsupportedOperationException ex) {
+            log.info("caught: " + ex);
+        }
     }
 }
