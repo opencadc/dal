@@ -67,40 +67,47 @@
 
 package org.opencadc.soda.server;
 
+import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.dali.Shape;
+import java.util.List;
+
 /**
- *
+ * Wrapper that holds all input for a cutout operation.
+ * 
  * @author pdowler
  */
-public class Cutout<T> {
+public class Cutout {
 
     /**
-     * Parameter name.
+     * Position axis cutout.
      */
-    public String name;
-    
-    /** 
-     * Raw parameter value.
-     */
-    public String value;
+    public Shape pos;
     
     /**
-     * Parsed DALI value.
+     * Energy axis cutout.
      */
-    public T cut;
-
-    Cutout() {
-    }
-
-    Cutout(String name, String value, T cut) {
-        this.name = name;
-        this.value = value;
-        this.cut = cut;
-    }
-
-    @Override
-    public String toString() {
-        return "Cutout[" + name + "=" + value + "]";
-    }
+    public Interval band;
     
+    /**
+     * Time axis cutout.
+     */
+    public Interval time;
     
+    /**
+     * Polarization axis cutout(s).
+     */
+    public List<String> pol;
+    
+    /**
+     * Custom axis to cutout.
+     */
+    public String customAxis;
+    
+    /**
+     * Custom axis cutout.
+     */
+    public Interval custom;
+
+    public Cutout() {
+    }
 }

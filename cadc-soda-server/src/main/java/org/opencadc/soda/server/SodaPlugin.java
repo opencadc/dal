@@ -67,9 +67,6 @@
 
 package org.opencadc.soda.server;
 
-import ca.nrc.cadc.dali.Interval;
-import ca.nrc.cadc.dali.Shape;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -97,17 +94,11 @@ public interface SodaPlugin {
      * 
      * @param serialNum number that increments for each call to the plugin within a single request
      * @param uri the ID value that identifies the data (file)
-     * @param pos optional position cutout (may be null)
-     * @param band optional energy cutout (may be null)
-     * @param time optional time cutout (may be null)
-     * @param pol optional polarization cutout (may be null)
-     * @param customCutouts list of orthogonal cutouts of custom axes (may be empty)
-     * @param customParams custom parameters and values (may be empty)
+     * @param cutouts holder for all cutout requests
+     * @param extraParams custom parameters and values (may be empty)
      * @return a URL to the result of the operation
      * @throws IOException failure to read or write data
      */
-    URL toURL(int serialNum, URI uri, Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, 
-            Cutout<List<String>> pol, List<Cutout<Interval>> customCutouts, 
-            Map<String, List<String>> customParams)
+    URL toURL(int serialNum, URI uri, Cutout cutouts, Map<String, List<String>> extraParams)
         throws IOException;
 }
