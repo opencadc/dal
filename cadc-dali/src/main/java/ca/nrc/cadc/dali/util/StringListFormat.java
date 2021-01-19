@@ -99,7 +99,7 @@ public class StringListFormat implements Format<List<String>> {
             throw new IllegalArgumentException("missing initial or final delimiter(s) (|): " + str);
         }
         
-        String[] ss = str.split("\\"+DELIMITER); // escape the delimiter
+        String[] ss = str.split("\\" + DELIMITER); // escape the delimiter
         for (String s : ss) {
             ret.add(s);
         }

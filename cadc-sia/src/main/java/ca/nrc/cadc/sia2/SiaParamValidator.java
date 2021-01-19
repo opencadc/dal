@@ -69,7 +69,6 @@
 
 package ca.nrc.cadc.sia2;
 
-import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.CommonParamValidator;
 import ca.nrc.cadc.dali.Interval;
 import java.util.Arrays;

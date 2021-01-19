@@ -68,12 +68,11 @@
 
 package org.opencadc.soda;
 
-import java.util.Iterator;
 import java.util.Objects;
 
 /**
  * A Range of pixel indices with optional step. Supports: step (default: 1) and flip
- * (lowerBound > upperBound).
+ * (lowerBound &gt; upperBound).
  */
 public class PixelRange {
     public final int lowerBound;
