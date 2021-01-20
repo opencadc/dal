@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,49 +65,46 @@
 ************************************************************************
 */
 
-package org.opencadc.soda.server;
+package ca.nrc.cadc.dali.util;
 
+import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.Interval;
-import ca.nrc.cadc.dali.Shape;
-import java.util.List;
+import ca.nrc.cadc.dali.LongInterval;
+import org.apache.log4j.Logger;
 
 /**
- * Wrapper that holds all input for a cutout operation.
+ * Generic interval formatter. This can be used to format (output) any type of
+ * interval but does not support parsing.
  * 
  * @author pdowler
  */
-public class Cutout {
+public class IntervalFormat implements Format<Interval> {
+    private static final Logger log = Logger.getLogger(IntervalFormat.class);
 
-    /**
-     * Position axis cutout.
-     */
-    public Shape pos;
-    
-    /**
-     * Energy axis cutout.
-     */
-    public Interval band;
-    
-    /**
-     * Time axis cutout.
-     */
-    public Interval time;
-    
-    /**
-     * Polarization axis cutout(s).
-     */
-    public List<String> pol;
-    
-    /**
-     * Custom axis to cutout.
-     */
-    public String customAxis;
-    
-    /**
-     * Custom axis cutout.
-     */
-    public Interval custom;
+    public IntervalFormat() { 
+    }
 
-    public Cutout() {
+    @Override
+    public Interval parse(String s) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String format(Interval t) {
+        if (t == null) {
+            return "";
+        }
+        
+        // try casting to known types first
+        if (t instanceof DoubleInterval) {
+            DoubleIntervalFormat f = new DoubleIntervalFormat();
+            return f.format((DoubleInterval) t);
+        }
+        if (t instanceof LongInterval) {
+            LongIntervalFormat f = new LongIntervalFormat();
+            return f.format((LongInterval) t);
+        }
+        
+        throw new UnsupportedOperationException("unexpected interval type: " + t.getClass().getName());
     }
 }

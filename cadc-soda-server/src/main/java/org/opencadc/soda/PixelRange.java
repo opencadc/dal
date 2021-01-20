@@ -66,80 +66,69 @@
  ************************************************************************
  */
 
-package org.opencadc.fits.slice;
+package org.opencadc.soda;
 
-import java.util.Iterator;
-
+import java.util.Objects;
 
 /**
- * Represents a Range of integer values.  Can be expanded to an entire array, but only on demand.  This uses concepts
- * from Python's numpy project to be able to have a start (lowerBound), stop (upperBound), and a striding value (step).
+ * A Range of pixel indices with optional step. Supports: step (default: 1) and flip
+ * (lowerBound &gt; upperBound).
  */
 public class PixelRange {
-
-    private final int lowerBound;
-    private final int upperBound;
-    private int step;
-
-
-    public PixelRange(final int lowerBound, final int upperBound, final int step) {
-        this(lowerBound, upperBound);
-        setStep(step);
-    }
+    public final int lowerBound;
+    public final int upperBound;
+    public final int step;
 
     public PixelRange(int lowerBound, int upperBound) {
+        this(lowerBound, upperBound, 1);
+    }
+    
+    public PixelRange(final int lowerBound, final int upperBound, final int step) {
+        // no negative values allowed
+        if (lowerBound < 0 || upperBound < 0) {
+            throw new IllegalArgumentException("invalid bounds: " + lowerBound + "," + upperBound);
+        }
+        if (step <= 0) {
+            throw new IllegalArgumentException("invalid step: " + step);
+        }
         this.lowerBound = lowerBound;
         this.upperBound = upperBound;
-        setStep(1);
+        this.step = step;
     }
 
-
+    @Deprecated
     public int getLowerBound() {
         return lowerBound;
     }
 
+    @Deprecated
     public int getUpperBound() {
         return upperBound;
     }
 
+    @Deprecated
     public int getStep() {
         return step;
     }
 
-    public void setStep(final int step) {
-        this.step = step;
-    }
-
-    /**
-     * Create a range of integers specified by the start and stop values, skipping every step value.
-     *
-     * @return Iterable integers.  Never null.
-     */
-    public Iterable<Integer> expand() {
-        if (step == 0) {
-            throw new IllegalArgumentException("Cannot have a step value of zero.");
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof PixelRange)) {
+            return false;
         }
-
-        return () -> new Iterator<Integer>() {
-            private int counter = lowerBound;
-
-            /**
-             * Ensure the counter still falls into the valid range.
-             * @return True if there are more integers to be had.  False otherwise.
-             */
-            @Override
-            public boolean hasNext() {
-                return counter < upperBound;
-            }
-
-            @Override
-            public Integer next() {
-                try {
-                    return counter;
-                } finally {
-                    counter += step;
-                }
-            }
-        };
+        PixelRange rhs = (PixelRange) o;
+        return (lowerBound == rhs.lowerBound && upperBound == rhs.upperBound && step == rhs.step);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lowerBound, upperBound, step);
+    }
+
+    @Override
+    public String toString() {
+        return "PixelRange[" + lowerBound + "," +  upperBound + "," + step + "]";
+    }
+    
+    
 }

@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,49 +65,62 @@
 ************************************************************************
 */
 
-package org.opencadc.soda.server;
+package ca.nrc.cadc.dali.util;
 
-import ca.nrc.cadc.dali.Interval;
-import ca.nrc.cadc.dali.Shape;
+import ca.nrc.cadc.util.StringUtil;
+import java.util.ArrayList;
 import java.util.List;
+import org.apache.log4j.Logger;
 
 /**
- * Wrapper that holds all input for a cutout operation.
- * 
+ *
  * @author pdowler
  */
-public class Cutout {
+public class StringListFormat implements Format<List<String>> {
+    private static final Logger log = Logger.getLogger(StringListFormat.class);
 
-    /**
-     * Position axis cutout.
-     */
-    public Shape pos;
+    public static final String DELIMITER = "|";
     
-    /**
-     * Energy axis cutout.
-     */
-    public Interval band;
-    
-    /**
-     * Time axis cutout.
-     */
-    public Interval time;
-    
-    /**
-     * Polarization axis cutout(s).
-     */
-    public List<String> pol;
-    
-    /**
-     * Custom axis to cutout.
-     */
-    public String customAxis;
-    
-    /**
-     * Custom axis cutout.
-     */
-    public Interval custom;
-
-    public Cutout() {
+    public StringListFormat() { 
     }
+
+    @Override
+    public List<String> parse(String str) {
+        List<String> ret = new ArrayList<>();
+        if (!StringUtil.hasText(str)) {
+            return ret;
+        }
+        str = str.trim();
+        
+        if (str.startsWith(DELIMITER) && str.endsWith(DELIMITER)) {
+            str = str.substring(1, str.length() - 1);
+        } else {
+            throw new IllegalArgumentException("missing initial or final delimiter(s) (|): " + str);
+        }
+        
+        String[] ss = str.split("\\" + DELIMITER); // escape the delimiter
+        for (String s : ss) {
+            ret.add(s);
+        }
+        
+        return ret;
+    }
+
+    @Override
+    public String format(List<String> strs) {
+        if (strs == null || strs.isEmpty()) {
+            return "";
+        }
+        
+        // wrapped with DELIM
+        StringBuilder sb = new StringBuilder(DELIMITER);
+        for (String s : strs) {
+            sb.append(s).append(DELIMITER);
+        }
+        
+        return sb.toString();
+    }
+
+    
+    
 }

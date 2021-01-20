@@ -163,7 +163,7 @@ public class SiaRunner implements JobRunner {
             mv.setMaxValue(MAX_MAXREC);
             Integer maxrec = mv.validate();
 
-            ParamExtractor pe = new ParamExtractor(SiaValidator.QUERY_PARAMS);
+            ParamExtractor pe = new ParamExtractor(SiaParamValidator.QUERY_PARAMS);
             Map<String, List<String>> queryParams = pe.getParameters(job.getParameterList());
 
             // Get the ADQL request parameters.

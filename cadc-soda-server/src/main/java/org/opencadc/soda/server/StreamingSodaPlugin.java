@@ -90,18 +90,13 @@ public interface StreamingSodaPlugin {
     /**
      * Perform cutout operation and write output.
      * 
-     * @param uri the ID value that identifies the data (file)
-     * @param pos optional position cutout (may be null)
-     * @param band optional energy cutout (may be null)
-     * @param time optional time cutout (may be null)
-     * @param pol optional polarization cutout (may be null)
-     * @param customCutouts list of orthogonal cutouts of custom axes (may be empty)
-     * @param customParams custom parameters and values (may be empty)
-     * @param out wrapper for setting output properties (HTTP headers) and opening the OutputStream
+     * 
+     * @param uri target resource (file)
+     * @param cutout parsed cutout request
+     * @param extraParams additional params not already handled
+     * @param out streaming output destination
      * @throws IOException failure to read or write data
      */
-    void write(URI uri, 
-            Cutout<Shape> pos, Cutout<Interval> band, Cutout<Interval> time, Cutout<List<String>> pol, 
-            List<Cutout<Interval>> customCutouts, Map<String, List<String>> customParams, SyncOutput out) 
+    void write(URI uri, Cutout cutout, Map<String, List<String>> extraParams, SyncOutput out) 
         throws IOException;
 }

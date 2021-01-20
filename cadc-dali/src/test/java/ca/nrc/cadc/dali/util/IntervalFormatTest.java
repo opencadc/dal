@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,49 +65,86 @@
 ************************************************************************
 */
 
-package org.opencadc.soda.server;
+package ca.nrc.cadc.dali.util;
 
+import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.Interval;
-import ca.nrc.cadc.dali.Shape;
+import ca.nrc.cadc.dali.LongInterval;
+import ca.nrc.cadc.util.Log4jInit;
 import java.util.List;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import org.junit.Test;
 
 /**
- * Wrapper that holds all input for a cutout operation.
- * 
+ *
  * @author pdowler
  */
-public class Cutout {
+public class IntervalFormatTest {
+    private static final Logger log = Logger.getLogger(IntervalFormatTest.class);
 
-    /**
-     * Position axis cutout.
-     */
-    public Shape pos;
+    static {
+        Log4jInit.setLevel("ca", Level.INFO);
+    }
     
-    /**
-     * Energy axis cutout.
-     */
-    public Interval band;
+    public IntervalFormatTest() { 
+    }
     
-    /**
-     * Time axis cutout.
-     */
-    public Interval time;
-    
-    /**
-     * Polarization axis cutout(s).
-     */
-    public List<String> pol;
-    
-    /**
-     * Custom axis to cutout.
-     */
-    public String customAxis;
-    
-    /**
-     * Custom axis cutout.
-     */
-    public Interval custom;
+    @Test
+    public void testNull() throws Exception {
+        StringListFormat format = new StringListFormat();
 
-    public Cutout() {
+        String result = format.format(null);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        List<String> actual = format.parse(result);
+        assertTrue("empty", actual.isEmpty());
+    }
+
+    @Test
+    public void testDouble() throws Exception {
+        IntervalFormat format = new IntervalFormat();
+
+        DoubleInterval expected = new DoubleInterval(1.1, 2.2);
+        String result = format.format(expected);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+
+        DoubleIntervalFormat df = new DoubleIntervalFormat();
+        DoubleInterval actual = df.parse(result);
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void testLong() throws Exception {
+        IntervalFormat format = new IntervalFormat();
+
+        LongInterval expected = new LongInterval(1L, 2L);
+        String result = format.format(expected);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+
+        LongIntervalFormat df = new LongIntervalFormat();
+        LongInterval actual = df.parse(result);
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void testFloat() throws Exception {
+        IntervalFormat format = new IntervalFormat();
+
+        Interval<Float> expected = new Interval<Float>(1.1f, 2.2f);
+        try {
+            String result = format.format(expected);
+            fail("expected UnsupportedOperationException, got: " + result);
+        } catch (UnsupportedOperationException ex) {
+            log.info("caught: " + ex);
+        }
     }
 }

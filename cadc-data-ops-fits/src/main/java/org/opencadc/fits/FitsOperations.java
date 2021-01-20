@@ -68,7 +68,6 @@
 package org.opencadc.fits;
 
 import ca.nrc.cadc.io.ReadException;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -80,7 +79,7 @@ import nom.tam.fits.Header;
 import nom.tam.util.RandomAccessDataObject;
 import org.apache.log4j.Logger;
 import org.opencadc.fits.slice.NDimensionalSlicer;
-import org.opencadc.fits.slice.Slices;
+import org.opencadc.soda.ExtensionSlice;
 
 /**
  * Operation on FITS files.
@@ -96,15 +95,12 @@ public class FitsOperations {
         this.src = src;
     }
 
-    // TODO: add support for this once nom-tam-fits defines RandomAccessDataObject      
-    //public FitsOperation(RandomAccessDataObject src) {
-    //}
-    
     public Header getPrimaryHeader() throws ReadException {
         try {
             Fits fits = new Fits(src);
             
             BasicHDU<?> hdu = fits.readHDU();
+            
             return hdu.getHeader();
         } catch (FitsException ex) {
             throw new RuntimeException("invalid fits data: " + src);
@@ -134,20 +130,20 @@ public class FitsOperations {
     }
 
     /**
-     * Slice out of this FITS file.
+     * Implement prototype SODA pixel cutout action.
      *
-     * @param cutoutSpec    The String cutout specified in the format {[EXTENSION][PIXELSTART:PIXELEND...]...}
+     * @param slices subsets of data to extract
      * @param outputStream  The Stream to write out to.
      * @throws ReadException    Any errors to report back to the caller.
      */
-    public void slice(final String cutoutSpec, final OutputStream outputStream) throws ReadException {
+    public void cutoutToStream(final List<ExtensionSlice> slices, final OutputStream outputStream) throws ReadException {
         try {
             final NDimensionalSlicer slicer = new NDimensionalSlicer();
-            slicer.slice(src, Slices.fromString(cutoutSpec), outputStream);
+            slicer.slice(src, slices, outputStream);
         } catch (FitsException ex) {
-            throw new RuntimeException("invalid fits data: " + src + ": " + ex.getMessage(), ex);
+            throw new ReadException("invalid fits data: " + src + " reason: " + ex.getMessage(), ex);
         } catch (IOException ex) {
-            throw new ReadException("failed to read " + src + ": " + ex.getMessage(), ex);
+            throw new ReadException("failed to read " + src + " reason: " + ex.getMessage(), ex);
         }
     }
 }

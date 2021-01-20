@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,51 +63,120 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
-package org.opencadc.soda.server;
+package ca.nrc.cadc.dali.util;
 
-import ca.nrc.cadc.dali.Interval;
-import ca.nrc.cadc.dali.Shape;
+import ca.nrc.cadc.util.Log4jInit;
+import java.util.ArrayList;
 import java.util.List;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
- * Wrapper that holds all input for a cutout operation.
- * 
+ *
  * @author pdowler
  */
-public class Cutout {
+public class StringListFormatTest {
 
-    /**
-     * Position axis cutout.
-     */
-    public Shape pos;
-    
-    /**
-     * Energy axis cutout.
-     */
-    public Interval band;
-    
-    /**
-     * Time axis cutout.
-     */
-    public Interval time;
-    
-    /**
-     * Polarization axis cutout(s).
-     */
-    public List<String> pol;
-    
-    /**
-     * Custom axis to cutout.
-     */
-    public String customAxis;
-    
-    /**
-     * Custom axis cutout.
-     */
-    public Interval custom;
+    private static final Logger log = Logger.getLogger(StringListFormatTest.class);
 
-    public Cutout() {
+    static {
+        Log4jInit.setLevel("ca", Level.INFO);
+    }
+
+    public StringListFormatTest() {
+    }
+
+    @Test
+    public void testNull() throws Exception {
+        StringListFormat format = new StringListFormat();
+
+        String result = format.format(null);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        List<String> actual = format.parse(result);
+        assertTrue("empty", actual.isEmpty());
+    }
+
+    @Test
+    public void testEmpty() throws Exception {
+        StringListFormat format = new StringListFormat();
+        List<String> expected = new ArrayList();
+
+        String result = format.format(expected);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        List<String> actual = format.parse(result);
+        assertTrue("empty", actual.isEmpty());
+    }
+    
+    @Test
+    public void testSingleValue() throws Exception {
+        StringListFormat format = new StringListFormat();
+        List<String> expected = new ArrayList();
+        expected.add("Q");
+
+        String result = format.format(expected);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+
+        List<String> actual = format.parse(result);
+        assertFalse("empty", actual.isEmpty());
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void testMultipleValue() throws Exception {
+        StringListFormat format = new StringListFormat();
+        List<String> expected = new ArrayList();
+        expected.add("I");
+        expected.add("Q");
+        expected.add("U");
+        expected.add("V");
+        
+        String result = format.format(expected);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+
+        List<String> actual = format.parse(result);
+        assertFalse("empty", actual.isEmpty());
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void testInvalid() throws Exception {
+        StringListFormat format = new StringListFormat();
+        
+        String i1 = "|abc";
+        String i2 = "abc|";
+        String i3 = "abc";
+
+        try {
+            format.parse(i1);
+            fail("expected IllegalArgumentException, got list from " + i1);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught: " + expected);
+        }
+        
+        try {
+            format.parse(i2);
+            fail("expected IllegalArgumentException, got list from " + i2);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught: " + expected);
+        }
+        
+        try {
+            format.parse(i3);
+            fail("expected IllegalArgumentException, got list from " + i3);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught: " + expected);
+        }
     }
 }

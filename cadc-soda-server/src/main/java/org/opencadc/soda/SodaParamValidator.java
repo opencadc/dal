@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -65,49 +65,83 @@
 ************************************************************************
 */
 
-package org.opencadc.soda.server;
+package org.opencadc.soda;
 
-import ca.nrc.cadc.dali.Interval;
-import ca.nrc.cadc.dali.Shape;
+import ca.nrc.cadc.dali.CommonParamValidator;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import org.apache.log4j.Logger;
 
 /**
- * Wrapper that holds all input for a cutout operation.
- * 
+ *
  * @author pdowler
  */
-public class Cutout {
+public class SodaParamValidator extends CommonParamValidator {
+    private static final Logger log = Logger.getLogger(SodaParamValidator.class);
 
-    /**
-     * Position axis cutout.
-     */
-    public Shape pos;
+    // inherit POS, CIRCLE, POLYGON, BAND, TIME, POL, ID from dali.common.ParamValidator
+    
+    // SODA-specific params
+    
+    // prototype or extension params
     
     /**
-     * Energy axis cutout.
+     * Metadata mode. Metadata mode can be combined with SUB to get metadata for
+     * part(s) of the data.
+     * META is single-valued. 
+     * Values: true|false (default: false).
      */
-    public Interval band;
+    public static final String META = "META";
     
     /**
-     * Time axis cutout.
+     * Subsection EXTraction. 
+     * SUB is multi-valued. 
+     * Values: CFITSIO-style [extension specifier][pixel range specifier].
      */
-    public Interval time;
+    public static final String SUB = "SUB";
     
-    /**
-     * Polarization axis cutout(s).
-     */
-    public List<String> pol;
     
-    /**
-     * Custom axis to cutout.
-     */
-    public String customAxis;
+    public static final List<String> SODA_PARAMS = Arrays.asList(
+        ID, POS, CIRCLE, POLYGON, BAND, TIME, POL, RUNID, META, SUB
+    );
     
-    /**
-     * Custom axis cutout.
-     */
-    public Interval custom;
+    public SodaParamValidator() { 
+    }
 
-    public Cutout() {
+    public boolean getMetaMode(Map<String, List<String>> params) {
+        List<String> vals = params.get(META);
+        if (vals == null || vals.isEmpty()) {
+            return false;
+        }
+        
+        String v = vals.get(0);
+        if (vals.size() > 1) {
+            log.debug("found " + vals.size() + " META values -- picking " + v);
+        }
+        if ("true".equals(v)) {
+            return true;
+        }
+        if ("false".equals(v)) {
+            return false;
+        }
+        throw new IllegalArgumentException("invalid META: " + v + " expected: true|false");
+    }
+
+    public List<ExtensionSlice> validateSUB(Map<String, List<String>> params) {
+        List<String> vals = params.get(SUB);
+        List<ExtensionSlice> ret = new ArrayList<>();
+        if (vals == null || vals.isEmpty()) {
+            return ret;
+        }
+        
+        ExtensionSliceFormat fmt  = new ExtensionSliceFormat();
+        for (String v : vals) {
+            ExtensionSlice es = fmt.parse(v);
+            ret.add(es);
+        }
+        
+        return ret;
     }
 }

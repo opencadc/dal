@@ -62,52 +62,109 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
+*  $Revision: 5 $
+*
 ************************************************************************
-*/
+ */
 
-package org.opencadc.soda.server;
+package ca.nrc.cadc.sia2;
 
+import ca.nrc.cadc.dali.CommonParamValidator;
 import ca.nrc.cadc.dali.Interval;
-import ca.nrc.cadc.dali.Shape;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import org.apache.log4j.Logger;
 
 /**
- * Wrapper that holds all input for a cutout operation.
- * 
+ *
  * @author pdowler
  */
-public class Cutout {
+public class SiaParamValidator extends CommonParamValidator {
 
-    /**
-     * Position axis cutout.
-     */
-    public Shape pos;
-    
-    /**
-     * Energy axis cutout.
-     */
-    public Interval band;
-    
-    /**
-     * Time axis cutout.
-     */
-    public Interval time;
-    
-    /**
-     * Polarization axis cutout(s).
-     */
-    public List<String> pol;
-    
-    /**
-     * Custom axis to cutout.
-     */
-    public String customAxis;
-    
-    /**
-     * Custom axis cutout.
-     */
-    public Interval custom;
+    private static final Logger log = Logger.getLogger(SiaParamValidator.class);
 
-    public Cutout() {
+    // POS, BAND, TIME, POL, ID params inherited from dali.common.ParamValiator
+    
+    // SIA-2.0 params
+    public static final String FOV = "FOV";
+    public static final String SPATRES = "SPATRES";
+    public static final String EXPTIME = "EXPTIME";
+    public static final String COLLECTION = "COLLECTION";
+    public static final String FACILITY = "FACILITY";
+    public static final String INSTRUMENT = "INSTRUMENT";
+    public static final String DPTYPE = "DPTYPE";
+    public static final String CALIB = "CALIB";
+    public static final String TARGET = "TARGET";
+    public static final String TIMERES = "TIMERES";
+    public static final String SPECRP = "SPECRP";
+    public static final String FORMAT = "FORMAT";
+
+    // used by the SiaRunner to pick out supported params only
+    static final List<String> QUERY_PARAMS = Arrays.asList(POS, BAND, TIME, POL, ID, 
+            FOV, SPATRES, EXPTIME,
+            COLLECTION, FACILITY, INSTRUMENT, DPTYPE,
+            CALIB, TARGET, TIMERES, SPECRP, FORMAT);
+
+    // allowed data product types are image and cube
+    static final List<String> ALLOWED_DPTYPES = Arrays.asList("cube", "image");
+
+    public SiaParamValidator() {
+    }
+
+    private String scalar2interval(String s) {
+        String[] ss = s.split(" ");
+        if (ss.length == 1) {
+            return s + " " + s;
+        }
+        return s;
+    }
+    
+    public List<Interval> validateFOV(Map<String, List<String>> params) {
+        return validateNumericInterval(FOV, params);
+    }
+
+    public List<Interval> validateSPATRES(Map<String, List<String>> params) {
+        return validateNumericInterval(SPATRES, params);
+    }
+
+    public List<Interval> validateEXPTIME(Map<String, List<String>> params) {
+        return validateNumericInterval(EXPTIME, params);
+    }
+
+    public List<String> validateCOLLECTION(Map<String, List<String>> params) {
+        return validateString(COLLECTION, params, null);
+    }
+
+    public List<String> validateFACILITY(Map<String, List<String>> params) {
+        return validateString(FACILITY, params, null);
+    }
+
+    public List<String> validateINSTRUMENT(Map<String, List<String>> params) {
+        return validateString(INSTRUMENT, params, null);
+    }
+
+    public List<String> validateDPTYPE(Map<String, List<String>> params) {
+        return validateString(DPTYPE, params, ALLOWED_DPTYPES);
+    }
+
+    public List<Integer> validateCALIB(Map<String, List<String>> params) {
+        return validateInteger(CALIB, params);
+    }
+
+    public List<String> validateTARGET(Map<String, List<String>> params) {
+        return validateString(TARGET, params, null);
+    }
+
+    public List<Interval> validateTIMERES(Map<String, List<String>> params) {
+        return validateNumericInterval(TIMERES, params);
+    }
+
+    public List<Interval> validateSPECRP(Map<String, List<String>> params) {
+        return validateNumericInterval(SPECRP, params);
+    }
+
+    public List<String> validateFORMAT(Map<String, List<String>> params) {
+        return validateString(FORMAT, params, null);
     }
 }

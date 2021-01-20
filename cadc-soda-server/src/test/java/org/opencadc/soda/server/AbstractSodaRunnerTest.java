@@ -93,57 +93,10 @@ public class AbstractSodaRunnerTest {
     }
     
     @Test
-    public void testOrthoCustomCuts() {
+    public void template() {
         
         try {
-            List<Cutout<Interval>> foos = new ArrayList<>();
-            foos.add(new Cutout<Interval>("foo", "1.0 2.0", new Interval<Double>(1.0, 2.0)));
             
-            List<Cutout<Interval>> bars = new ArrayList<>();
-            bars.add(new Cutout<Interval>("bar", "1.0 2.0", new Interval<Double>(1.0, 2.0)));
-            
-            List<List<Cutout<Interval>>> cuts = new ArrayList<>();
-            
-            List<List<Cutout<Interval>>> empty = AbstractSodaJobRunner.flatten(cuts);
-            Assert.assertNotNull(empty);
-            Assert.assertEquals("num empty combos", 0, empty.size());
-            
-            cuts.add(foos);
-            cuts.add(bars);
-            
-            for (List<Cutout<Interval>> cc : cuts) {
-                for (Cutout<Interval> c : cc) {
-                    log.info("in: " + c);
-                }
-            }
-            
-            List<List<Cutout<Interval>>> flat = AbstractSodaJobRunner.flatten(cuts);
-            Assert.assertNotNull(flat);
-            Assert.assertEquals("num flat combos", 1, flat.size());
-            for (List<Cutout<Interval>> f : flat) {
-                StringBuilder sb = new StringBuilder();
-                for (Cutout<Interval> c : f) {
-                    sb.append(c).append(" ");
-                }
-                log.info("out: " + sb);
-            }
-            
-            foos.add(new Cutout<Interval>("foo", "3.0 4.0", new Interval<Double>(3.0, 4.0)));
-            
-            try {
-                List<List<Cutout<Interval>>> ortho = AbstractSodaJobRunner.flatten(cuts);
-                Assert.fail("expected flatten to fail, got: " + ortho.size() + " combinations");
-            } catch (IllegalStateException expected) {
-                log.info("caught expected exception: " + expected);
-            }
-            
-            bars.add(new Cutout<Interval>("bar", "3.0 4.0", new Interval<Double>(3.0, 4.0)));
-            try {
-                List<List<Cutout<Interval>>> ortho = AbstractSodaJobRunner.flatten(cuts);
-                Assert.fail("expected flatten to fail, got: " + ortho.size() + " combinations");
-            } catch (IllegalStateException expected) {
-                log.info("caught expected exception: " + expected);
-            }
             
         } catch (Exception ex) {
             log.error("unexpected failure", ex);

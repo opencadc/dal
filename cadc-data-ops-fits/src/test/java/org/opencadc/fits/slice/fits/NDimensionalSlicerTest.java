@@ -70,6 +70,14 @@ package org.opencadc.fits.slice.fits;
 
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import nom.tam.fits.Fits;
 import nom.tam.util.RandomAccessDataObject;
 import nom.tam.util.RandomAccessFileExt;
@@ -79,14 +87,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.opencadc.fits.FitsTest;
 import org.opencadc.fits.slice.NDimensionalSlicer;
-import org.opencadc.fits.slice.Slices;
-
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import org.opencadc.soda.ExtensionSlice;
+import org.opencadc.soda.ExtensionSliceFormat;
 
 
 public class NDimensionalSlicerTest {
@@ -98,8 +100,15 @@ public class NDimensionalSlicerTest {
 
     @Test
     public void testMEFFileSlice() throws Exception {
+        ExtensionSliceFormat fmt = new ExtensionSliceFormat();
+        List<ExtensionSlice> slices = new ArrayList<>();
+        slices.add(fmt.parse("[SCI,10][80:220,100:150]"));
+        slices.add(fmt.parse("[1][10:16,70:90]"));
+        slices.add(fmt.parse("[106][8:32,88:112]"));
+        slices.add(fmt.parse("[126]"));
+        
+        
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
-        final Slices slices = Slices.fromString("[SCI,10][80:220,100:150][1][10:16,70:90][106][8:32,88:112][126]");
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
                                                        NDimensionalSlicerTest.class);
         file.setReadOnly();
@@ -124,8 +133,14 @@ public class NDimensionalSlicerTest {
 
     @Test
     public void testMEFRandomAccessSlice() throws Exception {
+        ExtensionSliceFormat fmt = new ExtensionSliceFormat();
+        List<ExtensionSlice> slices = new ArrayList<>();
+        slices.add(fmt.parse("[SCI,10][80:220,100:150]"));
+        slices.add(fmt.parse("[1][10:16,70:90]"));
+        slices.add(fmt.parse("[106][8:32,88:112]"));
+        slices.add(fmt.parse("[126]"));
+        
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
-        final Slices slices = Slices.fromString("[SCI,10][80:220,100:150][1][10:16,70:90][106][8:32,88:112][126]");
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
                                                        NDimensionalSlicerTest.class);
         final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
@@ -154,8 +169,12 @@ public class NDimensionalSlicerTest {
      */
     @Test
     public void testSimpleToMEF() throws Exception {
+        ExtensionSliceFormat fmt = new ExtensionSliceFormat();
+        List<ExtensionSlice> slices = new ArrayList<>();
+        slices.add(fmt.parse("[0][25:125]"));
+        slices.add(fmt.parse("[0][300:375]"));
+        
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
-        final Slices slices = Slices.fromString("[0][25:125][0][300:375]");
         final File file = FileUtil.getFileFromResource("test-simple-iris.fits",
                                                        NDimensionalSlicerTest.class);
         final File expectedFile = FileUtil.getFileFromResource("test-mef-iris-cutout.fits",
@@ -179,8 +198,11 @@ public class NDimensionalSlicerTest {
 
     @Test
     public void testMEFToSimple() throws Exception {
+        ExtensionSliceFormat fmt = new ExtensionSliceFormat();
+        List<ExtensionSlice> slices = new ArrayList<>();
+        slices.add(new ExtensionSlice("SCI", 13));
+        
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
-        final Slices slices = Slices.fromString("[SCI,13]");
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
                                                        NDimensionalSlicerTest.class);
         final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
@@ -205,8 +227,11 @@ public class NDimensionalSlicerTest {
 
     @Test
     public void testNoSuchExtension() throws Exception {
+        ExtensionSliceFormat fmt = new ExtensionSliceFormat();
+        List<ExtensionSlice> slices = new ArrayList<>();
+        slices.add(new ExtensionSlice("BOGUS", 367));
+        
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
-        final Slices slices = Slices.fromString("[BOGUS,367]");
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
                                                        NDimensionalSlicerTest.class);
         final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");

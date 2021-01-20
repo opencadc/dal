@@ -67,13 +67,8 @@
 ************************************************************************
  */
 
-package ca.nrc.cadc.sia2;
+package ca.nrc.cadc.dali;
 
-import ca.nrc.cadc.dali.Circle;
-import ca.nrc.cadc.dali.DoubleInterval;
-import ca.nrc.cadc.dali.Polygon;
-import ca.nrc.cadc.dali.Range;
-import ca.nrc.cadc.dali.Shape;
 import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.util.Log4jInit;
 import java.lang.reflect.Method;
@@ -90,15 +85,15 @@ import org.junit.Test;
  *
  * @author pdowler
  */
-public class SiaValidatorTest {
+public class CommonParamValidatorTest {
 
-    private static final Logger log = Logger.getLogger(SiaValidatorTest.class);
+    private static final Logger log = Logger.getLogger(CommonParamValidatorTest.class);
 
     static {
-        Log4jInit.setLevel("ca.nrc.cadc.sia2", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
     }
 
-    SiaValidator sia = new SiaValidator();
+    CommonParamValidator paramValidator = new CommonParamValidator();
 
     @Test
     public void testValidatePOS() {
@@ -129,7 +124,7 @@ public class SiaValidatorTest {
             "Donut 1.23E1 3.45E1 1.0E-1" // invalid shape
         };
         try {
-            List empty = sia.validatePOS(null); // null arg check
+            List empty = paramValidator.validatePOS(null); // null arg check
             Assert.assertNotNull(empty);
             Assert.assertTrue(empty.isEmpty());
 
@@ -140,7 +135,7 @@ public class SiaValidatorTest {
                     List<String> vals = new ArrayList<String>();
                     vals.add(tv);
                     params.put(tp, vals);
-                    List<Shape> pos = sia.validatePOS(params);
+                    List<Shape> pos = paramValidator.validatePOS(params);
                     Assert.assertNotNull(pos);
                     Assert.assertEquals(1, pos.size());
                     Shape s = pos.get(0);
@@ -155,7 +150,7 @@ public class SiaValidatorTest {
                     List<String> vals = new ArrayList<String>();
                     vals.add(tv);
                     params.put(tp, vals);
-                    List<Shape> pos = sia.validatePOS(params);
+                    List<Shape> pos = paramValidator.validatePOS(params);
                     Assert.assertNotNull(pos);
                     Assert.assertEquals(1, pos.size());
                     Shape s = pos.get(0);
@@ -171,7 +166,7 @@ public class SiaValidatorTest {
                     List<String> vals = new ArrayList<String>();
                     vals.add(tv);
                     params.put(tp, vals);
-                    List<Shape> pos = sia.validatePOS(params);
+                    List<Shape> pos = paramValidator.validatePOS(params);
                     Assert.assertNotNull(pos);
                     Assert.assertEquals(1, pos.size());
                     Shape s = pos.get(0);
@@ -189,7 +184,7 @@ public class SiaValidatorTest {
                     vals.add(tv);
                     params.put(tp, vals);
                     try {
-                        List<Shape> pos = sia.validatePOS(params);
+                        List<Shape> pos = paramValidator.validatePOS(params);
                         Assert.fail("expected IllegalArgumentException, got: " + pos.size() + " Shape(s)");
                     } catch (IllegalArgumentException expected) {
                         log.debug("caught expected: " + expected);
@@ -204,7 +199,7 @@ public class SiaValidatorTest {
                 vals.add(tv);
             }
             params.put("POS", vals);
-            List<Shape> pos = sia.validatePOS(params);
+            List<Shape> pos = paramValidator.validatePOS(params);
             Assert.assertNotNull(pos);
             Assert.assertEquals(testCircles.length, pos.size());
             for (Shape s : pos) {
@@ -243,7 +238,7 @@ public class SiaValidatorTest {
         };
 
         try {
-            List empty = sia.validateBAND(null); // null arg check
+            List empty = paramValidator.validateBAND(null); // null arg check
             Assert.assertNotNull(empty);
             Assert.assertTrue(empty.isEmpty());
 
@@ -254,26 +249,26 @@ public class SiaValidatorTest {
                     List<String> vals = new ArrayList<String>();
                     vals.add(tv);
                     params.put(tp, vals);
-                    List<DoubleInterval> times = sia.validateBAND(params);
+                    List<Interval> times = paramValidator.validateBAND(params);
                     Assert.assertNotNull(times);
                     Assert.assertEquals(1, times.size());
-                    DoubleInterval r = times.get(0);
+                    Interval r = times.get(0);
 
                     if (tv == LB) {
-                        Assert.assertEquals(550e-9, r.getLower(), 1e-12);
-                        Assert.assertTrue(r.getUpper().isInfinite());
+                        Assert.assertEquals(550e-9, r.getLower().doubleValue(), 1e-12);
+                        Assert.assertTrue(Double.isInfinite(r.getUpper().doubleValue()));
                     } else if (tv == UB) {
-                        Assert.assertTrue(r.getLower().isInfinite());
-                        Assert.assertEquals(550e-9, r.getUpper(), 1e-12);
+                        Assert.assertTrue(Double.isInfinite(r.getLower().doubleValue()));
+                        Assert.assertEquals(550e-9, r.getUpper().doubleValue(), 1e-12);
                     } else if (tv == OPEN) {
-                        Assert.assertTrue(r.getLower().isInfinite());
-                        Assert.assertTrue(r.getUpper().isInfinite());
+                        Assert.assertTrue(Double.isInfinite(r.getLower().doubleValue()));
+                        Assert.assertTrue(Double.isInfinite(r.getUpper().doubleValue()));
                     } else if (tv == SCALAR) {
-                        Assert.assertEquals(550e-9, r.getLower(), 1e-12);
-                        Assert.assertEquals(550e-9, r.getUpper(), 1e-12);
+                        Assert.assertEquals(550e-9, r.getLower().doubleValue(), 1e-12);
+                        Assert.assertEquals(550e-9, r.getUpper().doubleValue(), 1e-12);
                     } else {
-                        Assert.assertEquals(550e-9, r.getLower(), 1e-12);
-                        Assert.assertEquals(600e-9, r.getUpper(), 1e-12);
+                        Assert.assertEquals(550e-9, r.getLower().doubleValue(), 1e-12);
+                        Assert.assertEquals(600e-9, r.getUpper().doubleValue(), 1e-12);
                     }
                 }
             }
@@ -285,7 +280,7 @@ public class SiaValidatorTest {
                     vals.add(tv);
                     params.put(tp, vals);
                     try {
-                        List<DoubleInterval> ranges = sia.validateBAND(params);
+                        List<Interval> ranges = paramValidator.validateBAND(params);
                         Assert.fail("expected IllegalArgumentException, got: " + ranges.size() + " Range(s)");
                     } catch (IllegalArgumentException expected) {
                         log.debug("caught expected: " + expected);
@@ -300,12 +295,12 @@ public class SiaValidatorTest {
                 vals.add(testValues[i]);
             }
             params.put("BAND", vals);
-            List<DoubleInterval> times = sia.validateBAND(params);
+            List<Interval> times = paramValidator.validateBAND(params);
             Assert.assertNotNull(times);
             Assert.assertEquals(3, times.size());
-            for (DoubleInterval r : times) {
-                Assert.assertEquals(550e-9, r.getLower(), 1e-12);
-                Assert.assertEquals(600e-9, r.getUpper(), 0.001);
+            for (Interval r : times) {
+                Assert.assertEquals(550e-9, r.getLower().doubleValue(), 1e-12);
+                Assert.assertEquals(600e-9, r.getUpper().doubleValue(), 1e-12);
             }
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
@@ -334,7 +329,7 @@ public class SiaValidatorTest {
             "54321.0x 55432.1", // number format
         };
         try {
-            List empty = sia.validateTIME(null); // null arg check
+            List empty = paramValidator.validateTIME(null); // null arg check
             Assert.assertNotNull(empty);
             Assert.assertTrue(empty.isEmpty());
 
@@ -345,26 +340,26 @@ public class SiaValidatorTest {
                     List<String> vals = new ArrayList<String>();
                     vals.add(tv);
                     params.put(tp, vals);
-                    List<DoubleInterval> times = sia.validateTIME(params);
+                    List<Interval> times = paramValidator.validateTIME(params);
                     Assert.assertNotNull(times);
                     Assert.assertEquals(1, times.size());
-                    DoubleInterval r = times.get(0);
+                    Interval r = times.get(0);
 
                     if (tv == LB) {
-                        Assert.assertEquals(54321.0, r.getLower(), 0.0001);
-                        Assert.assertTrue(r.getUpper().isInfinite());
+                        Assert.assertEquals(54321.0, r.getLower().doubleValue(), 0.0001);
+                        Assert.assertTrue(Double.isInfinite(r.getUpper().doubleValue()));
                     } else if (tv == UB) {
-                        Assert.assertTrue(r.getLower().isInfinite());
-                        Assert.assertEquals(55432.1, r.getUpper(), 0.0001);
+                        Assert.assertTrue(Double.isInfinite(r.getLower().doubleValue()));
+                        Assert.assertEquals(55432.1, r.getUpper().doubleValue(), 0.0001);
                     } else if (tv == OPEN) {
-                        Assert.assertTrue(r.getLower().isInfinite());
-                        Assert.assertTrue(r.getUpper().isInfinite());
+                        Assert.assertTrue(Double.isInfinite(r.getLower().doubleValue()));
+                        Assert.assertTrue(Double.isInfinite(r.getUpper().doubleValue()));
                     } else if (tv == SCALAR) {
-                        Assert.assertEquals(54321.0, r.getLower(), 0.0001);
-                        Assert.assertEquals(54321.0, r.getUpper(), 0.0001);
+                        Assert.assertEquals(54321.0, r.getLower().doubleValue(), 0.0001);
+                        Assert.assertEquals(54321.0, r.getUpper().doubleValue(), 0.0001);
                     } else {
-                        Assert.assertEquals(54321.0, r.getLower(), 0.001);
-                        Assert.assertEquals(55432.1, r.getUpper(), 0.001);
+                        Assert.assertEquals(54321.0, r.getLower().doubleValue(), 0.001);
+                        Assert.assertEquals(55432.1, r.getUpper().doubleValue(), 0.001);
                     }
                 }
             }
@@ -376,7 +371,7 @@ public class SiaValidatorTest {
                     vals.add(tv);
                     params.put(tp, vals);
                     try {
-                        List<DoubleInterval> ranges = sia.validateTIME(params);
+                        List<Interval> ranges = paramValidator.validateTIME(params);
                         Assert.fail("expected IllegalArgumentException, got: " + ranges.size() + " Range(s)");
                     } catch (IllegalArgumentException expected) {
                         log.debug("caught expected: " + expected);
@@ -391,12 +386,12 @@ public class SiaValidatorTest {
                 vals.add(testValues[i]);
             }
             params.put("TIME", vals);
-            List<DoubleInterval> times = sia.validateTIME(params);
+            List<Interval> times = paramValidator.validateTIME(params);
             Assert.assertNotNull(times);
             Assert.assertEquals(3, times.size());
-            for (DoubleInterval r : times) {
-                Assert.assertEquals(54321.0, r.getLower(), 0.001);
-                Assert.assertEquals(55432.1, r.getUpper(), 0.001);
+            for (Interval r : times) {
+                Assert.assertEquals(54321.0, r.getLower().doubleValue(), 0.001);
+                Assert.assertEquals(55432.1, r.getUpper().doubleValue(), 0.001);
             }
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
@@ -412,7 +407,7 @@ public class SiaValidatorTest {
         };
         int[] len = new int[]{1, 4, testValues.length};
         try {
-            List empty = sia.validatePOL(null); // null arg check
+            List empty = paramValidator.validatePOL(null); // null arg check
             Assert.assertNotNull(empty);
             Assert.assertTrue(empty.isEmpty());
 
@@ -424,7 +419,7 @@ public class SiaValidatorTest {
                         vals.add(testValues[j]);
                     }
                     params.put(tp, vals);
-                    List<String> pols = sia.validatePOL(params);
+                    List<String> pols = paramValidator.validatePOL(params);
                     Assert.assertNotNull(pols);
                     Assert.assertEquals(len[i], pols.size());
                 }
@@ -436,71 +431,11 @@ public class SiaValidatorTest {
             params.clear();
             params.put("POL", vals);
             try {
-                List<String> pols = sia.validatePOL(params);
+                List<String> pols = paramValidator.validatePOL(params);
                 Assert.fail("expected IllegalArgumentException,. got: " + pols.size() + " String(s)");
             } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);
             }
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateFOV() {
-
-        String[] testParams = new String[]{"FOV", "fov", "FoV"};
-
-        try {
-            List empty = sia.validateFOV(null); // compile and null arg check
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method m = SiaValidator.class.getMethod("validateFOV", Map.class);
-            doValidateNumeric(m, "FOV", testParams);
-
-            // invalid: code is more or less tested already in testValidateBand
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateSPATRES() {
-
-        String[] testParams = new String[]{"SPATRES", "spatres", "SpAtReS"};
-
-        try {
-            List empty = sia.validateSPATRES(null); // compile and null arg check
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method m = SiaValidator.class.getMethod("validateSPATRES", Map.class);
-            doValidateNumeric(m, "SPATRES", testParams);
-
-            // invalid: code is more or less tested already in testValidateBand
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateEXPTIME() {
-
-        String[] testParams = new String[]{"EXPTIME", "exptime", "ExPtImE"};
-
-        try {
-            List empty = sia.validateEXPTIME(null); // compile and null arg check
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method m = SiaValidator.class.getMethod("validateEXPTIME", Map.class);
-            doValidateNumeric(m, "EXPTIME", testParams);
-
-            // invalid: code is more or less tested already in testValidateBand
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
@@ -513,207 +448,12 @@ public class SiaValidatorTest {
             String[] testParams = new String[]{"ID", "id", "Id"};
 
             // null arg check
-            List<String> empty = sia.validateID(null);
+            List<String> empty = paramValidator.validateID(null);
             Assert.assertNotNull(empty);
             Assert.assertTrue(empty.isEmpty());
 
-            Method method = SiaValidator.class.getMethod("validateID", Map.class);
+            Method method = CommonParamValidator.class.getMethod("validateID", Map.class);
             doValidateString(method, testParams, null);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateCOLLECTION() {
-        try {
-            String[] testParams = new String[]{"COLLECTION", "collection", "CoLlEcTiOn"};
-
-            // null arg check
-            List<String> empty = sia.validateCOLLECTION(null);
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method method = SiaValidator.class.getMethod("validateCOLLECTION", Map.class);
-            doValidateString(method, testParams, null);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateFACILITY() {
-        try {
-            String[] testParams = new String[]{"FACILITY", "facility", "FaCiLiTy"};
-
-            // null arg check
-            List<String> empty = sia.validateFACILITY(null);
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method method = SiaValidator.class.getMethod("validateFACILITY", Map.class);
-            doValidateString(method, testParams, null);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateINSTRUMENT() {
-        try {
-            String[] testParams = new String[]{"INSTRUMENT", "instrument", "InStRuMeNt"};
-
-            // null arg check
-            List<String> empty = sia.validateINSTRUMENT(null);
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method method = SiaValidator.class.getMethod("validateINSTRUMENT", Map.class);
-            doValidateString(method, testParams, null);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateDPTYPE() {
-        try {
-            String[] testParams = new String[]{"DPTYPE", "dptype", "DpTyPe"};
-            String[] testValues = new String[]{"cube", "image"};
-
-            // null arg check
-            List<String> empty = sia.validateDPTYPE(null);
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method method = SiaValidator.class.getMethod("validateDPTYPE", Map.class);
-            doValidateString(method, testParams, testValues);
-
-            // test invalid value
-            Map<String, List<String>> params = new TreeMap<String, List<String>>(new CaseInsensitiveStringComparator());
-            List<String> vals = new ArrayList<String>();
-            vals.add("FOO");
-            params.clear();
-            params.put(testParams[0], vals);
-            try {
-                List<String> ret = sia.validateDPTYPE(params);
-                Assert.fail("expected IllegalArgumentException,. got: " + ret.size() + " String(s)");
-            } catch (IllegalArgumentException expected) {
-                log.debug("caught expected: " + expected);
-            }
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateCALIB() {
-        try {
-            String[] testParams = new String[]{"CALIB", "calib", "CaLiB"};
-
-            List empty = sia.validateCALIB(null); // compile and null arg check
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method m = SiaValidator.class.getMethod("validateCALIB", Map.class);
-            doValidateInteger(m, "CALIB", testParams);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateTARGET() {
-        try {
-            String[] testParams = new String[]{"TARGET", "target", "TaRgEt"};
-
-            // null arg check
-            List<String> empty = sia.validateTARGET(null);
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method method = SiaValidator.class.getMethod("validateTARGET", Map.class);
-            doValidateString(method, testParams, null);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateTIMERES() {
-        try {
-            String[] testParams = new String[]{"TIMERES", "timeres", "TiMeReS"};
-
-            List empty = sia.validateTIMERES(null); // compile and null arg check
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method m = SiaValidator.class.getMethod("validateTIMERES", Map.class);
-            doValidateNumeric(m, "TIMERES", testParams);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateSPECRP() {
-        try {
-            String[] testParams = new String[]{"SPECRP", "specrp", "SpEcRp"};
-
-            List empty = sia.validateSPECRP(null); // compile and null arg check
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method m = SiaValidator.class.getMethod("validateSPECRP", Map.class);
-            doValidateNumeric(m, "SPECRP", testParams);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateFORMAT() {
-        try {
-            String[] testParams = new String[]{"FORMAT", "format", "FoRmAt"};
-
-            // null arg check
-            List<String> empty = sia.validateFORMAT(null);
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Method method = SiaValidator.class.getMethod("validateFORMAT", Map.class);
-            doValidateString(method, testParams, null);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-
-    @Test
-    public void testValidateCustomParam() {
-        try {
-            List empty = sia.validateString("FOO", null, null);
-            Assert.assertNotNull(empty);
-            Assert.assertTrue(empty.isEmpty());
-
-            Map<String, List<String>> params = new TreeMap<String, List<String>>(new CaseInsensitiveStringComparator());
-            List<String> vals = new ArrayList<String>();
-            vals.add("abc");
-            params.put("FOO", vals);
-            List<String> strs = sia.validateString("FOO", params, null);
-            Assert.assertNotNull(strs);
-            Assert.assertEquals(1, strs.size());
-            String s = strs.get(0);
-            Assert.assertEquals("abc", s);
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
@@ -741,7 +481,7 @@ public class SiaValidatorTest {
                     vals.add(testValues[j]);
                 }
                 params.put(tp, vals);
-                List<String> pols = (List<String>) testMethod.invoke(sia, params);
+                List<String> pols = (List<String>) testMethod.invoke(paramValidator, params);
                 Assert.assertNotNull(pols);
                 Assert.assertEquals(len[i], pols.size());
             }
@@ -764,7 +504,7 @@ public class SiaValidatorTest {
                     expected.add(tv);
                     params.put(tp, expected);
 
-                    List<Integer> actual = (List<Integer>) m.invoke(sia, params);
+                    List<Integer> actual = (List<Integer>) m.invoke(paramValidator, params);
 
                     Assert.assertNotNull(actual);
                     Assert.assertEquals(1, actual.size());
@@ -780,7 +520,7 @@ public class SiaValidatorTest {
                 expected.add(e);
             }
             params.put(paramName, expected);
-            List<Integer> actual = (List<Integer>) m.invoke(sia, params);
+            List<Integer> actual = (List<Integer>) m.invoke(paramValidator, params);
             Assert.assertNotNull(actual);
             Assert.assertEquals(expected.size(), actual.size());
             for (String e : expected) {
@@ -816,7 +556,7 @@ public class SiaValidatorTest {
                     vals.add(tv);
                     params.put(tp, vals);
 
-                    List<DoubleInterval> ranges = (List<DoubleInterval>) m.invoke(sia, params);
+                    List<DoubleInterval> ranges = (List<DoubleInterval>) m.invoke(paramValidator, params);
 
                     Assert.assertNotNull(ranges);
                     Assert.assertEquals(1, ranges.size());
@@ -848,7 +588,7 @@ public class SiaValidatorTest {
                 vals.add(testValues[i]);
             }
             params.put(paramName, vals);
-            List<DoubleInterval> ranges = (List<DoubleInterval>) m.invoke(sia, params);
+            List<DoubleInterval> ranges = (List<DoubleInterval>) m.invoke(paramValidator, params);
             Assert.assertNotNull(ranges);
             Assert.assertEquals(3, ranges.size());
             for (DoubleInterval r : ranges) {
