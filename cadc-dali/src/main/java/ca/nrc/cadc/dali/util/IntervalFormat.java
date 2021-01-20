@@ -106,28 +106,5 @@ public class IntervalFormat implements Format<Interval> {
         }
         
         throw new UnsupportedOperationException("unexpected interval type: " + t.getClass().getName());
-        
-        /*
-        if (isFloatingPoint(t)) {
-            // float to double like this is lossy (adds non-zero insignificant figs)
-            DoubleInterval di = new DoubleInterval(t.getLower().doubleValue(), t.getUpper().doubleValue());
-            DoubleIntervalFormat f = new DoubleIntervalFormat();
-            return f.format(di);
-        }
-        
-        // else: fixed point
-        LongInterval li = new LongInterval(t.getLower().longValue(), t.getUpper().longValue());
-        LongIntervalFormat f = new LongIntervalFormat();
-        return f.format(li);
-        */
-    }
-    
-    // there are more types of fixed point so floating point is easier to detect
-    // TODO: might need BigDecimal someday??
-    private boolean isFloatingPoint(Interval i) {
-        Number n1 = i.getLower();
-        Number n2 = i.getUpper();
-        return (n1 instanceof Double || n1 instanceof Float
-                || n2 instanceof Double || n2 instanceof Float);
     }
 }

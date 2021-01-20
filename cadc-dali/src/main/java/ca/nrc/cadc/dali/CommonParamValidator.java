@@ -115,6 +115,7 @@ public class CommonParamValidator {
     }
     
     /**
+     * @param params parameter map (e.g. from cadc-rest SyncInput or ParamExtractor)
      * @return single RUNID value or null
      */
     public String getRunID(Map<String, List<String>> params) {
@@ -126,6 +127,7 @@ public class CommonParamValidator {
     }
     
     /**
+     * @param params parameter map (e.g. from cadc-rest SyncInput or ParamExtractor)
      * @return single RESPONSEFORMAT value or null
      */
     public String getResponseFormat(Map<String, List<String>> params) {
@@ -136,7 +138,7 @@ public class CommonParamValidator {
         return values.get(0);
     }
 
-    private String scalar2interval(String s) {
+    private String scalarToInterval(String s) {
         String[] ss = s.split(" ");
         if (ss.length == 1) {
             return s + " " + s;
@@ -227,7 +229,7 @@ public class CommonParamValidator {
         }
         DoubleIntervalFormat fmt = new DoubleIntervalFormat();
         for (String v : values) {
-            String vv = scalar2interval(v);
+            String vv = scalarToInterval(v);
             log.debug("validateBAND: " + v + " aka " + vv);
             DoubleInterval di = fmt.parse(vv);
             ret.add(di);
@@ -247,7 +249,7 @@ public class CommonParamValidator {
         }
         DoubleIntervalFormat fmt = new DoubleIntervalFormat();
         for (String v : values) {
-            String vv = scalar2interval(v);
+            String vv = scalarToInterval(v);
             log.debug("validateBAND: " + v + " aka " + vv);
             DoubleInterval di = fmt.parse(vv);
             ret.add(di);

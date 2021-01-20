@@ -67,6 +67,7 @@
 
 package ca.nrc.cadc.dali.util;
 
+import ca.nrc.cadc.util.StringUtil;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.log4j.Logger;
@@ -86,13 +87,11 @@ public class StringListFormat implements Format<List<String>> {
     @Override
     public List<String> parse(String str) {
         List<String> ret = new ArrayList<>();
-        if (str == null) {
+        if (!StringUtil.hasText(str)) {
             return ret;
         }
         str = str.trim();
-        if (str.isEmpty()) {
-            return ret;
-        }
+        
         if (str.startsWith(DELIMITER) && str.endsWith(DELIMITER)) {
             str = str.substring(1, str.length() - 1);
         } else {
