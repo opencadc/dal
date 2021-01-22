@@ -199,7 +199,7 @@ public class NDimensionalSlicer {
         // MEF output is expected if the number of requested HDUs, or the number of requested values is greater than
         // one.
         final boolean mefOutput = overlapHDUs.size() > 1
-                                  || overlapHDUs.values().stream().mapToInt(e -> e.size()).sum() > 1;
+                                  || overlapHDUs.values().stream().mapToInt(List::size).sum() > 1;
 
         final boolean mefInput = hduCount > 1;
 
@@ -299,15 +299,14 @@ public class NDimensionalSlicer {
                                          + header.getIntValue(Standard.EXTVER, 1));
                             final ImageTiler imageTiler = imageHDU.getTiler();
 
-                            // CRPIX values are not set automatically.  Adjust them here.
+                            // CRPIX values are not set automatically.  Adjust them here, if present.
                             for (int i = 0; i < dimensionLength; i++) {
                                 final HeaderCard crPixCard = headerCopy.findCard(Standard.CRPIXn.n(i + 1));
-                                // Need to run backwards (reverse order) to match the dimensions.
-                                final double nextValue = corners[corners.length - i - 1];
                                 if (crPixCard != null) {
+                                    // Need to run backwards (reverse order) to match the dimensions.
+                                    final double nextValue = corners[corners.length - i - 1];
+
                                     crPixCard.setValue(Double.parseDouble(crPixCard.getValue()) - nextValue);
-                                } else {
-                                    headerCopy.addValue(Standard.CRPIXn.n(i + 1), nextValue);
                                 }
                             }
 
@@ -387,9 +386,9 @@ public class NDimensionalSlicer {
                 pixelRange = new PixelRange(0, maxRegionSize);
             }
 
-            final int rangeLowBound = pixelRange.getLowerBound();
-            final int rangeUpBound = pixelRange.getUpperBound();
-            final int rangeStep = pixelRange.getStep();
+            final int rangeLowBound = pixelRange.lowerBound;
+            final int rangeUpBound = pixelRange.upperBound;
+            final int rangeStep = pixelRange.step;
 
             final int lowerBound = rangeLowBound > 0 ? rangeLowBound - 1 : rangeLowBound;
             LOGGER.debug("Set lowerBound to " + lowerBound + " from rangeLowBound " + rangeLowBound);
@@ -563,10 +562,8 @@ public class NDimensionalSlicer {
 
         if (hdu != null) {
             for (final ExtensionSlice slice : slices) {
-                if (matchHDU(hdu, slice.getExtensionName(),
-                             slice.getExtensionVersion())
-                    || ((slice.getExtensionIndex() != null)
-                        && (hduIndex == slice.getExtensionIndex()))) {
+                if (matchHDU(hdu, slice.extensionName, slice.extensionVersion)
+                    || ((slice.extensionIndex != null) && (hduIndex == slice.extensionIndex))) {
 
                     // Entire extension requested, so it matters not that it may not be an Image HDU.
                     if (slice.getPixelRanges().isEmpty()) {
@@ -587,7 +584,7 @@ public class NDimensionalSlicer {
                                 // TODO: this does not take into account flipped axis (upperBound < lowerBound
                                 // so upperbound is really the smallest pixel index)
                                 if ((i < pixelRanges.size())
-                                    && (pixelRanges.get(i).getLowerBound() < maxUpperBound)) {
+                                    && (pixelRanges.get(i).lowerBound < maxUpperBound)) {
                                     overlappingSlices.add(slice);
                                     break;
                                 }
