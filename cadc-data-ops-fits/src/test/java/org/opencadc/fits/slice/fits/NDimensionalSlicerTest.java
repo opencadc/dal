@@ -77,8 +77,16 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.ImageData;
+import nom.tam.fits.ImageHDU;
+import nom.tam.fits.StreamingImageData;
+import nom.tam.util.ArrayFuncs;
 import nom.tam.util.RandomAccessDataObject;
 import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;
@@ -198,7 +206,6 @@ public class NDimensionalSlicerTest {
 
     @Test
     public void testMEFToSimple() throws Exception {
-        ExtensionSliceFormat fmt = new ExtensionSliceFormat();
         List<ExtensionSlice> slices = new ArrayList<>();
         slices.add(new ExtensionSlice("SCI", 13));
         
@@ -227,7 +234,6 @@ public class NDimensionalSlicerTest {
 
     @Test
     public void testNoSuchExtension() throws Exception {
-        ExtensionSliceFormat fmt = new ExtensionSliceFormat();
         List<ExtensionSlice> slices = new ArrayList<>();
         slices.add(new ExtensionSlice("BOGUS", 367));
         
@@ -246,6 +252,83 @@ public class NDimensionalSlicerTest {
         } catch (IllegalArgumentException illegalArgumentException) {
             Assert.assertTrue("Wrong message", illegalArgumentException.getMessage().contains(
                     "One or more requested slices could not be found"));
+        }
+
+        Files.deleteIfExists(outputPath);
+    }
+
+    @Test
+    public void testDataInPrimaryHeader() throws Exception {
+        final List<ExtensionSlice> slices = new ArrayList<>();
+        final ExtensionSliceFormat format = new ExtensionSliceFormat();
+        slices.add(format.parse("[1][*,1:100]"));
+        slices.add(format.parse("[2][50:90,*]"));
+
+        final int[][] data0 = new int[101][101];
+        final int[][] data1 = new int[250][250];
+        final int[][] data2 = new int[95][95];
+
+        final NDimensionalSlicer slicer = new NDimensionalSlicer();
+        final File file = Files.createTempFile("test-data-primary-", ".fits").toFile();
+        try (final DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(file));
+             final Fits fits = new Fits()) {
+            fits.setStreamWrite(true);
+            for (int i = 0; i < 101; i += 1) {
+                for (int j = 0; j < 101; j += 1) {
+                    data0[i][j] = i * j;
+                }
+            }
+            fits.addHDU(Fits.makeHDU(data0));
+
+            for (int i = 0; i < 250; i += 1) {
+                for (int j = 0; j < 250; j += 1) {
+                    data1[i][j] = i * j;
+                }
+            }
+            fits.addHDU(Fits.makeHDU(data1));
+
+            for (int i = 0; i < 95; i += 1) {
+                for (int j = 0; j < 95; j += 1) {
+                    data2[i][j] = i * j;
+                }
+            }
+            fits.addHDU(Fits.makeHDU(data2));
+
+            fits.write(dataOutputStream);
+        }
+
+        final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
+        final Path outputPath = (configuredTestWriteDir == null)
+                                ? Files.createTempFile("test-data-primary", ".fits")
+                                : Files.createTempFile(configuredTestWriteDir + "/test-fits-compliance", ".fits");
+        LOGGER.info("Writing out to " + outputPath);
+
+        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
+             final OutputStream outputStream = new FileOutputStream(outputPath.toFile())) {
+            slicer.slice(randomAccessDataObject, slices, outputStream);
+            outputStream.flush();
+        } catch (IllegalArgumentException illegalArgumentException) {
+            Assert.assertTrue("Wrong message", illegalArgumentException.getMessage().contains(
+                    "One or more requested slices could not be found"));
+        }
+
+        try (final Fits checkFits = new Fits(outputPath.toFile())) {
+            checkFits.setStreamWrite(true);
+            checkFits.read();
+
+            int index = 0;
+
+            final BasicHDU<?> primaryHDU = checkFits.getHDU(index++);
+            Assert.assertArrayEquals("Primary HDU data dimensions do not match.",
+                                     ArrayFuncs.getDimensions(data0), primaryHDU.getAxes());
+
+            final BasicHDU<?> firstImageHDU = checkFits.getHDU(index++);
+            Assert.assertArrayEquals("HDU 1 data dimensions do not match.",
+                                     new int[]{100, 250}, firstImageHDU.getAxes());
+
+            final BasicHDU<?> secondImageHDU = checkFits.getHDU(index);
+            Assert.assertArrayEquals("HDU 2 data dimensions do not match.",
+                                     new int[]{95, 41}, secondImageHDU.getAxes());
         }
 
         Files.deleteIfExists(outputPath);
