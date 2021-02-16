@@ -114,7 +114,7 @@ public class FITSHeaderWCSKeywordsTest {
     }
 
     @Test
-    public void testConstructor() throws Exception {
+    public void testGet() throws Exception {
         final long startMillis = System.currentTimeMillis();
         try (final RandomAccessDataObject randomAccessDataObject =
                      new RandomAccessFileExt(FileUtil.getFileFromResource("sample-mef.fits",
@@ -133,30 +133,82 @@ public class FITSHeaderWCSKeywordsTest {
                 final String headerCardKey = headerCard.getKey();
                 final String headerCardValue = headerCard.getValue();
 
-                if (!headerCardKey.equals("COMMENT") && !headerCardKey.equals("HISTORY")
-                    && StringUtil.hasText(headerCardKey) && StringUtil.hasText(headerCardValue)) {
-
-                    if (valueType == Integer.class) {
-                        Assert.assertEquals("Wrong integer value.", Integer.parseInt(headerCardValue),
-                                            testSubject.getIntValue(headerCardKey));
-                    } else if (valueType == Double.class || valueType == BigDecimal.class) {
-                        Assert.assertEquals("Wrong double value.", Double.parseDouble(headerCardValue),
-                                            testSubject.getDoubleValue(headerCardKey), 0.0D);
-                    } else {
-                        Assert.assertEquals("Wrong default value.", headerCardValue,
-                                            testSubject.getStringValue(headerCardKey));
-                    }
-
-                    counter.increment();
+                if (valueType == Integer.class) {
+                    Assert.assertEquals("Wrong integer value.", Integer.parseInt(headerCardValue),
+                                        testSubject.getIntValue(headerCardKey));
+                } else if (valueType == Double.class || valueType == BigDecimal.class) {
+                    Assert.assertEquals("Wrong double value.", Double.parseDouble(headerCardValue),
+                                        testSubject.getDoubleValue(headerCardKey), 0.0D);
+                } else {
+                    Assert.assertEquals("Wrong default value for " + headerCardKey + ".", headerCardValue,
+                                        testSubject.getStringValue(headerCardKey));
                 }
+
+                counter.increment();
             });
 
             Assert.assertEquals("Should've created " + counter.count + " keywords.",
                                 counter.count, testSubject.getNumberOfKeywords());
         }
-        LOGGER.debug("FITSHeaderWCSKeywordsTest.testConstructor ran in " + (System.currentTimeMillis() - startMillis)
+        LOGGER.debug("FITSHeaderWCSKeywordsTest.testGet ran in " + (System.currentTimeMillis() - startMillis) + " ms");
+    }
+
+    @Test
+    public void testIterator() throws Exception {
+        final long startMillis = System.currentTimeMillis();
+        try (final RandomAccessDataObject randomAccessDataObject =
+                     new RandomAccessFileExt(FileUtil.getFileFromResource("sample-mef.fits",
+                                                                          FITSHeaderWCSKeywordsTest.class), "r");
+             final Fits fits = new Fits(randomAccessDataObject)) {
+
+            // Just to cache it up front, and ensure that it can be read.
+            fits.read();
+
+            final Header header = fits.getHDU(0).getHeader();
+            final FITSHeaderWCSKeywords testSubject = new FITSHeaderWCSKeywords(header);
+            final Counter counter = new Counter();
+
+            testSubject.iterator().forEachRemaining(stringObjectEntry -> {
+                LOGGER.debug("iterator.next: " + stringObjectEntry.getKey() + " -> " + stringObjectEntry.getValue());
+                counter.increment();
+            });
+
+            Assert.assertEquals("Should've created " + counter.count + " keywords.",
+                                counter.count, testSubject.getNumberOfKeywords());
+        }
+        LOGGER.debug("FITSHeaderWCSKeywordsTest.testIterator ran in " + (System.currentTimeMillis() - startMillis)
                      + " ms");
     }
+
+    @Test
+    public void testEmptyIterator() {
+        final long startMillis = System.currentTimeMillis();
+        final FITSHeaderWCSKeywords testSubject = new FITSHeaderWCSKeywords();
+        final Counter counter = new Counter();
+
+        testSubject.iterator().forEachRemaining(stringObjectEntry -> {
+            LOGGER.debug("iterator.next: " + stringObjectEntry.getKey() + " -> " + stringObjectEntry.getValue());
+            counter.increment();
+        });
+
+        Assert.assertEquals("Should've created " + counter.count + " keywords.",
+                            counter.count, testSubject.getNumberOfKeywords());
+        LOGGER.debug("FITSHeaderWCSKeywordsTest.testIterator ran in " + (System.currentTimeMillis() - startMillis)
+                     + " ms");
+    }
+
+    @Test
+    public void testPutValues() {
+        final FITSHeaderWCSKeywords testSubject = new FITSHeaderWCSKeywords();
+        testSubject.put("KEY1", "VALUE1");
+        testSubject.put("KEY2", 2.0D);
+        testSubject.put("KEY3", -199);
+
+        Assert.assertEquals("Wrong string value.", "VALUE1", testSubject.getStringValue("KEY1"));
+        Assert.assertEquals("Wrong string value.", 2.0D, testSubject.getDoubleValue("KEY2"), 0.0D);
+        Assert.assertEquals("Wrong string value.", -199, testSubject.getIntValue("KEY3"));
+    }
+
 
     public static final class Counter {
         // Should only ever be modified with the increment method.

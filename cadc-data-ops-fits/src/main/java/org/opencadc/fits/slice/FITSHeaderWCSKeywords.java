@@ -68,35 +68,34 @@
 
 package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.util.StringUtil;
-import ca.nrc.cadc.wcs.WCSKeywordsImpl;
+import ca.nrc.cadc.wcs.WCSKeywords;
 
-import java.math.BigDecimal;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
-import nom.tam.fits.header.Standard;
-import org.apache.log4j.Logger;
+import nom.tam.fits.HeaderCardException;
+import nom.tam.util.Cursor;
 
 
 /**
- * Create WCS Keywords class from a FITS header.  Conversions are limited to the underlying data types.
+ * Create WCS Keywords class from a FITS header, using the header as a source.  Note that the put() calls are all
+ * add operations, rather than add or update, so it is the responsibility of the caller to ensure that no duplicates
+ * exist.
  */
-public class FITSHeaderWCSKeywords extends WCSKeywordsImpl {
-    private static final Logger LOGGER = Logger.getLogger(FITSHeaderWCSKeywords.class);
-    private static final List<String> IGNORED_KEYWORDS =
-            Arrays.asList(Standard.COMMENT.key(), Standard.HISTORY.key(), Standard.BLANKS.key());
+public class FITSHeaderWCSKeywords implements WCSKeywords {
+
+    // Source for values.
+    private final Header header;
 
 
     /**
      * Empty constructor.
      */
     public FITSHeaderWCSKeywords() {
-        super();
+        this(new Header());
     }
 
     /**
@@ -108,45 +107,232 @@ public class FITSHeaderWCSKeywords extends WCSKeywordsImpl {
      *               constructor.
      */
     public FITSHeaderWCSKeywords(final Header header) {
-        LOGGER.debug("FITSHeaderWCSKeywords constructor");
-
         if (header == null) {
-            LOGGER.error("FITSHeaderWCSKeywords error");
             throw new IllegalArgumentException("Header is required.");
         }
 
-        header.iterator().forEachRemaining(headerCard -> {
-            // Check for blank lines or just plain comments that are not relevant to WCS and ignore them.
-            if (isRelevant(headerCard)) {
-                final String headerCardKey = headerCard.getKey();
-                final String headerCardValue = headerCard.getValue();
-
-                final Class<?> valueType = headerCard.valueType();
-                if (valueType == Integer.class) {
-                    put(headerCardKey, Integer.parseInt(headerCardValue));
-                } else if (valueType == Double.class) {
-                    put(headerCardKey, Double.parseDouble(headerCardValue));
-                } else if (valueType == BigDecimal.class) {
-                    put(headerCardKey, new BigDecimal(headerCardValue).doubleValue());
-                } else {
-                    // Assume anything else is of a String type.
-                    put(headerCardKey, headerCardValue);
-                }
-            } else {
-                LOGGER.debug("Skipping header card '" + headerCard.getKey() + "'.");
-            }
-        });
-        LOGGER.debug("FITSHeaderWCSKeywords constructor with " + getNumberOfKeywords() + " keywords : OK");
+        this.header = header;
     }
 
     /**
-     * Omit unnecessary header cards such as COMMENT or HISTORY.
-     * @param headerCard    The card to check.
-     * @return  True if not irrelevant, False otherwise.
+     * Returns true if the specified key exists in the keywords.
+     *
+     * @param key key whose presence in keywords is to be tested.
+     * @return True if keywords contains key, False otherwise.
      */
-    boolean isRelevant(final HeaderCard headerCard) {
-        final String key = headerCard.getKey();
-        return StringUtil.hasText(key) && StringUtil.hasText(headerCard.getValue()) && !IGNORED_KEYWORDS.contains(key);
+    @Override
+    public boolean containsKey(String key) {
+        return header.containsKey(key);
+    }
+
+    /**
+     * Returns a double value for the specified key. It is expected that
+     * a default value, typically 0.0, will be returned if the key
+     * does not exist in the keywords.
+     *
+     * @param key key whose double value is to be returned.
+     * @return double value corresponding to the specified key.
+     */
+    @Override
+    public double getDoubleValue(String key) {
+        return header.getDoubleValue(key);
+    }
+
+    /**
+     * Returns a double value for the specified key. If the key does not
+     * exist in the keywords, the default value is returned.
+     *
+     * @param key   key whose double value is to be returned.
+     * @param value default value returned if the specified key does not exist in keywords.
+     * @return double value corresponding to the specified key.
+     */
+    @Override
+    public double getDoubleValue(String key, double value) {
+        return header.getDoubleValue(key, value);
+    }
+
+    /**
+     * Returns a float value for the specified key. It is expected that
+     * a default value, typically 0.0, will be returned if the key
+     * does not exist in the keywords.
+     *
+     * @param key key whose float value is to be returned.
+     * @return float value corresponding to the specified key.
+     */
+    @Override
+    public float getFloatValue(String key) {
+        return header.getFloatValue(key);
+    }
+
+    /**
+     * Returns a float value for the specified key. If the key does not
+     * exist in the keywords, the default value is returned.
+     *
+     * @param key   key whose float value is to be returned.
+     * @param value default value returned if the specified key does not exist in keywords.
+     * @return float value corresponding to the specified key.
+     */
+    @Override
+    public float getFloatValue(String key, float value) {
+        return header.getFloatValue(key, value);
+    }
+
+    /**
+     * Returns an int value for the specified key. It is expected that
+     * a default value, typically 0, will be returned if the key
+     * does not exist in the keywords.
+     *
+     * @param key key whose int value is to be returned.
+     * @return int value corresponding to the specified key.
+     */
+    @Override
+    public int getIntValue(String key) {
+        return header.getIntValue(key);
+    }
+
+    /**
+     * Returns an int value for the specified key. If the key does not
+     * exist in the keywords, the default value is returned.
+     *
+     * @param key   key whose int value is to be returned.
+     * @param value default value returned if the specified key does not exist in keywords.
+     * @return int value corresponding to the specified key.
+     */
+    @Override
+    public int getIntValue(String key, int value) {
+        return header.getIntValue(key, value);
+    }
+
+    /**
+     * Returns a String value for the specified key. It is expected that
+     * a default value, typically an empty String, will be returned if
+     * the key does not exist in the keywords.
+     *
+     * @param key key whose String value is to be returned.
+     * @return String value corresponding to the specified key.
+     */
+    @Override
+    public String getStringValue(String key) {
+        final HeaderCard card = header.findCard(key);
+        return card == null ? null : card.getValue();
+    }
+
+    /**
+     * Returns a String value for the specified key. If the key does not
+     * exist in the keywords, the default value is returned.
+     *
+     * @param key   key whose String value is to be returned.
+     * @param value default value returned if the specified key does not exist in keywords.
+     * @return String value corresponding to the specified key.
+     */
+    @Override
+    public String getStringValue(String key, String value) {
+        final String currVal = getStringValue(key);
+        return currVal == null ? value : currVal;
+    }
+
+    /**
+     * Add the key and String value to the keywords.
+     *
+     * @param key   keywords name.
+     * @param value keywords value.
+     */
+    @Override
+    public void put(String key, String value) {
+        try {
+            header.addValue(key, value, null);
+        } catch (HeaderCardException headerCardException) {
+            throw new IllegalArgumentException(headerCardException);
+        }
+    }
+
+    /**
+     * Add the key and int value to the keywords.
+     *
+     * @param key   key keywords name.
+     * @param value value keywords value.
+     */
+    @Override
+    public void put(String key, int value) {
+        putHeaderValue(key, value);
+    }
+
+    /**
+     * Add the key and double value to the keywords.
+     *
+     * @param key   key keywords name.
+     * @param value value keywords value.
+     */
+    @Override
+    public void put(String key, double value) {
+        putHeaderValue(key, value);
+    }
+
+    /**
+     * Add the key and Integer value to the keywords.
+     *
+     * @param key   key keywords name.
+     * @param value value keywords value.
+     */
+    @Override
+    public void put(String key, Integer value) {
+        putHeaderValue(key, value);
+    }
+
+    /**
+     * Add the key and Double value to the keywords.
+     *
+     * @param key   key keywords name.
+     * @param value value keywords value.
+     */
+    @Override
+    public void put(String key, Double value) {
+        putHeaderValue(key, value);
+    }
+
+    private void putHeaderValue(final String key, final int value) {
+        try {
+            header.addValue(key, value, null);
+        } catch (HeaderCardException headerCardException) {
+            throw new IllegalArgumentException(headerCardException);
+        }
+    }
+
+    private void putHeaderValue(final String key, final double value) {
+        try {
+            header.addValue(key, value, null);
+        } catch (HeaderCardException headerCardException) {
+            throw new IllegalArgumentException(headerCardException);
+        }
+    }
+
+    /**
+     * Iterate the cards of the Header and create Map Entries as needed.
+     * @return  An Iterator instance.  Never null.
+     */
+    @Override
+    public Iterator<Map.Entry<String, Object>> iterator() {
+        return new Iterator<Map.Entry<String, Object>>() {
+            final Cursor<String, HeaderCard> source = header.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return source.hasNext();
+            }
+
+            /**
+             * Convert to a Map.Entry object to adhere to the contract of this interface.  Be aware that BLANKS and
+             * some COMMENTs will create empty keys and possibly empty values.
+             * @return  Map.Entry object, never null.
+             */
+            @Override
+            public Map.Entry<String, Object> next() {
+                final Map<String, Object> convertor = new HashMap<>();
+                final HeaderCard nextHeaderCard = source.next();
+                convertor.put(nextHeaderCard.getKey(), nextHeaderCard.getValue());
+                return convertor.entrySet().iterator().next();
+            }
+        };
     }
 
     public int getNumberOfKeywords() {
