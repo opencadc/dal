@@ -76,14 +76,13 @@ import java.util.Map;
 
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
 import nom.tam.util.Cursor;
 
 
 /**
  * Create WCS Keywords class from a FITS header, using the header as a source.  Note that the put() calls are all
- * add operations, rather than add or update, so it is the responsibility of the caller to ensure that no duplicates
- * exist.
+ * unsupported in this implementation to avoid unintentional modification of the underlying Header and, possibly, the
+ * underlying Fits object.
  */
 public class FITSHeaderWCSKeywords implements WCSKeywords {
 
@@ -239,11 +238,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
      */
     @Override
     public void put(String key, String value) {
-        try {
-            header.addValue(key, value, null);
-        } catch (HeaderCardException headerCardException) {
-            throw new IllegalArgumentException(headerCardException);
-        }
+        throw new UnsupportedOperationException("Unsupported put(String, String)");
     }
 
     /**
@@ -254,7 +249,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
      */
     @Override
     public void put(String key, int value) {
-        putHeaderValue(key, value);
+        throw new UnsupportedOperationException("Unsupported put(String, int)");
     }
 
     /**
@@ -265,7 +260,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
      */
     @Override
     public void put(String key, double value) {
-        putHeaderValue(key, value);
+        throw new UnsupportedOperationException("Unsupported put(String, double)");
     }
 
     /**
@@ -276,7 +271,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
      */
     @Override
     public void put(String key, Integer value) {
-        putHeaderValue(key, value);
+        throw new UnsupportedOperationException("Unsupported put(String, Integer)");
     }
 
     /**
@@ -287,23 +282,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
      */
     @Override
     public void put(String key, Double value) {
-        putHeaderValue(key, value);
-    }
-
-    private void putHeaderValue(final String key, final int value) {
-        try {
-            header.addValue(key, value, null);
-        } catch (HeaderCardException headerCardException) {
-            throw new IllegalArgumentException(headerCardException);
-        }
-    }
-
-    private void putHeaderValue(final String key, final double value) {
-        try {
-            header.addValue(key, value, null);
-        } catch (HeaderCardException headerCardException) {
-            throw new IllegalArgumentException(headerCardException);
-        }
+        throw new UnsupportedOperationException("Unsupported put(String, Double)");
     }
 
     /**

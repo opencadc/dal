@@ -70,7 +70,6 @@ package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
-import ca.nrc.cadc.util.StringUtil;
 import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.util.RandomAccessDataObject;
@@ -195,18 +194,6 @@ public class FITSHeaderWCSKeywordsTest {
                             counter.count, testSubject.getNumberOfKeywords());
         LOGGER.debug("FITSHeaderWCSKeywordsTest.testIterator ran in " + (System.currentTimeMillis() - startMillis)
                      + " ms");
-    }
-
-    @Test
-    public void testPutValues() {
-        final FITSHeaderWCSKeywords testSubject = new FITSHeaderWCSKeywords();
-        testSubject.put("KEY1", "VALUE1");
-        testSubject.put("KEY2", 2.0D);
-        testSubject.put("KEY3", -199);
-
-        Assert.assertEquals("Wrong string value.", "VALUE1", testSubject.getStringValue("KEY1"));
-        Assert.assertEquals("Wrong string value.", 2.0D, testSubject.getDoubleValue("KEY2"), 0.0D);
-        Assert.assertEquals("Wrong string value.", -199, testSubject.getIntValue("KEY3"));
     }
 
 
