@@ -65,7 +65,8 @@
 *  $Revision: 4 $
 *
 ************************************************************************
-*/
+ */
+
 package ca.nrc.cadc.dali.tables.votable;
 
 import ca.nrc.cadc.dali.Circle;
@@ -74,6 +75,10 @@ import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.TableWriter;
+import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.util.FormatFactory;
+import ca.nrc.cadc.dali.util.PointFormat;
+import ca.nrc.cadc.dali.util.ShortFormat;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.StringWriter;
@@ -90,45 +95,42 @@ import org.junit.Test;
  *
  * @author jburke
  */
-public class VOTableReaderWriterTest
-{
+public class VOTableReaderWriterTest {
+
     private static final Logger log = Logger.getLogger(VOTableReaderWriterTest.class);
 
     private static final String DATE_TIME = "2009-01-02T11:04:05.678";
     private static DateFormat dateFormat;
-    
-    static
-    {
+
+    static {
         Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.INFO);
         dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
     }
-    
-    public VOTableReaderWriterTest() { }
+
+    public VOTableReaderWriterTest() {
+    }
 
     @Test
-    public void testReadWriteVOTable() throws Exception
-    {
+    public void testReadWriteVOTable() throws Exception {
         log.debug("testReadWriteVOTable");
-        try
-        {
+        try {
             String resourceName = "VOTable resource name";
-            
 
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
-            
+
             VOTableResource vr = new VOTableResource("meta");
             expected.getResources().add(vr);
             vr.getParams().addAll(getMetaParams());
             vr.getGroups().add(getMetaGroup());
-            
+
             vr = new VOTableResource("results");
             VOTableInfo vi = new VOTableInfo("FOO", "bar");
             vi.content = "useful message";
             vr.getInfos().add(vi);
             expected.getResources().add(vr);
             vr.setName(resourceName);
-            
+
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
 
@@ -152,29 +154,25 @@ public class VOTableReaderWriterTest
             // Read in xml to VOTable with schema validation.
             VOTableReader reader = new VOTableReader();
             VOTableDocument actual = reader.read(xml);
-            
+
             log.debug("Expected:\n\n" + expected);
             log.debug("Actual:\n\n" + actual);
 
             // writer always places this placeholder after a table
-            vr.getInfos().add(new VOTableInfo("QUERY_STATUS", "OK"));
+            vr.getInfos().add(new VOTableInfo("placeholder", "ignore"));
             compareVOTable(expected, actual, null);
 
-            log.info("testReadWriteVOTable passed");
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
-    //@Test
-    public void testReadWriteVOTableWithMax() throws Exception
-    {
+
+    @Test
+    public void testReadWriteVOTableWithMax() throws Exception {
         log.debug("testReadWriteVOTable");
-        try
-        {
+        long maxrec = 3L;
+        try {
             String resourceName = "VOTable resource name";
 
             // Build a VOTable.
@@ -186,7 +184,55 @@ public class VOTableReaderWriterTest
 
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
-            
+
+            // Add INFO's.
+            vot.getInfos().addAll(getTestInfos());
+
+            // Add VOTableFields.
+            vot.getParams().addAll(getTestParams());
+            vot.getFields().addAll(getTestFields());
+
+            // Add TableData.
+            vot.setTableData(new TestTableData(maxrec + 1L));
+
+            // Write VOTable to xml.
+            StringWriter sw = new StringWriter();
+            TableWriter<VOTableDocument> writer = new VOTableWriter();
+            writer.write(expected, sw, maxrec);
+            String xml = sw.toString();
+            log.debug("XML: \n\n" + xml);
+
+            // Read in xml to VOTable with schema validation.
+            VOTableReader reader = new VOTableReader();
+            VOTableDocument actual = reader.read(xml);
+
+            // the write should stick in this extra INFO element, so add to expected
+            VOTableInfo vi = new VOTableInfo("QUERY_STATUS", "OVERFLOW");
+            vr.getInfos().add(vi);
+            compareVOTable(expected, actual, 3L);
+
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+    
+    @Test
+    public void testReadWriteVOTableWithIterationFail() throws Exception {
+        log.debug("testReadWriteVOTable");
+        try {
+            String resourceName = "VOTable resource name";
+
+            // Build a VOTable.
+            VOTableDocument expected = new VOTableDocument();
+            VOTableResource vr = new VOTableResource("results");
+            vr.getInfos().add(new VOTableInfo("QUERY_STATUS", "OK"));
+            expected.getResources().add(vr);
+            vr.setName(resourceName);
+
+            VOTableTable vot = new VOTableTable();
+            vr.setTable(vot);
+
             // Add INFO's.
             vot.getInfos().addAll(getTestInfos());
 
@@ -200,40 +246,50 @@ public class VOTableReaderWriterTest
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
             TableWriter<VOTableDocument> writer = new VOTableWriter();
-            writer.write(expected, sw, 3L);
+            writer.setFormatFactory(new BrokenFormatFactory());
+            writer.write(expected, sw);
             String xml = sw.toString();
             log.debug("XML: \n\n" + xml);
 
             // Read in xml to VOTable with schema validation.
             VOTableReader reader = new VOTableReader();
             VOTableDocument actual = reader.read(xml);
-            
-            // the write should stick in this extra INFO element, so add to expected
-            VOTableInfo vi = new VOTableInfo("QUERY_STATUS", "OVERFLOW");
-            vr.getInfos().add(vi);
-            compareVOTable(expected, actual, 3L);
 
-            log.info("testReadWriteVOTable passed");
-        }
-        catch(Exception unexpected)
-        {
+            VOTableResource ar = actual.getResourceByType("results");
+            
+            Assert.assertFalse(ar.getInfos().isEmpty());
+            VOTableInfo trailer = ar.getInfos().get(ar.getInfos().size() - 1);
+            Assert.assertEquals("QUERY_STATUS", trailer.getName());
+            Assert.assertEquals("ERROR", trailer.getValue());
+
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
+    
+    private class BrokenFormatFactory extends FormatFactory {
+
+        @Override
+        public Format getFormat(VOTableField field) {
+            Format ret = super.getFormat(field);
+            if (ret instanceof PointFormat) {
+                return new ShortFormat();
+            }
+            return ret;
+        }
+        
+    }
 
     @Test
-    public void testReadWriteVOTableArraysize() throws Exception
-    {
+    public void testReadWriteVOTableArraysize() throws Exception {
         log.debug("testReadWriteVOTableArraysize");
-        try
-        {
+        try {
             String resourceName = "VOTable resource name";
-            
 
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
-            
+
             VOTableResource vr = new VOTableResource("meta");
             expected.getResources().add(vr);
             vr = new VOTableResource("results");
@@ -242,12 +298,12 @@ public class VOTableReaderWriterTest
             vr.getInfos().add(vi);
             expected.getResources().add(vr);
             vr.setName(resourceName);
-            
+
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
 
             VOTableField f;
-            
+
             f = new VOTableField("scalar", "double", null);
             vot.getFields().add(f);
             f = new VOTableField("array-1", "double", "1");
@@ -273,7 +329,7 @@ public class VOTableReaderWriterTest
             nullData.add(null);
             nullData.add(null);
             tData.getArrayList().add(nullData);
-            
+
             List<Object> valData = new ArrayList<>();
             valData.add(1.0);
             double[] a1 = new double[1];
@@ -286,22 +342,25 @@ public class VOTableReaderWriterTest
             valData.add(fa2);
             double[][] va2 = new double[4][5];
             valData.add(va2);
-            for (int i=0; i<4; i++)
-            {
+            for (int i = 0; i < 4; i++) {
                 fa[i] = i;
-                if (i<5)
-                    va[i]  = i;
-                for (int j=0; j<3; j++)
-                    fa2[i][j] = i+j;
-                for (int j=0; j<5; j++)
-                    va2[i][j] = i+j;
+                if (i < 5) {
+                    va[i] = i;
+                }
+                for (int j = 0; j < 3; j++) {
+                    fa2[i][j] = i + j;
+                }
+                for (int j = 0; j < 5; j++) {
+                    va2[i][j] = i + j;
+                }
             }
             double[] va3 = new double[7];
             valData.add(va3);
-            for (int i=0; i<7; i++)
+            for (int i = 0; i < 7; i++) {
                 va3[i] = i;
+            }
             tData.getArrayList().add(valData);
-            
+
             // Add TableData.
             vot.setTableData(tData);
 
@@ -315,66 +374,59 @@ public class VOTableReaderWriterTest
             // Read in xml to VOTable with schema validation.
             VOTableReader reader = new VOTableReader();
             VOTableDocument actual = reader.read(xml);
-            
+
             log.debug("Expected:\n\n" + expected);
             log.debug("Actual:\n\n" + actual);
 
             // writer always places this placeholder after a table
-            vr.getInfos().add(new VOTableInfo("QUERY_STATUS", "OK"));
+            vr.getInfos().add(new VOTableInfo("placeholder", "ignore"));
             compareVOTable(expected, actual, null);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
+
     /**
      *
      * Test might be a bit dodgy since it's assuming the VOTable
      * elements will be written and read in the same order.
      */
-    public void compareVOTable(VOTableDocument expected, VOTableDocument actual, Long actualMax)
-    {
+    public void compareVOTable(VOTableDocument expected, VOTableDocument actual, Long actualMax) {
         Assert.assertNotNull(expected);
         Assert.assertNotNull(actual);
 
         Assert.assertEquals(expected.getResources().size(), actual.getResources().size());
-        
-        for (int i=0; i<expected.getResources().size(); i++)
-        {
+
+        for (int i = 0; i < expected.getResources().size(); i++) {
             compareVOTableResource(expected.getResources().get(i), actual.getResources().get(i), actualMax);
         }
     }
-    
-    public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax)
-    {
+
+    public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax) {
         Assert.assertEquals(expected.getName(), actual.getName());
 
         compareInfos(expected.getInfos(), actual.getInfos());
 
         compareParams(expected.getParams(), actual.getParams());
-        
+
         compareGroups(expected.getGroups(), actual.getGroups());
 
         compareTables(expected.getTable(), actual.getTable(), actualMax);
     }
-    
-    public void compareTables(VOTableTable expected, VOTableTable actual, Long actualMax)
-    {
-        if (expected != null)
+
+    public void compareTables(VOTableTable expected, VOTableTable actual, Long actualMax) {
+        if (expected != null) {
             Assert.assertNotNull(actual);
-        else
-        {
+        } else {
             Assert.assertNull(actual);
             return;
         }
-        
+
         compareInfos(expected.getInfos(), actual.getInfos());
         compareParams(expected.getParams(), actual.getParams());
         compareFields(expected.getFields(), actual.getFields());
-        
+
         // TABLEDATA
         Assert.assertNotNull(expected.getTableData());
         Assert.assertNotNull(actual.getTableData());
@@ -394,50 +446,35 @@ public class VOTableReaderWriterTest
             List<Object> expectedList = expectedIter.next();
             log.debug("expected row: " + expectedList);
             log.debug("  actual row: " + actualList);
-            
+
             Assert.assertEquals(expectedList.size(), actualList.size());
-            for (int i = 0; i < expectedList.size(); i++)
-            {
+            for (int i = 0; i < expectedList.size(); i++) {
                 Object expectedObject = expectedList.get(i);
                 Object actualObject = actualList.get(i);
 
-                if (expectedObject instanceof byte[] && actualObject instanceof byte[])
-                {
+                if (expectedObject instanceof byte[] && actualObject instanceof byte[]) {
                     Assert.assertArrayEquals((byte[]) expectedObject, (byte[]) actualObject);
-                }
-                else if (expectedObject instanceof double[] && actualObject instanceof double[])
-                {
+                } else if (expectedObject instanceof double[] && actualObject instanceof double[]) {
                     Assert.assertArrayEquals((double[]) expectedObject, (double[]) actualObject, 0.0);
-                }
-                else if (expectedObject instanceof double[][] && actualObject instanceof double[][])
-                {
+                } else if (expectedObject instanceof double[][] && actualObject instanceof double[][]) {
                     double[][] exp = (double[][]) expectedObject;
                     double[][] act = (double[][]) actualObject;
                     Assert.assertEquals(exp.length, act.length);
-                    for (int i1=0; i1<exp.length; i1++)
-                    {
+                    for (int i1 = 0; i1 < exp.length; i1++) {
                         Assert.assertEquals(exp[i1].length, act[i1].length);
-                        for (int i2=0; i2<exp[i1].length; i2++)
-                            Assert.assertEquals("array["+i1+","+i2+"]", exp[i1][i2], act[i1][i2], 0.0);
+                        for (int i2 = 0; i2 < exp[i1].length; i2++) {
+                            Assert.assertEquals("array[" + i1 + "," + i2 + "]", exp[i1][i2], act[i1][i2], 0.0);
+                        }
                     }
-                }
-                else if (expectedObject instanceof float[] && actualObject instanceof float[])
-                {
+                } else if (expectedObject instanceof float[] && actualObject instanceof float[]) {
                     Assert.assertArrayEquals((float[]) expectedObject, (float[]) actualObject, 0.0f);
-                }
-                else if (expectedObject instanceof int[] && actualObject instanceof int[])
-                {
+                } else if (expectedObject instanceof int[] && actualObject instanceof int[]) {
                     Assert.assertArrayEquals((int[]) expectedObject, (int[]) actualObject);
-                }
-                else if (expectedObject instanceof long[] && actualObject instanceof long[])
-                {
+                } else if (expectedObject instanceof long[] && actualObject instanceof long[]) {
                     Assert.assertArrayEquals((long[]) expectedObject, (long[]) actualObject);
-                }
-                else if (expectedObject instanceof short[] && actualObject instanceof short[])
-                {
+                } else if (expectedObject instanceof short[] && actualObject instanceof short[]) {
                     Assert.assertArrayEquals((short[]) expectedObject, (short[]) actualObject);
-                }
-                /*
+                } /*
                 else if (expectedObject instanceof Position && actualObject instanceof Position)
                 {
                     Position expectedPosition = (Position) expectedObject;
@@ -450,26 +487,29 @@ public class VOTableReaderWriterTest
                     Region actualRegion = (Region) actualObject;
                     Assert.assertEquals(STC.format(expectedRegion), STC.format(actualRegion));
                 }
-                */
-                else
-                {
-                     Assert.assertEquals(expectedObject, actualObject);
+                 */ else {
+                    Assert.assertEquals(expectedObject, actualObject);
                 }
             }
         }
-        
-        if (actualMax != null)
+
+        if (actualMax != null) {
             Assert.assertEquals("wrong number of iterations", actualMax.intValue(), iteratorCount);
+        }
     }
 
-    public void compareInfos(List<VOTableInfo>  expected, List<VOTableInfo> actual)
-    {
+    public void compareInfos(List<VOTableInfo> expected, List<VOTableInfo> actual) {
         // INFO
         Assert.assertNotNull(expected);
         Assert.assertNotNull(actual);
+        for (VOTableInfo e : expected) {
+            log.warn("expected: " + e);
+        }
+        for (VOTableInfo a : actual) {
+            log.warn("actual: " + a);
+        }
         Assert.assertEquals(expected.size(), actual.size());
-        for (int i = 0; i < expected.size(); i++)
-        {
+        for (int i = 0; i < expected.size(); i++) {
             VOTableInfo expectedInfo = expected.get(i);
             VOTableInfo actualInfo = actual.get(i);
             Assert.assertNotNull(expectedInfo);
@@ -479,11 +519,10 @@ public class VOTableReaderWriterTest
             Assert.assertEquals(expectedInfo.content, actualInfo.content);
         }
     }
-    public void compareGroups(List<VOTableGroup> expected, List<VOTableGroup> actual)
-    {
+
+    public void compareGroups(List<VOTableGroup> expected, List<VOTableGroup> actual) {
         Assert.assertEquals("number of groups", expected.size(), actual.size());
-        for (int i=0; i<expected.size(); i++)
-        {
+        for (int i = 0; i < expected.size(); i++) {
             VOTableGroup eg = expected.get(i);
             VOTableGroup ag = actual.get(i);
             Assert.assertEquals(eg.getName(), ag.getName());
@@ -491,15 +530,13 @@ public class VOTableReaderWriterTest
             compareGroups(eg.getGroups(), ag.getGroups());
         }
     }
-    
-    public void compareParams(List<VOTableParam>  expected, List<VOTableParam> actual)
-    {
+
+    public void compareParams(List<VOTableParam> expected, List<VOTableParam> actual) {
         // PARAM
         Assert.assertNotNull(expected);
         Assert.assertNotNull(actual);
         Assert.assertEquals(expected.size(), actual.size());
-        for (int i = 0; i < expected.size(); i++)
-        {
+        for (int i = 0; i < expected.size(); i++) {
             VOTableParam expectedParam = expected.get(i);
             VOTableParam actualParam = actual.get(i);
             Assert.assertNotNull(expectedParam);
@@ -516,26 +553,23 @@ public class VOTableReaderWriterTest
             Assert.assertEquals(expectedParam.description, actualParam.description);
             List<String> expectedValues = expectedParam.getValues();
             List<String> actualValues = actualParam.getValues();
-            if (expectedValues == null)
-            {
+            if (expectedValues == null) {
                 Assert.assertNull(actualValues);
                 continue;
             }
             Assert.assertEquals(expectedValues.size(), actualValues.size());
-            for (int j = 0; j < expectedValues.size(); j++)
-            {
+            for (int j = 0; j < expectedValues.size(); j++) {
                 Assert.assertEquals(expectedValues.get(j), actualValues.get(j));
             }
         }
     }
-    public void compareFields(List<VOTableField>  expected, List<VOTableField> actual)
-    {
+
+    public void compareFields(List<VOTableField> expected, List<VOTableField> actual) {
         // FIELD
         Assert.assertNotNull(expected);
         Assert.assertNotNull(actual);
         Assert.assertEquals(expected.size(), actual.size());
-        for (int i = 0; i < expected.size(); i++)
-        {
+        for (int i = 0; i < expected.size(); i++) {
             VOTableField expectedField = expected.get(i);
             VOTableField actualField = actual.get(i);
             Assert.assertNotNull(expectedField);
@@ -551,39 +585,37 @@ public class VOTableReaderWriterTest
             Assert.assertEquals(expectedField.description, actualField.description);
         }
     }
-    public static List<VOTableInfo> getTestInfos()
-    {
+
+    public static List<VOTableInfo> getTestInfos() {
         List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
 
         infos.add(new VOTableInfo("QUERY", "select * from ivoa.ObsCore"));
-        
+
         return infos;
     }
 
-    public static List<VOTableParam> getMetaParams()
-    {
+    public static List<VOTableParam> getMetaParams() {
         List<VOTableParam> params = new ArrayList<VOTableParam>();
         params.add(new VOTableParam("standardID", "char", "ivo://ivoa.net/std/DataLink#links-1.0"));
         params.add(new VOTableParam("resourceIdentifier", "char", "ivo://cadc.nrc.ca/caom2ops"));
         params.add(new VOTableParam("accessURL", "char", "http://www.cadc.hia.nrc.gc.ca/caom2ops/datalink"));
         return params;
     }
-    public static VOTableGroup getMetaGroup()
-    {
+
+    public static VOTableGroup getMetaGroup() {
         VOTableGroup ret = new VOTableGroup("input");
-        
+
         VOTableParam servParam = new VOTableParam("ID", "char", "");
         servParam.ref = "someID";
         ret.getParams().add(servParam);
         ret.getParams().add(new VOTableParam("MAXREC", "int", "666"));
-                
+
         return ret;
     }
-    
-    public static List<VOTableParam> getTestParams()
-    {
+
+    public static List<VOTableParam> getTestParams() {
         List<VOTableParam> params = new ArrayList<VOTableParam>();
-        
+
         VOTableParam intersects = new VOTableParam("INPUT:INTERSECTS", "char", "*", "OVERLAPS");
         intersects.id = null;
         intersects.ucd = null;
@@ -610,8 +642,7 @@ public class VOTableReaderWriterTest
         return params;
     }
 
-    public static List<VOTableField> getTestFields()
-    {
+    public static List<VOTableField> getTestFields() {
         List<VOTableField> fields = new ArrayList<VOTableField>();
 
         // Add VOTableFields.
@@ -758,7 +789,7 @@ public class VOTableReaderWriterTest
         pointColumn.xtype = "point";
         pointColumn.description = "point column";
         fields.add(pointColumn);
-        
+
         VOTableField circleColumn = new VOTableField("circle column", "double", "3");
         circleColumn.id = "circleColumn.id";
         circleColumn.ucd = "circleColumn.ucd";
@@ -767,7 +798,7 @@ public class VOTableReaderWriterTest
         circleColumn.xtype = "circle";
         circleColumn.description = "circle column";
         fields.add(circleColumn);
-        
+
         VOTableField polyColumn = new VOTableField("polygon column", "double", "*");
         polyColumn.id = "polyColumn.id";
         polyColumn.ucd = "polyColumn.ucd";
@@ -776,7 +807,7 @@ public class VOTableReaderWriterTest
         polyColumn.xtype = "polygon";
         polyColumn.description = "poly column";
         fields.add(polyColumn);
-        
+
         //VOTableField regionColumn = new VOTableField("region column", "char", "*");
         //regionColumn.id = "regionColumn.id";
         //regionColumn.ucd = "regionColumn.ucd";
@@ -785,7 +816,6 @@ public class VOTableReaderWriterTest
         //regionColumn.xtype = "adql:REGION";
         //regionColumn.description = "region column";
         //fields.add(regionColumn);
-
         VOTableField idColumn = new VOTableField("id column", "char", "*");
         idColumn.id = "someID";
         idColumn.ucd = "idColumn.ucd";
@@ -793,35 +823,38 @@ public class VOTableReaderWriterTest
         idColumn.utype = "idColumn.utype";
         idColumn.description = "id column";
         fields.add(idColumn);
-        
+
         return fields;
     }
-    
-    public static class TestTableData implements TableData
-    {
-        List<List<Object>> fields;
 
-        public TestTableData() throws Exception
-        {
-            fields = new ArrayList<List<Object>>();
+    public static class TestTableData implements TableData {
+
+        List<List<Object>> rowData;
+
+        public TestTableData() throws Exception {
+            this(2);
+        }
+
+        public TestTableData(long numrows) throws Exception {
+            rowData = new ArrayList<List<Object>>();
 
             List<Object> row1 = new ArrayList<Object>();
             row1.add(Boolean.TRUE);
-            row1.add(new byte[] {1, 2});
+            row1.add(new byte[]{1, 2});
             row1.add(new Byte("1"));
-            row1.add(new double[] {3.3, 4.4});
+            row1.add(new double[]{3.3, 4.4});
             row1.add(new Double("5.5"));
-            row1.add(new float[] {6.6f, 7.7f});
+            row1.add(new float[]{6.6f, 7.7f});
             row1.add(new Float("8.8"));
-            row1.add(new int[] {9, 10});
+            row1.add(new int[]{9, 10});
             row1.add(new Integer("11"));
-            row1.add(new long[] {12l, 13l});
+            row1.add(new long[]{12l, 13l});
             row1.add(new Long("14"));
-            row1.add(new short[] {15, 16});
+            row1.add(new short[]{15, 16});
             row1.add(new Short("17"));
             row1.add("string value");
             row1.add(dateFormat.parse(DATE_TIME));
-            
+
             // DALI geom
             row1.add(new Point(1.0, 2.0));
             row1.add(new Circle(new Point(1.0, 2.0), 0.2));
@@ -831,26 +864,27 @@ public class VOTableReaderWriterTest
             poly.getVertices().add(new Point(3.0, 5.0));
             poly.getVertices().add(new Point(4.0, 3.0));
             row1.add(poly);
-            
+
             // STC 
             //row1.add(new Position(Frame.ICRS, ReferencePosition.BARYCENTER, Flavor.SPHERICAL2, 1.0, 2.0));
             //row1.add(new Circle(Frame.ICRS, ReferencePosition.GEOCENTER, Flavor.SPHERICAL2, 1.0, 2.0, 3.0));
-            
             row1.add("foo:bar/baz");
-            fields.add(row1);
+            rowData.add(row1);
 
             List<Object> row2 = new ArrayList<Object>();
             row2.add(Boolean.FALSE);
-            for (int i = 1; i<row1.size(); i++)
-            {
+            for (int i = 1; i < row1.size(); i++) {
                 row2.add(null);
             }
-            fields.add(row2);
+            rowData.add(row2);
+
+            for (int i = 2; i <= numrows; i++) {
+                rowData.add(row1);
+            }
         }
 
-        public Iterator<List<Object>> iterator()
-        {
-            return fields.iterator();
+        public Iterator<List<Object>> iterator() {
+            return rowData.iterator();
         }
 
     }
