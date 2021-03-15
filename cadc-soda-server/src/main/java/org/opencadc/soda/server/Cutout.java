@@ -117,31 +117,6 @@ public class Cutout {
      */
     public final List<ExtensionSlice> pixelCutouts = new ArrayList<>();
 
-    /**
-     * Ensure this cutout request is valid.  This method will check for the presence of mixed cutouts (sky and pixel)
-     * as well as missing values where at least one is expected.
-     *
-     * @throws IllegalArgumentException     If a mixed cutout is specified, or no values are set.
-     */
-    public void validate() {
-        if (!pixelCutouts.isEmpty()
-            && (pos != null
-                || band != null
-                || time != null
-                || (pol != null && !pol.isEmpty())
-                || customAxis != null
-                || custom != null)) {
-            throw new IllegalArgumentException("invalid cutout: cannot mix sky and pixel cutout spec");
-        } else if (pixelCutouts.isEmpty()
-                   && pos == null
-                   && band == null
-                   && time == null
-                   && (pol == null || pol.isEmpty())
-                   && (customAxis == null && custom == null)) {
-            throw new IllegalArgumentException("invalid cutout: no cutout specified");
-        }
-    }
-
     public Cutout() {
     }
 }
