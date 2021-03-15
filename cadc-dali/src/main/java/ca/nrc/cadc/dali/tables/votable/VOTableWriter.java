@@ -318,28 +318,20 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
                     log.debug("setup content interator: maxrec=" + maxrec);
                     Element trailer = new Element("INFO", namespace);
-                    trailer.setAttribute("name", "QUERY_STATUS");
-                    trailer.setAttribute("value", "OK");
+                    trailer.setAttribute("name", "placeholder");
+                    trailer.setAttribute("value", "ignore");
                     resource.addContent(trailer);
 
-                    try {
-                        Iterator<List<Object>> rowIter = vot.getTableData().iterator();
+                    Iterator<List<Object>> rowIter = vot.getTableData().iterator();
 
-                        TabledataContentConverter elementConverter = new TabledataContentConverter(vot.getFields(), namespace);
-                        TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer);
+                    TabledataContentConverter elementConverter = new TabledataContentConverter(vot.getFields(), namespace, trailer);
+                    TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer);
 
-                        IterableContent<Element, List<Object>> tabledata
-                                = new IterableContent<Element, List<Object>>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
+                    IterableContent<Element, List<Object>> tabledata
+                            = new IterableContent<Element, List<Object>>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
 
-                        data.addContent(tabledata);
-                    } catch (Throwable t) {
-                        log.debug("failure while iterating", t);
-                        Element info = new Element("INFO", namespace);
-                        info.setAttribute("name", "QUERY_STATUS");
-                        info.setAttribute("value", "ERROR");
-                        info.setText(t.toString());
-                        resource.addContent(info);
-                    }
+                    data.addContent(tabledata);
+                    
                 }
             }
         }
@@ -435,8 +427,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
     private class TabledataMaxIterations implements MaxIterations {
 
-        private long maxRec;
-        private Element info;
+        private final long maxRec;
+        private final Element info;
 
         TabledataMaxIterations(Long maxRec, Element info) {
             if (maxRec == null) {
@@ -455,7 +447,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         @Override
         public void maxIterationsReached() {
             log.debug("TabledataMaxIterations.maxIterationsReached: " + maxRec);
-            log.debug("modifying: " + info);
+            // DALI overflow
+            info.setAttribute("name", "QUERY_STATUS");
             info.setAttribute("value", "OVERFLOW");
         }
 
@@ -463,14 +456,16 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
     private class TabledataContentConverter implements ContentConverter<Element, List<Object>> {
 
-        private List<VOTableField> fields;
-        private Namespace namespace;
-        private List<Format<Object>> formats;
+        private final List<VOTableField> fields;
+        private final Namespace namespace;
+        private final List<Format<Object>> formats;
+        private final Element trailer;
 
-        TabledataContentConverter(List<VOTableField> fields, Namespace namespace) {
+        TabledataContentConverter(List<VOTableField> fields, Namespace namespace, Element trailer) {
             this.fields = fields;
             this.namespace = namespace;
-
+            this.trailer = trailer;
+            
             // initialize the list of associated formats
             this.formats = new ArrayList<Format<Object>>(fields.size());
 
@@ -497,11 +492,20 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
             // TD elements.
             for (int i = 0; i < row.size(); i++) {
-                Object o = row.get(i);
-                Format<Object> fmt = formats.get(i);
-                Element td = new Element("TD", namespace);
-                td.setText(fmt.format(o));
-                tr.addContent(td);
+                try {
+                    Object o = row.get(i);
+                    Format<Object> fmt = formats.get(i);
+                    Element td = new Element("TD", namespace);
+                    td.setText(fmt.format(o));
+                    tr.addContent(td);
+                } catch (Exception ex) {
+                    log.debug("failure while iterating", ex);
+                    // DALI error
+                    trailer.setAttribute("name", "QUERY_STATUS");
+                    trailer.setAttribute("value", "ERROR");
+                    trailer.setText(ex.toString());
+                    throw ex;
+                }
             }
 
             return tr;
