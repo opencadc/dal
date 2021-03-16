@@ -38,7 +38,7 @@ jobs:
       image: opencadc/cadc-wcs:7
 
     steps:
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
 # cadc-data-ops-fits relies on wcslib to be installed locally, so run in a separate image.
     - name: build and test cadc-data-ops-fits
