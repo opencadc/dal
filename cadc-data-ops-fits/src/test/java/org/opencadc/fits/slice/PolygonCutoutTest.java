@@ -77,6 +77,7 @@ import nom.tam.util.RandomAccessDataObject;
 import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -89,10 +90,20 @@ public class PolygonCutoutTest extends BaseCutoutTest {
     }
 
     @Test
+    @Ignore("Until test files can be used locally (or over HTTP).")
     public void testMegapipeCutout() throws Exception {
         final long startMillis = System.currentTimeMillis();
-        try (final RandomAccessDataObject randomAccessDataObject =
-                     new RandomAccessFileExt(new File("/data/test-megapipe.fits"), "r");
+        final String testFileName = "test-megapipe.fits";
+        final File testFile = new File(DEFAULT_DATA_DIR, testFileName);
+
+        if (!testFile.exists()) {
+            throw new IllegalStateException("The " + testFile.getAbsolutePath() + " file is missing.  It can be "
+                                            + "downloaded from "
+                                            + "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/CADC/test-data/cutouts/"
+                                            + testFileName + ", or simply @ignore this test.");
+        }
+
+        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(testFile, "r");
              final Fits fits = new Fits(randomAccessDataObject)) {
 
             final Header header = fits.readHDU().getHeader();
