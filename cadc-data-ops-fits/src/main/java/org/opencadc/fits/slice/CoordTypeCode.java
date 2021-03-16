@@ -70,7 +70,7 @@ package org.opencadc.fits.slice;
 
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.NoSuchElementException;
+
 
 public enum CoordTypeCode {
     // Spatial type codes.
@@ -95,7 +95,7 @@ public enum CoordTypeCode {
 
     private final String typeCodeString;
     private final String defaultUnit;
-    private CoordType coordType;
+    private final CoordType coordType;
 
 
     CoordTypeCode(final String typeCodeString, final String defaultUnit, final CoordType coordType) {
@@ -104,36 +104,21 @@ public enum CoordTypeCode {
         this.coordType = coordType;
     }
 
-    public String getDefaultUnit() {
-        return defaultUnit;
-    }
-
     public boolean isSpectral() {
         return coordType == CoordType.SPECTRAL;
     }
 
-    public static CoordTypeCode fromCType(final String cType) {
-        if (cType == null) {
-            return null;
-        } else {
-            final String prefixCode = cType.toUpperCase(Locale.ROOT).substring(0, 4);
-            for (final CoordTypeCode coordTypeCode : values()) {
-                if (coordTypeCode.typeCodeString.equals(prefixCode)) {
-                    return coordTypeCode;
-                }
-            }
-//            throw new NoSuchElementException("Unknown CoordTypeCode " + cType);
-            return null;
-        }
+    public String getDefaultUnit() {
+        return defaultUnit;
     }
 
-    public static String getDefaultUnit(final String cType) {
-        if (cType == null) {
+    public static String getDefaultUnit(final String ctype) {
+        if (ctype == null) {
             return null;
         }
 
         final CoordTypeCode matchedCoordTypeCode =
-                Arrays.stream(values()).filter(coordTypeCode -> cType.toUpperCase(Locale.ROOT).substring(0, 4).startsWith(
+                Arrays.stream(values()).filter(coordTypeCode -> ctype.toUpperCase(Locale.ROOT).substring(0, 4).startsWith(
                         coordTypeCode.typeCodeString)).findFirst().orElse(null);
         return (matchedCoordTypeCode == null) ? "" : matchedCoordTypeCode.getDefaultUnit();
     }

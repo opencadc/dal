@@ -73,16 +73,17 @@ import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.wcs.Transform;
 import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
-import jsky.coords.wcscon;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.header.Standard;
-import org.apache.log4j.Logger;
-
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import jsky.coords.wcscon;
+
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.header.Standard;
+import org.apache.log4j.Logger;
 
 
 /**
@@ -115,9 +116,9 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
      * cutout, and an int[0] when the image is wholly contained within the
      * polygon (and no cutout is necessary).
      *
-     * @param polygon   The shape to cutout
+     * @param polygon The shape to cutout
      * @return int[4] holding [x1, x2, y1, y2], int[0] if all pixels are included,
-     * or null if the circle does not intersect the WCS
+     *      or null if the circle does not intersect the WCS
      */
     private long[] getPositionBounds(final Polygon polygon) throws NoSuchKeywordException {
         final CoordSys coOrdSys = inferCoordSys();

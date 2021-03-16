@@ -104,7 +104,7 @@ public class CircleCutout extends ShapeCutout<Circle> {
      *
      * @param circle circle with center in ICRS coordinates
      * @return int[4] holding [x1, x2, y1, y2], int[0] if all pixels are included,
-     * or null if the circle does not intersect the WCS
+     *      or null if the circle does not intersect the WCS
      * @throws NoSuchKeywordException Unknown keyword found.
      * @throws WCSLibRuntimeException WCSLib (C) error.
      */

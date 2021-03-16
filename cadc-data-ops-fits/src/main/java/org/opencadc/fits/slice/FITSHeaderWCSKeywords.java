@@ -118,7 +118,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
      *               Expect an IllegalArgumentException if this is null as it is believed that the expectation is
      *               to return a populated WCSKeywords.  If an empty WCSKeywords is expected, then use the empty
      *               constructor.
-     * @throws HeaderCardException  If the header cards cannot be read.
+     * @throws HeaderCardException If the header cards cannot be read.
      */
     public FITSHeaderWCSKeywords(final Header header) throws HeaderCardException {
         if (header == null) {
@@ -222,7 +222,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
      */
     @Override
     public int getIntValue(String key, int value) {
-        LOGGER.trace("getIntValue(" + key + "/" + value +")");
+        LOGGER.trace("getIntValue(" + key + "/" + value + ")");
         return header.getIntValue(key, value);
     }
 
@@ -313,7 +313,8 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Iterate the cards of the Header and create Map Entries as needed.
-     * @return  An Iterator instance.  Never null.
+     *
+     * @return An Iterator instance.  Never null.
      */
     @Override
     public Iterator<Map.Entry<String, Object>> iterator() {
@@ -328,7 +329,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
             /**
              * Convert to a Map.Entry object to adhere to the contract of this interface.  Be aware that BLANKS and
              * some COMMENTs will create empty keys and possibly empty values.
-             * @return  Map.Entry object, never null.
+             * @return Map.Entry object, never null.
              */
             @Override
             public Map.Entry<String, Object> next() {
@@ -364,7 +365,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
     private Header cloneHeader(final WCSKeywords wcsKeywords) throws HeaderCardException {
         final Header destination = new Header();
         for (final Iterator<Map.Entry<String, Object>> entryIterator = wcsKeywords.iterator();
-             entryIterator.hasNext();) {
+             entryIterator.hasNext(); ) {
             final Map.Entry<String, Object> entry = entryIterator.next();
             final String key = entry.getKey();
             final Object value = entry.getValue();
@@ -383,15 +384,15 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
      * Make a copy of the header.  Adjusting the source Header directly with an underlying File can result in the source
      * file being modified.
      *
-     * @param source        The source Header.
+     * @param source The source Header.
      * @return Header object with reproduced cards.  Never null.
      * @throws HeaderCardException Any I/O with Header Cards.
      */
     private Header cloneHeader(final Header source) throws HeaderCardException {
         final Header destination = new Header();
 
-                // Use a for loop here rather than Java Collections stream to pass the exception up properly.
-        for (final Iterator<HeaderCard> headerCardIterator = source.iterator(); headerCardIterator.hasNext();) {
+        // Use a for loop here rather than Java Collections stream to pass the exception up properly.
+        for (final Iterator<HeaderCard> headerCardIterator = source.iterator(); headerCardIterator.hasNext(); ) {
             final HeaderCard headerCard = headerCardIterator.next();
             cloneHeaderCard(destination, headerCard.getKey(), headerCard.valueType(), headerCard.getComment(),
                             headerCard.getValue());
@@ -450,7 +451,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
         final int spectralAxis = getSpectralAxis(destination);
 
         for (int x = 1; x <= naxis; x++) {
-            for (int y = 1; y <= naxis; y ++) {
+            for (int y = 1; y <= naxis; y++) {
                 final String cdMatrixKey = String.format("CD%d_%d", x, y);
                 final String pcMatrixKey = String.format("PC%d_%d", x, y);
                 final String pvMatrixKey = String.format("PV%d_%d", x, y);
@@ -485,7 +486,8 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Obtain the energy (1-based) axis from the current header.  Return -1 if none found that match the Spectral types.
-     * @return  int axis, or -1 if no spectral axis present.
+     *
+     * @return int axis, or -1 if no spectral axis present.
      */
     int getSpectralAxis() {
         return getSpectralAxis(this.header);
@@ -493,14 +495,15 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Obtain the energy (1-based) axis from the given header.  Return -1 if none found that match the Spectral types.
-     * @return  integer axis, or -1 if not found.
+     *
+     * @return integer axis, or -1 if not found.
      */
     int getSpectralAxis(final Header destination) {
-        final int nAxis = destination.getIntValue(Standard.NAXIS);
-        for (int i = 1; i <= nAxis; i++) {
-            final String cTypeValue = destination.getStringValue(Standard.CTYPEn.n(i));
-            if (cTypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
-                    coOrdTypeCode -> cTypeValue.startsWith(coOrdTypeCode.name()) && coOrdTypeCode.isSpectral())) {
+        final int naxis = destination.getIntValue(Standard.NAXIS);
+        for (int i = 1; i <= naxis; i++) {
+            final String ctypeValue = destination.getStringValue(Standard.CTYPEn.n(i));
+            if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
+                coOrdTypeCode -> ctypeValue.startsWith(coOrdTypeCode.name()) && coOrdTypeCode.isSpectral())) {
                 return i;
             }
         }

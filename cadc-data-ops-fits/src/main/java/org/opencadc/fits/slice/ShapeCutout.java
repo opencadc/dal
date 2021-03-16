@@ -69,12 +69,14 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.dali.Shape;
+
+import java.io.Serializable;
+
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
-import java.io.Serializable;
 
 public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
     private static final Logger LOGGER = Logger.getLogger(ShapeCutout.class);
@@ -170,14 +172,6 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
 
         public String getName() {
             return name;
-        }
-
-        public Boolean getTimeDependent() {
-            return timeDependent;
-        }
-
-        public boolean isSupported() {
-            return supported;
         }
 
         public boolean isSwappedAxes() {
