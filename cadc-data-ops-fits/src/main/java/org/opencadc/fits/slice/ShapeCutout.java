@@ -90,63 +90,72 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
     }
 
     CoordSys inferCoordSys() {
-        final CoordSys ret = new CoordSys();
-        ret.name = fitsHeaderWCSKeywords.getStringValue(Standard.RADESYS.key());
-        ret.supported = false;
+        final CoordSys ret;
 
-        final String ctype1 = fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(1).key());
-        final String ctype2 = fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(2).key());
-        final float equinox = fitsHeaderWCSKeywords.getFloatValue(Standard.EQUINOX.key());
+        if (!fitsHeaderWCSKeywords.containsKey(Standard.CTYPEn.n(1).key())) {
+            ret = null;
+        } else {
+            final String ctype1 = fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(1).key());
 
-        if (CoordSys.GAPPT.equals(ret.name)) {
-            ret.timeDependent = Boolean.TRUE;
+            LOGGER.debug("CTYPE1 is " + ctype1);
+
+            final String ctype2 = fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(2).key());
+            final float equinox = fitsHeaderWCSKeywords.getFloatValue(Standard.EQUINOX.key());
+
+            ret = new CoordSys();
+            ret.name = fitsHeaderWCSKeywords.getStringValue(Standard.RADESYS.key());
             ret.supported = false;
-        } else if ((ctype1.startsWith("ELON") && ctype2.startsWith("ELAT"))
-                   || (ctype1.startsWith("ELAT") && ctype2.startsWith("ELON"))) {
-            // ecliptic
-            ret.name = CoordSys.ECL;
-            ret.timeDependent = Boolean.TRUE;
-            ret.supported = false;
-        } else if ((ctype1.startsWith("HLON") && ctype2.startsWith("HLAT"))
-                   || (ctype1.startsWith("HLAT") && ctype2.startsWith("HLON"))) {
-            // helio-ecliptic
-            ret.name = CoordSys.HECL;
-            ret.timeDependent = Boolean.TRUE;
-            ret.supported = false;
-        } else if ((ctype1.startsWith("GLON") && ctype2.startsWith("GLAT"))
-                   || (ctype1.startsWith("GLAT") && ctype2.startsWith("GLON"))) {
-            if (CoordSys.GAL.equals(ret.name)) {
-                LOGGER.debug("found coordsys=" + ret.name + " with GLON,GLAT - OK");
-            } else if (ret.name != null) {
-                LOGGER.debug("found coordsys=" + ret.name + " with GLON,GLAT - ignoring and assuming GAL");
-                ret.name = null;
-            }
-            if (ret.name == null) {
-                ret.name = CoordSys.GAL;
-            }
-            if (ctype1.startsWith("GLAT")) {
-                ret.swappedAxes = true;
-            }
-            ret.supported = true;
-        } else if ((ctype1.startsWith("RA") && ctype2.startsWith("DEC"))
-                   || (ctype1.startsWith("DEC") && ctype2.startsWith("RA"))) {
-            if (ret.name == null) {
-                if (equinox == 0.0F) {
-                    ret.name = CoordSys.ICRS;
-                } else if (Math.abs(equinox - 1950.0) < 1.0) {
-                    ret.name = CoordSys.FK4;
-                } else if (Math.abs(equinox - 2000.0) < 1.0) {
-                    ret.name = CoordSys.FK5;
-                } else {
-                    LOGGER.debug("cannot infer coordinate system from RA,DEC and equinox = " + equinox);
+
+            if (CoordSys.GAPPT.equals(ret.name)) {
+                ret.timeDependent = Boolean.TRUE;
+                ret.supported = false;
+            } else if ((ctype1.startsWith("ELON") && ctype2.startsWith("ELAT"))
+                       || (ctype1.startsWith("ELAT") && ctype2.startsWith("ELON"))) {
+                // ecliptic
+                ret.name = CoordSys.ECL;
+                ret.timeDependent = Boolean.TRUE;
+                ret.supported = false;
+            } else if ((ctype1.startsWith("HLON") && ctype2.startsWith("HLAT"))
+                       || (ctype1.startsWith("HLAT") && ctype2.startsWith("HLON"))) {
+                // helio-ecliptic
+                ret.name = CoordSys.HECL;
+                ret.timeDependent = Boolean.TRUE;
+                ret.supported = false;
+            } else if ((ctype1.startsWith("GLON") && ctype2.startsWith("GLAT"))
+                       || (ctype1.startsWith("GLAT") && ctype2.startsWith("GLON"))) {
+                if (CoordSys.GAL.equals(ret.name)) {
+                    LOGGER.debug("found coordsys=" + ret.name + " with GLON,GLAT - OK");
+                } else if (ret.name != null) {
+                    LOGGER.debug("found coordsys=" + ret.name + " with GLON,GLAT - ignoring and assuming GAL");
+                    ret.name = null;
                 }
-            }
-
-            if (ctype1.startsWith("DEC")) {
-                ret.swappedAxes = true;
-            }
-            if (ret.name != null) {
+                if (ret.name == null) {
+                    ret.name = CoordSys.GAL;
+                }
+                if (ctype1.startsWith("GLAT")) {
+                    ret.swappedAxes = true;
+                }
                 ret.supported = true;
+            } else if ((ctype1.startsWith("RA") && ctype2.startsWith("DEC"))
+                       || (ctype1.startsWith("DEC") && ctype2.startsWith("RA"))) {
+                if (ret.name == null) {
+                    if (equinox == 0.0F) {
+                        ret.name = CoordSys.ICRS;
+                    } else if (Math.abs(equinox - 1950.0) < 1.0) {
+                        ret.name = CoordSys.FK4;
+                    } else if (Math.abs(equinox - 2000.0) < 1.0) {
+                        ret.name = CoordSys.FK5;
+                    } else {
+                        LOGGER.debug("cannot infer coordinate system from RA,DEC and equinox = " + equinox);
+                    }
+                }
+
+                if (ctype1.startsWith("DEC")) {
+                    ret.swappedAxes = true;
+                }
+                if (ret.name != null) {
+                    ret.supported = true;
+                }
             }
         }
 

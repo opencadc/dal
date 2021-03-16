@@ -131,7 +131,7 @@ public class CircleCutoutTest extends BaseCutoutTest {
 
             assertFuzzyPixelArrayEquals("Wrong ALMA circle cutout.", expected, result);
         }
-        LOGGER.debug("Util.testALMA OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("CircleCutoutTest.testALMA OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 
     @Test
@@ -155,7 +155,7 @@ public class CircleCutoutTest extends BaseCutoutTest {
 
             assertFuzzyPixelArrayEquals("Wrong BLAST circle cutout.", expected, result);
         }
-        LOGGER.debug("Util.testComputeBLAST OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("CircleCutoutTest.testComputeBLAST OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 
     @Test
@@ -178,7 +178,7 @@ public class CircleCutoutTest extends BaseCutoutTest {
             final long[] result = circleCutout.getBounds(circle);
             assertFuzzyPixelArrayEquals("Wrong IRIS circle bounds.", expected, result);
         }
-        LOGGER.debug("Util.testComputeIRIS OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("CircleCutoutTest.testComputeIRIS OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 
     @Test
@@ -210,7 +210,7 @@ public class CircleCutoutTest extends BaseCutoutTest {
 
             assertFuzzyPixelArrayEquals("Wrong OMM circle cutout.", expected, result);
         }
-        LOGGER.debug("Util.testComputeOMM OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("CircleCutoutTest.testComputeOMM OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 
     @Test
@@ -221,39 +221,37 @@ public class CircleCutoutTest extends BaseCutoutTest {
                                                                           FITSHeaderWCSKeywordsTest.class), "r");
              final Fits fits = new Fits(randomAccessDataObject)) {
 
-            // Just to cache it up front, and ensure that it can be read.
-            fits.read();
+            fits.setStreamWrite(true);
+
             final int[] expectedExtensionIndexes = new int[] {
                     1, 101, 106, 11, 111, 116, 121, 126, 16, 21, 26, 31, 36, 41, 46, 51, 56, 6, 61, 66, 71, 76, 81, 86, 91, 96
             };
 
-            final int hduCount = fits.getNumberOfHDUs();
-            LOGGER.debug("Counted " + hduCount + " HDUs");
-            final Map<Integer, List<PixelRange>> extensionRanges = new HashMap<>();
-            final Circle circleCutout = new Circle(new Point(189.1726880000002D, 62.17111899999974D), 0.01D);
+            final Map<Integer, long[]> extensionRanges = new HashMap<>();
+            final Circle circle = new Circle(new Point(189.1726880000002D, 62.17111899999974D), 0.01D);
 
-            for (int i = 0; i < hduCount; i++) {
-                final BasicHDU<?> hdu = fits.getHDU(i);
-
+            BasicHDU<?> hdu;
+            int index = 0;
+            while ((hdu = fits.readHDU()) != null) {
                 if (hdu instanceof ImageHDU) {
-                    final Header testHeader = fits.getHDU(i).getHeader();
-                    final List<PixelRange> ranges =
-                            Util.computeCutout(testHeader, circleCutout, null, null, null, null, null);
-                    if (!ranges.isEmpty()) {
-                        // 1-based index
-                        extensionRanges.put(i, ranges);
-                        LOGGER.debug("Matched extension " + i);
+                    final Header testHeader = hdu.getHeader();
+                    LOGGER.debug("Looking at HDU " + index);
+                    final CircleCutout circleCutout = new CircleCutout(testHeader);
+                    final long[] bounds = circleCutout.getBounds(circle);
+                    if (bounds != null) {
+                        extensionRanges.put(index, bounds);
                     }
                 }
+                index++;
             }
 
-            extensionRanges.forEach((i, ranges) -> LOGGER.debug("Extension " + i + " > " + Arrays.toString(ranges.toArray())));
+            extensionRanges.forEach((i, bounds) -> LOGGER.debug("Extension " + i + " > " + Arrays.toString(bounds)));
 
             Assert.assertEquals("Should have 26 matched extensions.", 26, extensionRanges.size());
             Assert.assertEquals("Wrong extensions.", 0,
                                 Arrays.stream(expectedExtensionIndexes).filter(i -> !extensionRanges.containsKey(i)).sum());
         }
-        LOGGER.debug("Util.testComputeCutoutNoOverlap OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("CircleCutoutTest.testComputeCircleMEFCutout OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 
     @Test
@@ -272,6 +270,6 @@ public class CircleCutoutTest extends BaseCutoutTest {
             final CircleCutout circleCutout = new CircleCutout(testHeader);
             assertFuzzyPixelArrayEquals("Should be empty.", null, circleCutout.getBounds(circle));
         }
-        LOGGER.debug("Util.testNoOverlap OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("CircleCutoutTest.testNoOverlap OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 }

@@ -121,12 +121,17 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
      *      or null if the circle does not intersect the WCS
      */
     private long[] getPositionBounds(final Polygon polygon) throws NoSuchKeywordException {
+        final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
         final CoordSys coOrdSys = inferCoordSys();
+
+        // No coordsys could be inferred, or there is no data array, so no cutout available.
+        if (coOrdSys == null || naxis == 0) {
+            return null;
+        }
 
         // detect necessary conversion of target coOrds to native WCS coOrdSys
         final boolean gal = CoordSys.GAL.equals(coOrdSys.getName());
         final boolean fk4 = CoordSys.FK4.equals(coOrdSys.getName());
-        final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
         final long naxis1 = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS1.key());
         final long naxis2 = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS2.key());
 
