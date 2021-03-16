@@ -83,12 +83,10 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.opencadc.soda.PixelRange;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class CircleCutoutTest extends BaseCutoutTest {
@@ -103,6 +101,7 @@ public class CircleCutoutTest extends BaseCutoutTest {
      * @throws Exception    Any badness.
      */
     @Test
+    @Ignore("Until test data is configured")
     public void testALMA() throws Exception {
         final long startMillis = System.currentTimeMillis();
 
@@ -182,6 +181,7 @@ public class CircleCutoutTest extends BaseCutoutTest {
     }
 
     @Test
+    @Ignore("Until test data is configured")
     public void testComputeOMM() throws Exception {
         final long startMillis = System.currentTimeMillis();
         final String testFileName = "test-omm.fits";
