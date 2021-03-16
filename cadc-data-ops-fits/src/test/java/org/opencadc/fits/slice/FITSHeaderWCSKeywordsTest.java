@@ -80,6 +80,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigDecimal;
+import java.util.Iterator;
+import java.util.Map;
 
 
 public class FITSHeaderWCSKeywordsTest {
@@ -90,10 +92,10 @@ public class FITSHeaderWCSKeywordsTest {
     }
 
     @Test
-    public void testInvalidConstructor() {
+    public void testInvalidConstructor() throws Exception {
         final long startMillis = System.currentTimeMillis();
         try {
-            new FITSHeaderWCSKeywords(null);
+            new FITSHeaderWCSKeywords((Header) null);
             Assert.fail("Should throw IllegalArgumentException.");
         } catch (IllegalArgumentException illegalArgumentException) {
             // Good.
@@ -103,11 +105,11 @@ public class FITSHeaderWCSKeywordsTest {
     }
 
     @Test
-    public void testEmptyHeaderConstructor() {
+    public void testEmptyHeaderConstructor() throws Exception {
         final long startMillis = System.currentTimeMillis();
         final Header header = new Header();
         final FITSHeaderWCSKeywords testSubject = new FITSHeaderWCSKeywords(header);
-        Assert.assertEquals("Should be empty.", 0, testSubject.getNumberOfKeywords());
+        Assert.assertEquals("Should be empty.", 0, getNumberOfKeywords(testSubject));
         LOGGER.debug("FITSHeaderWCSKeywordsTest.testEmptyHeaderConstructor ran in "
                      + (System.currentTimeMillis() - startMillis) + " ms");
     }
@@ -147,7 +149,7 @@ public class FITSHeaderWCSKeywordsTest {
             });
 
             Assert.assertEquals("Should've created " + counter.count + " keywords.",
-                                counter.count, testSubject.getNumberOfKeywords());
+                                counter.count, getNumberOfKeywords(testSubject));
         }
         LOGGER.debug("FITSHeaderWCSKeywordsTest.testGet ran in " + (System.currentTimeMillis() - startMillis) + " ms");
     }
@@ -173,14 +175,14 @@ public class FITSHeaderWCSKeywordsTest {
             });
 
             Assert.assertEquals("Should've created " + counter.count + " keywords.",
-                                counter.count, testSubject.getNumberOfKeywords());
+                                counter.count, getNumberOfKeywords(testSubject));
         }
         LOGGER.debug("FITSHeaderWCSKeywordsTest.testIterator ran in " + (System.currentTimeMillis() - startMillis)
                      + " ms");
     }
 
     @Test
-    public void testEmptyIterator() {
+    public void testEmptyIterator() throws Exception {
         final long startMillis = System.currentTimeMillis();
         final FITSHeaderWCSKeywords testSubject = new FITSHeaderWCSKeywords();
         final Counter counter = new Counter();
@@ -191,7 +193,7 @@ public class FITSHeaderWCSKeywordsTest {
         });
 
         Assert.assertEquals("Should've created " + counter.count + " keywords.",
-                            counter.count, testSubject.getNumberOfKeywords());
+                            counter.count, getNumberOfKeywords(testSubject));
         LOGGER.debug("FITSHeaderWCSKeywordsTest.testIterator ran in " + (System.currentTimeMillis() - startMillis)
                      + " ms");
     }
@@ -204,5 +206,16 @@ public class FITSHeaderWCSKeywordsTest {
         void increment() {
             count++;
         }
+    }
+
+    int getNumberOfKeywords(final FITSHeaderWCSKeywords fitsHeaderWCSKeywords) {
+        int count = 0;
+        for (final Iterator<Map.Entry<String, Object>> entryIterator = fitsHeaderWCSKeywords.iterator();
+             entryIterator.hasNext();) {
+            entryIterator.next();
+            count++;
+        }
+
+        return count;
     }
 }
