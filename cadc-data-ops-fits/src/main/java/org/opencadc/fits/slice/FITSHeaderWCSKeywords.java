@@ -102,6 +102,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Empty constructor.
+     * @throws HeaderCardException  If cloning the header fails.
      */
     public FITSHeaderWCSKeywords() throws HeaderCardException {
         this(new Header());
@@ -382,7 +383,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Make a copy of the header.  Adjusting the source Header directly with an underlying File can result in the source
-     * file being modified.
+     * file being modified, so we duplicate it here to remove references.
      *
      * @param source The source Header.
      * @return Header object with reproduced cards.  Never null.
