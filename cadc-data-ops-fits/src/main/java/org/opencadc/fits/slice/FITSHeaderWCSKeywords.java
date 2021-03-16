@@ -398,7 +398,6 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
                             headerCard.getValue());
         }
 
-        destination.setNaxes(source.getIntValue(Standard.NAXIS));
         sanitizeHeader(destination);
 
         return destination;
@@ -422,8 +421,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
             if (valueType == String.class || valueType == null) {
                 destination.addValue(headerCardKey, value, comment);
             } else if (valueType == Boolean.class) {
-                destination.addValue(headerCardKey, Boolean.parseBoolean(value),
-                                     comment);
+                destination.addValue(headerCardKey, Boolean.parseBoolean(value) || value.equals("T"), comment);
             } else if (valueType == Integer.class) {
                 destination.addValue(headerCardKey, Integer.parseInt(value),
                                      comment);

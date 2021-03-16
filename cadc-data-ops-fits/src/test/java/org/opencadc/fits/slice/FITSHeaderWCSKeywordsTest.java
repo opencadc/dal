@@ -170,7 +170,7 @@ public class FITSHeaderWCSKeywordsTest {
             final Counter counter = new Counter();
 
             testSubject.iterator().forEachRemaining(stringObjectEntry -> {
-                LOGGER.debug("iterator.next: " + stringObjectEntry.getKey() + " -> " + stringObjectEntry.getValue());
+                LOGGER.trace("iterator.next: " + stringObjectEntry.getKey() + " -> " + stringObjectEntry.getValue());
                 counter.increment();
             });
 
@@ -188,7 +188,7 @@ public class FITSHeaderWCSKeywordsTest {
         final Counter counter = new Counter();
 
         testSubject.iterator().forEachRemaining(stringObjectEntry -> {
-            LOGGER.debug("iterator.next: " + stringObjectEntry.getKey() + " -> " + stringObjectEntry.getValue());
+            LOGGER.trace("iterator.next: " + stringObjectEntry.getKey() + " -> " + stringObjectEntry.getValue());
             counter.increment();
         });
 
