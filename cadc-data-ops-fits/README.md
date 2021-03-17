@@ -7,12 +7,22 @@ The `cadc-data-ops-fits` library depends on the NASA led NOM TAM FITS library
 ## Building it
 Gradle is required to compile and assemble the JAR file.
 
-```
-gradle -i clean build
+```bash
+$ gradle -i clean build
 ```
 
-## Slicing API (Cutouts)
-This library supports the commonly used cutout syntax to extract a sub-image from an HDU:
+## Cutout API
+This library supports the commonly used cutout syntax to extract a sub-image from an Image HDU.
+
+### Testing it
+```bash
+$ gradle -i clean test
+```
+
+Some tests will be ignored as they require local files that are too big to fit into source control 
+(see [CircleCutoutTest](src/test/java/org/opencadc/fits/slice/CircleCutoutTest.java), [PolygonCutoutTest](src/test/java/org/opencadc/fits/slice/PolygonCutoutTest.java))
+The contents of https://www.canfar.net/storage/list/CADC/test-data/cutouts can be put into your `System.properties("user.home")/.config/test-data`
+to enable them (recommended).
 
 ### Examples
 
@@ -38,7 +48,7 @@ final FitsOperations fitsOperations = new FitsOperations(myFitsFile);
 fitsOperations.slice(myCutoutSpec, System.out);
 ```
 
-#### A Circle cutout using SODA (https://www.ivoa.net/documents/SODA/)
+#### A Circle cutout using the IVOA SODA API (https://www.ivoa.net/documents/SODA/)
 
 ```java
 final File myFitsFile = new File("/data/file.fits");
