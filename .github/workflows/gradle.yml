@@ -1,6 +1,7 @@
 name: Java CI
 
-on: 
+on:
+  push:
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -31,6 +32,16 @@ jobs:
       
     - name: build and test cadc-soda-server
       run: cd cadc-soda-server && gradle --info clean build javadoc checkstyleMain install
-      
+
+  build-dadc-data-ops-fits:
+    runs-on: ubuntu-latest
+    
+    container:
+      image: opencadc/cadc-wcs:7
+
+    steps:
+    - uses: actions/checkout@v2
+
+# cadc-data-ops-fits relies on wcslib to be installed locally, so run in a separate image.
     - name: build and test cadc-data-ops-fits
       run: cd cadc-data-ops-fits && gradle --info clean build javadoc checkstyleMain install
