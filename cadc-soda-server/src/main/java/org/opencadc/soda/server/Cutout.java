@@ -113,7 +113,7 @@ public class Cutout {
 
     /**
      * Pixel cutout(s).  Initialized and finalized to prevent having to perform checks like:
-     * <code>pixelCutouts != null && !pixelCutouts.isEmpty()</code>
+     * <code>pixelCutouts != null &amp;&amp; !pixelCutouts.isEmpty()</code>
      */
     public final List<ExtensionSlice> pixelCutouts = new ArrayList<>();
 
