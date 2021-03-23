@@ -69,10 +69,12 @@ package org.opencadc.soda.server;
 
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Shape;
-import org.opencadc.soda.ExtensionSlice;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.opencadc.soda.ExtensionSlice;
+
 
 /**
  * Wrapper that holds all input for a cutout operation.
