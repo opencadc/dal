@@ -115,7 +115,7 @@ public class Cutout {
     /**
      * Pixel cutout(s).
      */
-    public final List<ExtensionSlice> pixelCutouts;
+    public List<ExtensionSlice> pixelCutouts;
 
     public Cutout() {
     }
