@@ -69,6 +69,9 @@ package org.opencadc.soda.server;
 
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Shape;
+import org.opencadc.soda.ExtensionSlice;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -107,6 +110,12 @@ public class Cutout {
      * Custom axis cutout.
      */
     public Interval custom;
+
+    /**
+     * Pixel cutout(s).  Initialized and finalized to prevent having to perform checks like:
+     * <code>pixelCutouts != null && !pixelCutouts.isEmpty()</code>
+     */
+    public final List<ExtensionSlice> pixelCutouts = new ArrayList<>();
 
     public Cutout() {
     }
