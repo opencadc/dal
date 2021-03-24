@@ -69,10 +69,11 @@ package org.opencadc.soda.server;
 
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Shape;
+
+import java.util.List;
+
 import org.opencadc.soda.ExtensionSlice;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Wrapper that holds all input for a cutout operation.
@@ -112,10 +113,9 @@ public class Cutout {
     public Interval custom;
 
     /**
-     * Pixel cutout(s).  Initialized and finalized to prevent having to perform checks like:
-     * <code>pixelCutouts != null && !pixelCutouts.isEmpty()</code>
+     * Pixel cutout(s).
      */
-    public final List<ExtensionSlice> pixelCutouts = new ArrayList<>();
+    public List<ExtensionSlice> pixelCutouts;
 
     public Cutout() {
     }
