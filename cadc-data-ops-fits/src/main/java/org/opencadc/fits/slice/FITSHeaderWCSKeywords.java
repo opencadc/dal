@@ -102,6 +102,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Empty constructor.
+     * @throws HeaderCardException  If cloning the header fails.
      */
     public FITSHeaderWCSKeywords() throws HeaderCardException {
         this(new Header());
@@ -382,7 +383,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Make a copy of the header.  Adjusting the source Header directly with an underlying File can result in the source
-     * file being modified.
+     * file being modified, so we duplicate it here to remove references.
      *
      * @param source The source Header.
      * @return Header object with reproduced cards.  Never null.
@@ -398,7 +399,6 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
                             headerCard.getValue());
         }
 
-        destination.setNaxes(source.getIntValue(Standard.NAXIS));
         sanitizeHeader(destination);
 
         return destination;
@@ -422,8 +422,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
             if (valueType == String.class || valueType == null) {
                 destination.addValue(headerCardKey, value, comment);
             } else if (valueType == Boolean.class) {
-                destination.addValue(headerCardKey, Boolean.parseBoolean(value),
-                                     comment);
+                destination.addValue(headerCardKey, Boolean.parseBoolean(value) || value.equals("T"), comment);
             } else if (valueType == Integer.class) {
                 destination.addValue(headerCardKey, Integer.parseInt(value),
                                      comment);
