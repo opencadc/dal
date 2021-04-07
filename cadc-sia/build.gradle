@@ -30,7 +30,6 @@ dependencies {
     compile 'org.opencadc:cadc-uws-server:[1.2,)'
     compile 'org.opencadc:cadc-vosi:[1.0,)'
 
-    testCompile 'apache-logging:commons-logging-api:[1.0,)'
     testCompile 'junit:junit:[4.0,)'
     testCompile 'xerces:xercesImpl:[2.0,)'
 }
