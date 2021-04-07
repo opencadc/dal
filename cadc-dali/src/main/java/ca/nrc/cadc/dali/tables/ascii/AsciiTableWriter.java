@@ -101,6 +101,10 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument> {
 
     private static final Logger log = Logger.getLogger(AsciiTableWriter.class);
 
+    public static final String CONTENT_TYPE_TSV = "text/tab-separated-values";
+    public static final String CONTENT_TYPE_CSV_HDR = "text/csv; header=present";
+    public static final String CONTENT_TYPE_CSV = "text/csv";
+    
     // ASCII character set.
     public static final String US_ASCII = "US-ASCII";
 
@@ -118,8 +122,8 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument> {
     private FormatFactory formatFactory;
 
     public static enum ContentType {
-        CSV("text/csv; header=present", "csv"),
-        TSV("text/tab-separated-values", "tsv");
+        CSV(CONTENT_TYPE_CSV_HDR, "csv"),
+        TSV(CONTENT_TYPE_TSV, "tsv");
 
         private String value;
         private String extension;
