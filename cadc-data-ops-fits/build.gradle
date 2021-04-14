@@ -15,8 +15,7 @@ sourceCompatibility = 1.8
 group = 'org.opencadc'
 version = '0.1.2'
 
-
-// To allow for french extended ASCII characters in file javadoc.
+// To allow for french extended ASCII characters in javadoc.
 javadoc {
     options.encoding = 'UTF-8'
 }
