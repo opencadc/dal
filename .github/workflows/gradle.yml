@@ -33,8 +33,8 @@ jobs:
     - name: build and test cadc-soda-server
       run: cd cadc-soda-server && gradle --info clean build javadoc checkstyleMain install
 
-    - name: install wcslib (libwcs7)
-      run: sudo apt-get update ; sudo apt-get install libwcs7
+    - name: install WCSLIB (libwcs7)
+      run: sudo apt-get update && sudo apt-get install -y libwcs7
 
-    - name: build cadc-data-ops-fits
+    - name: build and test cadc-data-ops-fits
       run: cd cadc-data-ops-fits && gradle --info clean build javadoc checkstyleMain install
