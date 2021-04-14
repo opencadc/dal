@@ -66,75 +66,78 @@
  ************************************************************************
  */
 
-package org.opencadc.fits;
+package org.opencadc.fits.slice;
 
-import nom.tam.fits.header.FitsHeaderImpl;
-import nom.tam.fits.header.IFitsHeader;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
-/**
- * Extension to the standard set of FITS headers.
- */
-public enum CADCExt implements IFitsHeader {
+public class EnergyConverterTest {
+    private static final Logger LOGGER = Logger.getLogger(EnergyConverterTest.class);
 
-    CDELT(HDU.IMAGE, VALUE.REAL, "Coord value at incr deg/pixel origin on line axis"),
-    CDELTn(HDU.IMAGE, VALUE.REAL, "Coord value at incr deg/pixel origin on line axis"),
-    CUNITn(HDU.IMAGE, VALUE.STRING, "Units for axis"),
-    LBOUNDn(HDU.IMAGE, VALUE.INTEGER, "Pixel origin along axis"),
-    OBSFREQ(HDU.IMAGE, VALUE.REAL, "Same as RESTFRQ"),
-    PC1_1(HDU.IMAGE, VALUE.REAL, ""),
-    PC01_01(HDU.IMAGE, VALUE.REAL, ""),
-    PC1_2(HDU.IMAGE, VALUE.REAL, ""),
-    PC2_1(HDU.IMAGE, VALUE.REAL, ""),
-    PC2_2(HDU.IMAGE, VALUE.REAL, ""),
-    RESTFRQ(HDU.IMAGE, VALUE.REAL, ""),
-
-    /**
-     * Use RESTFRQ
-     */
-    @Deprecated
-    RESTFREQ(HDU.IMAGE, VALUE.REAL, ""),
-
-    RESTWAV(HDU.IMAGE, VALUE.REAL, ""),
-    SPECSYS(HDU.IMAGE, VALUE.STRING, "");
-
-    private final IFitsHeader key;
-
-    CADCExt(IFitsHeader.HDU hdu, IFitsHeader.VALUE valueType, String comment) {
-        this.key = new FitsHeaderImpl(name(), IFitsHeader.SOURCE.NOAO, hdu, valueType, comment);
+    static {
+        Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
     }
 
-    CADCExt(String key, IFitsHeader.HDU hdu, IFitsHeader.VALUE valueType, String comment) {
-        this.key = new FitsHeaderImpl(name(), IFitsHeader.SOURCE.NOAO, hdu, valueType, comment);
+    @Test
+    public void metresToHz() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double hz = testSubject.fromMetres(0.1D, "Hz");
+        Assert.assertEquals("Wrong Hz.", 2997924580.0D, hz, 0.0D);
     }
 
-    @Override
-    public String comment() {
-        return this.key.comment();
+    @Test
+    public void metresToMHz() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double mhz = testSubject.fromMetres(2.2D, "MHz");
+        Assert.assertEquals("Wrong MHz.", 136.2700D, mhz, 0.01D);
     }
 
-    @Override
-    public IFitsHeader.HDU hdu() {
-        return this.key.hdu();
+    @Test
+    public void metresToGHz() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double ghz = testSubject.fromMetres(12.4D, "GHz");
+        Assert.assertEquals("Wrong GHz.", 0.0241768111D, ghz, 0.0000001D);
     }
 
-    @Override
-    public String key() {
-        return this.key.key();
+    @Test
+    public void metresToEv() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double eV = testSubject.fromMetres(0.68D, "eV");
+        LOGGER.debug("Calculated eV " + eV);
+        Assert.assertEquals("Wrong eV.", 2.9212439E-25D, eV, 0.00001E-22D);
     }
 
-    @Override
-    public IFitsHeader n(int... number) {
-        return this.key.n(number);
+    @Test
+    public void metresToKev() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double keV = testSubject.fromMetres(4.6D, "keV");
+        LOGGER.debug("Calculated keV " + keV);
+        Assert.assertEquals("Wrong keV.", 4.31836E-29D, keV, 0.00001E-18D);
     }
 
-    @Override
-    public IFitsHeader.SOURCE status() {
-        return this.key.status();
+    @Test
+    public void metresToNm() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double nm = testSubject.fromMetres(44.6D, "nm");
+        LOGGER.debug("Calculated nm " + nm);
+        Assert.assertEquals("Wrong nm.", 4.46E10D, nm, 0.0D);
     }
 
-    @Override
-    @SuppressWarnings("CPD-END")
-    public IFitsHeader.VALUE valueType() {
-        return this.key.valueType();
+    @Test
+    public void metresToA() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double angstrom = testSubject.fromMetres(13.99D, "A");
+        LOGGER.debug("Calculated A " + angstrom);
+        Assert.assertEquals("Wrong A.", 1.399E11D, angstrom, 0.0D);
     }
 }

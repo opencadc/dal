@@ -70,14 +70,11 @@ package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.util.ArrayUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import org.apache.log4j.Logger;
+
 
 public class EnergyConverter {
-    private static final long serialVersionUID = 201207191700L;
-
-    private static final String[] ALL_UNITS;
+    private static final Logger LOGGER = Logger.getLogger(EnergyConverter.class);
 
     private static final String[] FREQ_UNITS = new String[] {"Hz", "kHz", "MHz", "GHz" };
     private static final double[] FREQ_MULT = new double[] {1.0, 1.0e3, 1.0e6, 1.0e9 };
@@ -92,176 +89,68 @@ public class EnergyConverter {
                                                             1.0e-6, 1.0e-6, 1.0e-9,
                                                             1.0e-10, 1.0e-10,};
 
-    // Lay out the actual units only once, then coalesce them.
-    static {
-        final List<String> allUnitList = new ArrayList<>(Arrays.asList(FREQ_UNITS));
-        allUnitList.addAll(Arrays.asList(EN_UNITS));
-        allUnitList.addAll(Arrays.asList(WAVE_UNITS));
-
-        ALL_UNITS = allUnitList.toArray(new String[0]);
-    }
-
-    public static final String CORE_SPECSYS = "BARYCENT";
-    public static final String CORE_CTYPE = "WAVE";
-    public static final String CORE_UNIT = "m";
-
-    public static final String BASE_UNIT_FREQ = "Hz";
-
-    protected static final double c = 2.9979250e8; // m/sec
-    protected static final double h = 6.62620e-27; // erg/sec
-    protected static final double eV = 1.602192e-12; // erg
-
-    public String[] getSupportedUnits() {
-        return ALL_UNITS;
-    }
+    protected static final double c = 299792458.0D; // m/sec - Speed of light in a vacuum
+    protected static final double h = 6.62607015e-34; // J/sec - Planck constant
 
     /**
-     * Convert the supplied value/units to a value expressed in core energy
-     * units.
+     * Convert from known metres (user input) to the given unit.
+     * @param metres    Value to convert in metres (wavelength).
+     * @param cunit     The unit to convert to.
+     * @return          Converted value.
+     *
+     * @throws IllegalArgumentException For unknown or unusable unit value.
      */
-    public double convert(double value, String cunit) {
-        return toMeters(value, cunit);
-    }
-
-    /*
-     * public double convert(double value, String ctype, String fromUnit, String
-     * toUnit) { double valueM = toMeters(value, fromUnit);
-     *
-     * int i = ArrayUtil.matches("^" + toUnit + "$", freqUnits, true); if ( i !=
-     * -1 ) return waveToFreq(valueM, i);
-     *
-     * i = ArrayUtil.matches("^" + toUnit + "$", enUnits, true); if ( i != -1 )
-     * return waveToEnergy(valueM, i);
-     *
-     * i = ArrayUtil.matches("^" + toUnit + "$", waveUnits, true); if (i != -1)
-     * return waveToWave(valueM, i);
-     *
-     * throw new IllegalArgumentException("unknown units: " + toUnit); }
-     */
-
-    public double convertSpecsys(double value, String specsys) {
-        return value; // no-op
-    }
-
-    /**
-     * Convert the energy value d from the specified units to wavelength in
-     * meters.
-     *
-     * @param d
-     * @param units
-     * @return wavelength in meters
-     */
-    public double toMeters(double d, String units) {
+    public double fromMetres(final double metres, final String cunit) {
         final boolean inverse;
+        final String unit;
+
+        LOGGER.debug("Converting from metres (" + metres + ") to " + cunit);
 
         // 1 / the provided unit.
-        if (units.startsWith("/")) {
+        if (cunit.startsWith("/")) {
             inverse = true;
-            units = units.substring(1);
+            unit = cunit.substring(1);
+        } else if (!cunit.contains(" ") && cunit.endsWith("-1")) {
+            inverse = true;
+            unit = cunit.substring(0, cunit.indexOf("-1"));
         } else {
             inverse = false;
+            unit = cunit;
         }
 
-        int i = ArrayUtil.matches("^" + units + "$", FREQ_UNITS, true);
+        int i = ArrayUtil.matches("^" + unit + "$", FREQ_UNITS, true);
         if (i != -1) {
-            final double result = freqToMeters(d, i);
+            final double result = metresToFreq(metres, i);
             return inverse ? 1.0D / result : result;
         }
 
-        i = ArrayUtil.matches("^" + units + "$", EN_UNITS, true);
+        i = ArrayUtil.matches("^" + unit + "$", EN_UNITS, true);
         if (i != -1) {
-            final double result = energyToMeters(d, i);
+            final double result = metresToEnergy(metres, i);
             return inverse ? 1.0D / result : result;
         }
 
-        i = ArrayUtil.matches("^" + units + "$", WAVE_UNITS, true);
+        i = ArrayUtil.matches("^" + unit + "$", WAVE_UNITS, true);
         if (i != -1) {
-            final double result = wavelengthToMeters(d, i);
-            return inverse ? 1.0D / result : result;
+            final double result = metresToWavelength(metres, i);
+            LOGGER.debug("Wavelength " + result);
+            final double conversionResult = inverse ? 1.0D / result : result;
+            LOGGER.debug("Wavelength conversion " + conversionResult);
+            return conversionResult;
         }
 
-        throw new IllegalArgumentException("Unknown units: " + units);
+        throw new IllegalArgumentException("Unknown units: " + unit);
     }
 
-    /**
-     * Convert the energy value d from the specified units to frequency in Hz.
-     *
-     * @param d
-     * @param units
-     * @return frequency in Hz
-     */
-    public double toHz(double d, String units) {
-        int i = ArrayUtil.matches("^" + units + "$", FREQ_UNITS, true);
-        if (i != -1) {
-            return freqToHz(d, i);
-        }
-
-        i = ArrayUtil.matches("^" + units + "$", EN_UNITS, true);
-        if (i != -1) {
-            return energyToHz(d, i);
-        }
-
-        i = ArrayUtil.matches("^" + units + "$", WAVE_UNITS, true);
-        if (i != -1) {
-            return wavelengthToHz(d, i);
-        }
-
-        throw new IllegalArgumentException("unknown units: " + units);
+    private double metresToFreq(final double metres, final int factorIndex) {
+        return (c / metres) / FREQ_MULT[factorIndex];
     }
 
-    /**
-     * Compute the range of energy values to a wavelength width in meters.
-     *
-     * @param d1
-     * @param d2
-     * @param units
-     * @return delta lambda in meters
-     */
-    public double toDeltaMeters(double d1, double d2, String units) {
-        double w1 = toMeters(d1, units);
-        double w2 = toMeters(d2, units);
-        return Math.abs(w2 - w1);
+    private double metresToEnergy(final double metres, final int factorIndex) {
+        return ((c * h) / metres) / EN_MULT[factorIndex];
     }
 
-    /**
-     * Compute the range of energy values to a frequency width in Hz.
-     *
-     * @param d1
-     * @param d2
-     * @param units
-     * @return delta nu in Hz
-     */
-    public double toDeltaHz(double d1, double d2, String units) {
-        double f1 = toHz(d1, units);
-        double f2 = toHz(d2, units);
-        return Math.abs(f2 - f1);
-    }
-
-    private double freqToMeters(double d, int i) {
-        final double nu = d * FREQ_MULT[i];
-        return c / nu;
-    }
-
-    private double energyToMeters(double d, int i) {
-        final double e = eV * d * EN_MULT[i];
-        return c * h / e;
-    }
-
-    private double wavelengthToMeters(double d, int i) {
-        return d * WAVE_MULT[i];
-    }
-
-    private double freqToHz(double d, int i) {
-        return d * FREQ_MULT[i];
-    }
-
-    private double energyToHz(double d, int i) {
-        double w = energyToMeters(d, i);
-        return c / w;
-    }
-
-    private double wavelengthToHz(double d, int i) {
-        double w = d * WAVE_MULT[i];
-        return c / w;
+    private double metresToWavelength(double metres, int factorIndex) {
+        return metres / WAVE_MULT[factorIndex];
     }
 }

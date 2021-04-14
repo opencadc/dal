@@ -108,8 +108,17 @@ public enum CoordTypeCode {
         return coordType == CoordType.SPECTRAL;
     }
 
+    public boolean isVelocity() {
+        return this == VOPT || this == VELO || this == VRAD;
+    }
+
     public String getDefaultUnit() {
         return defaultUnit;
+    }
+
+    public static CoordTypeCode fromCType(final String ctype) {
+        final int hyphenIndex = ctype.indexOf("-");
+        return CoordTypeCode.valueOf(hyphenIndex > 0 ? ctype.substring(0, hyphenIndex) : ctype);
     }
 
     public static String getDefaultUnit(final String ctype) {
