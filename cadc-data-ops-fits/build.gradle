@@ -1,5 +1,4 @@
 plugins {
-    // Apply the java-library plugin to add support for Java Library
     id 'java'
     id 'maven'
     id 'maven-publish'
@@ -7,8 +6,8 @@ plugins {
 }
 
 repositories {
-    mavenLocal()
     mavenCentral()
+    mavenLocal()
     jcenter()
 }
 
@@ -16,17 +15,21 @@ sourceCompatibility = 1.8
 group = 'org.opencadc'
 version = '0.1.2'
 
+
 // To allow for french extended ASCII characters in file javadoc.
 javadoc {
     options.encoding = 'UTF-8'
 }
 
+description = 'OpenCADC FITS cutout library'
+def git_url = 'https://github.com/opencadc/dal'
+
 dependencies {
     compile 'log4j:log4j:[1.2.0,)'
     compile 'org.opencadc:cadc-util:[1.2,2.0)'
-    compile 'org.opencadc:cadc-soda-server:[1.2.1,2.0)'
-    compile 'org.opencadc:cadc-wcs:2.0'
     compile 'org.opencadc:jsky:[1.0.0,2.0.0)'
+    compile 'org.opencadc:cadc-soda-server:[1.2.1,2.0)'
+    compile 'org.opencadc:cadc-wcs:[2.0,3.0)'
     compile 'org.opencadc:nom-tam-fits:[1.16.1,1.17.0)'
 
     // Use JUnit test framework
