@@ -8,6 +8,8 @@ plugins {
 repositories {
     mavenCentral()
     mavenLocal()
+
+    // Remove when cadc-soda-server:1.2.1 is on mavenCentral()
     jcenter()
 }
 
