@@ -98,37 +98,37 @@ public class CircleCutoutTest extends BaseCutoutTest {
 
     /**
      * 4D cube cutout.
-     * @throws Exception    Any badness.
+     *
+     * @throws Exception Any badness.
      */
     @Test
-    @Ignore("Until test data is configured")
     public void testALMA() throws Exception {
         final long startMillis = System.currentTimeMillis();
 
         final String testFileName = "test-alma-cube.fits";
         final File testFile = new File(DEFAULT_DATA_DIR, testFileName);
 
-        if (!testFile.exists()) {
-            throw new IllegalStateException("The " + testFile.getAbsolutePath() + " file is missing.  It can be "
-                                            + "downloaded from "
-                                            + "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/CADC/test-data/cutouts/"
-                                            + testFileName + ", or simply @ignore this test.");
-        }
+        if (testFile.exists()) {
+            try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(testFile, "r");
+                 final Fits fits = new Fits(randomAccessDataObject)) {
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(testFile, "r");
-             final Fits fits = new Fits(randomAccessDataObject)) {
+                fits.setStreamWrite(true);
 
-            fits.setStreamWrite(true);
+                // 40.05 58.05 0.7
+                final Header testHeader = fits.readHDU().getHeader();
+                final Circle circle = new Circle(new Point(246.52D, -24.33D), 0.01D);
+                final CircleCutout circleCutout = new CircleCutout(testHeader);
 
-            // 40.05 58.05 0.7
-            final Header testHeader = fits.readHDU().getHeader();
-            final Circle circle = new Circle(new Point(246.52D, -24.33D), 0.01D);
-            final CircleCutout circleCutout = new CircleCutout(testHeader);
+                final long[] expected = new long[]{169, 300, 151, 300};
+                final long[] result = circleCutout.getBounds(circle);
 
-            final long[] expected = new long[] {169, 300, 151, 300};
-            final long[] result = circleCutout.getBounds(circle);
-
-            assertFuzzyPixelArrayEquals("Wrong ALMA circle cutout.", expected, result);
+                assertFuzzyPixelArrayEquals("Wrong ALMA circle cutout.", expected, result);
+            }
+        } else {
+            LOGGER.warn("The " + testFile.getAbsolutePath() + " file is missing.  It can be "
+                        + "downloaded from "
+                        + "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/CADC/test-data/cutouts and placed"
+                        + "into " + DEFAULT_DATA_DIR);
         }
         LOGGER.debug("CircleCutoutTest.testALMA OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
@@ -149,7 +149,7 @@ public class CircleCutoutTest extends BaseCutoutTest {
             final Circle circle = new Circle(new Point(309.8D, 42.7D), 0.3D);
             final CircleCutout circleCutout = new CircleCutout(testHeader);
 
-            final long[] expected = new long[] {1, 118, 1, 140};
+            final long[] expected = new long[]{1, 118, 1, 140};
             final long[] result = circleCutout.getBounds(circle);
 
             assertFuzzyPixelArrayEquals("Wrong BLAST circle cutout.", expected, result);
@@ -173,7 +173,7 @@ public class CircleCutoutTest extends BaseCutoutTest {
             final Circle circle = new Circle(new Point(250.0D, 75.2D), 0.3D);
             final CircleCutout circleCutout = new CircleCutout(testHeader);
 
-            final long[] expected = new long[] {431, 463, 79, 110};
+            final long[] expected = new long[]{431, 463, 79, 110};
             final long[] result = circleCutout.getBounds(circle);
             assertFuzzyPixelArrayEquals("Wrong IRIS circle bounds.", expected, result);
         }
@@ -181,34 +181,33 @@ public class CircleCutoutTest extends BaseCutoutTest {
     }
 
     @Test
-    @Ignore("Until test data is configured")
     public void testComputeOMM() throws Exception {
         final long startMillis = System.currentTimeMillis();
         final String testFileName = "test-omm.fits";
         final File testFile = new File(DEFAULT_DATA_DIR, testFileName);
 
-        if (!testFile.exists()) {
-            throw new IllegalStateException("The " + testFile.getAbsolutePath() + " file is missing.  It can be "
-                                            + "downloaded from "
-                                            + "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/CADC/test-data/cutouts/test-omm.fits, "
-                                            + "or simply ignore this test.");
-        }
+        if (testFile.exists()) {
+            try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(testFile, "r");
+                 final Fits fits = new Fits(randomAccessDataObject)) {
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(testFile, "r");
-             final Fits fits = new Fits(randomAccessDataObject)) {
+                // Just to cache it up front, and ensure that it can be read.
+                fits.read();
 
-            // Just to cache it up front, and ensure that it can be read.
-            fits.read();
+                final Header testHeader = fits.getHDU(0).getHeader();
 
-            final Header testHeader = fits.getHDU(0).getHeader();
+                final Circle circle = new Circle(new Point(20.89D, -59.47D), 0.1D);
+                final CircleCutout circleCutout = new CircleCutout(testHeader);
 
-            final Circle circle = new Circle(new Point(20.89D, -59.47D), 0.1D);
-            final CircleCutout circleCutout = new CircleCutout(testHeader);
+                final long[] expected = new long[]{642, 1381, 603, 1342};
+                final long[] result = circleCutout.getBounds(circle);
 
-            final long[] expected = new long[] {642, 1381, 603, 1342};
-            final long[] result = circleCutout.getBounds(circle);
-
-            assertFuzzyPixelArrayEquals("Wrong OMM circle cutout.", expected, result);
+                assertFuzzyPixelArrayEquals("Wrong OMM circle cutout.", expected, result);
+            }
+        } else {
+            LOGGER.warn("The " + testFile.getAbsolutePath() + " file is missing.  It can be "
+                        + "downloaded from "
+                        + "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/CADC/test-data/cutouts and placed"
+                        + "into " + DEFAULT_DATA_DIR);
         }
         LOGGER.debug("CircleCutoutTest.testComputeOMM OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
@@ -223,8 +222,9 @@ public class CircleCutoutTest extends BaseCutoutTest {
 
             fits.setStreamWrite(true);
 
-            final int[] expectedExtensionIndexes = new int[] {
-                    1, 101, 106, 11, 111, 116, 121, 126, 16, 21, 26, 31, 36, 41, 46, 51, 56, 6, 61, 66, 71, 76, 81, 86, 91, 96
+            final int[] expectedExtensionIndexes = new int[]{
+                    1, 101, 106, 11, 111, 116, 121, 126, 16, 21, 26, 31, 36, 41, 46, 51, 56, 6, 61, 66, 71, 76, 81, 86,
+                    91, 96
             };
 
             final Map<Integer, long[]> extensionRanges = new HashMap<>();
@@ -251,7 +251,8 @@ public class CircleCutoutTest extends BaseCutoutTest {
             Assert.assertEquals("Wrong extensions.", 0,
                                 Arrays.stream(expectedExtensionIndexes).filter(i -> !extensionRanges.containsKey(i)).sum());
         }
-        LOGGER.debug("CircleCutoutTest.testComputeCircleMEFCutout OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("CircleCutoutTest.testComputeCircleMEFCutout OK: " + (System.currentTimeMillis() - startMillis)
+                     + " ms");
     }
 
     @Test
