@@ -68,78 +68,25 @@
 
 package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.dali.DaliUtil;
-import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
-import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.header.Standard;
-import org.apache.log4j.Logger;
+public enum PolarizationState {
+    I(1), Q(2), U(3), V(4),
+    RR(-1), LL(-2), RL(-3), LR(-4), // Circular
+    XX(-5), YY(-6), XY(-7), YX(-8), // Linear
+    POLI(5),   // linear polarized intensity sqrt(Q^2 + U^2)
+    FPOLI(6), // fractional linear polarization POLI/I, code used in AIPS
+    POLA(7),   // linear polarization angle 1/2 arctan(U,Q), code used in AIPS
+    EPOLI(8), // elliptical polarization intensity sqrt(Q^2 + U^2 + V^2)
+    CPOLI(9), // circular polarization intensity |V|
+    NPOLI(10); // unpolarized intensity I - EPOLI
 
-public abstract class FITSCutout<T> {
-    private static final Logger LOGGER = Logger.getLogger(FITSCutout.class);
+    private final int value;
 
-    protected final FITSHeaderWCSKeywords fitsHeaderWCSKeywords;
 
-    public FITSCutout(final Header header) throws HeaderCardException {
-        DaliUtil.assertNotNull("header", header);
-        this.fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(header);
+    PolarizationState(final int value) {
+        this.value = value;
     }
 
-    protected FITSCutout(final FITSHeaderWCSKeywords fitsHeaderWCSKeywords) {
-        DaliUtil.assertNotNull("fitsHeaderWCSKeywords", fitsHeaderWCSKeywords);
-        this.fitsHeaderWCSKeywords = fitsHeaderWCSKeywords;
-    }
-
-
-    /**
-     * Obtain the bounds of the given cutout.
-     * @param cutoutBound   The bounds (shape, interval etc.) of the cutout.
-     * @return  long[] array of overlapping bounds, or long[0] if all pixels are included.
-     *
-     * @throws NoSuchKeywordException Unknown keyword found.
-     * @throws WCSLibRuntimeException WCSLib (C) error.
-     * @throws HeaderCardException  If a FITS Header card couldn't be read.
-     */
-    public abstract long[] getBounds(final T cutoutBound)
-            throws NoSuchKeywordException, WCSLibRuntimeException, HeaderCardException;
-
-    /**
-     * Clip the given bounds for the bounding range of the given axis.
-     * @param axis  1-based axis vale.
-     * @param lower The lower end to check.
-     * @param upper The upper end to check.
-     * @return  The array clipped.
-     */
-    long[] clip(final int axis, final double lower, final double upper) {
-        final long len = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(axis).key());
-
-        long x1 = (long) Math.floor(lower);
-        long x2 = (long) Math.ceil(upper);
-
-        if (x1 < 1) {
-            x1 = 1;
-        }
-
-        if (x2 > len) {
-            x2 = len;
-        }
-
-        LOGGER.debug("clip: " + len + " (" + x1 + ":" + x2 + ")");
-
-        // all pixels includes
-        if (x1 == 1 && x2 == len) {
-            LOGGER.warn("clip: all");
-            return new long[0];
-        }
-
-        // no pixels included
-        if (x1 > len || x2 < 1) {
-            LOGGER.warn("clip: none");
-            return null;
-        }
-
-        // an actual cutout
-        return new long[]{x1, x2};
+    public int getValue() {
+        return value;
     }
 }

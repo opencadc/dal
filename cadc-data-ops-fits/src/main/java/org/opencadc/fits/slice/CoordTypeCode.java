@@ -91,7 +91,10 @@ public enum CoordTypeCode {
     ZOPT("ZOPT", "", CoordType.SPECTRAL),
     AWAV("AWAV", "m", CoordType.SPECTRAL),
     VELO("VELO", "m s-1", CoordType.SPECTRAL),
-    BETA("BETA", "", CoordType.SPECTRAL);
+    BETA("BETA", "", CoordType.SPECTRAL),
+
+    // Polarization type codes.
+    STOKES("STOKES", "", CoordType.POLARIZATION);
 
     private final String typeCodeString;
     private final String defaultUnit;
@@ -106,6 +109,10 @@ public enum CoordTypeCode {
 
     public boolean isSpectral() {
         return coordType == CoordType.SPECTRAL;
+    }
+
+    public boolean isPolarization() {
+        return coordType == CoordType.POLARIZATION;
     }
 
     public String getDefaultUnit() {
