@@ -124,8 +124,6 @@ public enum CADCExt implements IFitsHeader {
     TIMESYS(HDU.PRIMARY_EXTENSION, VALUE.STRING, "Time scale.  Defaults to UTC."),
     TIMEUNIT(HDU.ANY, VALUE.STRING, "Unit of elapsed time.");
 
-
-
     private final IFitsHeader key;
 
     CADCExt(IFitsHeader.HDU hdu, IFitsHeader.VALUE valueType, String comment) {

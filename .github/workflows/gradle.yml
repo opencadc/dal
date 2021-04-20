@@ -1,6 +1,7 @@
 name: Java CI
 
-on: 
+on:
+  push:
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -30,7 +31,9 @@ jobs:
       run: cd cadc-datalink-server && ../gradlew --info clean build javadoc checkstyleMain install
       
     - name: build and test cadc-soda-server
-      run: cd cadc-soda-server && ../gradlew --info clean build javadoc checkstyleMain install
-      
+
+    - name: install WCSLIB (libwcs7)
+      run: sudo apt-get update && sudo apt-get install -y libwcs7
+
     - name: build and test cadc-data-ops-fits
       run: cd cadc-data-ops-fits && ../gradlew --info clean build javadoc checkstyleMain install

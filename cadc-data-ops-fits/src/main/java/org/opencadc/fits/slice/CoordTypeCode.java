@@ -73,7 +73,6 @@ import java.util.Locale;
 
 
 public enum CoordTypeCode {
-
     // Spatial type codes.
     RA("RA--", "deg", CoordType.SPATIAL),
     DEC("DEC-", "deg", CoordType.SPATIAL),
@@ -124,7 +123,6 @@ public enum CoordTypeCode {
     UT_UT2("UT(UT2)", "s", CoordType.TIME),
     UT1("UT1", "s", CoordType.TIME),
     UTC("UTC", "s", CoordType.TIME);
-
 
     private final String typeCodeString;
     private final String defaultUnit;
