@@ -69,12 +69,16 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
+
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
-import java.util.Locale;
 
 public class PolarizationCutout extends FITSCutout<String[]> {
     private static final Logger LOGGER = Logger.getLogger(PolarizationCutout.class);
@@ -102,16 +106,68 @@ public class PolarizationCutout extends FITSCutout<String[]> {
         final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(polarizationAxis).key());
 
         double pix1 = Double.MAX_VALUE;
-        double pix2 = Double.MIN_VALUE - 1.0D;
-        for (final String state : states) {
-            final int value = PolarizationState.valueOf(state.toUpperCase(Locale.ROOT)).getValue();
-            final double pix = crpix + (value - crval) / cdelt;
-            pix1 = Math.min(pix1, pix);
-            pix2 = Math.max(pix2, pix);
+        double pix2 = (-1 * Double.MAX_VALUE) - 1.0D;
+        for (final PolarizationState headerState : getHeaderStates(polarizationAxis)) {
+            LOGGER.debug("Checking next state " + headerState.name());
+            for (final String cutoutState : states) {
+                if (cutoutState.equals(headerState.name())) {
+                    final int value = headerState.getValue();
+                    final double pix = crpix + (value - crval) / cdelt;
+                    pix1 = Math.min(pix1, pix);
+                    pix2 = Math.max(pix2, pix);
 
-            LOGGER.debug("Values now (" + pix1 + ", " + pix2 + ")");
+                    LOGGER.debug("Values now (" + pix1 + ", " + pix2 + ")");
+                }
+            }
         }
 
         return clip(polarizationAxis, pix1, pix2);
+    }
+
+    public PolarizationState[] getHeaderStates(final int polarizationAxis) {
+        final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
+        final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(polarizationAxis).key());
+        final double crval = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(polarizationAxis).key());
+        final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(polarizationAxis).key());
+
+        final List<PolarizationState> polarizationStates = new ArrayList<>();
+
+        IntStream.range(1, naxis + 1)
+                 .map(i -> {
+                     final double calculatedHeaderState = (crpix + (i - crval) / cdelt);
+                     LOGGER.debug(String.format("Calculated header state %f to move to %d.", calculatedHeaderState,
+                                                (int) calculatedHeaderState));
+                     return (int) calculatedHeaderState;
+                 })
+                 .filter(i -> PolarizationState.fromValue(i) != null)
+                 .forEach(i -> polarizationStates.add(PolarizationState.fromValue(i)));
+
+        LOGGER.debug("Found states " + polarizationStates);
+        return polarizationStates.toArray(new PolarizationState[0]);
+    }
+
+    long[] clip(final int polarizationAxis, final double lower, final double upper) {
+        // Round floats to individual pixels
+        long p1 = (long) Math.floor(lower);
+        long p2 = (long) Math.ceil(upper);
+
+        // Bounds check
+        if (p1 < 1) {
+            p1 = 1L;
+        }
+
+        if (p2 > polarizationAxis) {
+            p2 = polarizationAxis;
+        }
+
+        LOGGER.debug("Clipped to (" + p1 + ", " + p2 + ")");
+
+        // Validity check, no pixels included
+        if (p1 > polarizationAxis || p2 < 1) {
+            return null;
+        }
+
+        // an actual cutout
+        return new long[]{p1, p2};
     }
 }

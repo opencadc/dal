@@ -114,22 +114,35 @@ public class PolarizationCutoutTest extends BaseCutoutTest {
     }
 
     @Test
+    @Ignore("Check for proper circular Polarization")
     public void testCircular() throws Exception {
         final Header testHeader = new Header();
 
-        testHeader.addValue(Standard.NAXIS, 2);
-        testHeader.addValue(Standard.NAXISn.n(1), 11);
-        testHeader.addValue(Standard.NAXISn.n(2), 1);
-        testHeader.addValue(CADCExt.CUNITn.n(1), "s");
-        testHeader.addValue(CADCExt.CUNITn.n(2), "");
-        testHeader.addValue(Standard.CRVALn.n(1), 2375.341D);
-        testHeader.addValue(Standard.CRVALn.n(2), -1.0D);
-        testHeader.addValue(Standard.CRPIXn.n(1), 1.0D);
-        testHeader.addValue(Standard.CRPIXn.n(2), 1.0D);
-        testHeader.addValue(Standard.CDELTn.n(1), 13.3629D);
-        testHeader.addValue(Standard.CDELTn.n(2), 1.0D);
-        testHeader.addValue(Standard.CTYPEn.n(1), DateUtil.UTC.getID());
-        testHeader.addValue(Standard.CTYPEn.n(2), CoordTypeCode.STOKES.name());
+        testHeader.addValue(Standard.NAXIS, 4);
+        testHeader.addValue(Standard.NAXISn.n(1), 2048);
+        testHeader.addValue(Standard.NAXISn.n(2), 2048);
+        testHeader.addValue(Standard.NAXISn.n(3), 128);
+        testHeader.addValue(Standard.NAXISn.n(4), 1);
+        testHeader.addValue(CADCExt.CUNITn.n(1), "km");
+        testHeader.addValue(CADCExt.CUNITn.n(2), "km");
+        testHeader.addValue(CADCExt.CUNITn.n(3), "min");
+        testHeader.addValue(CADCExt.CUNITn.n(4), "");
+        testHeader.addValue(Standard.CRVALn.n(1), 4.0D);
+        testHeader.addValue(Standard.CRVALn.n(2), 4.0D);
+        testHeader.addValue(Standard.CRVALn.n(3), 2375.341D);
+        testHeader.addValue(Standard.CRVALn.n(4), 1.0D);
+        testHeader.addValue(Standard.CRPIXn.n(1), 1024.5D);
+        testHeader.addValue(Standard.CRPIXn.n(2), 1024.5D);
+        testHeader.addValue(Standard.CRPIXn.n(3), 64.5D);
+        testHeader.addValue(Standard.CRPIXn.n(4), -1.0D);
+        testHeader.addValue(Standard.CDELTn.n(1), 3.0D);
+        testHeader.addValue(Standard.CDELTn.n(2), 3.0D);
+        testHeader.addValue(Standard.CDELTn.n(3), 1.0D);
+        testHeader.addValue(Standard.CDELTn.n(4), 1.0D);
+        testHeader.addValue(Standard.CTYPEn.n(1), CoordTypeCode.RA.name());
+        testHeader.addValue(Standard.CTYPEn.n(2), CoordTypeCode.DEC.name());
+        testHeader.addValue(Standard.CTYPEn.n(3), DateUtil.UTC.getID());
+        testHeader.addValue(Standard.CTYPEn.n(4), CoordTypeCode.STOKES.name());
 
         final String[] states = new String[] {
                 PolarizationState.RR.name(), PolarizationState.LL.name()
@@ -149,7 +162,7 @@ public class PolarizationCutoutTest extends BaseCutoutTest {
 
         testHeader.addValue(Standard.NAXIS, 2);
         testHeader.addValue(Standard.NAXISn.n(1), 11);
-        testHeader.addValue(Standard.NAXISn.n(2), 1);
+        testHeader.addValue(Standard.NAXISn.n(2), 14);
         testHeader.addValue(CADCExt.CUNITn.n(1), "s");
         testHeader.addValue(CADCExt.CUNITn.n(2), "");
         testHeader.addValue(Standard.CRVALn.n(1), 2375.341D);
@@ -162,13 +175,13 @@ public class PolarizationCutoutTest extends BaseCutoutTest {
         testHeader.addValue(Standard.CTYPEn.n(2), CoordTypeCode.STOKES.name());
 
         final String[] states = new String[] {
-                PolarizationState.XX.name()
+                PolarizationState.POLA.name(), PolarizationState.EPOLI.name()
         };
 
         final PolarizationCutout testSubject = new PolarizationCutout(testHeader);
 
         final long[] results = testSubject.getBounds(states);
-        final long[] expected = new long[0];
+        final long[] expected = new long[]{13L, 14L};
 
         assertFuzzyPixelArrayEquals("Wrong output.", expected, results);
     }

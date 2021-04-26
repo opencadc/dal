@@ -86,6 +86,16 @@ public enum PolarizationState {
         this.value = value;
     }
 
+    public static PolarizationState fromValue(final int value) {
+        for (final PolarizationState polarizationState : values()) {
+            if (polarizationState.getValue() == value) {
+                return polarizationState;
+            }
+        }
+
+        return null;
+    }
+
     public int getValue() {
         return value;
     }

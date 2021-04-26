@@ -519,7 +519,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
         for (int i = 1; i <= naxis; i++) {
             final String ctypeValue = h.getStringValue(Standard.CTYPEn.n(i));
             if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
-                    coOrdTypeCode -> ctypeValue.startsWith(coOrdTypeCode.name()) && coOrdTypeCode.isPolarization())) {
+                coOrdTypeCode -> ctypeValue.startsWith(coOrdTypeCode.name()) && coOrdTypeCode.isPolarization())) {
                 return i;
             }
         }
