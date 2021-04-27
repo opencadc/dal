@@ -108,7 +108,7 @@ public class PolarizationCutout extends FITSCutout<String[]> {
         double pix1 = Double.MAX_VALUE;
         double pix2 = (-1 * Double.MAX_VALUE) - 1.0D;
         for (final PolarizationState headerState : getHeaderStates(polarizationAxis)) {
-            LOGGER.debug("Checking next state " + headerState.name());
+            LOGGER.debug("Checking next header state " + headerState.name());
             for (final String cutoutState : states) {
                 if (cutoutState.equals(headerState.name())) {
                     final int value = headerState.getValue();
@@ -133,12 +133,7 @@ public class PolarizationCutout extends FITSCutout<String[]> {
         final List<PolarizationState> polarizationStates = new ArrayList<>();
 
         IntStream.range(1, naxis + 1)
-                 .map(i -> {
-                     final double calculatedHeaderState = (crpix + (i - crval) / cdelt);
-                     LOGGER.debug(String.format("Calculated header state %f to move to %d.", calculatedHeaderState,
-                                                (int) calculatedHeaderState));
-                     return (int) calculatedHeaderState;
-                 })
+                 .map(i -> (int) (crpix + (i - crval) / cdelt))
                  .filter(i -> PolarizationState.fromValue(i) != null)
                  .forEach(i -> polarizationStates.add(PolarizationState.fromValue(i)));
 
