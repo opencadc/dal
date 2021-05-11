@@ -72,5 +72,5 @@ public enum CoordType {
     SPATIAL,
     SPECTRAL,
     TIME,
-    CELESTIAL
+    POLARIZATION
 }
