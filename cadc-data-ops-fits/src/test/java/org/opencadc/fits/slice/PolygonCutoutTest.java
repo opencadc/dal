@@ -70,9 +70,12 @@ package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
+import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.BufferedDataInputStream;
 import nom.tam.util.RandomAccessDataObject;
 import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;
@@ -80,6 +83,8 @@ import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 public class PolygonCutoutTest extends BaseCutoutTest {
     private static final Logger LOGGER = Logger.getLogger(PolygonCutoutTest.class);
@@ -91,33 +96,28 @@ public class PolygonCutoutTest extends BaseCutoutTest {
     @Test
     public void testMegapipeCutout() throws Exception {
         final long startMillis = System.currentTimeMillis();
-        final String testFileName = "test-megapipe.fits";
-        final File testFile = new File(DEFAULT_DATA_DIR, testFileName);
 
-        if (testFile.exists()) {
-            try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(testFile, "r");
-                 final Fits fits = new Fits(randomAccessDataObject)) {
+        final String headerFileName = "test-megapipe-header.txt";
+        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
-                final Header header = fits.readHDU().getHeader();
-                final PolygonCutout polygonCutout = new PolygonCutout(header);
+        try (final InputStream inputStream = new FileInputStream(testFile);
+             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
 
-                final Polygon polygon = new Polygon();
+            final Header testHeader = Header.readHeader(arrayDataInput);
+            final PolygonCutout polygonCutout = new PolygonCutout(testHeader);
 
-                polygon.getVertices().add(new Point(51.291219363105000D, -21.737249735369637D));
-                polygon.getVertices().add(new Point(51.291193816346876D, -21.721717813306441D));
-                polygon.getVertices().add(new Point(51.307912919582414D, -21.721693011490995D));
-                polygon.getVertices().add(new Point(51.307940254544761D, -21.737224914051101D));
+            final Polygon polygon = new Polygon();
 
-                final long[] result = polygonCutout.getBounds(polygon);
-                final long[] expected = new long[]{400, 700, 400, 700};
-                assertFuzzyPixelArrayEquals("Wrong bounds.", expected, result);
-            }
-        } else {
-            LOGGER.warn("The " + testFile.getAbsolutePath() + " file is missing.  It can be "
-                        + "downloaded from "
-                        + "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/CADC/test-data/cutouts and placed"
-                        + "into " + DEFAULT_DATA_DIR);
+            polygon.getVertices().add(new Point(51.291219363105000D, -21.737249735369637D));
+            polygon.getVertices().add(new Point(51.291193816346876D, -21.721717813306441D));
+            polygon.getVertices().add(new Point(51.307912919582414D, -21.721693011490995D));
+            polygon.getVertices().add(new Point(51.307940254544761D, -21.737224914051101D));
+
+            final long[] result = polygonCutout.getBounds(polygon);
+            final long[] expected = new long[]{400, 700, 400, 700};
+            assertFuzzyPixelArrayEquals("Wrong bounds.", expected, result);
         }
+
         LOGGER.debug("Util.testALMACubeCutout OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 }
