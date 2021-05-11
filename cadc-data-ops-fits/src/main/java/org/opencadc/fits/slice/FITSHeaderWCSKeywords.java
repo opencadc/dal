@@ -173,7 +173,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Returns a float value for the specified key. It is expected that
-     * a de7fault value, typically 0.0, will be returned if the key
+     * a default value, typically 0.0, will be returned if the key
      * does not exist in the keywords.
      *
      * @param key key whose float value is to be returned.
