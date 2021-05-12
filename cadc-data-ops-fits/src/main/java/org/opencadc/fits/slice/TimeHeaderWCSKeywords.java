@@ -81,6 +81,9 @@ import org.apache.log4j.Logger;
 import org.opencadc.fits.CADCExt;
 
 
+/**
+ * Class to sanitize and obtain time specific values.
+ */
 public class TimeHeaderWCSKeywords {
     private static final Logger LOGGER = Logger.getLogger(TimeHeaderWCSKeywords.class);
     private static final String DEFAULT_TIME_SYSTEM = "UTC";
@@ -120,6 +123,7 @@ public class TimeHeaderWCSKeywords {
         } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.JDREF.key())) {
             mjdRef = MJD_TIME_CONVERTER.fromJulianDate(this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.JDREF.key()));
         } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.DATEREF.key())) {
+            LOGGER.debug("Using DATEREF: " + this.fitsHeaderWCSKeywords.getStringValue(CADCExt.DATEREF.key()));
             final String timeSystem = getSystem();
             mjdRef = MJD_TIME_CONVERTER.fromISODate(timeSystem,
                                                     this.fitsHeaderWCSKeywords.getStringValue(CADCExt.DATEREF.key()));
@@ -166,35 +170,6 @@ public class TimeHeaderWCSKeywords {
         return startMJD;
     }
 
-    public double getMJDStop() throws ParseException {
-        final double stopMJD;
-
-        if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.MJDEND.key())) {
-            stopMJD = this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.MJDEND.key());
-        } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.JDEND.key())) {
-            stopMJD = MJD_TIME_CONVERTER.fromJulianDate(
-                    this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.JDEND.key()));
-        } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.DATEEND.key())) {
-            final String timeSystem = getSystem();
-            stopMJD = MJD_TIME_CONVERTER.fromISODate(timeSystem,
-                                                     this.fitsHeaderWCSKeywords.getStringValue(CADCExt.DATEEND.key()));
-        } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.TSTOP.key())) {
-            final String unit = getUnit();
-            final double mjdRef = getMJDRef();
-            stopMJD = addToMJD(mjdRef, this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.TSTOP.key()), unit);
-        } else {
-            final int timeAxis = this.fitsHeaderWCSKeywords.getTemporalAxis();
-            stopMJD = addToMJD(getMJDStart(),
-                               this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(timeAxis).key())
-                               + this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(timeAxis).key()),
-                               getUnit());
-        }
-
-        LOGGER.debug("Stop MJD: " + stopMJD);
-
-        return stopMJD;
-    }
-
     private double addToMJD(final double mjdValue, final double crval, final String unit) {
         final SecondsConverter secondsConverter = new SecondsConverter();
         final DateConverter dateConverter = new DateConverter();
@@ -205,7 +180,7 @@ public class TimeHeaderWCSKeywords {
         calendar.setTime(date);
         calendar.add(Calendar.MILLISECOND, (int) Math.round(seconds * 1000.0D));
 
-        return MJD_TIME_CONVERTER.fromISODate(calendar.getTime());
+        return MJD_TIME_CONVERTER.fromISODate(calendar.getTime(), DateUtil.UTC);
     }
 
     private String getSystem() {

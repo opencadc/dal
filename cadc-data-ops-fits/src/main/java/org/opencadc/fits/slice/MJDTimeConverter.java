@@ -75,28 +75,53 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.apache.log4j.Logger;
+
 public class MJDTimeConverter {
+    private static final Logger LOGGER = Logger.getLogger(MJDTimeConverter.class);
+
     public static final String DEFAULT_TIME_UNIT = "s";
 
     private static final double FROM_JULIAN_DATE = 2400000.5D;
     private static final double TWENTY_FOUR_HOURS_MS = 86400000.0D;
 
 
+    /**
+     * Convert Julian to MJD.
+     * @param julianDate    The Julian date.
+     * @return  MJD double
+     */
     public final double fromJulianDate(final double julianDate) {
         return julianDate - FROM_JULIAN_DATE;
     }
 
-    public final double fromISODate(final Date isoDate) {
-        final Calendar calendar = Calendar.getInstance();
+    /**
+     * Convert the given Date in ISO-8601 format (yyyy-MM-dd'T'HH:mm:ss) in the given time zone to MJD.
+     * @param isoDate       The Date to convert to MJD
+     * @param timeZone      The time zone the date is in to match.
+     * @return      MJD double value
+     */
+    public final double fromISODate(final Date isoDate, final TimeZone timeZone) {
+        final Calendar calendar = Calendar.getInstance(timeZone);
         calendar.setTime(isoDate);
 
-        final int offsetHours = -(calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET)) / (60 * 1000);
-        return fromJulianDate(isoDate.getTime() / TWENTY_FOUR_HOURS_MS - offsetHours / 1440.0D + 2440587.5D);
+        final double offsetHours = -(calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET))
+                                   / (60.0D * 1000.0D);
+        LOGGER.debug("Offset hours are " + offsetHours);
+        return fromJulianDate((isoDate.getTime() / TWENTY_FOUR_HOURS_MS) - (offsetHours / 1440.0D) + 2440587.5D);
     }
 
+    /**
+     * Convert the given date string from the given time system to MJD.
+     * @param timeSystem    The Time System to convert from.
+     * @param dateString    The date string.
+     * @return  MJD double
+     * @throws ParseException   If the date string is invalid.
+     */
     public final double fromISODate(final String timeSystem, final String dateString) throws ParseException {
-        final Date iso8601Date = DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL,
-                                                        TimeZone.getTimeZone(timeSystem)).parse(dateString);
-        return fromISODate(iso8601Date);
+        final TimeZone timeZone = TimeZone.getTimeZone(timeSystem);
+        LOGGER.debug("fromISODate -> " + timeSystem + " (" + timeZone + ")");
+        final Date iso8601Date = DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, timeZone).parse(dateString);
+        return fromISODate(iso8601Date, timeZone);
     }
 }

@@ -69,9 +69,11 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
 import nom.tam.fits.header.Standard;
 import nom.tam.fits.header.extra.NOAOExt;
+import org.apache.log4j.Level;
 import org.junit.Assert;
 import org.junit.Test;
 import org.opencadc.fits.CADCExt;
@@ -81,6 +83,11 @@ import java.util.Date;
 
 
 public class TimeHeaderWCSKeywordsTest {
+
+    static {
+        Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
+    }
+
     @Test
     public void testMJDRef() throws Exception {
         final Header testHeader = new Header();
@@ -102,7 +109,7 @@ public class TimeHeaderWCSKeywordsTest {
         final TimeHeaderWCSKeywords testSubject = new TimeHeaderWCSKeywords(fitsHeaderWCSKeywords);
 
         final double result = testSubject.getMJDRef();
-        final double expected = 54360.7604D;
+        final double expected = 54361.05208333349D;
 
         Assert.assertEquals("Wrong MJD Ref value.", expected, result, 3.0E-5D);
     }
@@ -120,7 +127,7 @@ public class TimeHeaderWCSKeywordsTest {
         calendar.add(Calendar.HOUR, 2);
         final Date stopDate = calendar.getTime();
 
-        final double mjdValue = mjdTimeConverter.fromISODate(calendar.getTime());
+        final double mjdValue = mjdTimeConverter.fromISODate(calendar.getTime(), DateUtil.UTC);
         final int mjdValueI = (int) Math.floor(mjdValue);
 
         testHeader.addValue(Standard.NAXIS, 1);
@@ -140,7 +147,7 @@ public class TimeHeaderWCSKeywordsTest {
         final TimeHeaderWCSKeywords testSubject = new TimeHeaderWCSKeywords(testHeader);
         final double mjdStart = testSubject.getMJDStart();
 
-        Assert.assertEquals("Wrong MJD Start", 56247.7229D, mjdStart, 3.0E-5D);
+        Assert.assertEquals("Wrong MJD Start", 56248.05624999991D, mjdStart, 3.0E-5D);
     }
 
     @Test
