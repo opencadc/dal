@@ -69,9 +69,12 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.BufferedDataInputStream;
 import nom.tam.util.RandomAccessDataObject;
 import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;
@@ -81,6 +84,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.Arrays;
 
 public class EnergyCutoutTest extends BaseCutoutTest {
@@ -89,25 +94,19 @@ public class EnergyCutoutTest extends BaseCutoutTest {
     static {
         Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
     }
+
     @Test
     public void testCGPS() throws Exception {
         final long startMillis = System.currentTimeMillis();
 
-        final String testFileName = "test-cgps-cube.fits";
-        final File testFile = new File(DEFAULT_DATA_DIR, testFileName);
+        final String headerFileName = "test-cgps-cube-header.txt";
+        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
-        if (!testFile.exists()) {
-            throw new IllegalStateException("The " + testFile.getAbsolutePath() + " file is missing.  It can be "
-                                            + "downloaded from "
-                                            + "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/CADC/test-data/cutouts/"
-                                            + testFileName + ", or simply @ignore this test.");
-        }
+        try (final InputStream inputStream = new FileInputStream(testFile);
+             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(testFile, "r");
-             final Fits fits = new Fits(randomAccessDataObject)) {
-
-            final Header header = fits.readHDU().getHeader();
-            final EnergyCutout energyCutout = new EnergyCutout(header);
+            final Header testHeader = Header.readHeader(arrayDataInput);
+            final EnergyCutout energyCutout = new EnergyCutout(testHeader);
             final Interval<Number> energyCutoutBounds = new Interval<>(0.00023606D, 0.00024616D);
             energyCutout.getBounds(energyCutoutBounds);
             Assert.fail("Should throw IllegalArgumentException for incompatible conversion.");
@@ -117,28 +116,21 @@ public class EnergyCutoutTest extends BaseCutoutTest {
                                                   + "using provided wavelength metres.",
                                 illegalArgumentException.getMessage());
         }
-        LOGGER.debug("Util.testCGPS OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("EnergyCutoutTest.testCGPS OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 
     @Test
     public void testVLASS() throws Exception {
         final long startMillis = System.currentTimeMillis();
 
-        final String testFileName = "test-vlass-cube.fits";
-        final File testFile = new File(DEFAULT_DATA_DIR, testFileName);
+        final String headerFileName = "test-vlass-cube-header.txt";
+        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
-        if (!testFile.exists()) {
-            throw new IllegalStateException("The " + testFile.getAbsolutePath() + " file is missing.  It can be "
-                                            + "downloaded from "
-                                            + "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/CADC/test-data/cutouts/"
-                                            + testFileName + ", or simply @ignore this test.");
-        }
+        try (final InputStream inputStream = new FileInputStream(testFile);
+             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(testFile, "r");
-             final Fits fits = new Fits(randomAccessDataObject)) {
-
-            final Header header = fits.readHDU().getHeader();
-            final EnergyCutout energyCutout = new EnergyCutout(header);
+            final Header testHeader = Header.readHeader(arrayDataInput);
+            final EnergyCutout energyCutout = new EnergyCutout(testHeader);
             final Interval<Number> energyCutoutBounds = new Interval<>(1.10328E-2D, 9.99308E-2D);
 
             final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
@@ -148,61 +140,49 @@ public class EnergyCutoutTest extends BaseCutoutTest {
 
             LOGGER.debug("Results: " + Arrays.toString(resultBounds));
         }
-        LOGGER.debug("Util.testVLASS OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("EnergyCutoutTest.testVLASS OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 
     @Test
     public void testALMA() throws Exception {
         final long startMillis = System.currentTimeMillis();
-        final String testFileName = "test-alma-cube-band.fits";
-        final File testFile = new File(DEFAULT_DATA_DIR, testFileName);
 
-        if (!testFile.exists()) {
-            throw new IllegalStateException("The " + testFile.getAbsolutePath() + " file is missing.  It can be "
-                                            + "downloaded from "
-                                            + "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/CADC/test-data/cutouts/"
-                                            + testFileName + ", or simply @ignore this test.");
-        }
+        final String headerFileName = "test-alma-cube-band-header.txt";
+        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(testFile, "r");
-             final Fits fits = new Fits(randomAccessDataObject)) {
+        try (final InputStream inputStream = new FileInputStream(testFile);
+             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
 
-            final Header header = fits.readHDU().getHeader();
-            final EnergyCutout energyCutout = new EnergyCutout(header);
+            final Header testHeader = Header.readHeader(arrayDataInput);
+            final EnergyCutout energyCutout = new EnergyCutout(testHeader);
             final Interval<Number> energyCutoutBounds = new Interval<>(1.3606E-3D, 1.3616E-3D);
             final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
             final long[] expectedBounds = new long[]{1L, 18L};
 
             assertFuzzyPixelArrayEquals("Wrong energy bounds for ALMA Cube.", expectedBounds, resultBounds);
         }
-        LOGGER.debug("Util.testALMA OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("EnergyCutoutTest.testALMA OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 
     @Test
     @Ignore("Until SIP distortions are understood.")
     public void testSITELLE() throws Exception {
         final long startMillis = System.currentTimeMillis();
-        final String testFileName = "test-sitelle-cube.fits";
-        final File testFile = new File(DEFAULT_DATA_DIR, testFileName);
 
-        if (!testFile.exists()) {
-            throw new IllegalStateException("The " + testFile.getAbsolutePath() + " file is missing.  It can be "
-                                            + "downloaded from "
-                                            + "https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/files/vault/CADC/test-data/cutouts/"
-                                            + testFileName + ", or simply @ignore this test.");
-        }
+        final String headerFileName = "test-sitelle-cube-header.txt";
+        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(testFile, "r");
-             final Fits fits = new Fits(randomAccessDataObject)) {
+        try (final InputStream inputStream = new FileInputStream(testFile);
+             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
 
-            final Header header = fits.readHDU().getHeader();
-            final EnergyCutout energyCutout = new EnergyCutout(header);
+            final Header testHeader = Header.readHeader(arrayDataInput);
+            final EnergyCutout energyCutout = new EnergyCutout(testHeader);
             final Interval<Number> energyCutoutBounds = new Interval<>(0.00000051D, 0.00000052D);
 
             final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
 
             Assert.assertEquals("Wrong bounds.", 252, resultBounds[0]);
         }
-        LOGGER.debug("Util.testSITELLE OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("EnergyCutoutTest.testSITELLE OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 }
