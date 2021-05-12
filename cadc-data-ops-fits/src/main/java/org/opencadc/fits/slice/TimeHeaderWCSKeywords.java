@@ -68,11 +68,12 @@
 
 package org.opencadc.fits.slice;
 
+import ca.nrc.cadc.date.DateUtil;
+
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 
-import ca.nrc.cadc.date.DateUtil;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Standard;

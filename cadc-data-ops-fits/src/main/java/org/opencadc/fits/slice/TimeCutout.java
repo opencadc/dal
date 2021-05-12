@@ -71,12 +71,13 @@ package org.opencadc.fits.slice;
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
 
+import java.text.ParseException;
+
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
-import java.text.ParseException;
 
 
 /**

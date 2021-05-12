@@ -68,10 +68,11 @@
 
 package org.opencadc.fits.slice;
 
-import org.apache.log4j.Logger;
-
 import java.util.Arrays;
 import java.util.List;
+
+import org.apache.log4j.Logger;
+
 
 /**
  * Convert values to seconds.
@@ -80,13 +81,13 @@ public class SecondsConverter {
     private static final Logger LOGGER = Logger.getLogger(SecondsConverter.class);
 
     private static final String[] UNITS = new String[] {
-            "s",
-            "min",
-            "h",
-            "d",
-            "a",
-            "yr",
-            "cy"
+        "s",
+        "min",
+        "h",
+        "d",
+        "a",
+        "yr",
+        "cy"
     };
 
     private static final double[] MULTIPLIERS = new double[] {
