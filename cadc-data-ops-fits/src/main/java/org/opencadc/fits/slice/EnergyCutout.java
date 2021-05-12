@@ -96,7 +96,7 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
      *
      * @param bounds The bounds of the cutout.
      * @return int[2] with the pixel bounds, int[0] if all pixels are included, or
-     * null if no pixels are included
+     *          null if no pixels are included
      */
     public long[] getBounds(final Interval<Number> bounds)
             throws NoSuchKeywordException, WCSLibRuntimeException {

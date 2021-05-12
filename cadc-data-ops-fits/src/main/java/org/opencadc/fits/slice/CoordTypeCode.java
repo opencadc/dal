@@ -116,11 +116,6 @@ public enum CoordTypeCode {
         return defaultUnit;
     }
 
-    public static CoordTypeCode fromCType(final String ctype) {
-        final int hyphenIndex = ctype.indexOf("-");
-        return CoordTypeCode.valueOf(hyphenIndex > 0 ? ctype.substring(0, hyphenIndex) : ctype);
-    }
-
     public static String getDefaultUnit(final String ctype) {
         if (ctype == null) {
             return null;
@@ -130,5 +125,10 @@ public enum CoordTypeCode {
                 Arrays.stream(values()).filter(coordTypeCode -> ctype.toUpperCase(Locale.ROOT).substring(0, 4).startsWith(
                         coordTypeCode.typeCodeString)).findFirst().orElse(null);
         return (matchedCoordTypeCode == null) ? "" : matchedCoordTypeCode.getDefaultUnit();
+    }
+
+    public static CoordTypeCode fromCType(final String ctype) {
+        final int hyphenIndex = ctype.indexOf("-");
+        return CoordTypeCode.valueOf(hyphenIndex > 0 ? ctype.substring(0, hyphenIndex) : ctype);
     }
 }
