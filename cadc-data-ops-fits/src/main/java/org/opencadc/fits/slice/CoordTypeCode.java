@@ -74,8 +74,8 @@ import java.util.Locale;
 
 public enum CoordTypeCode {
     // Spatial type codes.
-    RA("RA--", "deg", CoordType.SPATIAL),
-    DEC("DEC-", "deg", CoordType.SPATIAL),
+    RA("RA", "deg", CoordType.SPATIAL),
+    DEC("DEC", "deg", CoordType.SPATIAL),
     GLON("GLON", "deg", CoordType.SPATIAL),
     GLAT("GLAT", "deg", CoordType.SPATIAL),
     ELON("ELON", "deg", CoordType.SPATIAL),
@@ -118,7 +118,7 @@ public enum CoordTypeCode {
         }
 
         final CoordTypeCode matchedCoordTypeCode =
-                Arrays.stream(values()).filter(coordTypeCode -> ctype.toUpperCase(Locale.ROOT).substring(0, 4).startsWith(
+                Arrays.stream(values()).filter(coordTypeCode -> ctype.toUpperCase(Locale.ROOT).startsWith(
                         coordTypeCode.typeCodeString)).findFirst().orElse(null);
         return (matchedCoordTypeCode == null) ? "" : matchedCoordTypeCode.getDefaultUnit();
     }
