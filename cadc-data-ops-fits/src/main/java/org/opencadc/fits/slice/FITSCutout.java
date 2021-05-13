@@ -93,7 +93,7 @@ public abstract class FITSCutout<T> {
     /**
      * Obtain the bounds of the given cutout.
      * @param cutoutBound   The bounds (shape, interval etc.) of the cutout.
-     * @return  long[] array of overlapping bounds, or long[0] if all pixels are included.
+     * @return  long[] array of overlapping bounds, long[0] if all pixels are included, or null if no overlap.
      *
      * @throws NoSuchKeywordException Unknown keyword found.
      * @throws WCSLibRuntimeException WCSLib (C) error.
