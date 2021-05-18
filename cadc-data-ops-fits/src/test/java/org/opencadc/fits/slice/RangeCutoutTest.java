@@ -104,7 +104,7 @@ public class RangeCutoutTest extends BaseCutoutTest {
                                           new DoubleInterval(-24.34D, -24.319999999999997D));
             final RangeCutout rangeCutout = new RangeCutout(testHeader);
 
-            final long[] expected = new long[]{169, 300, 151, 300};
+            final long[] expected = new long[]{169, 300, 151, 300, 1, 151, 1, 1};
             final long[] result = rangeCutout.getBounds(range);
 
             assertFuzzyPixelArrayEquals("Wrong ALMA range cutout.", expected, result);

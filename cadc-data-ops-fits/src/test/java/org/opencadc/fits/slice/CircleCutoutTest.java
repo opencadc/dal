@@ -124,7 +124,7 @@ public class CircleCutoutTest extends BaseCutoutTest {
             final Circle circle = new Circle(new Point(246.52D, -24.33D), 0.01D);
             final CircleCutout circleCutout = new CircleCutout(testHeader);
 
-            final long[] expected = new long[]{169, 300, 151, 300};
+            final long[] expected = new long[]{169, 300, 151, 300, 1, 151, 1, 1};
             final long[] result = circleCutout.getBounds(circle);
 
             assertFuzzyPixelArrayEquals("Wrong ALMA circle cutout.", expected, result);
