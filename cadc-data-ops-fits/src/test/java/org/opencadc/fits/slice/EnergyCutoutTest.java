@@ -71,22 +71,20 @@ package org.opencadc.fits.slice;
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
-import nom.tam.fits.Fits;
-import nom.tam.fits.Header;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.BufferedDataInputStream;
-import nom.tam.util.RandomAccessDataObject;
-import nom.tam.util.RandomAccessFileExt;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
+
+import nom.tam.fits.Header;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.BufferedDataInputStream;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class EnergyCutoutTest extends BaseCutoutTest {
     private static final Logger LOGGER = Logger.getLogger(EnergyCutoutTest.class);
@@ -134,7 +132,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
             final Interval<Number> energyCutoutBounds = new Interval<>(1.10328E-2D, 9.99308E-2D);
 
             final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
-            final long[] expectedBounds = new long[]{1L, 13L};
+            final long[] expectedBounds = new long[]{1L, 12150L, 1L, 12150L, 1L, 13L, 1L, 4L};
 
             assertFuzzyPixelArrayEquals("Wrong energy bounds for VLASS Cube.", expectedBounds, resultBounds);
 
@@ -157,7 +155,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
             final Interval<Number> energyCutoutBounds = new Interval<>(1.3606E-3D, 1.3616E-3D);
             final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
-            final long[] expectedBounds = new long[]{1L, 18L};
+            final long[] expectedBounds = new long[]{1L, 400L, 1L, 400L, 1L, 18L, 1L, 1L};
 
             assertFuzzyPixelArrayEquals("Wrong energy bounds for ALMA Cube.", expectedBounds, resultBounds);
         }

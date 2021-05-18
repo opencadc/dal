@@ -91,6 +91,30 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
     }
 
     /**
+     * Implementors can override this to further process the Header to accommodate different cutout types.  Leave empty
+     * if no further processing needs to be done.
+     *
+     * @param header The Header to modify.
+     */
+    @Override
+    protected void postProcess(Header header) throws HeaderCardException {
+        final int naxis = header.getIntValue(Standard.NAXIS);
+        final boolean expectPV = header.containsKey(CADCExt.RESTFRQ) || header.containsKey(CADCExt.RESTFREQ);
+
+        for (int x = 1; x <= naxis; x++) {
+            for (int y = 1; y <= naxis; y++) {
+                final String pvMatrixKey = String.format("PV%d_%d", x, y);
+
+                // If the RESTFRQ header is present, the PV values seem to be necessary as well.  Spatial (2D) cutouts
+                // will fail if they exist for the spatial axes however, so keep it to the spectral axis.
+                if (expectPV && !header.containsKey(pvMatrixKey)) {
+                    header.addValue(pvMatrixKey, (x == y) ? 1.0D : 0.0D, null);
+                }
+            }
+        }
+    }
+
+    /**
      * Compute a pixel cutout for the specified bounds. The bounds are assumed to be
      * barycentric wavelength in meters.
      *
@@ -119,14 +143,32 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
                 LOGGER.warn("No overlap.");
                 return null;
             } else {
-                LOGGER.debug("Overlap is (" + intersectionPixels.getLower() + ", " + intersectionPixels.getUpper()
-                             + ")");
-
                 final double low = intersectionPixels.getLower();
                 final double up = intersectionPixels.getUpper();
+                final long maxSpectralLength =
+                        this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(energyAxis).key());
 
-                return clip(spectralWCSKeywords, (long) Math.floor(Math.min(low, up) + 0.5D), (long) Math.ceil(
-                        Math.max(low, up) - 0.5D));
+                final long[] clippedSpectralBounds =
+                        clip(maxSpectralLength, (long) Math.floor(Math.min(low, up) + 0.5D),
+                             (long) Math.ceil(Math.max(low, up) - 0.5D));
+
+                final long[] entireBounds = clippedSpectralBounds == null ? null : new long[naxis * 2];
+
+                if (entireBounds != null) {
+                    for (int i = 0; i < entireBounds.length; i += 2) {
+                        final int axis = (i + 2) / 2;
+                        if (axis == energyAxis) {
+                            entireBounds[i] = clippedSpectralBounds[0];
+                            entireBounds[i + 1] = clippedSpectralBounds[1];
+                        } else {
+                            entireBounds[i] = 1L;
+                            entireBounds[i + 1] = (long) this.fitsHeaderWCSKeywords.getDoubleValue(
+                                    Standard.NAXISn.n(axis).key());
+                        }
+                    }
+                }
+
+                return entireBounds;
             }
         }
     }
@@ -181,37 +223,5 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
         LOGGER.debug("Calculated pixel values (" + low + "," + hi + ")");
 
         return new Interval<>(Math.min(low, hi), Math.max(low, hi));
-    }
-
-    private long[] clip(final FITSHeaderWCSKeywords energyFITSKeywords, final long lower, final long upper) {
-        final long len = energyFITSKeywords.getIntValue(Standard.NAXISn.n(1).key());
-
-        long x1 = lower;
-        long x2 = upper;
-
-        if (x1 < 1) {
-            x1 = 1;
-        }
-
-        if (x2 > len) {
-            x2 = len;
-        }
-
-        LOGGER.debug("clip: " + len + " (" + x1 + ":" + x2 + ")");
-
-        // all pixels includes
-        if (x1 == 1 && x2 == len) {
-            LOGGER.warn("clip: all");
-            return new long[0];
-        }
-
-        // no pixels included
-        if (x1 > len || x2 < 1) {
-            LOGGER.warn("clip: none");
-            return null;
-        }
-
-        // an actual cutout
-        return new long[]{x1, x2};
     }
 }
