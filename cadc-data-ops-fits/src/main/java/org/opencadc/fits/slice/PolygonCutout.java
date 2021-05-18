@@ -106,7 +106,16 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
      */
     @Override
     public long[] getBounds(final Polygon cutoutBound) throws NoSuchKeywordException, WCSLibRuntimeException {
-        return getPositionBounds(cutoutBound);
+        try {
+            return getPositionBounds(cutoutBound);
+        } catch (WCSLibRuntimeException wcsLibRuntimeException) {
+            if (wcsLibRuntimeException.getMessage().equals(FITSCutout.INPUT_TOO_DISTANT_ERROR_MESSAGE)) {
+                // No overlap
+                return null;
+            } else {
+                throw wcsLibRuntimeException;
+            }
+        }
     }
 
     /**

@@ -106,15 +106,6 @@ public class RangeCutout extends ShapeCutout<Range> {
         boundingBox.getVertices().add(new Point(x1, y2));
 
         final PolygonCutout polygonCutout = new PolygonCutout(this.fitsHeaderWCSKeywords.getHeader());
-        try {
-            return polygonCutout.getBounds(boundingBox);
-        } catch (WCSLibRuntimeException wcsLibRuntimeException) {
-            if (wcsLibRuntimeException.getMessage().equals(INPUT_TOO_DISTANT_ERROR_MESSAGE)) {
-                // No overlap
-                return null;
-            } else {
-                throw wcsLibRuntimeException;
-            }
-        }
+        return polygonCutout.getBounds(boundingBox);
     }
 }
