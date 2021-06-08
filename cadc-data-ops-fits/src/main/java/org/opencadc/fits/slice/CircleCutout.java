@@ -109,7 +109,7 @@ public class CircleCutout extends ShapeCutout<Circle> {
      * @throws WCSLibRuntimeException WCSLib (C) error.
      */
     private long[] getPositionBounds(final Circle circle)
-            throws NoSuchKeywordException, WCSLibRuntimeException, HeaderCardException {
+            throws NoSuchKeywordException, WCSLibRuntimeException {
         final double x = circle.getCenter().getLongitude();
         final double y = circle.getCenter().getLatitude();
         final double radius = circle.getRadius();
@@ -121,7 +121,7 @@ public class CircleCutout extends ShapeCutout<Circle> {
         boundingBox.getVertices().add(rangeReduce(x + dx, y + radius));
         boundingBox.getVertices().add(rangeReduce(x - dx, y + radius));
 
-        final PolygonCutout polygonCutout = new PolygonCutout(this.fitsHeaderWCSKeywords.getHeader());
+        final PolygonCutout polygonCutout = new PolygonCutout(this.fitsHeaderWCSKeywords);
         return polygonCutout.getBounds(boundingBox);
     }
 

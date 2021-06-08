@@ -96,6 +96,10 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
         super(header);
     }
 
+    public PolygonCutout(FITSHeaderWCSKeywords fitsHeaderWCSKeywords) {
+        super(fitsHeaderWCSKeywords);
+    }
+
     /**
      * Obtain the bounds of the given cutout.
      *
