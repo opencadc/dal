@@ -68,37 +68,56 @@
 
 package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.dali.DaliUtil;
-import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
-import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
+import ca.nrc.cadc.dali.Point;
+import ca.nrc.cadc.dali.Polygon;
+import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCardException;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.BufferedDataInputStream;
+import nom.tam.util.RandomAccessDataObject;
+import nom.tam.util.RandomAccessFileExt;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Test;
 
-public abstract class FITSCutout<T> {
-    static final String INPUT_TOO_DISTANT_ERROR_MESSAGE = "One or more of the world coordinates were invalid(9)";
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
-    protected final FITSHeaderWCSKeywords fitsHeaderWCSKeywords;
+public class PolygonCutoutTest extends BaseCutoutTest {
+    private static final Logger LOGGER = Logger.getLogger(PolygonCutoutTest.class);
 
-    public FITSCutout(final Header header) throws HeaderCardException {
-        DaliUtil.assertNotNull("header", header);
-        this.fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(header);
+    static {
+        Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
     }
 
-    protected FITSCutout(final FITSHeaderWCSKeywords fitsHeaderWCSKeywords) {
-        DaliUtil.assertNotNull("fitsHeaderWCSKeywords", fitsHeaderWCSKeywords);
-        this.fitsHeaderWCSKeywords = fitsHeaderWCSKeywords;
+    @Test
+    public void testMegapipeCutout() throws Exception {
+        final long startMillis = System.currentTimeMillis();
+
+        final String headerFileName = "test-megapipe-header.txt";
+        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
+
+        try (final InputStream inputStream = new FileInputStream(testFile);
+             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+
+            final Header testHeader = Header.readHeader(arrayDataInput);
+            final PolygonCutout polygonCutout = new PolygonCutout(testHeader);
+
+            final Polygon polygon = new Polygon();
+
+            polygon.getVertices().add(new Point(51.291219363105000D, -21.737249735369637D));
+            polygon.getVertices().add(new Point(51.291193816346876D, -21.721717813306441D));
+            polygon.getVertices().add(new Point(51.307912919582414D, -21.721693011490995D));
+            polygon.getVertices().add(new Point(51.307940254544761D, -21.737224914051101D));
+
+            final long[] result = polygonCutout.getBounds(polygon);
+            final long[] expected = new long[]{400, 700, 400, 700};
+            assertFuzzyPixelArrayEquals("Wrong bounds.", expected, result);
+        }
+
+        LOGGER.debug("Util.testALMACubeCutout OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
-
-
-    /**
-     * Obtain the bounds of the given cutout.
-     * @param cutoutBound   The bounds (shape, interval etc.) of the cutout.
-     * @return  long[] array of overlapping bounds, long[0] if all pixels are included, or null if no overlap.
-     *
-     * @throws NoSuchKeywordException Unknown keyword found.
-     * @throws WCSLibRuntimeException WCSLib (C) error.
-     * @throws HeaderCardException  If a FITS Header card couldn't be read.
-     */
-    public abstract long[] getBounds(final T cutoutBound)
-            throws NoSuchKeywordException, WCSLibRuntimeException, HeaderCardException;
 }

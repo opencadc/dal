@@ -68,37 +68,93 @@
 
 package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.dali.DaliUtil;
+import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.Point;
+import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 
-public abstract class FITSCutout<T> {
-    static final String INPUT_TOO_DISTANT_ERROR_MESSAGE = "One or more of the world coordinates were invalid(9)";
 
-    protected final FITSHeaderWCSKeywords fitsHeaderWCSKeywords;
+public class CircleCutout extends ShapeCutout<Circle> {
 
-    public FITSCutout(final Header header) throws HeaderCardException {
-        DaliUtil.assertNotNull("header", header);
-        this.fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(header);
-    }
-
-    protected FITSCutout(final FITSHeaderWCSKeywords fitsHeaderWCSKeywords) {
-        DaliUtil.assertNotNull("fitsHeaderWCSKeywords", fitsHeaderWCSKeywords);
-        this.fitsHeaderWCSKeywords = fitsHeaderWCSKeywords;
+    public CircleCutout(final Header header) throws HeaderCardException {
+        super(header);
     }
 
 
     /**
      * Obtain the bounds of the given cutout.
-     * @param cutoutBound   The bounds (shape, interval etc.) of the cutout.
-     * @return  long[] array of overlapping bounds, long[0] if all pixels are included, or null if no overlap.
      *
+     * @param cutoutBound The bounds (shape, interval etc.) of the cutout.
+     * @return long[] array of overlapping bounds, or long[0] if all pixels are included.
      * @throws NoSuchKeywordException Unknown keyword found.
      * @throws WCSLibRuntimeException WCSLib (C) error.
-     * @throws HeaderCardException  If a FITS Header card couldn't be read.
+     * @throws HeaderCardException    If a FITS Header card couldn't be read.
      */
-    public abstract long[] getBounds(final T cutoutBound)
-            throws NoSuchKeywordException, WCSLibRuntimeException, HeaderCardException;
+    @Override
+    public long[] getBounds(final Circle cutoutBound) throws NoSuchKeywordException, WCSLibRuntimeException,
+                                                             HeaderCardException {
+        return getPositionBounds(cutoutBound);
+    }
+
+    /**
+     * Find the pixel bounds that enclose the specified circle.
+     *
+     * @param circle circle with center in ICRS coordinates
+     * @return int[4] holding [x1, x2, y1, y2], int[0] if all pixels are included,
+     *      or null if the circle does not intersect the WCS
+     * @throws NoSuchKeywordException Unknown keyword found.
+     * @throws WCSLibRuntimeException WCSLib (C) error.
+     */
+    private long[] getPositionBounds(final Circle circle)
+            throws NoSuchKeywordException, WCSLibRuntimeException {
+        final double x = circle.getCenter().getLongitude();
+        final double y = circle.getCenter().getLatitude();
+        final double radius = circle.getRadius();
+        final double dx = Math.abs(radius / Math.cos(Math.toRadians(y)));
+
+        final Polygon boundingBox = new Polygon();
+        boundingBox.getVertices().add(rangeReduce(x - dx, y - radius));
+        boundingBox.getVertices().add(rangeReduce(x + dx, y - radius));
+        boundingBox.getVertices().add(rangeReduce(x + dx, y + radius));
+        boundingBox.getVertices().add(rangeReduce(x - dx, y + radius));
+
+        final PolygonCutout polygonCutout = new PolygonCutout(this.fitsHeaderWCSKeywords);
+        return polygonCutout.getBounds(boundingBox);
+    }
+
+    /**
+     * Modify argument vertex so that coordinates are in [0,360] and [-90,90].
+     *
+     * @param longitude The longitude to check
+     * @param latitude  The latitude to check
+     * @return the same vertex for convenience
+     *
+     */
+    private Point rangeReduce(final double longitude, final double latitude) {
+        double retLongitude = longitude;
+        double retLatitude = latitude;
+
+        if (retLatitude > 90.0) {
+            retLongitude += 180.0;
+            retLatitude = 180.0 - retLatitude;
+        }
+
+        if (retLatitude < -90.0) {
+            retLongitude += 180.0;
+            retLatitude = -180.0 - retLatitude;
+        }
+
+        if (retLongitude < 0) {
+            retLongitude += 360.0;
+        }
+
+        if (retLongitude > 360.0) {
+            retLongitude -= 360.0;
+        }
+
+        return new Point(retLongitude, retLatitude);
+    }
 }

@@ -77,15 +77,10 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.StreamingImageData;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.RandomAccessDataObject;
 import nom.tam.util.RandomAccessFileExt;
@@ -114,8 +109,7 @@ public class NDimensionalSlicerTest {
         slices.add(fmt.parse("[1][10:16,70:90]"));
         slices.add(fmt.parse("[106][8:32,88:112]"));
         slices.add(fmt.parse("[126]"));
-        
-        
+
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
                                                        NDimensionalSlicerTest.class);
