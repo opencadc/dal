@@ -96,6 +96,10 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
         super(header);
     }
 
+    public PolygonCutout(FITSHeaderWCSKeywords fitsHeaderWCSKeywords) {
+        super(fitsHeaderWCSKeywords);
+    }
+
     /**
      * Obtain the bounds of the given cutout.
      *
@@ -106,7 +110,16 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
      */
     @Override
     public long[] getBounds(final Polygon cutoutBound) throws NoSuchKeywordException, WCSLibRuntimeException {
-        return getPositionBounds(cutoutBound);
+        try {
+            return getPositionBounds(cutoutBound);
+        } catch (WCSLibRuntimeException wcsLibRuntimeException) {
+            if (wcsLibRuntimeException.getMessage().equals(FITSCutout.INPUT_TOO_DISTANT_ERROR_MESSAGE)) {
+                // No overlap
+                return null;
+            } else {
+                throw wcsLibRuntimeException;
+            }
+        }
     }
 
     /**
@@ -174,7 +187,7 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
         // convert polygonToCut to pixel coordinates and find min/max
         double x1 = Double.MAX_VALUE;
         double x2 = -1.0D * x1;
-        double y1 = x1;
+        double y1 = Double.MAX_VALUE;
         double y2 = -1.0D * y1;
         LOGGER.debug("Bounding box is " + polygonToCut);
         for (final Point point : polygonToCut.getVertices()) {
@@ -217,17 +230,26 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
         final long iy1 = (long) Math.floor(y1 + buffer);
         final long iy2 = (long) Math.ceil(y2 - buffer);
 
-        LOGGER.debug("Rounded from [" + Arrays.toString(new double[]{x1, x2, y1, y2}) + "]");
-
         // clipping
         LOGGER.debug("Clipping box " + Arrays.toString(new long[]{ix1, ix2, iy1, iy2}) + " into "
                      + Arrays.toString(new long[]{naxis1, naxis2}));
 
         final long[] clippedBox = clip(naxis1, naxis2, ix1, ix2, iy1, iy2);
+        final long[] entireBounds = clippedBox == null ? null : Arrays.copyOf(clippedBox, naxis * 2);
+
+        // Pad the entire range to include each axis bounds.
+        if (entireBounds != null) {
+            for (int i = clippedBox.length; i < entireBounds.length; i += 2) {
+                final int axis = (i + 2) / 2;
+                entireBounds[i] = 1L;
+                entireBounds[i + 1] = (long) this.fitsHeaderWCSKeywords.getDoubleValue(
+                        Standard.NAXISn.n(axis).key());
+            }
+        }
 
         LOGGER.debug("Clipping OK: " + Arrays.toString(clippedBox));
 
-        return clippedBox;
+        return entireBounds;
     }
 
     private long[] clip(long w, long h, long x1, long x2, long y1, long y2) {

@@ -5,18 +5,18 @@ The `cadc-data-ops-fits` library depends on the NASA led NOM TAM FITS library
 (https://github.com/nom-tam-fits/nom-tam-fits) version 1.15.3 (or newer).
 
 ## Building it
-Gradle is required to compile and assemble the JAR file.
+You may use the provided Gradle Wrapper, or provide your own Gradle (< 7) installation.
 
-```bash
-$ gradle -i clean build
+```sh
+$ ../gradlew -i clean build
 ```
 
 ## Cutout API
 This library supports the commonly used cutout syntax to extract a sub-image from an Image HDU.
 
 ### Testing it
-```bash
-$ gradle -i clean test
+```sh
+$ ../gradlew -i clean test
 ```
 
 Some tests will be ignored as they require local files that are too big to fit into source control 

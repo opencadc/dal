@@ -68,56 +68,67 @@
 
 package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.dali.Point;
-import ca.nrc.cadc.dali.Polygon;
+import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Range;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
-import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.BufferedDataInputStream;
-import nom.tam.util.RandomAccessDataObject;
-import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
-public class PolygonCutoutTest extends BaseCutoutTest {
-    private static final Logger LOGGER = Logger.getLogger(PolygonCutoutTest.class);
+public class RangeCutoutTest extends BaseCutoutTest {
+    private static final Logger LOGGER = Logger.getLogger(RangeCutoutTest.class);
 
     static {
         Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
     }
 
     @Test
-    public void testMegapipeCutout() throws Exception {
+    public void testGetBounds() throws Exception {
         final long startMillis = System.currentTimeMillis();
-
-        final String headerFileName = "test-megapipe-header.txt";
+        final String headerFileName = "test-alma-cube-header.txt";
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
              final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
-
             final Header testHeader = Header.readHeader(arrayDataInput);
-            final PolygonCutout polygonCutout = new PolygonCutout(testHeader);
+            final Range range = new Range(new DoubleInterval(246.50902531258566D, 246.53097468741436D),
+                                          new DoubleInterval(-24.34D, -24.319999999999997D));
+            final RangeCutout rangeCutout = new RangeCutout(testHeader);
 
-            final Polygon polygon = new Polygon();
+            final long[] expected = new long[]{169, 300, 151, 300, 1, 151, 1, 1};
+            final long[] result = rangeCutout.getBounds(range);
 
-            polygon.getVertices().add(new Point(51.291219363105000D, -21.737249735369637D));
-            polygon.getVertices().add(new Point(51.291193816346876D, -21.721717813306441D));
-            polygon.getVertices().add(new Point(51.307912919582414D, -21.721693011490995D));
-            polygon.getVertices().add(new Point(51.307940254544761D, -21.737224914051101D));
-
-            final long[] result = polygonCutout.getBounds(polygon);
-            final long[] expected = new long[]{400, 700, 400, 700};
-            assertFuzzyPixelArrayEquals("Wrong bounds.", expected, result);
+            assertFuzzyPixelArrayEquals("Wrong ALMA range cutout.", expected, result);
         }
+        LOGGER.debug("RangeCutoutTest.testGetBounds OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+    }
 
-        LOGGER.debug("Util.testALMACubeCutout OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+    @Test
+    public void testNoOverlap() throws Exception {
+        final long startMillis = System.currentTimeMillis();
+        final String headerFileName = "test-alma-cube-header.txt";
+        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
+
+        try (final InputStream inputStream = new FileInputStream(testFile);
+             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+            final Header testHeader = Header.readHeader(arrayDataInput);
+            final Range range = new Range(new DoubleInterval(110.5D, 155.8D),
+                                          new DoubleInterval(-4.34D, 10.31D));
+            final RangeCutout rangeCutout = new RangeCutout(testHeader);
+
+            final long[] result = rangeCutout.getBounds(range);
+
+            Assert.assertNull("Wrong ALMA range cutout.", result);
+        }
+        LOGGER.debug("RangeCutoutTest.testNoOverlap OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 }

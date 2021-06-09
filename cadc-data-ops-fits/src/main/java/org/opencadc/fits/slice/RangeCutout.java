@@ -70,54 +70,41 @@ package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
-import ca.nrc.cadc.util.FileUtil;
-import ca.nrc.cadc.util.Log4jInit;
-import nom.tam.fits.Fits;
+import ca.nrc.cadc.dali.Range;
+import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
+import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
 import nom.tam.fits.Header;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.BufferedDataInputStream;
-import nom.tam.util.RandomAccessDataObject;
-import nom.tam.util.RandomAccessFileExt;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Test;
+import nom.tam.fits.HeaderCardException;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 
-public class PolygonCutoutTest extends BaseCutoutTest {
-    private static final Logger LOGGER = Logger.getLogger(PolygonCutoutTest.class);
-
-    static {
-        Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
+public class RangeCutout extends ShapeCutout<Range> {
+    public RangeCutout(Header header) throws HeaderCardException {
+        super(header);
     }
 
-    @Test
-    public void testMegapipeCutout() throws Exception {
-        final long startMillis = System.currentTimeMillis();
+    /**
+     * Obtain the bounds of the given cutout.
+     *
+     * @param cutoutBound The bounds (shape, interval etc.) of the cutout.
+     * @return long[] array of overlapping bounds, or long[0] if all pixels are included.
+     * @throws NoSuchKeywordException Unknown keyword found.
+     * @throws WCSLibRuntimeException WCSLib (C) error.
+     */
+    @Override
+    public long[] getBounds(final Range cutoutBound)
+            throws NoSuchKeywordException, WCSLibRuntimeException {
+        final double x1 = cutoutBound.getLongitude().getLower();
+        final double x2 = cutoutBound.getLongitude().getUpper();
+        final double y1 = cutoutBound.getLatitude().getLower();
+        final double y2 = cutoutBound.getLatitude().getUpper();
 
-        final String headerFileName = "test-megapipe-header.txt";
-        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
+        final Polygon boundingBox = new Polygon();
+        boundingBox.getVertices().add(new Point(x1, y1));
+        boundingBox.getVertices().add(new Point(x2, y1));
+        boundingBox.getVertices().add(new Point(x2, y2));
+        boundingBox.getVertices().add(new Point(x1, y2));
 
-        try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
-
-            final Header testHeader = Header.readHeader(arrayDataInput);
-            final PolygonCutout polygonCutout = new PolygonCutout(testHeader);
-
-            final Polygon polygon = new Polygon();
-
-            polygon.getVertices().add(new Point(51.291219363105000D, -21.737249735369637D));
-            polygon.getVertices().add(new Point(51.291193816346876D, -21.721717813306441D));
-            polygon.getVertices().add(new Point(51.307912919582414D, -21.721693011490995D));
-            polygon.getVertices().add(new Point(51.307940254544761D, -21.737224914051101D));
-
-            final long[] result = polygonCutout.getBounds(polygon);
-            final long[] expected = new long[]{400, 700, 400, 700};
-            assertFuzzyPixelArrayEquals("Wrong bounds.", expected, result);
-        }
-
-        LOGGER.debug("Util.testALMACubeCutout OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        final PolygonCutout polygonCutout = new PolygonCutout(this.fitsHeaderWCSKeywords);
+        return polygonCutout.getBounds(boundingBox);
     }
 }

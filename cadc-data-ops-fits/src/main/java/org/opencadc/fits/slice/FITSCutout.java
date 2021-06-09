@@ -75,6 +75,8 @@ import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 
 public abstract class FITSCutout<T> {
+    static final String INPUT_TOO_DISTANT_ERROR_MESSAGE = "One or more of the world coordinates were invalid(9)";
+
     protected final FITSHeaderWCSKeywords fitsHeaderWCSKeywords;
 
     public FITSCutout(final Header header) throws HeaderCardException {
