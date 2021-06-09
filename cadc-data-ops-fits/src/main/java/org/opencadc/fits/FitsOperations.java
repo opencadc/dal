@@ -68,12 +68,13 @@
 package org.opencadc.fits;
 
 import ca.nrc.cadc.io.ReadException;
+import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
