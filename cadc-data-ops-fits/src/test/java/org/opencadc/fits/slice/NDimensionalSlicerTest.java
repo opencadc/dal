@@ -341,40 +341,4 @@ public class NDimensionalSlicerTest {
 
         Files.deleteIfExists(outputPath);
     }
-
-    @Test
-    public void testWCSCircle() throws Exception {
-        final Cutout cutout = new Cutout();
-        // Python bounding box is [-56, 89, 17, 162].
-        cutout.pos = new Circle(new Point(309.8D, 42.7D), 0.3D);
-
-        final NDimensionalSlicer slicer = new NDimensionalSlicer();
-        final File file = FileUtil.getFileFromResource("test-blast.fits",
-                                                       NDimensionalSlicerTest.class);
-        final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
-        final String testWriteDir = configuredTestWriteDir == null ? "/tmp" : configuredTestWriteDir;
-        final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(),
-                                                     "test-blast-wcs-circle-cutout", ".fits");
-        LOGGER.debug("Writing out to " + outputPath);
-
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
-             final OutputStream fileOutputStream = new FileOutputStream(outputPath.toFile())) {
-            slicer.slice(randomAccessDataObject, cutout, fileOutputStream);
-            fileOutputStream.flush();
-        }
-
-        final Fits resultFits = new Fits(outputPath.toFile());
-        resultFits.read();
-
-        Assert.assertEquals("Should have two HDUs", 2, resultFits.getNumberOfHDUs());
-
-        final ImageHDU firstImageHDU = (ImageHDU) resultFits.getHDU(0);
-        Assert.assertArrayEquals("First HDU has incorrect axes.", new int[]{140, 118},
-                                 firstImageHDU.getAxes());
-        final ImageHDU secondImageHDU = (ImageHDU) resultFits.getHDU(0);
-        Assert.assertArrayEquals("Second HDU has incorrect axes.", new int[]{140, 118},
-                                 secondImageHDU.getAxes());
-
-        Files.deleteIfExists(outputPath);
-    }
 }
