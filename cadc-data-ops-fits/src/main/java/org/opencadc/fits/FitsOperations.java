@@ -72,6 +72,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
@@ -80,6 +82,7 @@ import nom.tam.util.RandomAccessDataObject;
 import org.apache.log4j.Logger;
 import org.opencadc.fits.slice.NDimensionalSlicer;
 import org.opencadc.soda.ExtensionSlice;
+import org.opencadc.soda.server.Cutout;
 
 /**
  * Operation on FITS files.
@@ -139,8 +142,10 @@ public class FitsOperations {
     public void cutoutToStream(final List<ExtensionSlice> slices, final OutputStream outputStream) throws ReadException {
         try {
             final NDimensionalSlicer slicer = new NDimensionalSlicer();
-            slicer.slice(src, slices, outputStream);
-        } catch (FitsException ex) {
+            final Cutout cutout = new Cutout();
+            cutout.pixelCutouts = slices;
+            slicer.slice(src, cutout, outputStream);
+        } catch (FitsException | NoSuchKeywordException ex) {
             throw new ReadException("invalid fits data: " + src + " reason: " + ex.getMessage(), ex);
         } catch (IOException ex) {
             throw new ReadException("failed to read " + src + " reason: " + ex.getMessage(), ex);

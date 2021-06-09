@@ -93,6 +93,7 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
     /**
      * Implementors can override this to further process the Header to accommodate different cutout types.  Leave empty
      * if no further processing needs to be done.
+     * This class overrides to insert the PV matrix keywords that are necessary for slicing along the spectral axis.
      *
      * @param header The Header to modify.
      */
