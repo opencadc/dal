@@ -66,95 +66,78 @@
  ************************************************************************
  */
 
-package org.opencadc.fits.slice;
+package ca.nrc.cadc.dali;
 
-import ca.nrc.cadc.util.ArrayUtil;
-
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
+public class EnergyConverterTest {
+    private static final Logger LOGGER = Logger.getLogger(EnergyConverterTest.class);
 
-/**
- * Conversion functions for energy units.  This converter is concerned with conversions from metres as that is the
- * defined input unit for DAL SODA.  This could just as easily be called EnergyMetreConverter.
- */
-public class EnergyConverter {
-    private static final Logger LOGGER = Logger.getLogger(EnergyConverter.class);
-
-    private static final String[] FREQ_UNITS = new String[] {"Hz", "kHz", "MHz", "GHz" };
-    private static final double[] FREQ_MULT = new double[] {1.0, 1.0e3, 1.0e6, 1.0e9 };
-
-    private static final String[] EN_UNITS = new String[] {"eV", "keV", "MeV", "GeV" };
-    private static final double[] EN_MULT = new double[] {1.0, 1.0e3, 1.0e6, 1.0e9 };
-
-    private static final String[] WAVE_UNITS = new String[] {"m", "cm", "mm",
-                                                             "um", "µm", "nm",
-                                                             "Angstrom", "A" }; // A  deprecated
-    private static final double[] WAVE_MULT = new double[] {1.0, 1.0e-2, 1.0e-3,
-                                                            1.0e-6, 1.0e-6, 1.0e-9,
-                                                            1.0e-10, 1.0e-10,};
-
-    protected static final double c = 299792458.0D; // m/sec - Speed of light in a vacuum
-    protected static final double h = 6.62607015e-34; // J/sec - Planck constant
-
-    /**
-     * Convert from known metres (user input) to the given unit.
-     * @param metres    Value to convert in metres (wavelength).
-     * @param cunit     The unit to convert to.
-     * @return          Converted value.
-     *
-     * @throws IllegalArgumentException For unknown or unusable unit value.
-     */
-    public double fromMetres(final double metres, final String cunit) {
-        final boolean inverse;
-        final String unit;
-
-        LOGGER.debug("Converting from metres (" + metres + ") to " + cunit);
-
-        // 1 / the provided unit.
-        if (cunit.startsWith("/")) {
-            inverse = true;
-            unit = cunit.substring(1);
-        } else if (!cunit.contains(" ") && cunit.endsWith("-1")) {
-            inverse = true;
-            unit = cunit.substring(0, cunit.indexOf("-1"));
-        } else {
-            inverse = false;
-            unit = cunit;
-        }
-
-        int i = ArrayUtil.matches("^" + unit + "$", FREQ_UNITS, true);
-        if (i != -1) {
-            final double result = metresToFreq(metres, i);
-            return inverse ? 1.0D / result : result;
-        }
-
-        i = ArrayUtil.matches("^" + unit + "$", EN_UNITS, true);
-        if (i != -1) {
-            final double result = metresToEnergy(metres, i);
-            return inverse ? 1.0D / result : result;
-        }
-
-        i = ArrayUtil.matches("^" + unit + "$", WAVE_UNITS, true);
-        if (i != -1) {
-            final double result = metresToWavelength(metres, i);
-            LOGGER.debug("Wavelength " + result);
-            final double conversionResult = inverse ? 1.0D / result : result;
-            LOGGER.debug("Wavelength conversion " + conversionResult);
-            return conversionResult;
-        }
-
-        throw new IllegalArgumentException("Unknown units: " + unit);
+    static {
+        Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
     }
 
-    private double metresToFreq(final double metres, final int factorIndex) {
-        return (c / metres) / FREQ_MULT[factorIndex];
+    @Test
+    public void metresToHz() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double hz = testSubject.fromMetres(0.1D, "Hz");
+        Assert.assertEquals("Wrong Hz.", 2997924580.0D, hz, 0.0D);
     }
 
-    private double metresToEnergy(final double metres, final int factorIndex) {
-        return ((c * h) / metres) / EN_MULT[factorIndex];
+    @Test
+    public void metresToMHz() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double mhz = testSubject.fromMetres(2.2D, "MHz");
+        Assert.assertEquals("Wrong MHz.", 136.2700D, mhz, 0.01D);
     }
 
-    private double metresToWavelength(double metres, int factorIndex) {
-        return metres / WAVE_MULT[factorIndex];
+    @Test
+    public void metresToGHz() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double ghz = testSubject.fromMetres(12.4D, "GHz");
+        Assert.assertEquals("Wrong GHz.", 0.0241768111D, ghz, 0.0000001D);
+    }
+
+    @Test
+    public void metresToEv() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double eV = testSubject.fromMetres(0.68D, "eV");
+        LOGGER.debug("Calculated eV " + eV);
+        Assert.assertEquals("Wrong eV.", 2.9212439E-25D, eV, 0.00001E-22D);
+    }
+
+    @Test
+    public void metresToKev() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double keV = testSubject.fromMetres(4.6D, "keV");
+        LOGGER.debug("Calculated keV " + keV);
+        Assert.assertEquals("Wrong keV.", 4.31836E-29D, keV, 0.00001E-18D);
+    }
+
+    @Test
+    public void metresToNm() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double nm = testSubject.fromMetres(44.6D, "nm");
+        LOGGER.debug("Calculated nm " + nm);
+        Assert.assertEquals("Wrong nm.", 4.46E10D, nm, 0.0D);
+    }
+
+    @Test
+    public void metresToA() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double angstrom = testSubject.fromMetres(13.99D, "A");
+        LOGGER.debug("Calculated A " + angstrom);
+        Assert.assertEquals("Wrong A.", 1.399E11D, angstrom, 0.0D);
     }
 }
