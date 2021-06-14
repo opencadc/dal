@@ -97,6 +97,7 @@ public abstract class FITSCutout<T> {
     /**
      * Implementors can override this to further process the Header to accommodate different cutout types.  Leave empty
      * if no further processing needs to be done.
+     * This method MUST be called before the fitsHeaderWCSKeywords is created as that object cannot be modified.
      * @param header    The Header to modify.
      * @throws HeaderCardException  if modification fails.
      */

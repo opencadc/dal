@@ -73,6 +73,10 @@ import ca.nrc.cadc.util.ArrayUtil;
 import org.apache.log4j.Logger;
 
 
+/**
+ * Conversion functions for energy units.  This converter is concerned with conversions from metres as that is the
+ * defined input unit for DAL SODA.  This could just as easily be called EnergyMetreConverter.
+ */
 public class EnergyConverter {
     private static final Logger LOGGER = Logger.getLogger(EnergyConverter.class);
 

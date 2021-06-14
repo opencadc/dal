@@ -78,6 +78,10 @@ import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
 
+/**
+ * Base class for Shapes (Spatial cutouts).  It mainly contains a convenience method that can be shared.
+ * @param <T>   Shape.
+ */
 public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
     private static final Logger LOGGER = Logger.getLogger(ShapeCutout.class);
 

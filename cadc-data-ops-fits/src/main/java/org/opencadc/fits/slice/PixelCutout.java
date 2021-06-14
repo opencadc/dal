@@ -79,6 +79,9 @@ import org.opencadc.soda.ExtensionSlice;
 import org.opencadc.soda.PixelRange;
 
 
+/**
+ * Simple class to cut pixels out.  Exists to maintain the same format as the WCS cutouts.
+ */
 public class PixelCutout extends FITSCutout<ExtensionSlice> {
     private static final Logger LOGGER = Logger.getLogger(PixelCutout.class);
 

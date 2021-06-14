@@ -80,19 +80,16 @@ import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import nom.tam.util.RandomAccessDataObject;
-import org.apache.log4j.Logger;
 import org.opencadc.fits.slice.NDimensionalSlicer;
 import org.opencadc.soda.ExtensionSlice;
 import org.opencadc.soda.server.Cutout;
 
 /**
- * Operation on FITS files.
+ * Operations on FITS files.
  * 
  * @author pdowler
  */
 public class FitsOperations {
-    private static final Logger log = Logger.getLogger(FitsOperations.class);
-
     private final RandomAccessDataObject src;
 
     public FitsOperations(RandomAccessDataObject src) {

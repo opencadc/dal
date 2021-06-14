@@ -82,6 +82,10 @@ import org.apache.log4j.Logger;
 import org.opencadc.fits.CADCExt;
 
 
+/**
+ * Provide the cutout bounds for the given Header.  This class is executed after the inputs are parsed into a
+ * representative Interval object that can be used to obtain an array of bounding pixels.
+ */
 public class EnergyCutout extends FITSCutout<Interval<Number>> {
     private static final Logger LOGGER = Logger.getLogger(EnergyCutout.class);
 
@@ -120,11 +124,11 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
      * barycentric wavelength in meters.
      *
      * @param bounds The bounds of the cutout.
-     * @return int[2] with the pixel bounds, int[0] if all pixels are included, or
+     * @return long[NAXIS] with the pixel bounds, long[0] if all pixels are included, or
      *          null if no pixels are included
      */
-    public long[] getBounds(final Interval<Number> bounds)
-            throws NoSuchKeywordException, WCSLibRuntimeException {
+    @Override
+    public long[] getBounds(final Interval<Number> bounds) throws NoSuchKeywordException, WCSLibRuntimeException {
         // compute intersection
         final int energyAxis = this.fitsHeaderWCSKeywords.getSpectralAxis();
         final FITSHeaderWCSKeywords spectralWCSKeywords = this.fitsHeaderWCSKeywords;

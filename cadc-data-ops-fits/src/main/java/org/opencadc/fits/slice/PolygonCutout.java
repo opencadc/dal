@@ -87,7 +87,7 @@ import org.apache.log4j.Logger;
 
 
 /**
- * A Position (spatial) cutout.
+ * A Spatial Polygon cutout.  This class is executed after the inputs are parsed into an appropriate Polygon shape.
  */
 public class PolygonCutout extends ShapeCutout<Polygon> {
     private static final Logger LOGGER = Logger.getLogger(PolygonCutout.class);
@@ -125,12 +125,12 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
     /**
      * Compute the range of pixel indices that correspond to the supplied
      * polygon. This method computes the cutout ranges within the image. The
-     * returned value is null if there is no intersection, an int[4] for a
+     * returned value is null if there is no intersection, an long[NAXIS] for a
      * cutout, and an int[0] when the image is wholly contained within the
      * polygon (and no cutout is necessary).
      *
      * @param polygon The shape to cutout
-     * @return int[4] holding [x1, x2, y1, y2], int[0] if all pixels are included,
+     * @return long[NAXIS], or long[0] if all pixels are included,
      *      or null if the circle does not intersect the WCS
      */
     private long[] getPositionBounds(final Polygon polygon) throws NoSuchKeywordException {

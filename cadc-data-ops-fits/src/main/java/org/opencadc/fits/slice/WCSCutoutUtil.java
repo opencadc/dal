@@ -82,6 +82,11 @@ import nom.tam.fits.HeaderCardException;
 import org.opencadc.soda.server.Cutout;
 
 
+/**
+ * Utility class to provide bounds for the given WCS Cutout.  In the unlikely event that multiple cutouts are specified,
+ * only one will be honoured, with priority given to POSITION, then BAND, then TIME, and finally POLARIZATION.
+ * Pixel cutouts are handled outside of this class.
+ */
 public class WCSCutoutUtil {
     public static long[] getBounds(final Header header, final Cutout cutout)
             throws HeaderCardException, NoSuchKeywordException {

@@ -109,7 +109,8 @@ import org.opencadc.soda.PixelRange;
 import org.opencadc.soda.server.Cutout;
 
 /**
- * Slice out a portion of an image.
+ * Slice out a portion of an image.  This class will support the SODA Shapes and will delegate each cutout to its
+ * appropriate handler (e.g. CircleCutout, EnergyCutout, etc.).
  */
 public class NDimensionalSlicer {
     private static final Logger LOGGER = Logger.getLogger(NDimensionalSlicer.class);

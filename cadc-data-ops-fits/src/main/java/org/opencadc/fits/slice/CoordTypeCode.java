@@ -72,6 +72,9 @@ import java.util.Arrays;
 import java.util.Locale;
 
 
+/**
+ * Supported COORD Type codes used to identify a certain type of axis.
+ */
 public enum CoordTypeCode {
     // Spatial type codes.
     RA("RA", "deg", CoordType.SPATIAL),

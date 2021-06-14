@@ -77,6 +77,12 @@ import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 
 
+/**
+ * Iterate over HDUs of a nom.tam.fits.Fits object.  The Fits object essentially contains two lists of HDUs; one is the
+ * cache of HDUs that have been iterated over, and the second is the list of HDUs that have yet to be read.  This
+ * iterator simplifies that by first iterating the cache, then it reads the unread HDUs.
+ * This is a read-only operation, so the remove() operation is not supported.
+ */
 public class HDUIterator implements Iterator<BasicHDU<?>> {
 
     private final Iterator<BasicHDU<?>> unCachedIterator;

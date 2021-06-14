@@ -77,6 +77,9 @@ import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 
 
+/**
+ * A Spatial Circle cutout.  This class is executed after the inputs are parsed into an appropriate Circle shape.
+ */
 public class CircleCutout extends ShapeCutout<Circle> {
 
     public CircleCutout(final Header header) throws HeaderCardException {
@@ -103,13 +106,12 @@ public class CircleCutout extends ShapeCutout<Circle> {
      * Find the pixel bounds that enclose the specified circle.
      *
      * @param circle circle with center in ICRS coordinates
-     * @return int[4] holding [x1, x2, y1, y2], int[0] if all pixels are included,
+     * @return long[NAXIS], or long[0] if all pixels are included,
      *      or null if the circle does not intersect the WCS
      * @throws NoSuchKeywordException Unknown keyword found.
      * @throws WCSLibRuntimeException WCSLib (C) error.
      */
-    private long[] getPositionBounds(final Circle circle)
-            throws NoSuchKeywordException, WCSLibRuntimeException {
+    private long[] getPositionBounds(final Circle circle) throws NoSuchKeywordException, WCSLibRuntimeException {
         final double x = circle.getCenter().getLongitude();
         final double y = circle.getCenter().getLatitude();
         final double radius = circle.getRadius();
