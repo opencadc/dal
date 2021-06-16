@@ -86,8 +86,7 @@ import org.opencadc.soda.server.Cutout;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+
 
 public class WCSCutoutUtilTest extends BaseCutoutTest {
     private static final Logger LOGGER = Logger.getLogger(WCSCutoutUtilTest.class);
@@ -103,32 +102,23 @@ public class WCSCutoutUtilTest extends BaseCutoutTest {
         final String headerFileName = "test-alma-cube-band-header.txt";
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
         final Cutout cutout = new Cutout();
-        cutout.pos = new Circle(new Point(128.638D, 17.34D), 0.02D);
+        cutout.pos = new Circle(new Point(128.638D, 17.33D), 0.01D);
         cutout.band = new Interval<>(1.3606E-3D, 1.3616E-3D);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
              final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
-
             final Header testHeader = Header.readHeader(arrayDataInput);
-            final List<PixelRange[]> resultRanges = WCSCutoutUtil.getBounds(testHeader, cutout);
-            final List<PixelRange[]> expectedRanges = new ArrayList<>();
-            expectedRanges.add(new PixelRange[] {
-                    new PixelRange(1, 400),
-                    new PixelRange(1, 400),
-                    new PixelRange(1, 60),
-                    new PixelRange(1, 1)
-            });
+            final PixelRange[] resultRanges = WCSCutoutUtil.getBounds(testHeader, cutout);
 
-            expectedRanges.add(new PixelRange[] {
-                    new PixelRange(1, 400),
-                    new PixelRange(1, 400),
+            // Combined Circle cutout (axes 1 & 2), as well as Band cutout on axis 3.
+            final PixelRange[] expectedRanges = new PixelRange[] {
+                    new PixelRange(17, 400),
+                    new PixelRange(1, 52),
                     new PixelRange(1, 18),
                     new PixelRange(1, 1)
-            });
+            };
 
-            Assert.assertArrayEquals("Wrong cutout bounds for ALMA Cube.",
-                                     expectedRanges.toArray(new PixelRange[0][0]),
-                                     resultRanges.toArray(new PixelRange[0][0]));
+            Assert.assertArrayEquals("Wrong cutout bounds for ALMA Cube.", expectedRanges, resultRanges);
         }
         LOGGER.debug("WCSCutoutUtilTest.testMultipleWCS OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }

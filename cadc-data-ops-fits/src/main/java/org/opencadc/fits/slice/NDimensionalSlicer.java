@@ -498,18 +498,16 @@ public class NDimensionalSlicer {
     private void mapOverlap(final Header header, final Cutout cutout, final int hduIndex,
                             final Map<Integer, List<ExtensionSlice>> overlapHDUIndexesSlices)
             throws HeaderCardException, NoSuchKeywordException {
-        final List<PixelRange[]> pixelCutoutBounds = WCSCutoutUtil.getBounds(header, cutout);
-        if (!pixelCutoutBounds.isEmpty()) {
-            for (final PixelRange[] pixelRange : pixelCutoutBounds) {
-                final ExtensionSlice overlapSlice = new ExtensionSlice(hduIndex);
-                overlapSlice.getPixelRanges().addAll(Arrays.asList(pixelRange));
+        final PixelRange[] pixelCutoutBounds = WCSCutoutUtil.getBounds(header, cutout);
+        if (pixelCutoutBounds.length > 0) {
+            final ExtensionSlice overlapSlice = new ExtensionSlice(hduIndex);
+            overlapSlice.getPixelRanges().addAll(Arrays.asList(pixelCutoutBounds));
 
-                final List<ExtensionSlice> overlapSlices = overlapHDUIndexesSlices.containsKey(hduIndex)
-                                                           ? overlapHDUIndexesSlices.get(hduIndex)
-                                                           : new ArrayList<>();
-                overlapSlices.add(overlapSlice);
-                overlapHDUIndexesSlices.put(hduIndex, overlapSlices);
-            }
+            final List<ExtensionSlice> overlapSlices = overlapHDUIndexesSlices.containsKey(hduIndex)
+                                                       ? overlapHDUIndexesSlices.get(hduIndex)
+                                                       : new ArrayList<>();
+            overlapSlices.add(overlapSlice);
+            overlapHDUIndexesSlices.put(hduIndex, overlapSlices);
         }
     }
 

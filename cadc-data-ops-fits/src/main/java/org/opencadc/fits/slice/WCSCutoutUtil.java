@@ -102,39 +102,39 @@ public class WCSCutoutUtil {
      * @throws NoSuchKeywordException Unknown keyword found in Header.
      * @throws HeaderCardException    If a FITS Header card couldn't be read.
      */
-    public static List<PixelRange[]> getBounds(final Header header, final Cutout cutout)
+    public static PixelRange[] getBounds(final Header header, final Cutout cutout)
             throws HeaderCardException, NoSuchKeywordException {
-        final List<PixelRange[]> allPixelRanges = new ArrayList<>();
+        final List<PixelRange> allPixelRanges = new ArrayList<>();
 
         if (cutout.pos != null) {
             final PixelRange[] spatialPixelRanges = WCSCutoutUtil.getSpatialBounds(header, cutout.pos);
             if (spatialPixelRanges != null) {
-                allPixelRanges.add(spatialPixelRanges);
+                WCSCutoutUtil.merge(spatialPixelRanges, allPixelRanges);
             }
         }
 
         if (cutout.band != null) {
             final PixelRange[] spectralPixelRanges = WCSCutoutUtil.getSpectralBounds(header, cutout.band);
             if (spectralPixelRanges != null) {
-                allPixelRanges.add(spectralPixelRanges);
+                WCSCutoutUtil.merge(spectralPixelRanges, allPixelRanges);
             }
         }
 
         if (cutout.time != null) {
             final PixelRange[] temporalPixelRanges = WCSCutoutUtil.getTemporalBounds(header, cutout.time);
             if (temporalPixelRanges != null) {
-                allPixelRanges.add(temporalPixelRanges);
+                WCSCutoutUtil.merge(temporalPixelRanges, allPixelRanges);
             }
         }
 
         if (cutout.pol != null) {
             final PixelRange[] polarizationPixelRanges = WCSCutoutUtil.getPolarizationBounds(header, cutout.pol);
             if (polarizationPixelRanges != null) {
-                allPixelRanges.add(polarizationPixelRanges);
+                WCSCutoutUtil.merge(polarizationPixelRanges, allPixelRanges);
             }
         }
 
-        return allPixelRanges;
+        return allPixelRanges.toArray(new PixelRange[0]);
     }
 
     static PixelRange[] getSpatialBounds(final Header header, final Shape shape)
@@ -169,11 +169,30 @@ public class WCSCutoutUtil {
     }
 
     /**
-     * Convert the given bounds to an array of Pixel ranges.  The given bounds are expected to be an even number of
-     * pairs.
-     * @param pixelBounds   The bounds calculated.
-     * @return  PixelRange array of overlaps, or null if no overlap.
+     * Merge in the given pixelCutoutRanges array into the entire list of PixelRange objects.  This is to support
+     * multiple cutouts in a single HDU (Header), but along different axes.
+     * @param pixelCutoutRanges         The NAXIS-length array of PixelRange objects.
+     * @param completePixelRangeList    The List of PixelRange objects so far.  Can be empty but not null.
      */
+    static void merge(final PixelRange[] pixelCutoutRanges, final List<PixelRange> completePixelRangeList) {
+        if (completePixelRangeList.isEmpty()) {
+            completePixelRangeList.addAll(Arrays.asList(pixelCutoutRanges));
+        } else {
+            final int pixelCutoutRangesLength = pixelCutoutRanges.length;
+            for (int i = 0; i < pixelCutoutRangesLength; i++) {
+                final PixelRange pixelCutoutRange = pixelCutoutRanges[i];
+                final PixelRange pixelRange = completePixelRangeList.get(i);
+
+                if (!pixelCutoutRange.equals(pixelRange)) {
+                    final PixelRange mergedPixelRange =
+                            new PixelRange(Math.max(pixelCutoutRange.lowerBound, pixelRange.lowerBound),
+                                           Math.min(pixelCutoutRange.upperBound, pixelRange.upperBound));
+                    completePixelRangeList.set(i, mergedPixelRange);
+                }
+            }
+        }
+    }
+
     static PixelRange[] toPixelRanges(final long[] pixelBounds) {
         LOGGER.debug("toPixelRanges from bounds " + Arrays.toString(pixelBounds));
         if (pixelBounds == null) {
