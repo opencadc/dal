@@ -75,10 +75,14 @@ import ca.nrc.cadc.dali.Range;
 import ca.nrc.cadc.dali.Shape;
 import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
+import org.apache.log4j.Logger;
+import org.opencadc.soda.PixelRange;
 import org.opencadc.soda.server.Cutout;
 
 
@@ -88,46 +92,98 @@ import org.opencadc.soda.server.Cutout;
  * Pixel cutouts are handled outside of this class.
  */
 public class WCSCutoutUtil {
-    public static long[] getBounds(final Header header, final Cutout cutout)
+    private static final Logger LOGGER = Logger.getLogger(WCSCutoutUtil.class);
+
+    /**
+     * Calculate the pixel ranges that the set of WCS cutouts will produce for the HDU that the given Header represents.
+     * @param header        The Header to check.
+     * @param cutout        The Cutout specifications.
+     * @return  Array of PixelRange objects, or empty if no overlap.  Never null.
+     * @throws NoSuchKeywordException Unknown keyword found in Header.
+     * @throws HeaderCardException    If a FITS Header card couldn't be read.
+     */
+    public static List<PixelRange[]> getBounds(final Header header, final Cutout cutout)
             throws HeaderCardException, NoSuchKeywordException {
+        final List<PixelRange[]> allPixelRanges = new ArrayList<>();
+
         if (cutout.pos != null) {
-            return WCSCutoutUtil.getSpatialBounds(header, cutout.pos);
-        } else if (cutout.band != null) {
-            return WCSCutoutUtil.getSpectralBounds(header, cutout.band);
-        } else if (cutout.time != null) {
-            return WCSCutoutUtil.getTemporalBounds(header, cutout.time);
-        } else if ((cutout.pol != null) && !cutout.pol.isEmpty()) {
-            return WCSCutoutUtil.getPolarizationBounds(header, cutout.pol);
-        } else {
-            return null;
+            final PixelRange[] spatialPixelRanges = WCSCutoutUtil.getSpatialBounds(header, cutout.pos);
+            if (spatialPixelRanges != null) {
+                allPixelRanges.add(spatialPixelRanges);
+            }
         }
+
+        if (cutout.band != null) {
+            final PixelRange[] spectralPixelRanges = WCSCutoutUtil.getSpectralBounds(header, cutout.band);
+            if (spectralPixelRanges != null) {
+                allPixelRanges.add(spectralPixelRanges);
+            }
+        }
+
+        if (cutout.time != null) {
+            final PixelRange[] temporalPixelRanges = WCSCutoutUtil.getTemporalBounds(header, cutout.time);
+            if (temporalPixelRanges != null) {
+                allPixelRanges.add(temporalPixelRanges);
+            }
+        }
+
+        if (cutout.pol != null) {
+            final PixelRange[] polarizationPixelRanges = WCSCutoutUtil.getPolarizationBounds(header, cutout.pol);
+            if (polarizationPixelRanges != null) {
+                allPixelRanges.add(polarizationPixelRanges);
+            }
+        }
+
+        return allPixelRanges;
     }
 
-    static long[] getSpatialBounds(final Header header, final Shape shape)
+    static PixelRange[] getSpatialBounds(final Header header, final Shape shape)
             throws HeaderCardException, NoSuchKeywordException {
+        final long[] bounds;
         if (shape instanceof Circle) {
-            return new CircleCutout(header).getBounds((Circle) shape);
+            bounds = new CircleCutout(header).getBounds((Circle) shape);
         } else if (shape instanceof Polygon) {
-            return new PolygonCutout(header).getBounds((Polygon) shape);
+            bounds = new PolygonCutout(header).getBounds((Polygon) shape);
         } else if (shape instanceof Range) {
-            return new RangeCutout(header).getBounds((Range) shape);
+            bounds = new RangeCutout(header).getBounds((Range) shape);
         } else {
-            return null;
+            bounds = null;
         }
+
+        return WCSCutoutUtil.toPixelRanges(bounds);
     }
 
-    static long[] getSpectralBounds(final Header header, final Interval<Number> spectralInterval)
+    static PixelRange[] getSpectralBounds(final Header header, final Interval<Number> spectralInterval)
             throws HeaderCardException, NoSuchKeywordException {
-        return new EnergyCutout(header).getBounds(spectralInterval);
+        return WCSCutoutUtil.toPixelRanges(new EnergyCutout(header).getBounds(spectralInterval));
     }
 
-    static long[] getTemporalBounds(final Header header, final Interval<Number> temporalInterval)
+    static PixelRange[] getTemporalBounds(final Header header, final Interval<Number> temporalInterval)
             throws HeaderCardException {
         throw new UnsupportedOperationException("Temporal not yet implemented.");
     }
 
-    static long[] getPolarizationBounds(final Header header, final List<String> polarizationStates)
+    static PixelRange[] getPolarizationBounds(final Header header, final List<String> polarizationStates)
             throws HeaderCardException {
         throw new UnsupportedOperationException("Polarization not yet implemented.");
+    }
+
+    /**
+     * Convert the given bounds to an array of Pixel ranges.  The given bounds are expected to be an even number of
+     * pairs.
+     * @param pixelBounds   The bounds calculated.
+     * @return  PixelRange array of overlaps, or null if no overlap.
+     */
+    static PixelRange[] toPixelRanges(final long[] pixelBounds) {
+        LOGGER.debug("toPixelRanges from bounds " + Arrays.toString(pixelBounds));
+        if (pixelBounds == null) {
+            return null;
+        } else {
+            final PixelRange[] pixelRanges = new PixelRange[pixelBounds.length / 2];
+            for (int i = 0; i < pixelBounds.length; i += 2) {
+                pixelRanges[i / 2] = new PixelRange((int) pixelBounds[i], (int) pixelBounds[i + 1]);
+            }
+            return pixelRanges;
+        }
     }
 }
