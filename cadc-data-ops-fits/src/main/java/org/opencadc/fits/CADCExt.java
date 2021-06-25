@@ -92,7 +92,7 @@ public enum CADCExt implements IFitsHeader {
      * Use RESTFRQ
      * @deprecated Use RESTFRQ
      */
-    @Deprecated()
+    @Deprecated
     RESTFREQ(HDU.IMAGE, VALUE.REAL, ""),
 
     RESTWAV(HDU.IMAGE, VALUE.REAL, ""),
