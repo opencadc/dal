@@ -93,38 +93,44 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
         super(fitsHeaderWCSKeywords);
     }
 
+    /**
+     * Deduce the Coordinate System used.  This will scan the Header for CTYPEn values.
+     * @return  CoordSys instance, or null if the Header has no CTYPEn value(s).
+     */
     CoordSys inferCoordSys() {
         final CoordSys ret;
+        final int spatialLongitudeAxis = this.fitsHeaderWCSKeywords.getSpatialLongitudeAxis();
+        final int spatialLatitudeAxis = this.fitsHeaderWCSKeywords.getSpatialLatitudeAxis();
 
-        if (!fitsHeaderWCSKeywords.containsKey(Standard.CTYPEn.n(1).key())) {
+        if (spatialLongitudeAxis < 0 || spatialLatitudeAxis < 0) {
             ret = null;
         } else {
-            final String ctype1 = fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(1).key());
+            final String ctype1 =
+                    fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(spatialLongitudeAxis).key());
 
             LOGGER.debug("CTYPE1 is " + ctype1);
 
-            final String ctype2 = fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(2).key());
+            final String ctype2 = fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(spatialLatitudeAxis).key());
             final float equinox = fitsHeaderWCSKeywords.getFloatValue(Standard.EQUINOX.key());
 
             ret = new CoordSys();
+            ret.longitudeAxis = spatialLongitudeAxis;
+            ret.latitudeAxis = spatialLatitudeAxis;
             ret.name = fitsHeaderWCSKeywords.getStringValue(Standard.RADESYS.key());
             ret.supported = false;
 
             if (CoordSys.GAPPT.equals(ret.name)) {
                 ret.timeDependent = Boolean.TRUE;
-                ret.supported = false;
             } else if ((ctype1.startsWith("ELON") && ctype2.startsWith("ELAT"))
                        || (ctype1.startsWith("ELAT") && ctype2.startsWith("ELON"))) {
                 // ecliptic
                 ret.name = CoordSys.ECL;
                 ret.timeDependent = Boolean.TRUE;
-                ret.supported = false;
             } else if ((ctype1.startsWith("HLON") && ctype2.startsWith("HLAT"))
                        || (ctype1.startsWith("HLAT") && ctype2.startsWith("HLON"))) {
                 // helio-ecliptic
                 ret.name = CoordSys.HECL;
                 ret.timeDependent = Boolean.TRUE;
-                ret.supported = false;
             } else if ((ctype1.startsWith("GLON") && ctype2.startsWith("GLAT"))
                        || (ctype1.startsWith("GLAT") && ctype2.startsWith("GLON"))) {
                 if (CoordSys.GAL.equals(ret.name)) {
@@ -166,6 +172,9 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
         return ret;
     }
 
+    /**
+     * Simple DTO class to bundle similar Shape data.
+     */
     public static class CoordSys implements Serializable {
         private static final long serialVersionUID = 201207300900L;
 
@@ -182,6 +191,8 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
         Boolean timeDependent;
         boolean supported;
         boolean swappedAxes = false;
+        int longitudeAxis;
+        int latitudeAxis;
 
         public String getName() {
             return name;

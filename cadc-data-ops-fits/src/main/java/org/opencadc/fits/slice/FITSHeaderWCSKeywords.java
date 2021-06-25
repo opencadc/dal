@@ -479,6 +479,60 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
     }
 
     /**
+     * Obtain the spatial longitude axis value.
+     * @return int axis, or -1 if no spectral axis present.
+     */
+    int getSpatialLongitudeAxis() {
+        return getSpatialLongitudeAxis(this.header);
+    }
+
+    /**
+     * Obtain the two spatial axis value.
+     * @param header    The header to check for the axes.
+     * @return  int of longitude axis numbers, or -1 if none found.
+     */
+    int getSpatialLongitudeAxis(final Header header) {
+        final int naxis = header.getIntValue(Standard.NAXIS);
+        for (int i = 1; i <= naxis; i++) {
+            final String ctypeValue = header.getStringValue(Standard.CTYPEn.n(i));
+            if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
+                    coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name())
+                                     && coordTypeCode.isSpatialLongitudinal())) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Obtain the spatial longitude axis value.
+     * @return int axis, or -1 if no spectral axis present.
+     */
+    int getSpatialLatitudeAxis() {
+        return getSpatialLatitudeAxis(this.header);
+    }
+
+    /**
+     * Obtain the two spatial axis value.
+     * @param header    The header to check for the axes.
+     * @return  int of longitude axis numbers, or -1 if none found.
+     */
+    int getSpatialLatitudeAxis(final Header header) {
+        final int naxis = header.getIntValue(Standard.NAXIS);
+        for (int i = 1; i <= naxis; i++) {
+            final String ctypeValue = header.getStringValue(Standard.CTYPEn.n(i));
+            if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
+                    coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name())
+                                     && coordTypeCode.isSpatialLatitudinal())) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
      * Obtain the energy (1-based) axis from the current header.  Return -1 if none found that match the Spectral types.
      *
      * @return int axis, or -1 if no spectral axis present.
@@ -497,7 +551,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
         for (int i = 1; i <= naxis; i++) {
             final String ctypeValue = destination.getStringValue(Standard.CTYPEn.n(i));
             if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
-                coOrdTypeCode -> ctypeValue.startsWith(coOrdTypeCode.name()) && coOrdTypeCode.isSpectral())) {
+                coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name()) && coordTypeCode.isSpectral())) {
                 return i;
             }
         }

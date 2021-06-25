@@ -348,6 +348,8 @@ public class NDimensionalSlicer {
 
                 final StreamingImageData newImageData =
                         (StreamingImageData) FitsFactory.dataFactory(headerCopy, true);
+                // The tiler is where the source data comes from.
+                newImageData.setTiler(imageHDU.getTiler());
                 newImageData.setTile(corners, lengths);
 
                 fitsOutput.addHDU(FitsFactory.hduFactory(headerCopy, newImageData));

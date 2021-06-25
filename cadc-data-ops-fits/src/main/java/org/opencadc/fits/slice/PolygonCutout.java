@@ -135,24 +135,24 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
      */
     private long[] getPositionBounds(final Polygon polygon) throws NoSuchKeywordException {
         final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
-        final CoordSys coOrdSys = inferCoordSys();
+        final CoordSys coordSys = inferCoordSys();
 
         // No coordsys could be inferred, or there is no data array, so no cutout available.
-        if (coOrdSys == null || naxis == 0) {
+        if (coordSys == null || naxis == 0 || coordSys.longitudeAxis < 0 || coordSys.latitudeAxis < 0) {
             return null;
         }
 
-        // detect necessary conversion of target coOrds to native WCS coOrdSys
-        final boolean gal = CoordSys.GAL.equals(coOrdSys.getName());
-        final boolean fk4 = CoordSys.FK4.equals(coOrdSys.getName());
+        // detect necessary conversion of target coords to native WCS coordSys
+        final boolean gal = CoordSys.GAL.equals(coordSys.getName());
+        final boolean fk4 = CoordSys.FK4.equals(coordSys.getName());
         final long naxis1 = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS1.key());
         final long naxis2 = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS2.key());
 
-        if (!CoordSys.ICRS.equals(coOrdSys.getName())
-            && !CoordSys.FK5.equals(coOrdSys.getName())
+        if (!CoordSys.ICRS.equals(coordSys.getName())
+            && !CoordSys.FK5.equals(coordSys.getName())
             && !gal
             && !fk4) {
-            throw new UnsupportedOperationException("unexpected coordsys: " + coOrdSys.getName());
+            throw new UnsupportedOperationException("unexpected coordsys: " + coordSys.getName());
         }
 
         final Transform transform = new Transform(this.fitsHeaderWCSKeywords);
@@ -162,7 +162,7 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
         // npoly is in ICRS
         if (gal || fk4) {
             // convert npoly to native coordsys, in place since we created a new npoly above
-            LOGGER.debug("converting coordinate system to " + coOrdSys);
+            LOGGER.debug("converting coordinate system to " + coordSys);
             final java.util.List<Point> vertices = polygon.getVertices();
             final List<Point> convertedVertices = new ArrayList<>(vertices.size());
             for (final Point point : vertices) {
@@ -193,7 +193,7 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
         for (final Point point : polygonToCut.getVertices()) {
             final double[] spatialCoords = new double[2];
 
-            if (coOrdSys.isSwappedAxes()) {
+            if (coordSys.isSwappedAxes()) {
                 LOGGER.debug("Coordinates are swapped.");
                 spatialCoords[0] = point.getLatitude();
                 spatialCoords[1] = point.getLongitude();
@@ -203,9 +203,18 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
             }
 
             // Pad the axes that go beyond what we're interested in (NAXISn where n > 2).
-            final double[] worldCoords = Arrays.copyOf(spatialCoords, naxis);
+            final double[] worldCoords = new double[naxis];
+            final int spatialAxisIndex1 = coordSys.longitudeAxis - 1;
+            final int spatialAxisIndex2 = coordSys.latitudeAxis - 1;
 
-            for (int i = spatialCoords.length; i < worldCoords.length; i++) {
+            // Set the spatial values where they should be.
+            worldCoords[spatialAxisIndex1] = spatialCoords[0];
+            worldCoords[spatialAxisIndex2] = spatialCoords[1];
+
+            LOGGER.debug("World coordinates are set to " + Arrays.toString(worldCoords));
+
+            // Fill in the rest of the world coordinates.
+            for (int i = 0; i < worldCoords.length && i != spatialAxisIndex1 && i != spatialAxisIndex2; i++) {
                 worldCoords[i] = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(i + 1).key());
             }
 

@@ -77,12 +77,12 @@ import java.util.Locale;
  */
 public enum CoordTypeCode {
     // Spatial type codes.
-    RA("RA", "deg", CoordType.SPATIAL),
-    DEC("DEC", "deg", CoordType.SPATIAL),
-    GLON("GLON", "deg", CoordType.SPATIAL),
-    GLAT("GLAT", "deg", CoordType.SPATIAL),
-    ELON("ELON", "deg", CoordType.SPATIAL),
-    ELAT("ELAT", "deg", CoordType.SPATIAL),
+    RA("RA", "deg", CoordType.SPATIAL_LONGITUDE),
+    DEC("DEC", "deg", CoordType.SPATIAL_LATITUDE),
+    GLON("GLON", "deg", CoordType.SPATIAL_LONGITUDE),
+    GLAT("GLAT", "deg", CoordType.SPATIAL_LATITUDE),
+    ELON("ELON", "deg", CoordType.SPATIAL_LONGITUDE),
+    ELAT("ELAT", "deg", CoordType.SPATIAL_LATITUDE),
 
     // Spectral type codes.
     FREQ("FREQ", "Hz", CoordType.SPECTRAL),
@@ -109,6 +109,14 @@ public enum CoordTypeCode {
 
     public boolean isSpectral() {
         return coordType == CoordType.SPECTRAL;
+    }
+
+    public boolean isSpatialLongitudinal() {
+        return coordType == CoordType.SPATIAL_LONGITUDE;
+    }
+
+    public boolean isSpatialLatitudinal() {
+        return coordType == CoordType.SPATIAL_LATITUDE;
     }
 
     public boolean isVelocity() {
