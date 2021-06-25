@@ -496,8 +496,8 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
         for (int i = 1; i <= naxis; i++) {
             final String ctypeValue = header.getStringValue(Standard.CTYPEn.n(i));
             if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
-                    coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name())
-                                     && coordTypeCode.isSpatialLongitudinal())) {
+                coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name())
+                                 && coordTypeCode.isSpatialLongitudinal())) {
                 return i;
             }
         }
@@ -523,8 +523,8 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
         for (int i = 1; i <= naxis; i++) {
             final String ctypeValue = header.getStringValue(Standard.CTYPEn.n(i));
             if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
-                    coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name())
-                                     && coordTypeCode.isSpatialLatitudinal())) {
+                coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name())
+                                 && coordTypeCode.isSpatialLatitudinal())) {
                 return i;
             }
         }
