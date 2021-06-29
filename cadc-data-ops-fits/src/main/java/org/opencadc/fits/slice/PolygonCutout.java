@@ -204,9 +204,10 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
             worldCoords[spatialLatitudeAxisIndex] = point.getLatitude();
 
             // Fill in the rest of the world coordinates.
-            for (int i = 0; i < worldCoords.length
-                            && i != spatialLongitudeAxisIndex && i != spatialLatitudeAxisIndex; i++) {
-                worldCoords[i] = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(i + 1).key());
+            for (int i = 0; i < worldCoords.length; i++) {
+                if (i != spatialLongitudeAxisIndex && i != spatialLatitudeAxisIndex) {
+                    worldCoords[i] = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(i + 1).key());
+                }
             }
 
             LOGGER.debug("Coordinates to transform are " + Arrays.toString(worldCoords));
