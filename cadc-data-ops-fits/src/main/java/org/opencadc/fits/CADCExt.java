@@ -80,7 +80,9 @@ public enum CADCExt implements IFitsHeader {
     CDELTn(HDU.IMAGE, VALUE.REAL, "Coord value at incr deg/pixel origin on line axis"),
     CUNITn(HDU.IMAGE, VALUE.STRING, "Units for axis"),
     LBOUNDn(HDU.IMAGE, VALUE.INTEGER, "Pixel origin along axis"),
+    OBSFREQ(HDU.IMAGE, VALUE.REAL, "Same as RESTFRQ"),
     PC1_1(HDU.IMAGE, VALUE.REAL, ""),
+    PC01_01(HDU.IMAGE, VALUE.REAL, ""),
     PC1_2(HDU.IMAGE, VALUE.REAL, ""),
     PC2_1(HDU.IMAGE, VALUE.REAL, ""),
     PC2_2(HDU.IMAGE, VALUE.REAL, ""),
@@ -88,6 +90,7 @@ public enum CADCExt implements IFitsHeader {
 
     /**
      * Use RESTFRQ
+     * @deprecated Use RESTFRQ
      */
     @Deprecated
     RESTFREQ(HDU.IMAGE, VALUE.REAL, ""),

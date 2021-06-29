@@ -81,7 +81,6 @@ import java.util.List;
 
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
-import nom.tam.util.ArrayFuncs;
 import nom.tam.util.RandomAccessDataObject;
 import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;
@@ -91,6 +90,7 @@ import org.junit.Test;
 import org.opencadc.fits.FitsTest;
 import org.opencadc.soda.ExtensionSlice;
 import org.opencadc.soda.ExtensionSliceFormat;
+import org.opencadc.soda.server.Cutout;
 
 
 public class NDimensionalSlicerTest {
@@ -108,12 +108,13 @@ public class NDimensionalSlicerTest {
         slices.add(fmt.parse("[1][10:16,70:90]"));
         slices.add(fmt.parse("[106][8:32,88:112]"));
         slices.add(fmt.parse("[126]"));
-        
-        
+
+        final Cutout cutout = new Cutout();
+        cutout.pixelCutouts = slices;
+
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
                                                        NDimensionalSlicerTest.class);
-        file.setReadOnly();
 
         final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
         final String testWriteDir = configuredTestWriteDir == null ? "/tmp" : configuredTestWriteDir;
@@ -122,8 +123,8 @@ public class NDimensionalSlicerTest {
         final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-hst-mef-cutout", ".fits");
         LOGGER.debug("Writing out to " + outputPath);
 
-        try (final OutputStream outputStream = new FileOutputStream(outputPath.toFile());) {
-            slicer.slice(file, slices, outputStream);
+        try (final OutputStream outputStream = new FileOutputStream(outputPath.toFile())) {
+            slicer.slice(file, cutout, outputStream);
         }
 
         final Fits expectedFits = new Fits(expectedFile);
@@ -141,7 +142,10 @@ public class NDimensionalSlicerTest {
         slices.add(fmt.parse("[1][10:16,70:90]"));
         slices.add(fmt.parse("[106][8:32,88:112]"));
         slices.add(fmt.parse("[126]"));
-        
+
+        final Cutout cutout = new Cutout();
+        cutout.pixelCutouts = slices;
+
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
                                                        NDimensionalSlicerTest.class);
@@ -155,7 +159,7 @@ public class NDimensionalSlicerTest {
         try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
              final OutputStream outputStream = new FileOutputStream(outputPath.toFile());
              final OutputStream hstFileCutoutStream = new DataOutputStream(outputStream)) {
-            slicer.slice(randomAccessDataObject, slices, hstFileCutoutStream);
+            slicer.slice(randomAccessDataObject, cutout, hstFileCutoutStream);
             hstFileCutoutStream.flush();
         }
 
@@ -175,7 +179,10 @@ public class NDimensionalSlicerTest {
         List<ExtensionSlice> slices = new ArrayList<>();
         slices.add(fmt.parse("[0][25:125]"));
         slices.add(fmt.parse("[0][300:375]"));
-        
+
+        final Cutout cutout = new Cutout();
+        cutout.pixelCutouts = slices;
+
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
         final File file = FileUtil.getFileFromResource("test-simple-iris.fits",
                                                        NDimensionalSlicerTest.class);
@@ -187,7 +194,7 @@ public class NDimensionalSlicerTest {
 
         try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
              final OutputStream outputStream = new FileOutputStream(outputPath.toFile())) {
-            slicer.slice(randomAccessDataObject, slices, outputStream);
+            slicer.slice(randomAccessDataObject, cutout, outputStream);
             outputStream.flush();
         }
 
@@ -202,7 +209,10 @@ public class NDimensionalSlicerTest {
     public void testMEFToSimple() throws Exception {
         List<ExtensionSlice> slices = new ArrayList<>();
         slices.add(new ExtensionSlice("SCI", 13));
-        
+
+        final Cutout cutout = new Cutout();
+        cutout.pixelCutouts = slices;
+
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
                                                        NDimensionalSlicerTest.class);
@@ -215,7 +225,7 @@ public class NDimensionalSlicerTest {
 
         try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
              final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
-            slicer.slice(randomAccessDataObject, slices, hstFileCutoutStream);
+            slicer.slice(randomAccessDataObject, cutout, hstFileCutoutStream);
             hstFileCutoutStream.flush();
         }
 
@@ -230,7 +240,10 @@ public class NDimensionalSlicerTest {
     public void testNoSuchExtension() throws Exception {
         List<ExtensionSlice> slices = new ArrayList<>();
         slices.add(new ExtensionSlice("BOGUS", 367));
-        
+
+        final Cutout cutout = new Cutout();
+        cutout.pixelCutouts = slices;
+
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
         final File file = FileUtil.getFileFromResource("test-hst-mef.fits",
                                                        NDimensionalSlicerTest.class);
@@ -241,7 +254,7 @@ public class NDimensionalSlicerTest {
 
         try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
              final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
-            slicer.slice(randomAccessDataObject, slices, hstFileCutoutStream);
+            slicer.slice(randomAccessDataObject, cutout, hstFileCutoutStream);
             hstFileCutoutStream.flush();
         } catch (IllegalArgumentException illegalArgumentException) {
             Assert.assertTrue("Wrong message", illegalArgumentException.getMessage().contains(
@@ -257,6 +270,9 @@ public class NDimensionalSlicerTest {
         final ExtensionSliceFormat format = new ExtensionSliceFormat();
         slices.add(format.parse("[1][*,1:100]"));
         slices.add(format.parse("[2][50:90,*]"));
+
+        final Cutout cutout = new Cutout();
+        cutout.pixelCutouts = slices;
 
         final int[][] data0 = new int[101][101];
         final int[][] data1 = new int[250][250];
@@ -292,14 +308,18 @@ public class NDimensionalSlicerTest {
         }
 
         final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
+        final String tempFileExtension = ".fits";
+        final String tempFilename = "test-data-primary";
         final Path outputPath = (configuredTestWriteDir == null)
-                                ? Files.createTempFile("test-data-primary", ".fits")
-                                : Files.createTempFile(configuredTestWriteDir + "/test-fits-compliance", ".fits");
-        LOGGER.info("Writing out to " + outputPath);
+                                ? Files.createTempFile(tempFilename, tempFileExtension)
+                                : Files.createTempFile(new File(configuredTestWriteDir).toPath(), tempFilename,
+                                                       tempFileExtension);
+
+        LOGGER.debug("Writing out to " + outputPath);
 
         try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
              final OutputStream outputStream = new FileOutputStream(outputPath.toFile())) {
-            slicer.slice(randomAccessDataObject, slices, outputStream);
+            slicer.slice(randomAccessDataObject, cutout, outputStream);
             outputStream.flush();
         } catch (IllegalArgumentException illegalArgumentException) {
             Assert.assertTrue("Wrong message", illegalArgumentException.getMessage().contains(
@@ -311,10 +331,6 @@ public class NDimensionalSlicerTest {
             checkFits.read();
 
             int index = 0;
-
-            final BasicHDU<?> primaryHDU = checkFits.getHDU(index++);
-            Assert.assertArrayEquals("Primary HDU data dimensions do not match.",
-                                     ArrayFuncs.getDimensions(data0), primaryHDU.getAxes());
 
             final BasicHDU<?> firstImageHDU = checkFits.getHDU(index++);
             Assert.assertArrayEquals("HDU 1 data dimensions do not match.",

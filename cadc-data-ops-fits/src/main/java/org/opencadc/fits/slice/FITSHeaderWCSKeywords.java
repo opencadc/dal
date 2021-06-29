@@ -370,9 +370,12 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
             final Map.Entry<String, Object> entry = entryIterator.next();
             final String key = entry.getKey();
             final Object value = entry.getValue();
-            final Class<?> valueType = value.getClass();
 
-            cloneHeaderCard(destination, key, valueType, "", value.toString());
+            if (value != null) {
+                final Class<?> valueType = value.getClass();
+
+                cloneHeaderCard(destination, key, valueType, "", value.toString());
+            }
         }
 
         destination.setNaxes(wcsKeywords.getIntValue(Standard.NAXIS.key()));
@@ -445,31 +448,23 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
         final int naxis = destination.getIntValue(Standard.NAXIS);
         final boolean expectCD = destination.containsKey(NOAOExt.CD1_1);
         final boolean expectPC = destination.containsKey(CADCExt.PC1_1);
-        final boolean expectPV = destination.containsKey(CADCExt.RESTFRQ)
-                                 || destination.containsKey(CADCExt.RESTFREQ);
-        final int spectralAxis = getSpectralAxis(destination);
         final int temporalAxis = getTemporalAxis(destination);
+        final boolean expectPCProper = destination.containsKey(CADCExt.PC01_01);
 
         for (int x = 1; x <= naxis; x++) {
             for (int y = 1; y <= naxis; y++) {
                 final String cdMatrixKey = String.format("CD%d_%d", x, y);
                 final String pcMatrixKey = String.format("PC%d_%d", x, y);
-                final String pvMatrixKey = String.format("PV%d_%d", x, y);
-
+                final String pcProperMatrixKey = String.format("PC%02d_%02d", x, y);
 
                 // The wcslib library wants the PC/CD matrix intact for spatial cutouts.
                 if (expectCD && !destination.containsKey(cdMatrixKey)) {
                     destination.addValue(cdMatrixKey, (x == y) ? 1.0D : 0.0D, null);
                 }
 
-                if (expectPC && !destination.containsKey(pcMatrixKey)) {
-                    destination.addValue(pcMatrixKey, (x == y) ? 1.0D : 0.0D, null);
-                }
-
-                // If the RESTFRQ header is present, the PV values seem to be necessary as well.  Spatial (2D) cutouts
-                // will fail if they exist for the spatial axes however, so keep it to the spectral axis.
-                if (expectPV && (x == spectralAxis) && !destination.containsKey(pvMatrixKey)) {
-                    destination.addValue(pvMatrixKey, 0.0D, null);
+                if ((expectPC && !destination.containsKey(pcMatrixKey))
+                    || (expectPCProper && !destination.containsKey(pcProperMatrixKey))) {
+                    destination.addValue(pcProperMatrixKey, (x == y) ? 1.0D : 0.0D, null);
                 }
 
                 if (x == temporalAxis && !destination.containsKey(CADCExt.CUNITn.n(x))
@@ -487,6 +482,60 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
                 }
             }
         }
+    }
+
+    /**
+     * Obtain the spatial longitude axis value.
+     * @return int axis, or -1 if no spectral axis present.
+     */
+    int getSpatialLongitudeAxis() {
+        return getSpatialLongitudeAxis(this.header);
+    }
+
+    /**
+     * Obtain the two spatial axis value.
+     * @param header    The header to check for the axes.
+     * @return  int of longitude axis numbers, or -1 if none found.
+     */
+    int getSpatialLongitudeAxis(final Header header) {
+        final int naxis = header.getIntValue(Standard.NAXIS);
+        for (int i = 1; i <= naxis; i++) {
+            final String ctypeValue = header.getStringValue(Standard.CTYPEn.n(i));
+            if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
+                coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name())
+                                 && coordTypeCode.isSpatialLongitudinal())) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Obtain the spatial longitude axis value.
+     * @return int axis, or -1 if no spectral axis present.
+     */
+    int getSpatialLatitudeAxis() {
+        return getSpatialLatitudeAxis(this.header);
+    }
+
+    /**
+     * Obtain the two spatial axis value.
+     * @param header    The header to check for the axes.
+     * @return  int of longitude axis numbers, or -1 if none found.
+     */
+    int getSpatialLatitudeAxis(final Header header) {
+        final int naxis = header.getIntValue(Standard.NAXIS);
+        for (int i = 1; i <= naxis; i++) {
+            final String ctypeValue = header.getStringValue(Standard.CTYPEn.n(i));
+            if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
+                coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name())
+                                 && coordTypeCode.isSpatialLatitudinal())) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     /**
@@ -508,7 +557,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
         for (int i = 1; i <= naxis; i++) {
             final String ctypeValue = destination.getStringValue(Standard.CTYPEn.n(i));
             if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
-                coOrdTypeCode -> ctypeValue.startsWith(coOrdTypeCode.name()) && coOrdTypeCode.isSpectral())) {
+                coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name()) && coordTypeCode.isSpectral())) {
                 return i;
             }
         }
