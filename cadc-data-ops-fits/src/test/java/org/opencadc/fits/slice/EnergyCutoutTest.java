@@ -78,6 +78,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 import nom.tam.fits.Header;
+import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.BufferedDataInputStream;
 import org.apache.log4j.Level;
@@ -85,6 +86,7 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.opencadc.fits.CADCExt;
 
 public class EnergyCutoutTest extends BaseCutoutTest {
     private static final Logger LOGGER = Logger.getLogger(EnergyCutoutTest.class);
@@ -160,6 +162,105 @@ public class EnergyCutoutTest extends BaseCutoutTest {
             assertFuzzyPixelArrayEquals("Wrong energy bounds for ALMA Cube.", expectedBounds, resultBounds);
         }
         LOGGER.debug("EnergyCutoutTest.testALMA OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+    }
+
+    @Test
+    public void test1DEnergy() throws Exception {
+        final long startMillis = System.currentTimeMillis();
+
+        final Header testHeader = new Header();
+
+        testHeader.setSimple(true);
+        testHeader.setBitpix(-32);
+        testHeader.setNaxes(1);
+        testHeader.addValue(Standard.NAXIS1, 151);
+        testHeader.addValue(Standard.EXTEND, true);
+        testHeader.addValue(Standard.CTYPEn.n(1), CoordTypeCode.FREQ.name());
+        testHeader.addValue(Standard.CRVALn.n(1), 1.152750450330E+11D);
+        testHeader.addValue(Standard.CDELTn.n(1), -7.690066705322E+04D);
+        testHeader.addValue(Standard.CRPIXn.n(1), 1.000000000000E+00D);
+        testHeader.addValue(CADCExt.CUNITn.n(1), "Hz");
+        testHeader.addValue(CADCExt.PC1_1, 1.000000000000E+00D);
+        testHeader.addValue(CADCExt.RESTFRQ, 1.152712000000E+11D);
+        testHeader.addValue(CADCExt.SPECSYS, "LSRK");
+        testHeader.addValue(Standard.BSCALE, 1.000000000000E+00D);
+        testHeader.addValue(Standard.BZERO, 0.000000000000E+00D);
+        testHeader.addValue(Standard.BUNIT, "JY/BEAM");
+        testHeader.addValue("VELREF", 257, "");
+        testHeader.addValue("LATPOLE", -2.434013888889E+01D, "");
+        testHeader.addValue("LONPOLE", 1.800000000000E+02D, "");
+        testHeader.addValue(Standard.EQUINOX, 2.000000000000E+03D);
+        testHeader.addValue(Standard.RADESYS, "FK5");
+
+        final EnergyCutout energyCutout = new EnergyCutout(testHeader);
+        final Interval<Number> energyCutoutBounds = new Interval<>(2.600708E-3D, 2.6008209E-3D);
+        energyCutout.fitsHeaderWCSKeywords.iterator().forEachRemaining(keyVal -> LOGGER.debug(keyVal.getKey() + " = "
+                                                                                              + keyVal.getValue()));
+        final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
+        final long[] expectedBounds = new long[]{22L, 87L};
+
+        assertFuzzyPixelArrayEquals("Wrong energy bounds 1D file.", expectedBounds, resultBounds);
+        LOGGER.debug("EnergyCutoutTest.test1DEnergy OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+    }
+
+    @Test
+    public void testCubeEnergyNAXIS1() throws Exception {
+        final long startMillis = System.currentTimeMillis();
+        final Header testHeader = new Header();
+        final int naxis = 3;
+
+        testHeader.setSimple(true);
+        testHeader.addValue(Standard.EXTEND, true);
+        testHeader.setBitpix(-32);
+        testHeader.setNaxes(naxis);
+        testHeader.addValue(Standard.NAXISn.n(1), 151);
+        testHeader.addValue(Standard.NAXISn.n(2), 300);
+        testHeader.addValue(Standard.NAXISn.n(3), 300);
+        testHeader.addValue(Standard.CTYPEn.n(1), CoordTypeCode.FREQ.name());
+        testHeader.addValue(Standard.CRVALn.n(1), 1.152750450330E+11D);
+        testHeader.addValue(Standard.CDELTn.n(1), -7.690066705322E+04D);
+        testHeader.addValue(Standard.CRPIXn.n(1), 1.000000000000E+00D);
+        testHeader.addValue(CADCExt.CUNITn.n(1), "Hz");
+
+        testHeader.addValue(Standard.CTYPEn.n(2), "RA---SIN");
+        testHeader.addValue(Standard.CRVALn.n(2), 2.465333333333E+02D);
+        testHeader.addValue(Standard.CDELTn.n(2), -1.111111111111E-04D);
+        testHeader.addValue(Standard.CRPIXn.n(2), 1.510000000000E+02D);
+        testHeader.addValue(CADCExt.CUNITn.n(2), "deg");
+
+        testHeader.addValue(Standard.CTYPEn.n(3), "DEC--SIN");
+        testHeader.addValue(Standard.CRVALn.n(3), -2.434013888889E+01D);
+        testHeader.addValue(Standard.CDELTn.n(3), 1.111111111111E-04D);
+        testHeader.addValue(Standard.CRPIXn.n(3), 1.510000000000E+02D);
+        testHeader.addValue(CADCExt.CUNITn.n(3), "deg");
+
+        testHeader.addValue("PV3_1", 0.000000000000E+00D, "");
+        testHeader.addValue("PV3_2", 0.000000000000E+00D, "");
+
+        for (int i = 1; i <= naxis; i++) {
+            for (int j = 1; j <= naxis; j++) {
+                testHeader.addValue(String.format("PC0%d_0%d", i, j), (i == j) ? 1.0D : 0.0D, "");
+            }
+        }
+
+        testHeader.addValue(CADCExt.RESTFRQ, 1.152712000000E+11D);
+        testHeader.addValue(CADCExt.SPECSYS, "LSRK");
+        testHeader.addValue(Standard.BSCALE, 1.000000000000E+00D);
+        testHeader.addValue(Standard.BZERO, 0.000000000000E+00D);
+        testHeader.addValue(Standard.BUNIT, "JY/BEAM");
+        testHeader.addValue("VELREF", 257, "");
+        testHeader.addValue("LATPOLE", -2.434013888889E+01D, "");
+        testHeader.addValue("LONPOLE", 1.800000000000E+02D, "");
+        testHeader.addValue(Standard.EQUINOX, 2.000000000000E+03D);
+        testHeader.addValue(Standard.RADESYS, "FK5");
+
+        final EnergyCutout energyCutout = new EnergyCutout(testHeader);
+        final Interval<Number> energyCutoutBounds = new Interval<>(2.600708E-3D, 2.6008209E-3D);
+        final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
+        final long[] expectedBounds = new long[]{22L, 87L, 1L, 300L, 1L, 300L};
+
+        assertFuzzyPixelArrayEquals("Wrong energy bounds cube file.", expectedBounds, resultBounds);
+        LOGGER.debug("EnergyCutoutTest.testCubeEnergyNAXIS1 OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 
     @Test

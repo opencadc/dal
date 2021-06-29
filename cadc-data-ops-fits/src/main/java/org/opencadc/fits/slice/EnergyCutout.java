@@ -209,6 +209,8 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
         // Upper coordinates of the range.
         final double[] upperCoords = new double[naxis];
 
+        LOGGER.debug("Bounds in metres (" + lower + ", " + upper + ")");
+
         if (isVelocity) {
             throw new IllegalArgumentException("Unable to cutout from velocity type (" + ctype + ") using provided "
                                                + "wavelength metres.");
@@ -217,10 +219,10 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
             upperCoords[energyAxisIndex] = energyConverter.fromMetres(upper, unit);
         }
 
-        LOGGER.debug("Getting pixel one for lower coords " + Arrays.toString(lowerCoords));
+        LOGGER.debug("Getting pixel value for lower coords " + Arrays.toString(lowerCoords));
         final Transform.Result p1 = transform.sky2pix(lowerCoords);
 
-        LOGGER.debug("Getting pixel one for upper coords " + Arrays.toString(upperCoords));
+        LOGGER.debug("Getting pixel value for upper coords " + Arrays.toString(upperCoords));
         final Transform.Result p2 = transform.sky2pix(upperCoords);
 
         final double low = p1.coordinates[energyAxisIndex];

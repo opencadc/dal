@@ -72,19 +72,19 @@ import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
-import nom.tam.fits.Fits;
-import nom.tam.fits.Header;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.BufferedDataInputStream;
-import nom.tam.util.RandomAccessDataObject;
-import nom.tam.util.RandomAccessFileExt;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import nom.tam.fits.Header;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.header.extra.NOAOExt;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.BufferedDataInputStream;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Test;
+import org.opencadc.fits.CADCExt;
+
 
 public class PolygonCutoutTest extends BaseCutoutTest {
     private static final Logger LOGGER = Logger.getLogger(PolygonCutoutTest.class);
@@ -118,6 +118,60 @@ public class PolygonCutoutTest extends BaseCutoutTest {
             assertFuzzyPixelArrayEquals("Wrong bounds.", expected, result);
         }
 
-        LOGGER.debug("Util.testALMACubeCutout OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        LOGGER.debug("Util.testMegapipeCutout OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+    }
+
+    /**
+     * Test a Polygon slice where the FITS file's longitude and latitude axes are reversed.
+     * @throws Exception    For any errors.
+     */
+    @Test
+    public void testSwappedRADec() throws Exception {
+        final long startMillis = System.currentTimeMillis();
+
+        final Header testHeader = new Header();
+        final int naxis = 2;
+
+        testHeader.setSimple(true);
+        testHeader.setBitpix(-32);
+        testHeader.addValue(Standard.EXTEND, true);
+        testHeader.setNaxes(naxis);
+        testHeader.setNaxis(1, 10000);
+        testHeader.setNaxis(2, 10000);
+
+        // The CD matrix needs to also be reversed in the file.
+        testHeader.addValue(NOAOExt.CD1_1, 5.160234650248E-05D);
+        testHeader.addValue(NOAOExt.CD1_2, 0.0D);
+        testHeader.addValue(NOAOExt.CD2_1, 0.0D);
+        testHeader.addValue(NOAOExt.CD2_2, -5.160234650248E-05D);
+
+        testHeader.addValue(Standard.CTYPEn.n(1), "DEC--TAN");
+        testHeader.addValue(CADCExt.CUNITn.n(1), "deg");
+        testHeader.addValue(Standard.CRVALn.n(1), -2.150000000000E+01D);
+        testHeader.addValue(Standard.CRPIXn.n(1), 5.000000000000E+03D);
+
+        testHeader.addValue(Standard.CTYPEn.n(2), "RA---TAN");
+        testHeader.addValue(CADCExt.CUNITn.n(2), "deg");
+        testHeader.addValue(Standard.CRVALn.n(2), 5.105234642000E+01D);
+        testHeader.addValue(Standard.CRPIXn.n(2), 5.000000000000E+03D);
+
+        testHeader.addValue(Standard.EQUINOX, 2.000000000000E+03D);
+        testHeader.addValue(Standard.RADESYS, "ICRS");
+        testHeader.addValue("MJD-OBS", 5.479849048670E+04D, "");
+        testHeader.addValue("FILTER", "R.MP9601", "");
+
+        final PolygonCutout polygonCutout = new PolygonCutout(testHeader);
+        final Polygon polygon = new Polygon();
+
+        polygon.getVertices().add(new Point(51.291219363105000D, -21.737249735369637D));
+        polygon.getVertices().add(new Point(51.291193816346876D, -21.721717813306441D));
+        polygon.getVertices().add(new Point(51.307912919582414D, -21.721693011490995D));
+        polygon.getVertices().add(new Point(51.307940254544761D, -21.737224914051101D));
+
+        final long[] result = polygonCutout.getBounds(polygon);
+        final long[] expected = new long[]{400, 700, 400, 700};
+        assertFuzzyPixelArrayEquals("Wrong bounds.", expected, result);
+
+        LOGGER.debug("Util.testSwappedRADec OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 }
