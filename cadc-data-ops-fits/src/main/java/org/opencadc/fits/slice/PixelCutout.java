@@ -68,78 +68,103 @@
 
 package org.opencadc.fits.slice;
 
+import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
 import java.util.Arrays;
-import java.util.Locale;
+import java.util.List;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.header.Standard;
+import org.apache.log4j.Logger;
+import org.opencadc.soda.ExtensionSlice;
+import org.opencadc.soda.PixelRange;
 
 
 /**
- * Supported COORD Type codes used to identify a certain type of axis.
+ * Simple class to cut pixels out.  Exists to maintain the same format as the WCS cutouts.
  */
-public enum CoordTypeCode {
-    // Spatial type codes.
-    RA("RA", "deg", CoordType.SPATIAL_LONGITUDE),
-    DEC("DEC", "deg", CoordType.SPATIAL_LATITUDE),
-    GLON("GLON", "deg", CoordType.SPATIAL_LONGITUDE),
-    GLAT("GLAT", "deg", CoordType.SPATIAL_LATITUDE),
-    ELON("ELON", "deg", CoordType.SPATIAL_LONGITUDE),
-    ELAT("ELAT", "deg", CoordType.SPATIAL_LATITUDE),
+public class PixelCutout extends FITSCutout<ExtensionSlice> {
+    private static final Logger LOGGER = Logger.getLogger(PixelCutout.class);
 
-    // Spectral type codes.
-    FREQ("FREQ", "Hz", CoordType.SPECTRAL),
-    ENER("ENER", "J", CoordType.SPECTRAL),
-    WAVN("WAVN", "/m", CoordType.SPECTRAL),
-    VRAD("VRAD", "m s-1", CoordType.SPECTRAL),
-    WAVE("WAVE", "m", CoordType.SPECTRAL),
-    VOPT("VOPT", "m s-1", CoordType.SPECTRAL),
-    ZOPT("ZOPT", "", CoordType.SPECTRAL),
-    AWAV("AWAV", "m", CoordType.SPECTRAL),
-    VELO("VELO", "m s-1", CoordType.SPECTRAL),
-    BETA("BETA", "", CoordType.SPECTRAL);
-
-    private final String typeCodeString;
-    private final String defaultUnit;
-    private final CoordType coordType;
-
-
-    CoordTypeCode(final String typeCodeString, final String defaultUnit, final CoordType coordType) {
-        this.typeCodeString = typeCodeString;
-        this.defaultUnit = defaultUnit;
-        this.coordType = coordType;
+    public PixelCutout(final Header header) throws HeaderCardException {
+        super(header);
     }
 
-    public boolean isSpectral() {
-        return coordType == CoordType.SPECTRAL;
+
+    /**
+     * Obtain the bounds of the given cutout.
+     *
+     * @param cutoutBound The bounds (shape, interval etc.) of the cutout.
+     * @return long[] array of overlapping bounds, or long[0] if all pixels are included.
+     * @throws WCSLibRuntimeException WCSLib (C) error.
+     */
+    @Override
+    public long[] getBounds(final ExtensionSlice cutoutBound) throws WCSLibRuntimeException {
+
+        // Entire extension requested.
+        if (cutoutBound.getPixelRanges().isEmpty()) {
+            return new long[0];
+        } else {
+
+            // The HDU matches a requested one, now check if pixels overlap
+            final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
+
+            final List<PixelRange> pixelRanges = cutoutBound.getPixelRanges();
+            long[] pixelCutoutBounds = new long[0];
+            for (int i = 0; i < naxis; i++) {
+                final int axisKey = i + 1;
+                final int maxUpperBound = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(axisKey).key());
+
+                // TODO: this does not take into account flipped axis (upperBound < lowerBound
+                // so upperbound is really the smallest pixel index)
+                if (i < pixelRanges.size()) {
+                    final int lowBound = pixelRanges.get(i).lowerBound;
+                    final int hiBound = pixelRanges.get(i).upperBound;
+                    if (lowBound < maxUpperBound) {
+                        final long[] clip = clip(axisKey, lowBound, Math.min(maxUpperBound, hiBound));
+                        if (clip != null) {
+                            final long[] overlap = clip.length == 0 ? new long[] {lowBound, hiBound} : clip;
+                            final int oldLength = pixelCutoutBounds.length;
+                            final int newLength = oldLength + overlap.length;
+                            pixelCutoutBounds = Arrays.copyOf(pixelCutoutBounds, newLength);
+                            System.arraycopy(overlap, 0, pixelCutoutBounds, oldLength, overlap.length);
+                        }
+                    }
+                }
+            }
+
+            return pixelCutoutBounds.length == 0 ? null : pixelCutoutBounds;
+        }
     }
 
-    public boolean isSpatialLongitudinal() {
-        return coordType == CoordType.SPATIAL_LONGITUDE;
-    }
+    private long[] clip(final int axis, final long lower, final long upper) {
+        final long len = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(axis).key());
 
-    public boolean isSpatialLatitudinal() {
-        return coordType == CoordType.SPATIAL_LATITUDE;
-    }
+        long x1 = lower;
+        long x2 = upper;
 
-    public boolean isVelocity() {
-        return this == VOPT || this == VELO || this == VRAD;
-    }
+        if (x1 < 1) {
+            x1 = 1;
+        }
 
-    public String getDefaultUnit() {
-        return defaultUnit;
-    }
+        if (x2 > len) {
+            x2 = len;
+        }
 
-    public static String getDefaultUnit(final String ctype) {
-        if (ctype == null) {
+        LOGGER.debug("clip: " + len + " (" + x1 + ":" + x2 + ")");
+
+        // all pixels includes
+        if (x1 == 1 && x2 == len) {
+            LOGGER.warn("clip: all");
+            return new long[0];
+        }
+
+        // no pixels included
+        if (x1 > len || x2 < 1) {
+            LOGGER.warn("clip: none");
             return null;
         }
 
-        final CoordTypeCode matchedCoordTypeCode =
-                Arrays.stream(values()).filter(coordTypeCode -> ctype.toUpperCase(Locale.ROOT).startsWith(
-                        coordTypeCode.typeCodeString)).findFirst().orElse(null);
-        return (matchedCoordTypeCode == null) ? "" : matchedCoordTypeCode.getDefaultUnit();
-    }
-
-    public static CoordTypeCode fromCType(final String ctype) {
-        final int hyphenIndex = ctype.indexOf("-");
-        return CoordTypeCode.valueOf(hyphenIndex > 0 ? ctype.substring(0, hyphenIndex) : ctype);
+        // an actual cutout
+        return new long[]{x1, x2};
     }
 }

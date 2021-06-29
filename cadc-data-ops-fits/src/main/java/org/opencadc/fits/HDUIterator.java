@@ -66,80 +66,113 @@
  ************************************************************************
  */
 
-package org.opencadc.fits.slice;
+package org.opencadc.fits;
 
-import java.util.Arrays;
-import java.util.Locale;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
 
 
 /**
- * Supported COORD Type codes used to identify a certain type of axis.
+ * Iterate over HDUs of a nom.tam.fits.Fits object.  The Fits object essentially contains two lists of HDUs; one is the
+ * cache of HDUs that have been iterated over, and the second is the list of HDUs that have yet to be read.  This
+ * iterator simplifies that by first iterating the cache, then it reads the unread HDUs.
+ * This is a read-only operation, so the remove() operation is not supported.
  */
-public enum CoordTypeCode {
-    // Spatial type codes.
-    RA("RA", "deg", CoordType.SPATIAL_LONGITUDE),
-    DEC("DEC", "deg", CoordType.SPATIAL_LATITUDE),
-    GLON("GLON", "deg", CoordType.SPATIAL_LONGITUDE),
-    GLAT("GLAT", "deg", CoordType.SPATIAL_LATITUDE),
-    ELON("ELON", "deg", CoordType.SPATIAL_LONGITUDE),
-    ELAT("ELAT", "deg", CoordType.SPATIAL_LATITUDE),
+public class HDUIterator implements Iterator<BasicHDU<?>> {
 
-    // Spectral type codes.
-    FREQ("FREQ", "Hz", CoordType.SPECTRAL),
-    ENER("ENER", "J", CoordType.SPECTRAL),
-    WAVN("WAVN", "/m", CoordType.SPECTRAL),
-    VRAD("VRAD", "m s-1", CoordType.SPECTRAL),
-    WAVE("WAVE", "m", CoordType.SPECTRAL),
-    VOPT("VOPT", "m s-1", CoordType.SPECTRAL),
-    ZOPT("ZOPT", "", CoordType.SPECTRAL),
-    AWAV("AWAV", "m", CoordType.SPECTRAL),
-    VELO("VELO", "m s-1", CoordType.SPECTRAL),
-    BETA("BETA", "", CoordType.SPECTRAL);
-
-    private final String typeCodeString;
-    private final String defaultUnit;
-    private final CoordType coordType;
+    private final Iterator<BasicHDU<?>> unCachedIterator;
+    private Iterator<BasicHDU<?>> currentIterator;
 
 
-    CoordTypeCode(final String typeCodeString, final String defaultUnit, final CoordType coordType) {
-        this.typeCodeString = typeCodeString;
-        this.defaultUnit = defaultUnit;
-        this.coordType = coordType;
+    public HDUIterator(final Fits source) {
+        currentIterator = new Iterator<BasicHDU<?>>() {
+
+            private final int cachedHDUCount = source.getNumberOfHDUs();
+            private int currentHDUIndex = 0;
+
+            @Override
+            public boolean hasNext() {
+                return currentHDUIndex < cachedHDUCount;
+            }
+
+            @Override
+            public BasicHDU<?> next() {
+                try {
+                    final BasicHDU<?> nextHDU = source.getHDU(currentHDUIndex);
+
+                    if (nextHDU == null) {
+                        throw new NoSuchElementException("No more elements.");
+                    } else {
+                        currentHDUIndex++;
+                        return nextHDU;
+                    }
+                } catch (FitsException | IOException exception) {
+                    throw new IllegalStateException(exception.getMessage(), exception);
+                }
+            }
+        };
+
+        unCachedIterator = new Iterator<BasicHDU<?>>() {
+
+            private BasicHDU<?> currentHDU = null;
+
+            @Override
+            public boolean hasNext() {
+                try {
+                    return currentHDU != null || (currentHDU = source.readHDU()) != null;
+                } catch (FitsException | IOException exception) {
+                    throw new IllegalStateException(exception.getMessage(), exception);
+                }
+            }
+
+            @Override
+            public BasicHDU<?> next() {
+                try {
+                    final BasicHDU<?> nextHDU = currentHDU == null ? source.readHDU() : currentHDU;
+
+                    if (nextHDU == null) {
+                        throw new NoSuchElementException("No more elements.");
+                    } else {
+                        return nextHDU;
+                    }
+                } catch (FitsException | IOException exception) {
+                    throw new IllegalStateException(exception.getMessage(), exception);
+                } finally {
+                    currentHDU = null;
+                }
+            }
+        };
     }
 
-    public boolean isSpectral() {
-        return coordType == CoordType.SPECTRAL;
-    }
-
-    public boolean isSpatialLongitudinal() {
-        return coordType == CoordType.SPATIAL_LONGITUDE;
-    }
-
-    public boolean isSpatialLatitudinal() {
-        return coordType == CoordType.SPATIAL_LATITUDE;
-    }
-
-    public boolean isVelocity() {
-        return this == VOPT || this == VELO || this == VRAD;
-    }
-
-    public String getDefaultUnit() {
-        return defaultUnit;
-    }
-
-    public static String getDefaultUnit(final String ctype) {
-        if (ctype == null) {
-            return null;
+    /**
+     * Returns {@code true} if the iteration has more elements.
+     * (In other words, returns {@code true} if {@link #next} would
+     * return an element rather than throwing an exception.)
+     *
+     * @return {@code true} if the iteration has more elements
+     */
+    @Override
+    public boolean hasNext() {
+        if (!currentIterator.hasNext()) {
+            currentIterator = unCachedIterator;
         }
 
-        final CoordTypeCode matchedCoordTypeCode =
-                Arrays.stream(values()).filter(coordTypeCode -> ctype.toUpperCase(Locale.ROOT).startsWith(
-                        coordTypeCode.typeCodeString)).findFirst().orElse(null);
-        return (matchedCoordTypeCode == null) ? "" : matchedCoordTypeCode.getDefaultUnit();
+        return currentIterator.hasNext();
     }
 
-    public static CoordTypeCode fromCType(final String ctype) {
-        final int hyphenIndex = ctype.indexOf("-");
-        return CoordTypeCode.valueOf(hyphenIndex > 0 ? ctype.substring(0, hyphenIndex) : ctype);
+    /**
+     * Returns the next element in the iteration.
+     *
+     * @return the next element in the iteration
+     * @throws NoSuchElementException if the iteration has no more elements
+     */
+    @Override
+    public BasicHDU<?> next() {
+        return currentIterator.next();
     }
 }

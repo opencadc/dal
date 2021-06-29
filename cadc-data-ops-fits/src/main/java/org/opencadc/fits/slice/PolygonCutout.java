@@ -87,7 +87,7 @@ import org.apache.log4j.Logger;
 
 
 /**
- * A Position (spatial) cutout.
+ * A Spatial Polygon cutout.  This class is executed after the inputs are parsed into an appropriate Polygon shape.
  */
 public class PolygonCutout extends ShapeCutout<Polygon> {
     private static final Logger LOGGER = Logger.getLogger(PolygonCutout.class);
@@ -125,34 +125,38 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
     /**
      * Compute the range of pixel indices that correspond to the supplied
      * polygon. This method computes the cutout ranges within the image. The
-     * returned value is null if there is no intersection, an int[4] for a
+     * returned value is null if there is no intersection, an long[NAXIS] for a
      * cutout, and an int[0] when the image is wholly contained within the
      * polygon (and no cutout is necessary).
      *
      * @param polygon The shape to cutout
-     * @return int[4] holding [x1, x2, y1, y2], int[0] if all pixels are included,
+     * @return long[NAXIS], or long[0] if all pixels are included,
      *      or null if the circle does not intersect the WCS
      */
     private long[] getPositionBounds(final Polygon polygon) throws NoSuchKeywordException {
         final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
-        final CoordSys coOrdSys = inferCoordSys();
+        final CoordSys coordSys = inferCoordSys();
 
         // No coordsys could be inferred, or there is no data array, so no cutout available.
-        if (coOrdSys == null || naxis == 0) {
+        if (coordSys == null || naxis == 0 || coordSys.longitudeAxis < 0 || coordSys.latitudeAxis < 0) {
             return null;
         }
 
-        // detect necessary conversion of target coOrds to native WCS coOrdSys
-        final boolean gal = CoordSys.GAL.equals(coOrdSys.getName());
-        final boolean fk4 = CoordSys.FK4.equals(coOrdSys.getName());
-        final long naxis1 = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS1.key());
-        final long naxis2 = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS2.key());
+        LOGGER.debug("CoordSys found: " + coordSys);
 
-        if (!CoordSys.ICRS.equals(coOrdSys.getName())
-            && !CoordSys.FK5.equals(coOrdSys.getName())
+        // detect necessary conversion of target coords to native WCS coordSys
+        final boolean gal = CoordSys.GAL.equals(coordSys.getName());
+        final boolean fk4 = CoordSys.FK4.equals(coordSys.getName());
+        final long naxisLongitude =
+                this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(coordSys.longitudeAxis).key());
+        final long naxisLatitude =
+                this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(coordSys.latitudeAxis).key());
+
+        if (!CoordSys.ICRS.equals(coordSys.getName())
+            && !CoordSys.FK5.equals(coordSys.getName())
             && !gal
             && !fk4) {
-            throw new UnsupportedOperationException("unexpected coordsys: " + coOrdSys.getName());
+            throw new UnsupportedOperationException("unexpected coordsys: " + coordSys.getName());
         }
 
         final Transform transform = new Transform(this.fitsHeaderWCSKeywords);
@@ -162,7 +166,7 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
         // npoly is in ICRS
         if (gal || fk4) {
             // convert npoly to native coordsys, in place since we created a new npoly above
-            LOGGER.debug("converting coordinate system to " + coOrdSys);
+            LOGGER.debug("converting coordinate system to " + coordSys);
             final java.util.List<Point> vertices = polygon.getVertices();
             final List<Point> convertedVertices = new ArrayList<>(vertices.size());
             for (final Point point : vertices) {
@@ -189,24 +193,21 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
         double x2 = -1.0D * x1;
         double y1 = Double.MAX_VALUE;
         double y2 = -1.0D * y1;
+        final int spatialLongitudeAxisIndex = coordSys.longitudeAxis - 1;
+        final int spatialLatitudeAxisIndex = coordSys.latitudeAxis - 1;
+
         LOGGER.debug("Bounding box is " + polygonToCut);
         for (final Point point : polygonToCut.getVertices()) {
-            final double[] spatialCoords = new double[2];
+            final double[] worldCoords = new double[naxis];
+            // Set the spatial values where they should be.
+            worldCoords[spatialLongitudeAxisIndex] = point.getLongitude();
+            worldCoords[spatialLatitudeAxisIndex] = point.getLatitude();
 
-            if (coOrdSys.isSwappedAxes()) {
-                LOGGER.debug("Coordinates are swapped.");
-                spatialCoords[0] = point.getLatitude();
-                spatialCoords[1] = point.getLongitude();
-            } else {
-                spatialCoords[0] = point.getLongitude();
-                spatialCoords[1] = point.getLatitude();
-            }
-
-            // Pad the axes that go beyond what we're interested in (NAXISn where n > 2).
-            final double[] worldCoords = Arrays.copyOf(spatialCoords, naxis);
-
-            for (int i = spatialCoords.length; i < worldCoords.length; i++) {
-                worldCoords[i] = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(i + 1).key());
+            // Fill in the rest of the world coordinates.
+            for (int i = 0; i < worldCoords.length; i++) {
+                if (i != spatialLongitudeAxisIndex && i != spatialLatitudeAxisIndex) {
+                    worldCoords[i] = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(i + 1).key());
+                }
             }
 
             LOGGER.debug("Coordinates to transform are " + Arrays.toString(worldCoords));
@@ -217,10 +218,12 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
             if (tr != null) {
                 LOGGER.debug("Transformed coordinates: " + Arrays.toString(tr.coordinates));
 
-                x1 = Math.min(x1, tr.coordinates[0]);
-                x2 = Math.max(x2, tr.coordinates[0]);
-                y1 = Math.min(y1, tr.coordinates[1]);
-                y2 = Math.max(y2, tr.coordinates[1]);
+                x1 = Math.min(x1, tr.coordinates[spatialLongitudeAxisIndex]);
+                x2 = Math.max(x2, tr.coordinates[spatialLongitudeAxisIndex]);
+                y1 = Math.min(y1, tr.coordinates[spatialLatitudeAxisIndex]);
+                y2 = Math.max(y2, tr.coordinates[spatialLatitudeAxisIndex]);
+
+                LOGGER.debug("Current (x, y) values are [" + x1 + ", " + x2 + ", " + y1 + ", " + y2 + "]");
             }
         }
 
@@ -232,9 +235,9 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
 
         // clipping
         LOGGER.debug("Clipping box " + Arrays.toString(new long[]{ix1, ix2, iy1, iy2}) + " into "
-                     + Arrays.toString(new long[]{naxis1, naxis2}));
+                     + Arrays.toString(new long[]{naxisLongitude, naxisLatitude}));
 
-        final long[] clippedBox = clip(naxis1, naxis2, ix1, ix2, iy1, iy2);
+        final long[] clippedBox = clip(naxisLongitude, naxisLatitude, ix1, ix2, iy1, iy2);
         final long[] entireBounds = clippedBox == null ? null : Arrays.copyOf(clippedBox, naxis * 2);
 
         // Pad the entire range to include each axis bounds.
@@ -242,8 +245,7 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
             for (int i = clippedBox.length; i < entireBounds.length; i += 2) {
                 final int axis = (i + 2) / 2;
                 entireBounds[i] = 1L;
-                entireBounds[i + 1] = (long) this.fitsHeaderWCSKeywords.getDoubleValue(
-                        Standard.NAXISn.n(axis).key());
+                entireBounds[i + 1] = (long) this.fitsHeaderWCSKeywords.getDoubleValue(Standard.NAXISn.n(axis).key());
             }
         }
 

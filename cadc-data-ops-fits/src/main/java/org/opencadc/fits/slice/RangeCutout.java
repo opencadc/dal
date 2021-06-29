@@ -77,6 +77,10 @@ import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 
 
+/**
+ * Simple spatial range cutout.  This relies on the Polygon cutout after a bounding box is created from the given
+ * Range values.  This class is executed after the inputs are parsed into an appropriate Range object.
+ */
 public class RangeCutout extends ShapeCutout<Range> {
     public RangeCutout(Header header) throws HeaderCardException {
         super(header);

@@ -66,80 +66,78 @@
  ************************************************************************
  */
 
-package org.opencadc.fits.slice;
+package ca.nrc.cadc.dali;
 
-import java.util.Arrays;
-import java.util.Locale;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
+public class EnergyConverterTest {
+    private static final Logger LOGGER = Logger.getLogger(EnergyConverterTest.class);
 
-/**
- * Supported COORD Type codes used to identify a certain type of axis.
- */
-public enum CoordTypeCode {
-    // Spatial type codes.
-    RA("RA", "deg", CoordType.SPATIAL_LONGITUDE),
-    DEC("DEC", "deg", CoordType.SPATIAL_LATITUDE),
-    GLON("GLON", "deg", CoordType.SPATIAL_LONGITUDE),
-    GLAT("GLAT", "deg", CoordType.SPATIAL_LATITUDE),
-    ELON("ELON", "deg", CoordType.SPATIAL_LONGITUDE),
-    ELAT("ELAT", "deg", CoordType.SPATIAL_LATITUDE),
-
-    // Spectral type codes.
-    FREQ("FREQ", "Hz", CoordType.SPECTRAL),
-    ENER("ENER", "J", CoordType.SPECTRAL),
-    WAVN("WAVN", "/m", CoordType.SPECTRAL),
-    VRAD("VRAD", "m s-1", CoordType.SPECTRAL),
-    WAVE("WAVE", "m", CoordType.SPECTRAL),
-    VOPT("VOPT", "m s-1", CoordType.SPECTRAL),
-    ZOPT("ZOPT", "", CoordType.SPECTRAL),
-    AWAV("AWAV", "m", CoordType.SPECTRAL),
-    VELO("VELO", "m s-1", CoordType.SPECTRAL),
-    BETA("BETA", "", CoordType.SPECTRAL);
-
-    private final String typeCodeString;
-    private final String defaultUnit;
-    private final CoordType coordType;
-
-
-    CoordTypeCode(final String typeCodeString, final String defaultUnit, final CoordType coordType) {
-        this.typeCodeString = typeCodeString;
-        this.defaultUnit = defaultUnit;
-        this.coordType = coordType;
+    static {
+        Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
     }
 
-    public boolean isSpectral() {
-        return coordType == CoordType.SPECTRAL;
+    @Test
+    public void metresToHz() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double hz = testSubject.fromMetres(0.1D, "Hz");
+        Assert.assertEquals("Wrong Hz.", 2997924580.0D, hz, 0.0D);
     }
 
-    public boolean isSpatialLongitudinal() {
-        return coordType == CoordType.SPATIAL_LONGITUDE;
+    @Test
+    public void metresToMHz() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double mhz = testSubject.fromMetres(2.2D, "MHz");
+        Assert.assertEquals("Wrong MHz.", 136.2700D, mhz, 0.01D);
     }
 
-    public boolean isSpatialLatitudinal() {
-        return coordType == CoordType.SPATIAL_LATITUDE;
+    @Test
+    public void metresToGHz() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double ghz = testSubject.fromMetres(12.4D, "GHz");
+        Assert.assertEquals("Wrong GHz.", 0.0241768111D, ghz, 0.0000001D);
     }
 
-    public boolean isVelocity() {
-        return this == VOPT || this == VELO || this == VRAD;
+    @Test
+    public void metresToEv() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double eV = testSubject.fromMetres(0.68D, "eV");
+        LOGGER.debug("Calculated eV " + eV);
+        Assert.assertEquals("Wrong eV.", 2.9212439E-25D, eV, 0.00001E-22D);
     }
 
-    public String getDefaultUnit() {
-        return defaultUnit;
+    @Test
+    public void metresToKev() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double keV = testSubject.fromMetres(4.6D, "keV");
+        LOGGER.debug("Calculated keV " + keV);
+        Assert.assertEquals("Wrong keV.", 4.31836E-29D, keV, 0.00001E-18D);
     }
 
-    public static String getDefaultUnit(final String ctype) {
-        if (ctype == null) {
-            return null;
-        }
+    @Test
+    public void metresToNm() {
+        final EnergyConverter testSubject = new EnergyConverter();
 
-        final CoordTypeCode matchedCoordTypeCode =
-                Arrays.stream(values()).filter(coordTypeCode -> ctype.toUpperCase(Locale.ROOT).startsWith(
-                        coordTypeCode.typeCodeString)).findFirst().orElse(null);
-        return (matchedCoordTypeCode == null) ? "" : matchedCoordTypeCode.getDefaultUnit();
+        final double nm = testSubject.fromMetres(44.6D, "nm");
+        LOGGER.debug("Calculated nm " + nm);
+        Assert.assertEquals("Wrong nm.", 4.46E10D, nm, 0.0D);
     }
 
-    public static CoordTypeCode fromCType(final String ctype) {
-        final int hyphenIndex = ctype.indexOf("-");
-        return CoordTypeCode.valueOf(hyphenIndex > 0 ? ctype.substring(0, hyphenIndex) : ctype);
+    @Test
+    public void metresToA() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double angstrom = testSubject.fromMetres(13.99D, "A");
+        LOGGER.debug("Calculated A " + angstrom);
+        Assert.assertEquals("Wrong A.", 1.399E11D, angstrom, 0.0D);
     }
 }

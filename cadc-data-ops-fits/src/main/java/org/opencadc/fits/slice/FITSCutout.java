@@ -73,14 +73,19 @@ import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
+import org.apache.log4j.Logger;
+
 
 public abstract class FITSCutout<T> {
+    private static final Logger LOGGER = Logger.getLogger(FITSCutout.class);
     static final String INPUT_TOO_DISTANT_ERROR_MESSAGE = "One or more of the world coordinates were invalid(9)";
 
     protected final FITSHeaderWCSKeywords fitsHeaderWCSKeywords;
 
+
     public FITSCutout(final Header header) throws HeaderCardException {
         DaliUtil.assertNotNull("header", header);
+        postProcess(header);
         this.fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(header);
     }
 
@@ -89,6 +94,16 @@ public abstract class FITSCutout<T> {
         this.fitsHeaderWCSKeywords = fitsHeaderWCSKeywords;
     }
 
+    /**
+     * Implementors can override this to further process the Header to accommodate different cutout types.  Leave empty
+     * if no further processing needs to be done.
+     * This method MUST be called before the fitsHeaderWCSKeywords is created as that object cannot be modified.
+     * @param header    The Header to modify.
+     * @throws HeaderCardException  if modification fails.
+     */
+    protected void postProcess(final Header header) throws HeaderCardException {
+
+    }
 
     /**
      * Obtain the bounds of the given cutout.
@@ -101,4 +116,42 @@ public abstract class FITSCutout<T> {
      */
     public abstract long[] getBounds(final T cutoutBound)
             throws NoSuchKeywordException, WCSLibRuntimeException, HeaderCardException;
+
+    /**
+     * Clip the given bounds for the bounding range of the given axis.
+     * @param len   The max length to clip at.
+     * @param lower The lower end to check.
+     * @param upper The upper end to check.
+     * @return  The array clipped, or empty array for entire data, or null if no overlap.
+     */
+    long[] clip(final long len, final double lower, final double upper) {
+
+        long x1 = (long) Math.floor(lower);
+        long x2 = (long) Math.ceil(upper);
+
+        if (x1 < 1) {
+            x1 = 1;
+        }
+
+        if (x2 > len) {
+            x2 = len;
+        }
+
+        LOGGER.debug("clip: " + len + " (" + x1 + ":" + x2 + ")");
+
+        // all pixels includes
+        if (x1 == 1 && x2 == len) {
+            LOGGER.warn("clip: all");
+            return new long[0];
+        }
+
+        // no pixels included
+        if (x1 > len || x2 < 1) {
+            LOGGER.warn("clip: none");
+            return null;
+        }
+
+        // an actual cutout
+        return new long[]{x1, x2};
+    }
 }

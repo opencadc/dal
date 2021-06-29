@@ -78,6 +78,11 @@ import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
 
+/**
+ * Base class for Shapes (Spatial cutouts).  It mainly contains a convenience method that can be shared.
+ *
+ * @param <T> Shape.
+ */
 public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
     private static final Logger LOGGER = Logger.getLogger(ShapeCutout.class);
 
@@ -89,40 +94,51 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
         super(fitsHeaderWCSKeywords);
     }
 
+    /**
+     * Deduce the Coordinate System used.  This will scan the Header for CTYPEn values.
+     *
+     * @return CoordSys instance, or null if the Header has no CTYPEn value(s).
+     */
     CoordSys inferCoordSys() {
         final CoordSys ret;
+        final int spatialLongitudeAxis = this.fitsHeaderWCSKeywords.getSpatialLongitudeAxis();
+        final int spatialLatitudeAxis = this.fitsHeaderWCSKeywords.getSpatialLatitudeAxis();
 
-        if (!fitsHeaderWCSKeywords.containsKey(Standard.CTYPEn.n(1).key())) {
+        if (spatialLongitudeAxis < 0 || spatialLatitudeAxis < 0) {
             ret = null;
         } else {
-            final String ctype1 = fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(1).key());
+            final String longitudeCType =
+                    fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(spatialLongitudeAxis).key());
 
-            LOGGER.debug("CTYPE1 is " + ctype1);
+            LOGGER.debug("CTYPE" + spatialLongitudeAxis + " is " + longitudeCType);
 
-            final String ctype2 = fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(2).key());
+            final String latitudeCType =
+                    fitsHeaderWCSKeywords.getStringValue(Standard.CTYPEn.n(spatialLatitudeAxis).key());
+
+            LOGGER.debug("CTYPE" + spatialLatitudeAxis + " is " + latitudeCType);
+
             final float equinox = fitsHeaderWCSKeywords.getFloatValue(Standard.EQUINOX.key());
 
             ret = new CoordSys();
+            ret.longitudeAxis = spatialLongitudeAxis;
+            ret.latitudeAxis = spatialLatitudeAxis;
             ret.name = fitsHeaderWCSKeywords.getStringValue(Standard.RADESYS.key());
             ret.supported = false;
 
             if (CoordSys.GAPPT.equals(ret.name)) {
                 ret.timeDependent = Boolean.TRUE;
-                ret.supported = false;
-            } else if ((ctype1.startsWith("ELON") && ctype2.startsWith("ELAT"))
-                       || (ctype1.startsWith("ELAT") && ctype2.startsWith("ELON"))) {
+            } else if ((longitudeCType.startsWith("ELON") && latitudeCType.startsWith("ELAT"))
+                       || (longitudeCType.startsWith("ELAT") && latitudeCType.startsWith("ELON"))) {
                 // ecliptic
                 ret.name = CoordSys.ECL;
                 ret.timeDependent = Boolean.TRUE;
-                ret.supported = false;
-            } else if ((ctype1.startsWith("HLON") && ctype2.startsWith("HLAT"))
-                       || (ctype1.startsWith("HLAT") && ctype2.startsWith("HLON"))) {
+            } else if ((longitudeCType.startsWith("HLON") && latitudeCType.startsWith("HLAT"))
+                       || (longitudeCType.startsWith("HLAT") && latitudeCType.startsWith("HLON"))) {
                 // helio-ecliptic
                 ret.name = CoordSys.HECL;
                 ret.timeDependent = Boolean.TRUE;
-                ret.supported = false;
-            } else if ((ctype1.startsWith("GLON") && ctype2.startsWith("GLAT"))
-                       || (ctype1.startsWith("GLAT") && ctype2.startsWith("GLON"))) {
+            } else if ((longitudeCType.startsWith("GLON") && latitudeCType.startsWith("GLAT"))
+                       || (longitudeCType.startsWith("GLAT") && latitudeCType.startsWith("GLON"))) {
                 if (CoordSys.GAL.equals(ret.name)) {
                     LOGGER.debug("found coordsys=" + ret.name + " with GLON,GLAT - OK");
                 } else if (ret.name != null) {
@@ -132,12 +148,12 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
                 if (ret.name == null) {
                     ret.name = CoordSys.GAL;
                 }
-                if (ctype1.startsWith("GLAT")) {
+                if (longitudeCType.startsWith("GLAT")) {
                     ret.swappedAxes = true;
                 }
                 ret.supported = true;
-            } else if ((ctype1.startsWith("RA") && ctype2.startsWith("DEC"))
-                       || (ctype1.startsWith("DEC") && ctype2.startsWith("RA"))) {
+            } else if ((longitudeCType.startsWith("RA") && latitudeCType.startsWith("DEC"))
+                       || (longitudeCType.startsWith("DEC") && latitudeCType.startsWith("RA"))) {
                 if (ret.name == null) {
                     if (equinox == 0.0F) {
                         ret.name = CoordSys.ICRS;
@@ -150,7 +166,7 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
                     }
                 }
 
-                if (ctype1.startsWith("DEC")) {
+                if (spatialLatitudeAxis < spatialLongitudeAxis) {
                     ret.swappedAxes = true;
                 }
                 if (ret.name != null) {
@@ -162,6 +178,9 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
         return ret;
     }
 
+    /**
+     * Simple DTO class to bundle similar Shape data.
+     */
     public static class CoordSys implements Serializable {
         private static final long serialVersionUID = 201207300900L;
 
@@ -178,6 +197,8 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
         Boolean timeDependent;
         boolean supported;
         boolean swappedAxes = false;
+        int longitudeAxis;
+        int latitudeAxis;
 
         public String getName() {
             return name;
@@ -185,6 +206,39 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
 
         public boolean isSwappedAxes() {
             return swappedAxes;
+        }
+
+        /**
+         * Returns a string representation of the object. In general, the
+         * {@code toString} method returns a string that
+         * "textually represents" this object. The result should
+         * be a concise but informative representation that is easy for a
+         * person to read.
+         * It is recommended that all subclasses override this method.
+         *
+         * <p>The {@code toString} method for class {@code Object}
+         * returns a string consisting of the name of the class of which the
+         * object is an instance, the at-sign character `{@code @}', and
+         * the unsigned hexadecimal representation of the hash code of the
+         * object. In other words, this method returns a string equal to the
+         * value of:
+         * <blockquote>
+         * <pre>
+         * getClass().getName() + '@' + Integer.toHexString(hashCode())
+         * </pre></blockquote>
+         *
+         * @return a string representation of the object.
+         */
+        @Override
+        public String toString() {
+            return CoordSys.class.getName() + "["
+                   + "Name: " + name + ", "
+                   + "Time dependant: " + timeDependent + ", "
+                   + "Supported Flag: " + supported + ", "
+                   + "Swapped Axes flag: " + swappedAxes + ", "
+                   + "Longitude axis: " + longitudeAxis + ", "
+                   + "Latitude axis: " + latitudeAxis + "]";
+
         }
     }
 }

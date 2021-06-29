@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2020.                            (c) 2020.
+*  (c) 2021.                            (c) 2021.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,91 +62,64 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
+*
 ************************************************************************
 */
 
-package org.opencadc.fits;
+package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.io.ReadException;
-import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
+import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.dali.Point;
+import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
-import nom.tam.util.RandomAccessDataObject;
-import org.opencadc.fits.slice.NDimensionalSlicer;
-import org.opencadc.soda.ExtensionSlice;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.BufferedDataInputStream;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
+import org.opencadc.soda.PixelRange;
 import org.opencadc.soda.server.Cutout;
 
-/**
- * Operations on FITS files.
- * 
- * @author pdowler
- */
-public class FitsOperations {
-    private final RandomAccessDataObject src;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
-    public FitsOperations(RandomAccessDataObject src) {
-        this.src = src;
+
+public class WCSCutoutUtilTest extends BaseCutoutTest {
+    private static final Logger LOGGER = Logger.getLogger(WCSCutoutUtilTest.class);
+
+    static {
+        Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
     }
 
-    public Header getPrimaryHeader() throws ReadException {
-        try {
-            Fits fits = new Fits(src);
-            
-            BasicHDU<?> hdu = fits.readHDU();
-            
-            return hdu.getHeader();
-        } catch (FitsException ex) {
-            throw new RuntimeException("invalid fits data: " + src);
-        } catch (IOException ex) {
-            throw new ReadException("failed to read " + src, ex);
-        }
-    }
-    
-    public List<Header> getHeaders() throws ReadException {
-        try {
-            List<Header> ret = new ArrayList<>();
-            
-            Fits fits = new Fits(src);
-            BasicHDU<?> hdu = fits.readHDU();
-            while (hdu != null) {
-                Header h = hdu.getHeader();
-                ret.add(h);
-                hdu = fits.readHDU();
-            }
-            
-            return ret;
-        } catch (FitsException ex) {
-            throw new RuntimeException("invalid fits data: " + src);
-        } catch (IOException ex) {
-            throw new ReadException("failed to read " + src, ex);
-        }
-    }
+    @Test
+    public void testMultipleWCS() throws Exception {
+        final long startMillis = System.currentTimeMillis();
 
-    /**
-     * Implement prototype SODA pixel cutout action.
-     *
-     * @param slices subsets of data to extract
-     * @param outputStream  The Stream to write out to.
-     * @throws ReadException    Any errors to report back to the caller.
-     */
-    public void cutoutToStream(final List<ExtensionSlice> slices, final OutputStream outputStream) throws ReadException {
-        try {
-            final NDimensionalSlicer slicer = new NDimensionalSlicer();
-            final Cutout cutout = new Cutout();
-            cutout.pixelCutouts = slices;
-            slicer.slice(src, cutout, outputStream);
-        } catch (FitsException | NoSuchKeywordException ex) {
-            throw new ReadException("invalid fits data: " + src + " reason: " + ex.getMessage(), ex);
-        } catch (IOException ex) {
-            throw new ReadException("failed to read " + src + " reason: " + ex.getMessage(), ex);
+        final String headerFileName = "test-alma-cube-band-header.txt";
+        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
+        final Cutout cutout = new Cutout();
+        cutout.pos = new Circle(new Point(128.638D, 17.33D), 0.01D);
+        cutout.band = new Interval<>(1.3606E-3D, 1.3616E-3D);
+
+        try (final InputStream inputStream = new FileInputStream(testFile);
+             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+            final Header testHeader = Header.readHeader(arrayDataInput);
+            final PixelRange[] resultRanges = WCSCutoutUtil.getBounds(testHeader, cutout);
+
+            // Combined Circle cutout (axes 1 & 2), as well as Band cutout on axis 3.
+            final PixelRange[] expectedRanges = new PixelRange[] {
+                    new PixelRange(17, 400),
+                    new PixelRange(1, 52),
+                    new PixelRange(1, 18),
+                    new PixelRange(1, 1)
+            };
+
+            Assert.assertArrayEquals("Wrong cutout bounds for ALMA Cube.", expectedRanges, resultRanges);
         }
+        LOGGER.debug("WCSCutoutUtilTest.testMultipleWCS OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 }
