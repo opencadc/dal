@@ -565,10 +565,20 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
         return -1;
     }
 
+    /**
+     * Obtain the time (1-based) axis from the current header.  Return -1 if none found that match the Temporal types.
+     *
+     * @return int axis, or -1 if no spectral axis present.
+     */
     public int getTemporalAxis() {
         return getTemporalAxis(this.header);
     }
 
+    /**
+     * Obtain the time (1-based) axis from the given header.  Return -1 if none found that match the Temporal types.
+     *
+     * @return integer axis, or -1 if not found.
+     */
     int getTemporalAxis(final Header destination) {
         final int naxis = destination.getIntValue(Standard.NAXIS);
         for (int i = 1; i <= naxis; i++) {
