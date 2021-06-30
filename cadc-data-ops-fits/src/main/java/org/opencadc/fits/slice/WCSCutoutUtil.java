@@ -160,7 +160,7 @@ public class WCSCutoutUtil {
 
     static PixelRange[] getTemporalBounds(final Header header, final Interval<Number> temporalInterval)
             throws HeaderCardException {
-        throw new UnsupportedOperationException("Temporal not yet implemented.");
+        return WCSCutoutUtil.toPixelRanges(new TimeCutout(header).getBounds(temporalInterval));
     }
 
     static PixelRange[] getPolarizationBounds(final Header header, final List<String> polarizationStates)

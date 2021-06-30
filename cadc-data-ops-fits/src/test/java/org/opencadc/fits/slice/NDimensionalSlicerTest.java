@@ -108,7 +108,6 @@ public class NDimensionalSlicerTest {
         slices.add(fmt.parse("[1][10:16,70:90]"));
         slices.add(fmt.parse("[106][8:32,88:112]"));
         slices.add(fmt.parse("[126]"));
-
         final Cutout cutout = new Cutout();
         cutout.pixelCutouts = slices;
 
@@ -142,7 +141,6 @@ public class NDimensionalSlicerTest {
         slices.add(fmt.parse("[1][10:16,70:90]"));
         slices.add(fmt.parse("[106][8:32,88:112]"));
         slices.add(fmt.parse("[126]"));
-
         final Cutout cutout = new Cutout();
         cutout.pixelCutouts = slices;
 
@@ -179,7 +177,6 @@ public class NDimensionalSlicerTest {
         List<ExtensionSlice> slices = new ArrayList<>();
         slices.add(fmt.parse("[0][25:125]"));
         slices.add(fmt.parse("[0][300:375]"));
-
         final Cutout cutout = new Cutout();
         cutout.pixelCutouts = slices;
 
@@ -209,7 +206,6 @@ public class NDimensionalSlicerTest {
     public void testMEFToSimple() throws Exception {
         List<ExtensionSlice> slices = new ArrayList<>();
         slices.add(new ExtensionSlice("SCI", 13));
-
         final Cutout cutout = new Cutout();
         cutout.pixelCutouts = slices;
 
@@ -240,7 +236,6 @@ public class NDimensionalSlicerTest {
     public void testNoSuchExtension() throws Exception {
         List<ExtensionSlice> slices = new ArrayList<>();
         slices.add(new ExtensionSlice("BOGUS", 367));
-
         final Cutout cutout = new Cutout();
         cutout.pixelCutouts = slices;
 
@@ -270,7 +265,6 @@ public class NDimensionalSlicerTest {
         final ExtensionSliceFormat format = new ExtensionSliceFormat();
         slices.add(format.parse("[1][*,1:100]"));
         slices.add(format.parse("[2][50:90,*]"));
-
         final Cutout cutout = new Cutout();
         cutout.pixelCutouts = slices;
 

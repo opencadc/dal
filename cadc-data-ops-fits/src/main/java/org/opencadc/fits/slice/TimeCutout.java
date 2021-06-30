@@ -87,6 +87,9 @@ import org.apache.log4j.Logger;
 public class TimeCutout extends FITSCutout<Interval<Number>> {
     private static final Logger LOGGER = Logger.getLogger(TimeCutout.class);
 
+    // Since there are several Time related headers to represent the same value, we create a separate WCS Keywords
+    // instance with time specific methods to obtain values like DATEREF, which could be made up from MJDREF[IF],
+    // JDREF, or plain DATEREF.
     private final TimeHeaderWCSKeywords timeHeaderWCSKeywords;
 
 
@@ -102,39 +105,64 @@ public class TimeCutout extends FITSCutout<Interval<Number>> {
 
 
     /**
-     * Obtain the bounds of the given cutout.
+     * Obtain the bounds of the given cutout.  This will reduce values to seconds, obtain an overlap, then convert to
+     * pixels.
      *
      * @param cutoutBound The interval bounds of the cutout in MJD.
-     * @return long[] array of overlapping bounds, or long[0] if all pixels are included.
+     * @return long[NAXIS] with the pixel bounds, long[0] if all pixels are included, or
+     *          null if no pixels are included
      * @throws WCSLibRuntimeException WCSLib (C) error.
      */
     @Override
     public long[] getBounds(final Interval<Number> cutoutBound) throws WCSLibRuntimeException {
         final int timeAxis = this.fitsHeaderWCSKeywords.getTemporalAxis();
-        try {
-            final Interval<Double> headerSecondsInterval = toSecondsInterval();
-            final Interval<Double> cutoutSecondsInterval = getCutoutSecondsInterval(cutoutBound);
-            final Interval<Double> overlapSeconds = getOverlap(headerSecondsInterval, cutoutSecondsInterval);
 
-            if (overlapSeconds == null) {
-                LOGGER.debug("No overlap.");
-                return null;
+        if (timeAxis < 0) {
+            LOGGER.debug("No time axis found.");
+            return null;
+        } else {
+            final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
+            try {
+                final Interval<Double> headerSecondsInterval = toSecondsInterval();
+                final Interval<Double> cutoutSecondsInterval = getCutoutSecondsInterval(cutoutBound);
+                final Interval<Double> overlapSeconds = getOverlap(headerSecondsInterval, cutoutSecondsInterval);
+
+                if (overlapSeconds == null) {
+                    LOGGER.debug("No overlap.");
+                    return null;
+                }
+
+                LOGGER.debug("Found overlap (" + overlapSeconds.getLower() + ", " + overlapSeconds.getUpper() + ")");
+
+                final double d1 = val2pix(timeAxis, overlapSeconds.getLower());
+                final double d2 = val2pix(timeAxis, overlapSeconds.getUpper());
+
+                final long x1 = (long) Math.floor(Math.min(d1, d2));
+                final long x2 = (long) Math.ceil(Math.max(d1, d2));
+
+                final long[] clippedTemporalBounds = clip(x1, x2);
+                final long[] entireBounds = clippedTemporalBounds == null ? null : new long[naxis * 2];
+
+                if (entireBounds != null) {
+                    for (int i = 0; i < entireBounds.length; i += 2) {
+                        final int axis = (i + 2) / 2;
+                        if (axis == timeAxis) {
+                            entireBounds[i] = clippedTemporalBounds[0];
+                            entireBounds[i + 1] = clippedTemporalBounds[1];
+                        } else {
+                            entireBounds[i] = 1L;
+                            entireBounds[i + 1] = (long) this.fitsHeaderWCSKeywords.getDoubleValue(
+                                    Standard.NAXISn.n(axis).key());
+                        }
+                    }
+                }
+
+                LOGGER.debug("Pixel overlap: (" + x1 + ", " + x2 + ")");
+
+                return entireBounds;
+            } catch (ParseException parseException) {
+                throw new IllegalArgumentException(parseException.getMessage(), parseException);
             }
-
-            LOGGER.debug("Found overlap (" + overlapSeconds.getLower() + ", " + overlapSeconds.getUpper() + ")");
-
-            final double d1 = val2pix(timeAxis, overlapSeconds.getLower());
-            final double d2 = val2pix(timeAxis, overlapSeconds.getUpper());
-
-            final double padding = 0.0D;
-            final long x1 = (long) Math.floor(Math.min(d1, d2) + padding);
-            final long x2 = (long) Math.ceil(Math.max(d1, d2) - padding);
-
-            LOGGER.debug("Pixel overlap: (" + x1 + ", " + x2 + ")");
-
-            return clip(x1, x2);
-        } catch (ParseException parseException) {
-            throw new IllegalArgumentException(parseException.getMessage(), parseException);
         }
     }
 

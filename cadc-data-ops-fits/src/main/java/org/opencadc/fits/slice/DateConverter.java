@@ -73,9 +73,18 @@ import ca.nrc.cadc.date.DateUtil;
 import java.util.Calendar;
 import java.util.Date;
 
+/**
+ * Convert values to Date objects.  Currently on converting from MJD is supported.
+ */
 public class DateConverter {
     private static final double FROM_JULIAN_DATE = 2400000.5D;
 
+    /**
+     * Convert from the given MJD value to a Java Date object.
+     *
+     * @param modifiedJulianDate    The MJD value.
+     * @return  Date instance.  Never null.
+     */
     public final Date fromMJD(final double modifiedJulianDate) {
         // Julian day
         final double julianDate = Math.floor(modifiedJulianDate) + FROM_JULIAN_DATE;

@@ -77,6 +77,9 @@ import java.util.TimeZone;
 
 import org.apache.log4j.Logger;
 
+/**
+ * Conversions to MJD from other formats.
+ */
 public class MJDTimeConverter {
     private static final Logger LOGGER = Logger.getLogger(MJDTimeConverter.class);
 

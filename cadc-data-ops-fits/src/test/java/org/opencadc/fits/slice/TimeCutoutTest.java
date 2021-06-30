@@ -119,8 +119,10 @@ public class TimeCutoutTest extends BaseCutoutTest {
     public void testSimpleMJDOverlap() throws Exception {
         final Header testHeader = new Header();
 
-        testHeader.addValue(Standard.NAXIS, 1);
+        testHeader.setNaxes(3);
         testHeader.addValue(Standard.NAXISn.n(1), 350);
+        testHeader.addValue(Standard.NAXISn.n(2), 550);
+        testHeader.addValue(Standard.NAXISn.n(3), 550);
         testHeader.addValue(CADCExt.CUNITn.n(1), "s");
         testHeader.addValue(Standard.CRVALn.n(1), 40.0D); // Forty seconds long exposure
         testHeader.addValue(Standard.CRPIXn.n(1), 102.0);
@@ -131,11 +133,23 @@ public class TimeCutoutTest extends BaseCutoutTest {
         testHeader.addValue(CADCExt.MJDREFI, 54468);
         testHeader.addValue(CADCExt.MJDREFF, 0.2489D);
 
+        testHeader.addValue(Standard.CTYPEn.n(2), "RA---SIN");
+        testHeader.addValue(Standard.CRVALn.n(2), 2.465333333333E+02D);
+        testHeader.addValue(Standard.CDELTn.n(2), -1.111111111111E-04D);
+        testHeader.addValue(Standard.CRPIXn.n(2), 1.510000000000E+02D);
+        testHeader.addValue(CADCExt.CUNITn.n(2), "deg");
+
+        testHeader.addValue(Standard.CTYPEn.n(3), "DEC--SIN");
+        testHeader.addValue(Standard.CRVALn.n(3), -2.434013888889E+01D);
+        testHeader.addValue(Standard.CDELTn.n(3), 1.111111111111E-04D);
+        testHeader.addValue(Standard.CRPIXn.n(3), 1.510000000000E+02D);
+        testHeader.addValue(CADCExt.CUNITn.n(3), "deg");
+
         final Interval<Number> testInterval = new Interval<>(54468.2489864D, 54468.24901D);
         final TimeCutout testSubject = new TimeCutout(testHeader);
 
         final long[] results = testSubject.getBounds(testInterval);
-        final long[] expected = new long[]{12L, 19L};
+        final long[] expected = new long[]{12L, 19L, 1L, 550L, 1L, 550L};
 
         assertFuzzyPixelArrayEquals("Wrong output.", expected, results);
     }
@@ -144,7 +158,7 @@ public class TimeCutoutTest extends BaseCutoutTest {
     public void testNoOverlap() throws Exception {
         final Header testHeader = new Header();
 
-        testHeader.addValue(Standard.NAXIS, 1);
+        testHeader.setNaxes(1);
         testHeader.addValue(Standard.NAXISn.n(1), 1600);
         testHeader.addValue(CADCExt.CUNITn.n(1), "d");
         testHeader.addValue(Standard.CRVALn.n(1), 3.23D);  // 3.23 days exposure
