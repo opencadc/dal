@@ -69,6 +69,7 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
 
 import java.text.ParseException;
@@ -167,12 +168,11 @@ public class TimeCutout extends FITSCutout<Interval<Number>> {
     }
 
     Interval<Double> getCutoutSecondsInterval(final Interval<Number> bounds) throws ParseException {
-        final SecondsConverter secondsConverter = new SecondsConverter();
         final double mjdRef = this.timeHeaderWCSKeywords.getMJDRef();
         final double daysLower = bounds.getLower().doubleValue() - mjdRef;
         final double daysUpper = bounds.getUpper().doubleValue() - mjdRef;
-        final double secondsLower = secondsConverter.from(daysLower, "d");
-        final double secondsUpper = secondsConverter.from(daysUpper, "d");
+        final double secondsLower = DateUtil.toSeconds(daysLower, "d");
+        final double secondsUpper = DateUtil.toSeconds(daysUpper, "d");
 
         return new Interval<>(Math.min(secondsLower, secondsUpper), Math.max(secondsLower, secondsUpper));
     }
@@ -207,8 +207,7 @@ public class TimeCutout extends FITSCutout<Interval<Number>> {
         final double refVal = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(timeAxis).key());
         final double refCDelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(timeAxis).key());
         final String refUnit = this.timeHeaderWCSKeywords.getUnit();
-        final SecondsConverter secondsConverter = new SecondsConverter();
-        final double upperSeconds = secondsConverter.from(refVal + refCDelt, refUnit);
+        final double upperSeconds = DateUtil.toSeconds(refVal + refCDelt, refUnit);
 
         final Interval<Double> returnInterval = new Interval<>(0.0D, upperSeconds);
         LOGGER.debug("Header interval seconds is (" + returnInterval.getLower() + "," + returnInterval.getUpper()
@@ -223,8 +222,7 @@ public class TimeCutout extends FITSCutout<Interval<Number>> {
         final double refCDelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(timeAxis).key());
         final String refUnit = this.timeHeaderWCSKeywords.getUnit();
 
-        final SecondsConverter secondsConverter = new SecondsConverter();
-        final double headerSeconds = secondsConverter.from(refVal + refCDelt, refUnit);
+        final double headerSeconds = DateUtil.toSeconds(refVal + refCDelt, refUnit);
 
         return refPix + (secondsValue - headerSeconds) / refCDelt;
     }

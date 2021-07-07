@@ -116,7 +116,6 @@ public class TimeHeaderWCSKeywordsTest {
 
     @Test
     public void testMJDStart() throws Exception {
-        final MJDTimeConverter mjdTimeConverter = new MJDTimeConverter();
         final Header testHeader = new Header();
         final Calendar calendar = Calendar.getInstance(DateUtil.UTC);
         calendar.set(2012, Calendar.NOVEMBER, 17, 1, 21, 0);
@@ -127,7 +126,7 @@ public class TimeHeaderWCSKeywordsTest {
         calendar.add(Calendar.HOUR, 2);
         final Date stopDate = calendar.getTime();
 
-        final double mjdValue = mjdTimeConverter.fromISODate(calendar.getTime(), DateUtil.UTC);
+        final double mjdValue = DateUtil.toModifiedJulianDate(calendar.getTime(), DateUtil.UTC);
         final int mjdValueI = (int) Math.floor(mjdValue);
 
         testHeader.addValue(Standard.NAXIS, 1);
