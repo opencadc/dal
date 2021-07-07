@@ -98,24 +98,18 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
     /**
      * Implementors can override this to further process the Header to accommodate different cutout types.  Leave empty
      * if no further processing needs to be done.
-     * This class overrides to insert the PV matrix keywords that are necessary for slicing along the spectral axis.
+     * This class overrides to remove the PV matrix as it produces erroneous results.
      *
      * @param header The Header to modify.
      */
     @Override
-    protected void postProcess(Header header) throws HeaderCardException {
+    protected void postProcess(final Header header) {
         final int naxis = header.getIntValue(Standard.NAXIS);
-        final boolean expectPV = header.containsKey(CADCExt.RESTFRQ) || header.containsKey(CADCExt.RESTFREQ);
 
         for (int x = 1; x <= naxis; x++) {
             for (int y = 1; y <= naxis; y++) {
                 final String pvMatrixKey = String.format("PV%d_%d", x, y);
-
-                // If the RESTFRQ header is present, the PV values seem to be necessary as well.  Spatial (2D) cutouts
-                // will fail if they exist for the spatial axes however, so keep it to the spectral axis.
-                if (expectPV && !header.containsKey(pvMatrixKey)) {
-                    header.addValue(pvMatrixKey, (x == y) ? 1.0D : 0.0D, null);
-                }
+                header.deleteKey(pvMatrixKey);
             }
         }
     }
@@ -180,6 +174,10 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
     }
 
     private Interval<Double> getOverlap(final Interval<Double> headerWCSInterval, final Interval<Double> cutoutBounds) {
+        LOGGER.debug("Checking overlap between header pixels ("
+                     + headerWCSInterval.getLower() + ", " + headerWCSInterval.getUpper()
+                     + ") and requested bounds pixels ("
+                     + cutoutBounds.getLower() + ", " + cutoutBounds.getUpper() + ")");
         if (headerWCSInterval.getLower() > cutoutBounds.getUpper()
             || headerWCSInterval.getUpper() < cutoutBounds.getLower()) {
             return null;
@@ -189,6 +187,14 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
         }
     }
 
+    /**
+     * Produce an Interval of pixel values as converted from the given bounds.
+     * @param bounds            The user-input bounds in metres.
+     * @param energyAxis        The energy axis.
+     * @param naxis             The number of axes.
+     * @return  Interval of double pixels.  Never null.
+     * @throws NoSuchKeywordException   If there is no NAXIS keyword.
+     */
     Interval<Double> getCutoutPixelInterval(final Interval<Number> bounds, final int energyAxis, final int naxis)
             throws NoSuchKeywordException {
         final double lower = bounds.getLower().doubleValue();
@@ -217,6 +223,27 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
         } else {
             lowerCoords[energyAxisIndex] = energyConverter.fromMetres(lower, unit);
             upperCoords[energyAxisIndex] = energyConverter.fromMetres(upper, unit);
+        }
+
+        // To convert from Sky coordinate values to pixel values, using just 0.0 for the longitude and latitude
+        // is invalid.  We need to set them to the CRVALn values.
+        final int longitudeAxis = this.fitsHeaderWCSKeywords.getSpatialLongitudeAxis();
+        final int latitudeAxis = this.fitsHeaderWCSKeywords.getSpatialLatitudeAxis();
+
+        if (longitudeAxis > 0 && latitudeAxis > 0) {
+            final double longitudeReferenceVal =
+                    this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(longitudeAxis).key());
+            if (longitudeReferenceVal > 0.0D) {
+                lowerCoords[longitudeAxis - 1] = longitudeReferenceVal;
+                upperCoords[longitudeAxis - 1] = longitudeReferenceVal;
+            }
+
+            final double latitudeReferenceVal =
+                    this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(latitudeAxis).key());
+            if (latitudeReferenceVal > 0.0D) {
+                lowerCoords[latitudeAxis - 1] = latitudeReferenceVal;
+                upperCoords[latitudeAxis - 1] = latitudeReferenceVal;
+            }
         }
 
         LOGGER.debug("Getting pixel value for lower coords " + Arrays.toString(lowerCoords));

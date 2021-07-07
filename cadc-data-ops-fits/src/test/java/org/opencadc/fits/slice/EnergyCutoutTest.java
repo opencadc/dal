@@ -84,7 +84,6 @@ import nom.tam.util.BufferedDataInputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.opencadc.fits.CADCExt;
 
@@ -93,6 +92,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
 
     static {
         Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.DEBUG);
     }
 
     @Test
@@ -162,6 +162,31 @@ public class EnergyCutoutTest extends BaseCutoutTest {
             assertFuzzyPixelArrayEquals("Wrong energy bounds for ALMA Cube.", expectedBounds, resultBounds);
         }
         LOGGER.debug("EnergyCutoutTest.testALMA OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+    }
+
+    /**
+     * This test was added as even thought the testALMA test was passing, this cube could not be cutout from.
+     * @throws Exception    For anything that was unexpected
+     */
+    @Test
+    public void testALMA2() throws Exception {
+        final long startMillis = System.currentTimeMillis();
+
+        final String headerFileName = "test-alma-cube-2-header.txt";
+        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
+
+        try (final InputStream inputStream = new FileInputStream(testFile);
+             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+
+            final Header testHeader = Header.readHeader(arrayDataInput);
+            final EnergyCutout energyCutout = new EnergyCutout(testHeader);
+            final Interval<Number> energyCutoutBounds = new Interval<>(2.208594862199E-3, 2.212996759406E-3);
+            final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
+            final long[] expectedBounds = new long[]{1L, 108L, 1L, 108L, 184L, 253L, 1L, 1L};
+
+            assertFuzzyPixelArrayEquals("Wrong energy bounds for ALMA 2 Cube.", expectedBounds, resultBounds);
+        }
+        LOGGER.debug("EnergyCutoutTest.testALMA2 OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
 
     @Test
@@ -264,7 +289,6 @@ public class EnergyCutoutTest extends BaseCutoutTest {
     }
 
     @Test
-    @Ignore("Until SIP distortions are understood.")
     public void testSITELLE() throws Exception {
         final long startMillis = System.currentTimeMillis();
 
@@ -276,11 +300,11 @@ public class EnergyCutoutTest extends BaseCutoutTest {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
-            final Interval<Number> energyCutoutBounds = new Interval<>(0.00000051D, 0.00000052D);
-
+            final Interval<Number> energyCutoutBounds = new Interval<>(5.368180E-9D, 5.3810E-9D);
             final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
+            final long[] expectedBounds = new long[]{1L, 2048, 1L, 2064, 60L, 105L};
 
-            Assert.assertEquals("Wrong bounds.", 252, resultBounds[0]);
+            assertFuzzyPixelArrayEquals("Wrong energy bounds cube file.", expectedBounds, resultBounds);
         }
         LOGGER.debug("EnergyCutoutTest.testSITELLE OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
