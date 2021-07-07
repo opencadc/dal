@@ -68,11 +68,8 @@
 
 package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.dali.Circle;
-import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
-
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -84,7 +81,6 @@ import java.util.List;
 
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
-import nom.tam.fits.ImageHDU;
 import nom.tam.util.RandomAccessDataObject;
 import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;

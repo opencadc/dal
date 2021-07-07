@@ -68,113 +68,96 @@
 
 package org.opencadc.fits.slice;
 
-import java.util.Arrays;
-import java.util.Locale;
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import nom.tam.fits.Header;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.header.extra.NOAOExt;
+import org.apache.log4j.Level;
+import org.junit.Assert;
+import org.junit.Test;
+import org.opencadc.fits.CADCExt;
+
+import java.util.Calendar;
+import java.util.Date;
 
 
-/**
- * Supported COORD Type codes used to identify a certain type of axis.
- */
-public enum CoordTypeCode {
-    // Spatial type codes.
-    RA("RA", "deg", CoordType.SPATIAL_LONGITUDE),
-    DEC("DEC", "deg", CoordType.SPATIAL_LATITUDE),
-    GLON("GLON", "deg", CoordType.SPATIAL_LONGITUDE),
-    GLAT("GLAT", "deg", CoordType.SPATIAL_LATITUDE),
-    ELON("ELON", "deg", CoordType.SPATIAL_LONGITUDE),
-    ELAT("ELAT", "deg", CoordType.SPATIAL_LATITUDE),
+public class TimeHeaderWCSKeywordsTest {
 
-    // Spectral type codes.
-    FREQ("FREQ", "Hz", CoordType.SPECTRAL),
-    ENER("ENER", "J", CoordType.SPECTRAL),
-    WAVN("WAVN", "/m", CoordType.SPECTRAL),
-    VRAD("VRAD", "m s-1", CoordType.SPECTRAL),
-    WAVE("WAVE", "m", CoordType.SPECTRAL),
-    VOPT("VOPT", "m s-1", CoordType.SPECTRAL),
-    ZOPT("ZOPT", "", CoordType.SPECTRAL),
-    AWAV("AWAV", "m", CoordType.SPECTRAL),
-    VELO("VELO", "m s-1", CoordType.SPECTRAL),
-    BETA("BETA", "", CoordType.SPECTRAL),
-
-    // Temporal type codes.
-    TIME("TIME", "s", CoordType.TIME),
-    ET("ET", "s", CoordType.TIME),
-    GMT("GMT", "s", CoordType.TIME),
-    GPS("GPS", "s", CoordType.TIME),
-    IAT("TT", "s", CoordType.TIME),
-    TAI("TAI", "s", CoordType.TIME),
-    TCB("TCB", "s", CoordType.TIME),
-    TCG("TCG", "s", CoordType.TIME),
-    TDB("TDB", "s", CoordType.TIME),
-    TDT("TDT", "s", CoordType.TIME),
-    // TT = TAI + 32.184s,
-    TT("TT", "s", CoordType.TIME),
-    UT_WWW("UT(WWW)", "s", CoordType.TIME),
-    UT_CHU("UT(CHU)", "s", CoordType.TIME),
-    UT_NBS("UT(NBS)", "s", CoordType.TIME),
-    UT_NRC("UT(NRC)", "s", CoordType.TIME),
-    UT_BIH("UT(BIH)", "s", CoordType.TIME),
-    UT_JJY("UT(JJY)", "s", CoordType.TIME),
-    UT_DCF77("UT(DCF77)", "s", CoordType.TIME),
-    UT_MSF("UT(MSF)", "s", CoordType.TIME),
-    UT_NICT("UT(NICT)", "s", CoordType.TIME),
-    UT_PTB("UT(PTB)", "s", CoordType.TIME),
-    UT_NPL("UT(NPL)", "s", CoordType.TIME),
-    UT_BIPM("UT(BIPM)", "s", CoordType.TIME),
-    UT_UT0("UT(UT0)", "s", CoordType.TIME),
-    UT_UT1("UT(UT1)", "s", CoordType.TIME),
-    UT_UT2("UT(UT2)", "s", CoordType.TIME),
-    UT1("UT1", "s", CoordType.TIME),
-    UTC("UTC", "s", CoordType.TIME);
-
-    private final String typeCodeString;
-    private final String defaultUnit;
-    private final CoordType coordType;
-
-
-    CoordTypeCode(final String typeCodeString, final String defaultUnit, final CoordType coordType) {
-        this.typeCodeString = typeCodeString;
-        this.defaultUnit = defaultUnit;
-        this.coordType = coordType;
+    static {
+        Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
     }
 
-    public boolean isSpectral() {
-        return coordType == CoordType.SPECTRAL;
+    @Test
+    public void testMJDRef() throws Exception {
+        final Header testHeader = new Header();
+        final Calendar calendar = Calendar.getInstance(DateUtil.UTC);
+        calendar.set(2007, Calendar.SEPTEMBER, 18, 1, 15, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        testHeader.addValue(Standard.NAXIS, 1);
+        testHeader.addValue(Standard.NAXISn.n(1), 350);
+        testHeader.addValue(CADCExt.CUNITn.n(1), "s");
+        testHeader.addValue(Standard.CRVALn.n(1), 40.0D); // Forty seconds long exposure
+        testHeader.addValue(Standard.CRPIXn.n(1), 1.0);
+        testHeader.addValue(Standard.CDELTn.n(1), 0.369);
+        testHeader.addValue(Standard.CTYPEn.n(1), "UTC");
+        testHeader.addValue(CADCExt.DATEREF, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
+                                                     .format(calendar.getTime()));
+
+        final FITSHeaderWCSKeywords fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(testHeader);
+        final TimeHeaderWCSKeywords testSubject = new TimeHeaderWCSKeywords(fitsHeaderWCSKeywords);
+
+        final double result = testSubject.getMJDRef();
+        final double expected = 54361.05208333349D;
+
+        Assert.assertEquals("Wrong MJD Ref value.", expected, result, 3.0E-5D);
     }
 
-    public boolean isTemporal() {
-        return coordType == CoordType.TIME;
+    @Test
+    public void testMJDStart() throws Exception {
+        final Header testHeader = new Header();
+        final Calendar calendar = Calendar.getInstance(DateUtil.UTC);
+        calendar.set(2012, Calendar.NOVEMBER, 17, 1, 21, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        final Date startDate = calendar.getTime();
+
+        calendar.add(Calendar.HOUR, 2);
+        final Date stopDate = calendar.getTime();
+
+        final double mjdValue = DateUtil.toModifiedJulianDate(calendar.getTime(), DateUtil.UTC);
+        final int mjdValueI = (int) Math.floor(mjdValue);
+
+        testHeader.addValue(Standard.NAXIS, 1);
+        testHeader.addValue(Standard.NAXISn.n(1), 350);
+        testHeader.addValue(CADCExt.CUNITn.n(1), "s");
+        testHeader.addValue(Standard.CRVALn.n(1), 40.0D); // Forty seconds long exposure
+        testHeader.addValue(Standard.CRPIXn.n(1), 1.0);
+        testHeader.addValue(Standard.CDELTn.n(1), 0.369);
+        testHeader.addValue(CADCExt.DATEBEG, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
+                                                     .format(startDate));
+        testHeader.addValue(CADCExt.DATEEND, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
+                                                     .format(stopDate));
+        testHeader.addValue(NOAOExt.TIMESYS, "UTC");
+        testHeader.addValue(CADCExt.MJDREFI, mjdValueI);
+        testHeader.addValue(CADCExt.MJDREFF, (mjdValue - mjdValueI));
+
+        final TimeHeaderWCSKeywords testSubject = new TimeHeaderWCSKeywords(testHeader);
+        final double mjdStart = testSubject.getMJDStart();
+
+        Assert.assertEquals("Wrong MJD Start", 56248.05624999991D, mjdStart, 3.0E-5D);
     }
 
-    public boolean isSpatialLongitudinal() {
-        return coordType == CoordType.SPATIAL_LONGITUDE;
-    }
+    @Test
+    public void testMJDUnit() throws Exception {
+        final Header testHeader = new Header();
 
-    public boolean isSpatialLatitudinal() {
-        return coordType == CoordType.SPATIAL_LATITUDE;
-    }
+        testHeader.addValue(CADCExt.TIMEUNIT, "m");
+        final TimeHeaderWCSKeywords testSubject = new TimeHeaderWCSKeywords(testHeader);
+        Assert.assertEquals("Wrong unit.", "m", testSubject.getUnit());
 
-    public boolean isVelocity() {
-        return this == VOPT || this == VELO || this == VRAD;
-    }
-
-    public String getDefaultUnit() {
-        return defaultUnit;
-    }
-
-    public static String getDefaultUnit(final String ctype) {
-        if (ctype == null) {
-            return null;
-        }
-
-        final CoordTypeCode matchedCoordTypeCode =
-                Arrays.stream(values()).filter(coordTypeCode -> ctype.toUpperCase(Locale.ROOT).startsWith(
-                        coordTypeCode.typeCodeString)).findFirst().orElse(null);
-        return (matchedCoordTypeCode == null) ? "" : matchedCoordTypeCode.getDefaultUnit();
-    }
-
-    public static CoordTypeCode fromCType(final String ctype) {
-        final int hyphenIndex = ctype.indexOf("-");
-        return CoordTypeCode.valueOf(hyphenIndex > 0 ? ctype.substring(0, hyphenIndex) : ctype);
+        Assert.assertEquals("Wrong default unit.", "s",
+                            new TimeHeaderWCSKeywords(new Header()).getUnit());
     }
 }
