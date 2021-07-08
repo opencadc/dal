@@ -73,6 +73,7 @@ import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
 import nom.tam.fits.header.Standard;
 import org.apache.log4j.Level;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.opencadc.fits.CADCExt;
@@ -220,8 +221,44 @@ public class PolarizationCutoutTest extends BaseCutoutTest {
     }
 
     @Test
-    @Ignore("Would this ever happen?")
     public void testNoOverlap() throws Exception {
+        final Header testHeader = new Header();
 
+        testHeader.addValue(Standard.NAXIS, 4);
+        testHeader.addValue(Standard.NAXISn.n(1), 300);
+        testHeader.addValue(Standard.CTYPEn.n(1), CoordTypeCode.RA.name() + "---SIN");
+        testHeader.addValue(Standard.CRVALn.n(1), 2.465333333333E+02D);
+        testHeader.addValue(Standard.CDELTn.n(1), -1.111111111111E-04D);
+        testHeader.addValue(Standard.CRPIXn.n(1), 1.510000000000E+02D);
+        testHeader.addValue(CADCExt.CUNITn.n(1), "deg");
+
+        testHeader.addValue(Standard.NAXISn.n(2), 300);
+        testHeader.addValue(Standard.CTYPEn.n(2), CoordTypeCode.DEC.name() + "--SIN");
+        testHeader.addValue(Standard.CRVALn.n(2), 2.434013888889E+01D);
+        testHeader.addValue(Standard.CDELTn.n(2), 1.111111111111E-04D);
+        testHeader.addValue(Standard.CRPIXn.n(2), 1.510000000000E+02D);
+        testHeader.addValue(CADCExt.CUNITn.n(2), "deg");
+
+        testHeader.addValue(Standard.NAXISn.n(3), 151);
+        testHeader.addValue(Standard.CTYPEn.n(3), CoordTypeCode.FREQ.name());
+        testHeader.addValue(Standard.CRVALn.n(3), 1.152750450330E+11D);
+        testHeader.addValue(Standard.CDELTn.n(3), -7.690066705322E+04D);
+        testHeader.addValue(Standard.CRPIXn.n(3), 1.000000000000E+00D);
+        testHeader.addValue(CADCExt.CUNITn.n(3), "Hz");
+
+        testHeader.addValue(Standard.NAXISn.n(4), 1);
+        testHeader.addValue(Standard.CTYPEn.n(4), CoordTypeCode.STOKES.name());
+        testHeader.addValue(Standard.CRVALn.n(4), 3.0D);
+        testHeader.addValue(Standard.CDELTn.n(4), 1.0D);
+        testHeader.addValue(Standard.CRPIXn.n(4), 1.0D);
+        testHeader.addValue(CADCExt.CUNITn.n(4), "");
+
+        final PolarizationState[] states = new PolarizationState[] {
+                PolarizationState.LL
+        };
+
+        final PolarizationCutout testSubject = new PolarizationCutout(testHeader);
+
+        Assert.assertNull("Should be no overlap.", testSubject.getBounds(states));
     }
 }
