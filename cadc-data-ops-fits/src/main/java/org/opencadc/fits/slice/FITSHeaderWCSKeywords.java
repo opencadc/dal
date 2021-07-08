@@ -494,13 +494,13 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Obtain the two spatial axis value.
-     * @param header    The header to check for the axes.
+     * @param h    The header to check for the axes.
      * @return  int of longitude axis numbers, or -1 if none found.
      */
-    int getSpatialLongitudeAxis(final Header header) {
-        final int naxis = header.getIntValue(Standard.NAXIS);
+    int getSpatialLongitudeAxis(final Header h) {
+        final int naxis = h.getIntValue(Standard.NAXIS);
         for (int i = 1; i <= naxis; i++) {
-            final String ctypeValue = header.getStringValue(Standard.CTYPEn.n(i));
+            final String ctypeValue = h.getStringValue(Standard.CTYPEn.n(i));
             if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
                 coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name())
                                  && coordTypeCode.isSpatialLongitudinal())) {
@@ -521,13 +521,13 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Obtain the two spatial axis value.
-     * @param header    The header to check for the axes.
+     * @param h    The header to check for the axes.
      * @return  int of longitude axis numbers, or -1 if none found.
      */
-    int getSpatialLatitudeAxis(final Header header) {
-        final int naxis = header.getIntValue(Standard.NAXIS);
+    int getSpatialLatitudeAxis(final Header h) {
+        final int naxis = h.getIntValue(Standard.NAXIS);
         for (int i = 1; i <= naxis; i++) {
-            final String ctypeValue = header.getStringValue(Standard.CTYPEn.n(i));
+            final String ctypeValue = h.getStringValue(Standard.CTYPEn.n(i));
             if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
                 coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name())
                                  && coordTypeCode.isSpatialLatitudinal())) {
@@ -550,12 +550,13 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
     /**
      * Obtain the energy (1-based) axis from the given header.  Return -1 if none found that match the Spectral types.
      *
+     * @param   h   The header to search in
      * @return integer axis, or -1 if not found.
      */
-    int getSpectralAxis(final Header destination) {
-        final int naxis = destination.getIntValue(Standard.NAXIS);
+    int getSpectralAxis(final Header h) {
+        final int naxis = h.getIntValue(Standard.NAXIS);
         for (int i = 1; i <= naxis; i++) {
-            final String ctypeValue = destination.getStringValue(Standard.CTYPEn.n(i));
+            final String ctypeValue = h.getStringValue(Standard.CTYPEn.n(i));
             if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
                 coordTypeCode -> ctypeValue.startsWith(coordTypeCode.name()) && coordTypeCode.isSpectral())) {
                 return i;
@@ -568,7 +569,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
     /**
      * Obtain the time (1-based) axis from the current header.  Return -1 if none found that match the Temporal types.
      *
-     * @return int axis, or -1 if no spectral axis present.
+     * @return int axis, or -1 if no temporal axis present.
      */
     public int getTemporalAxis() {
         return getTemporalAxis(this.header);
@@ -577,14 +578,43 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
     /**
      * Obtain the time (1-based) axis from the given header.  Return -1 if none found that match the Temporal types.
      *
+     * @param   h   The header to search in
      * @return integer axis, or -1 if not found.
      */
-    int getTemporalAxis(final Header destination) {
-        final int naxis = destination.getIntValue(Standard.NAXIS);
+    int getTemporalAxis(final Header h) {
+        final int naxis = h.getIntValue(Standard.NAXIS);
         for (int i = 1; i <= naxis; i++) {
-            final String ctypeValue = destination.getStringValue(Standard.CTYPEn.n(i));
+            final String ctypeValue = h.getStringValue(Standard.CTYPEn.n(i));
             if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
                 coOrdTypeCode -> ctypeValue.startsWith(coOrdTypeCode.name()) && coOrdTypeCode.isTemporal())) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Obtain the time (1-based) axis from the given header.  Return -1 if none found that match the Temporal types.
+     *
+     * @return integer axis, or -1 if not found.
+     */
+    int getPolarizationAxis() {
+        return getPolarizationAxis(this.header);
+    }
+
+    /**
+     * Obtain the time (1-based) axis from the given header.  Return -1 if none found that match the Temporal types.
+     *
+     * @param   h   The header to search in
+     * @return integer axis, or -1 if not found.
+     */
+    int getPolarizationAxis(final Header h) {
+        final int naxis = h.getIntValue(Standard.NAXIS);
+        for (int i = 1; i <= naxis; i++) {
+            final String ctypeValue = h.getStringValue(Standard.CTYPEn.n(i));
+            if (ctypeValue != null && Arrays.stream(CoordTypeCode.values()).anyMatch(
+                coOrdTypeCode -> ctypeValue.startsWith(coOrdTypeCode.name()) && coOrdTypeCode.isPolarization())) {
                 return i;
             }
         }

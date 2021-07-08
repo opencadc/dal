@@ -125,7 +125,10 @@ public enum CoordTypeCode {
     UT_UT1("UT(UT1)", "s", CoordType.TIME),
     UT_UT2("UT(UT2)", "s", CoordType.TIME),
     UT1("UT1", "s", CoordType.TIME),
-    UTC("UTC", "s", CoordType.TIME);
+    UTC("UTC", "s", CoordType.TIME),
+
+    // Polarization type codes.
+    STOKES("STOKES", "", CoordType.POLARIZATION);
 
     private final String typeCodeString;
     private final String defaultUnit;
@@ -140,6 +143,10 @@ public enum CoordTypeCode {
 
     public boolean isSpectral() {
         return coordType == CoordType.SPECTRAL;
+    }
+
+    public boolean isPolarization() {
+        return coordType == CoordType.POLARIZATION;
     }
 
     public boolean isTemporal() {

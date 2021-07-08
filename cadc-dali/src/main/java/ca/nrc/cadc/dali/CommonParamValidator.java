@@ -69,8 +69,6 @@
 
 package ca.nrc.cadc.dali;
 
-import ca.nrc.cadc.dali.DoubleInterval;
-import ca.nrc.cadc.dali.Shape;
 import ca.nrc.cadc.dali.util.CircleFormat;
 import ca.nrc.cadc.dali.util.DoubleIntervalFormat;
 import ca.nrc.cadc.dali.util.PolygonFormat;
@@ -79,6 +77,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.apache.log4j.Logger;
 
@@ -258,8 +257,25 @@ public class CommonParamValidator {
         return ret;
     }
 
-    public List<String> validatePOL(Map<String, List<String>> params) {
-        return validateString(POL, params, POL_STATES);
+    /**
+     * For any POL parameters with unexpected values, this will throw an IllegalArgumentException.
+     * @param params    The Request parameters.
+     * @return  List of PolarizationState instances.  Never null.
+     * @throws IllegalArgumentException for a bad POL param.
+     */
+    public List<PolarizationState> validatePOL(Map<String, List<String>> params) {
+        final List<PolarizationState> polStates = new ArrayList<>();
+
+        if (params != null) {
+            final List<String> polParameters = params.get(POL);
+            if (polParameters != null) {
+                for (final String polParam : polParameters) {
+                    polStates.add(PolarizationState.valueOf(polParam.toUpperCase(Locale.ROOT)));
+                }
+            }
+        }
+
+        return polStates;
     }
 
     public List<String> validateID(Map<String, List<String>> params) {
