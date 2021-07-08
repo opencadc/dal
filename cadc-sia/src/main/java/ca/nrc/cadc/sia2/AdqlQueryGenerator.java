@@ -73,6 +73,7 @@ import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Point;
+import ca.nrc.cadc.dali.PolarizationState;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.Range;
 import ca.nrc.cadc.dali.Shape;
@@ -200,7 +201,7 @@ public class AdqlQueryGenerator {
         List<Interval> times = sia.validateTIME(queryParams);
         addNumericRangeConstraint(query, "t_min", "t_max", times);
 
-        List<String> pols = sia.validatePOL(queryParams);
+        List<PolarizationState> pols = sia.validatePOL(queryParams);
         if (!pols.isEmpty()) {
             // for a single pattern-matching LIKE statement, we need to sort the POL values in canoncial order
             // and stick in wildcard % whenever there is a gap
@@ -217,12 +218,12 @@ public class AdqlQueryGenerator {
                 query.append(" AND ");
             }
             boolean needOr = false;
-            for (String p : pols) {
+            for (PolarizationState p : pols) {
                 if (needOr) {
                     query.append(" OR ");
                 }
                 query.append("(");
-                query.append("pol_states LIKE '%").append(p).append("%'");
+                query.append("pol_states LIKE '%").append(p.name()).append("%'");
                 query.append(")");
                 needOr = true;
             }
