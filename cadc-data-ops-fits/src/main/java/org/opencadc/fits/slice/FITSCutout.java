@@ -73,9 +73,13 @@ import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
+
+/**
+ * Abstract base class for Cutouts.
+ * @param <T>   The type of input to the cutout.
+ */
 public abstract class FITSCutout<T> {
     private static final Logger LOGGER = Logger.getLogger(FITSCutout.class);
 
@@ -83,6 +87,7 @@ public abstract class FITSCutout<T> {
 
     public FITSCutout(final Header header) throws HeaderCardException {
         DaliUtil.assertNotNull("header", header);
+        postProcess(header);
         this.fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(header);
     }
 
@@ -91,6 +96,16 @@ public abstract class FITSCutout<T> {
         this.fitsHeaderWCSKeywords = fitsHeaderWCSKeywords;
     }
 
+    /**
+     * Implementors can override this to further process the Header to accommodate different cutout types.  Leave empty
+     * if no further processing needs to be done.
+     * This method MUST be called before the fitsHeaderWCSKeywords is created as that object cannot be modified.
+     * @param header    The Header to modify.
+     * @throws HeaderCardException  if modification fails.
+     */
+    protected void postProcess(final Header header) throws HeaderCardException {
+
+    }
 
     /**
      * Obtain the bounds of the given cutout.
@@ -106,13 +121,12 @@ public abstract class FITSCutout<T> {
 
     /**
      * Clip the given bounds for the bounding range of the given axis.
-     * @param axis  1-based axis vale.
+     * @param len   The max length to clip at.
      * @param lower The lower end to check.
      * @param upper The upper end to check.
-     * @return  The array clipped.
+     * @return  The array clipped, or empty array for entire data, or null if no overlap.
      */
-    long[] clip(final int axis, final double lower, final double upper) {
-        final long len = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(axis).key());
+    long[] clip(final long len, final double lower, final double upper) {
 
         long x1 = (long) Math.floor(lower);
         long x2 = (long) Math.ceil(upper);

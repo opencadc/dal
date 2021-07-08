@@ -68,8 +68,12 @@
 
 package org.opencadc.fits.slice;
 
+/**
+ * Identifying coordinate type.  Useful when searching for a specific type of axis.
+ */
 public enum CoordType {
-    SPATIAL,
+    SPATIAL_LONGITUDE,
+    SPATIAL_LATITUDE,
     SPECTRAL,
     TIME,
     POLARIZATION

@@ -72,14 +72,17 @@ import java.util.Arrays;
 import java.util.Locale;
 
 
+/**
+ * Supported COORD Type codes used to identify a certain type of axis.
+ */
 public enum CoordTypeCode {
     // Spatial type codes.
-    RA("RA", "deg", CoordType.SPATIAL),
-    DEC("DEC", "deg", CoordType.SPATIAL),
-    GLON("GLON", "deg", CoordType.SPATIAL),
-    GLAT("GLAT", "deg", CoordType.SPATIAL),
-    ELON("ELON", "deg", CoordType.SPATIAL),
-    ELAT("ELAT", "deg", CoordType.SPATIAL),
+    RA("RA", "deg", CoordType.SPATIAL_LONGITUDE),
+    DEC("DEC", "deg", CoordType.SPATIAL_LATITUDE),
+    GLON("GLON", "deg", CoordType.SPATIAL_LONGITUDE),
+    GLAT("GLAT", "deg", CoordType.SPATIAL_LATITUDE),
+    ELON("ELON", "deg", CoordType.SPATIAL_LONGITUDE),
+    ELAT("ELAT", "deg", CoordType.SPATIAL_LATITUDE),
 
     // Spectral type codes.
     FREQ("FREQ", "Hz", CoordType.SPECTRAL),
@@ -92,6 +95,37 @@ public enum CoordTypeCode {
     AWAV("AWAV", "m", CoordType.SPECTRAL),
     VELO("VELO", "m s-1", CoordType.SPECTRAL),
     BETA("BETA", "", CoordType.SPECTRAL),
+
+    // Temporal type codes.
+    TIME("TIME", "s", CoordType.TIME),
+    ET("ET", "s", CoordType.TIME),
+    GMT("GMT", "s", CoordType.TIME),
+    GPS("GPS", "s", CoordType.TIME),
+    IAT("TT", "s", CoordType.TIME),
+    TAI("TAI", "s", CoordType.TIME),
+    TCB("TCB", "s", CoordType.TIME),
+    TCG("TCG", "s", CoordType.TIME),
+    TDB("TDB", "s", CoordType.TIME),
+    TDT("TDT", "s", CoordType.TIME),
+    // TT = TAI + 32.184s,
+    TT("TT", "s", CoordType.TIME),
+    UT_WWW("UT(WWW)", "s", CoordType.TIME),
+    UT_CHU("UT(CHU)", "s", CoordType.TIME),
+    UT_NBS("UT(NBS)", "s", CoordType.TIME),
+    UT_NRC("UT(NRC)", "s", CoordType.TIME),
+    UT_BIH("UT(BIH)", "s", CoordType.TIME),
+    UT_JJY("UT(JJY)", "s", CoordType.TIME),
+    UT_DCF77("UT(DCF77)", "s", CoordType.TIME),
+    UT_MSF("UT(MSF)", "s", CoordType.TIME),
+    UT_NICT("UT(NICT)", "s", CoordType.TIME),
+    UT_PTB("UT(PTB)", "s", CoordType.TIME),
+    UT_NPL("UT(NPL)", "s", CoordType.TIME),
+    UT_BIPM("UT(BIPM)", "s", CoordType.TIME),
+    UT_UT0("UT(UT0)", "s", CoordType.TIME),
+    UT_UT1("UT(UT1)", "s", CoordType.TIME),
+    UT_UT2("UT(UT2)", "s", CoordType.TIME),
+    UT1("UT1", "s", CoordType.TIME),
+    UTC("UTC", "s", CoordType.TIME),
 
     // Polarization type codes.
     STOKES("STOKES", "", CoordType.POLARIZATION);
@@ -115,6 +149,22 @@ public enum CoordTypeCode {
         return coordType == CoordType.POLARIZATION;
     }
 
+    public boolean isTemporal() {
+        return coordType == CoordType.TIME;
+    }
+
+    public boolean isSpatialLongitudinal() {
+        return coordType == CoordType.SPATIAL_LONGITUDE;
+    }
+
+    public boolean isSpatialLatitudinal() {
+        return coordType == CoordType.SPATIAL_LATITUDE;
+    }
+
+    public boolean isVelocity() {
+        return this == VOPT || this == VELO || this == VRAD;
+    }
+
     public String getDefaultUnit() {
         return defaultUnit;
     }
@@ -128,5 +178,10 @@ public enum CoordTypeCode {
                 Arrays.stream(values()).filter(coordTypeCode -> ctype.toUpperCase(Locale.ROOT).startsWith(
                         coordTypeCode.typeCodeString)).findFirst().orElse(null);
         return (matchedCoordTypeCode == null) ? "" : matchedCoordTypeCode.getDefaultUnit();
+    }
+
+    public static CoordTypeCode fromCType(final String ctype) {
+        final int hyphenIndex = ctype.indexOf("-");
+        return CoordTypeCode.valueOf(hyphenIndex > 0 ? ctype.substring(0, hyphenIndex) : ctype);
     }
 }
