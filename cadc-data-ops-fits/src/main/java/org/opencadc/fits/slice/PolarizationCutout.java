@@ -68,6 +68,8 @@
 
 package org.opencadc.fits.slice;
 
+import ca.nrc.cadc.dali.PolarizationState;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -81,7 +83,7 @@ import org.apache.log4j.Logger;
 /**
  * Provide the cutout bounds for the given Header.
  */
-public class PolarizationCutout extends FITSCutout<String[]> {
+public class PolarizationCutout extends FITSCutout<PolarizationState[]> {
     private static final Logger LOGGER = Logger.getLogger(PolarizationCutout.class);
 
     public PolarizationCutout(final Header header) throws HeaderCardException {
@@ -99,7 +101,7 @@ public class PolarizationCutout extends FITSCutout<String[]> {
      * @return long[NAXIS] with the pixel bounds, null if no pixels are included
      */
     @Override
-    public long[] getBounds(final String[] states) {
+    public long[] getBounds(final PolarizationState[] states) {
         final int polarizationAxis = this.fitsHeaderWCSKeywords.getPolarizationAxis();
         final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
         final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(polarizationAxis).key());
@@ -110,8 +112,8 @@ public class PolarizationCutout extends FITSCutout<String[]> {
         double pix2 = Double.MIN_VALUE;
         for (final PolarizationState headerState : getHeaderStates(polarizationAxis)) {
             LOGGER.debug("Checking next header state " + headerState.name());
-            for (final String cutoutState : states) {
-                if (cutoutState.equals(headerState.name())) {
+            for (final PolarizationState cutoutState : states) {
+                if (cutoutState.equals(headerState)) {
                     final int value = headerState.getValue();
                     final double pix = crpix + (value - crval) / cdelt;
                     pix1 = Math.min(pix1, pix);

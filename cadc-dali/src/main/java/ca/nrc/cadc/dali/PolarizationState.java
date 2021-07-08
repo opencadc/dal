@@ -66,7 +66,7 @@
  ************************************************************************
  */
 
-package org.opencadc.fits.slice;
+package ca.nrc.cadc.dali;
 
 /**
  * Represents the various Polarization state values to be used when calculating cutouts.

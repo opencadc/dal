@@ -419,7 +419,7 @@ public class CommonParamValidatorTest {
                         vals.add(testValues[j]);
                     }
                     params.put(tp, vals);
-                    List<String> pols = paramValidator.validatePOL(params);
+                    List<PolarizationState> pols = paramValidator.validatePOL(params);
                     Assert.assertNotNull(pols);
                     Assert.assertEquals(len[i], pols.size());
                 }
@@ -431,7 +431,7 @@ public class CommonParamValidatorTest {
             params.clear();
             params.put("POL", vals);
             try {
-                List<String> pols = paramValidator.validatePOL(params);
+                List<PolarizationState> pols = paramValidator.validatePOL(params);
                 Assert.fail("expected IllegalArgumentException,. got: " + pols.size() + " String(s)");
             } catch (IllegalArgumentException expected) {
                 log.debug("caught expected: " + expected);

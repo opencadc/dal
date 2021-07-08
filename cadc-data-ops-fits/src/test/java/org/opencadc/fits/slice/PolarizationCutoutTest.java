@@ -68,6 +68,7 @@
 
 package org.opencadc.fits.slice;
 
+import ca.nrc.cadc.dali.PolarizationState;
 import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
 import nom.tam.fits.header.Standard;
@@ -115,8 +116,8 @@ public class PolarizationCutoutTest extends BaseCutoutTest {
         testHeader.addValue(Standard.CRPIXn.n(4), 1.0D);
         testHeader.addValue(CADCExt.CUNITn.n(4), "");
 
-        final String[] states = new String[]{
-                PolarizationState.I.name()
+        final PolarizationState[] states = new PolarizationState[] {
+                PolarizationState.I
         };
 
         final PolarizationCutout testSubject = new PolarizationCutout(testHeader);
@@ -160,9 +161,9 @@ public class PolarizationCutoutTest extends BaseCutoutTest {
         testHeader.addValue(Standard.CRPIXn.n(4), 1.0D);
         testHeader.addValue(CADCExt.CUNITn.n(4), "");
 
-        final String[] states = new String[]{
-                PolarizationState.RR.name(),
-                PolarizationState.LL.name()
+        final PolarizationState[] states = new PolarizationState[]{
+                PolarizationState.RR,
+                PolarizationState.LL
         };
 
         final PolarizationCutout testSubject = new PolarizationCutout(testHeader);
@@ -206,8 +207,8 @@ public class PolarizationCutoutTest extends BaseCutoutTest {
         testHeader.addValue(Standard.CRPIXn.n(4), 1.0D);
         testHeader.addValue(CADCExt.CUNITn.n(4), "");
 
-        final String[] states = new String[] {
-                PolarizationState.XX.name()
+        final PolarizationState[] states = new PolarizationState[] {
+                PolarizationState.XX
         };
 
         final PolarizationCutout testSubject = new PolarizationCutout(testHeader);
