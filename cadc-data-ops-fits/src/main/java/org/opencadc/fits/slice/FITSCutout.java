@@ -82,6 +82,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class FITSCutout<T> {
     private static final Logger LOGGER = Logger.getLogger(FITSCutout.class);
+    static final String INPUT_TOO_DISTANT_ERROR_MESSAGE = "One or more of the world coordinates were invalid(9)";
 
     protected final FITSHeaderWCSKeywords fitsHeaderWCSKeywords;
 

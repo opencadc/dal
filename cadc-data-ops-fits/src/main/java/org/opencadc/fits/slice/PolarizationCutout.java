@@ -68,8 +68,6 @@
 
 package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -80,6 +78,9 @@ import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
 
+/**
+ * Provide the cutout bounds for the given Header.
+ */
 public class PolarizationCutout extends FITSCutout<String[]> {
     private static final Logger LOGGER = Logger.getLogger(PolarizationCutout.class);
 
@@ -95,18 +96,18 @@ public class PolarizationCutout extends FITSCutout<String[]> {
      * Obtain the bounds of the given cutout.
      *
      * @param states The bounds (Stokes states).
-     * @return long[] array of overlapping bounds, or long[0] if all pixels are included.
-     * @throws WCSLibRuntimeException WCSLib (C) error.
+     * @return long[NAXIS] with the pixel bounds, null if no pixels are included
      */
     @Override
-    public long[] getBounds(final String[] states) throws WCSLibRuntimeException {
+    public long[] getBounds(final String[] states) {
         final int polarizationAxis = this.fitsHeaderWCSKeywords.getPolarizationAxis();
+        final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
         final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(polarizationAxis).key());
         final double crval = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(polarizationAxis).key());
         final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(polarizationAxis).key());
 
         double pix1 = Double.MAX_VALUE;
-        double pix2 = (-1 * Double.MAX_VALUE) - 1.0D;
+        double pix2 = Double.MIN_VALUE;
         for (final PolarizationState headerState : getHeaderStates(polarizationAxis)) {
             LOGGER.debug("Checking next header state " + headerState.name());
             for (final String cutoutState : states) {
@@ -121,10 +122,33 @@ public class PolarizationCutout extends FITSCutout<String[]> {
             }
         }
 
-        return clip(polarizationAxis, pix1, pix2);
+        // The polarization axis is the length to compare against.
+        final long[] clippedPolarizationBounds = clip(polarizationAxis, pix1, pix2);
+        final long[] entireBounds = clippedPolarizationBounds == null ? null : new long[naxis * 2];
+
+        if (entireBounds != null) {
+            for (int i = 0; i < entireBounds.length; i += 2) {
+                final int axis = (i + 2) / 2;
+                if (axis == polarizationAxis) {
+                    entireBounds[i] = clippedPolarizationBounds[0];
+                    entireBounds[i + 1] = clippedPolarizationBounds[1];
+                } else {
+                    entireBounds[i] = 1L;
+                    entireBounds[i + 1] = (long) this.fitsHeaderWCSKeywords.getDoubleValue(
+                            Standard.NAXISn.n(axis).key());
+                }
+            }
+        }
+
+        return entireBounds;
     }
 
-    public PolarizationState[] getHeaderStates(final int polarizationAxis) {
+    /**
+     * Get the PolarizationState instances associated with this HDU.
+     * @param polarizationAxis  The polarization axis to get values from.
+     * @return     Array of PolarizationState objects.  Never null.
+     */
+    PolarizationState[] getHeaderStates(final int polarizationAxis) {
         final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
         final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(polarizationAxis).key());
         final double crval = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(polarizationAxis).key());
@@ -139,30 +163,5 @@ public class PolarizationCutout extends FITSCutout<String[]> {
 
         LOGGER.debug("Found states " + polarizationStates);
         return polarizationStates.toArray(new PolarizationState[0]);
-    }
-
-    long[] clip(final int polarizationAxis, final double lower, final double upper) {
-        // Round floats to individual pixels
-        long p1 = (long) Math.floor(lower);
-        long p2 = (long) Math.ceil(upper);
-
-        // Bounds check
-        if (p1 < 1) {
-            p1 = 1L;
-        }
-
-        if (p2 > polarizationAxis) {
-            p2 = polarizationAxis;
-        }
-
-        LOGGER.debug("Clipped to (" + p1 + ", " + p2 + ")");
-
-        // Validity check, no pixels included
-        if (p1 > polarizationAxis || p2 < 1) {
-            return null;
-        }
-
-        // an actual cutout
-        return new long[]{p1, p2};
     }
 }

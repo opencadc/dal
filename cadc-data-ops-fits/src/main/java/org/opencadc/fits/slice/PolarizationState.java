@@ -68,6 +68,9 @@
 
 package org.opencadc.fits.slice;
 
+/**
+ * Represents the various Polarization state values to be used when calculating cutouts.
+ */
 public enum PolarizationState {
     I(1), Q(2), U(3), V(4),
     RR(-1), LL(-2), RL(-3), LR(-4), // Circular
@@ -86,6 +89,11 @@ public enum PolarizationState {
         this.value = value;
     }
 
+    /**
+     * Obtain a PolarizationState instance from an integer value.
+     * @param value     The integer to lookup.
+     * @return          PolarizationState instance, or null if no match to the hard-coded values.
+     */
     public static PolarizationState fromValue(final int value) {
         for (final PolarizationState polarizationState : values()) {
             if (polarizationState.getValue() == value) {
