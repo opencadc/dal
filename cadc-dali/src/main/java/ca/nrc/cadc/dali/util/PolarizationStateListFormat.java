@@ -68,13 +68,14 @@
 
 package ca.nrc.cadc.dali.util;
 
+import static ca.nrc.cadc.dali.util.StringListFormat.DELIMITER;
+
 import ca.nrc.cadc.dali.PolarizationState;
 import ca.nrc.cadc.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static ca.nrc.cadc.dali.util.StringListFormat.DELIMITER;
 
 /**
  * Format a list of PolarizationState instances.  Borrows from the StringList formatter.
