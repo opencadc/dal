@@ -68,93 +68,102 @@
 
 package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.dali.DaliUtil;
-import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
-import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
+import ca.nrc.cadc.dali.PolarizationState;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
+
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
 
 /**
- * Abstract base class for Cutouts.
- * @param <T>   The type of input to the cutout.
+ * Provide the cutout bounds for the given Header.
  */
-public abstract class FITSCutout<T> {
-    private static final Logger LOGGER = Logger.getLogger(FITSCutout.class);
-    static final String INPUT_TOO_DISTANT_ERROR_MESSAGE = "One or more of the world coordinates were invalid(9)";
+public class PolarizationCutout extends FITSCutout<PolarizationState[]> {
+    private static final Logger LOGGER = Logger.getLogger(PolarizationCutout.class);
 
-    protected final FITSHeaderWCSKeywords fitsHeaderWCSKeywords;
-
-    public FITSCutout(final Header header) throws HeaderCardException {
-        DaliUtil.assertNotNull("header", header);
-        postProcess(header);
-        this.fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(header);
+    public PolarizationCutout(final Header header) throws HeaderCardException {
+        super(header);
     }
 
-    protected FITSCutout(final FITSHeaderWCSKeywords fitsHeaderWCSKeywords) {
-        DaliUtil.assertNotNull("fitsHeaderWCSKeywords", fitsHeaderWCSKeywords);
-        this.fitsHeaderWCSKeywords = fitsHeaderWCSKeywords;
-    }
-
-    /**
-     * Implementors can override this to further process the Header to accommodate different cutout types.  Leave empty
-     * if no further processing needs to be done.
-     * This method MUST be called before the fitsHeaderWCSKeywords is created as that object cannot be modified.
-     * @param header    The Header to modify.
-     * @throws HeaderCardException  if modification fails.
-     */
-    protected void postProcess(final Header header) throws HeaderCardException {
-
+    public PolarizationCutout(final FITSHeaderWCSKeywords fitsHeaderWCSKeywords) {
+        super(fitsHeaderWCSKeywords);
     }
 
     /**
      * Obtain the bounds of the given cutout.
-     * @param cutoutBound   The bounds (shape, interval etc.) of the cutout.
-     * @return  long[] array of overlapping bounds, long[0] if all pixels are included, or null if no overlap.
      *
-     * @throws NoSuchKeywordException Unknown keyword found.
-     * @throws WCSLibRuntimeException WCSLib (C) error.
-     * @throws HeaderCardException  If a FITS Header card couldn't be read.
+     * @param states The bounds (Stokes states).
+     * @return long[NAXIS] with the pixel bounds, null if no pixels are included
      */
-    public abstract long[] getBounds(final T cutoutBound)
-            throws NoSuchKeywordException, WCSLibRuntimeException, HeaderCardException;
+    @Override
+    public long[] getBounds(final PolarizationState[] states) {
+        final int polarizationAxis = this.fitsHeaderWCSKeywords.getPolarizationAxis();
+        final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
+        final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(polarizationAxis).key());
+        final double crval = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(polarizationAxis).key());
+        final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(polarizationAxis).key());
+
+        double pix1 = Double.MAX_VALUE;
+        double pix2 = Double.MIN_VALUE;
+        for (final PolarizationState headerState : getHeaderStates(polarizationAxis)) {
+            LOGGER.debug("Checking next header state " + headerState.name());
+            for (final PolarizationState cutoutState : states) {
+                if (cutoutState.equals(headerState)) {
+                    final int value = headerState.getValue();
+                    final double pix = crpix + (value - crval) / cdelt;
+                    pix1 = Math.min(pix1, pix);
+                    pix2 = Math.max(pix2, pix);
+
+                    LOGGER.debug("Values now (" + pix1 + ", " + pix2 + ")");
+                }
+            }
+        }
+
+        // The polarization axis is the length to compare against.
+        final long[] clippedPolarizationBounds = clip(polarizationAxis, pix1, pix2);
+        final long[] entireBounds = clippedPolarizationBounds == null ? null : new long[naxis * 2];
+
+        if (entireBounds != null) {
+            for (int i = 0; i < entireBounds.length; i += 2) {
+                final int axis = (i + 2) / 2;
+                if (axis == polarizationAxis) {
+                    entireBounds[i] = clippedPolarizationBounds[0];
+                    entireBounds[i + 1] = clippedPolarizationBounds[1];
+                } else {
+                    entireBounds[i] = 1L;
+                    entireBounds[i + 1] = (long) this.fitsHeaderWCSKeywords.getDoubleValue(
+                            Standard.NAXISn.n(axis).key());
+                }
+            }
+        }
+
+        return entireBounds;
+    }
 
     /**
-     * Clip the given bounds for the bounding range of the given axis.
-     * @param len   The max length to clip at.
-     * @param lower The lower end to check.
-     * @param upper The upper end to check.
-     * @return  The array clipped, or empty array for entire data, or null if no overlap.
+     * Get the PolarizationState instances associated with this HDU.
+     * @param polarizationAxis  The polarization axis to get values from.
+     * @return     Array of PolarizationState objects.  Never null.
      */
-    long[] clip(final long len, final double lower, final double upper) {
+    PolarizationState[] getHeaderStates(final int polarizationAxis) {
+        final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
+        final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(polarizationAxis).key());
+        final double crval = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(polarizationAxis).key());
+        final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(polarizationAxis).key());
 
-        long x1 = (long) Math.floor(lower);
-        long x2 = (long) Math.ceil(upper);
+        final List<PolarizationState> polarizationStates = new ArrayList<>();
 
-        if (x1 < 1) {
-            x1 = 1;
-        }
+        IntStream.range(1, naxis + 1)
+                 .map(i -> (int) (crpix + (i - crval) / cdelt))
+                 .filter(i -> PolarizationState.fromValue(i) != null)
+                 .forEach(i -> polarizationStates.add(PolarizationState.fromValue(i)));
 
-        if (x2 > len) {
-            x2 = len;
-        }
-
-        LOGGER.debug("clip: " + len + " (" + x1 + ":" + x2 + ")");
-
-        // all pixels includes
-        if (x1 == 1 && x2 == len) {
-            LOGGER.warn("clip: all");
-            return new long[0];
-        }
-
-        // no pixels included
-        if (x1 > len || x2 < 1) {
-            LOGGER.warn("clip: none");
-            return null;
-        }
-
-        // an actual cutout
-        return new long[]{x1, x2};
+        LOGGER.debug("Found states " + polarizationStates);
+        return polarizationStates.toArray(new PolarizationState[0]);
     }
 }

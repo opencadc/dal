@@ -68,93 +68,96 @@
 
 package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.dali.DaliUtil;
-import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
-import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
+import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCardException;
-import org.apache.log4j.Logger;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.header.extra.NOAOExt;
+import org.apache.log4j.Level;
+import org.junit.Assert;
+import org.junit.Test;
+import org.opencadc.fits.CADCExt;
+
+import java.util.Calendar;
+import java.util.Date;
 
 
-/**
- * Abstract base class for Cutouts.
- * @param <T>   The type of input to the cutout.
- */
-public abstract class FITSCutout<T> {
-    private static final Logger LOGGER = Logger.getLogger(FITSCutout.class);
-    static final String INPUT_TOO_DISTANT_ERROR_MESSAGE = "One or more of the world coordinates were invalid(9)";
+public class TimeHeaderWCSKeywordsTest {
 
-    protected final FITSHeaderWCSKeywords fitsHeaderWCSKeywords;
-
-    public FITSCutout(final Header header) throws HeaderCardException {
-        DaliUtil.assertNotNull("header", header);
-        postProcess(header);
-        this.fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(header);
+    static {
+        Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
     }
 
-    protected FITSCutout(final FITSHeaderWCSKeywords fitsHeaderWCSKeywords) {
-        DaliUtil.assertNotNull("fitsHeaderWCSKeywords", fitsHeaderWCSKeywords);
-        this.fitsHeaderWCSKeywords = fitsHeaderWCSKeywords;
+    @Test
+    public void testMJDRef() throws Exception {
+        final Header testHeader = new Header();
+        final Calendar calendar = Calendar.getInstance(DateUtil.UTC);
+        calendar.set(2007, Calendar.SEPTEMBER, 18, 1, 15, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        testHeader.addValue(Standard.NAXIS, 1);
+        testHeader.addValue(Standard.NAXISn.n(1), 350);
+        testHeader.addValue(CADCExt.CUNITn.n(1), "s");
+        testHeader.addValue(Standard.CRVALn.n(1), 40.0D); // Forty seconds long exposure
+        testHeader.addValue(Standard.CRPIXn.n(1), 1.0);
+        testHeader.addValue(Standard.CDELTn.n(1), 0.369);
+        testHeader.addValue(Standard.CTYPEn.n(1), "UTC");
+        testHeader.addValue(CADCExt.DATEREF, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
+                                                     .format(calendar.getTime()));
+
+        final FITSHeaderWCSKeywords fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(testHeader);
+        final TimeHeaderWCSKeywords testSubject = new TimeHeaderWCSKeywords(fitsHeaderWCSKeywords);
+
+        final double result = testSubject.getMJDRef();
+        final double expected = 54361.05208333349D;
+
+        Assert.assertEquals("Wrong MJD Ref value.", expected, result, 3.0E-5D);
     }
 
-    /**
-     * Implementors can override this to further process the Header to accommodate different cutout types.  Leave empty
-     * if no further processing needs to be done.
-     * This method MUST be called before the fitsHeaderWCSKeywords is created as that object cannot be modified.
-     * @param header    The Header to modify.
-     * @throws HeaderCardException  if modification fails.
-     */
-    protected void postProcess(final Header header) throws HeaderCardException {
+    @Test
+    public void testMJDStart() throws Exception {
+        final Header testHeader = new Header();
+        final Calendar calendar = Calendar.getInstance(DateUtil.UTC);
+        calendar.set(2012, Calendar.NOVEMBER, 17, 1, 21, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
 
+        final Date startDate = calendar.getTime();
+
+        calendar.add(Calendar.HOUR, 2);
+        final Date stopDate = calendar.getTime();
+
+        final double mjdValue = DateUtil.toModifiedJulianDate(calendar.getTime(), DateUtil.UTC);
+        final int mjdValueI = (int) Math.floor(mjdValue);
+
+        testHeader.addValue(Standard.NAXIS, 1);
+        testHeader.addValue(Standard.NAXISn.n(1), 350);
+        testHeader.addValue(CADCExt.CUNITn.n(1), "s");
+        testHeader.addValue(Standard.CRVALn.n(1), 40.0D); // Forty seconds long exposure
+        testHeader.addValue(Standard.CRPIXn.n(1), 1.0);
+        testHeader.addValue(Standard.CDELTn.n(1), 0.369);
+        testHeader.addValue(CADCExt.DATEBEG, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
+                                                     .format(startDate));
+        testHeader.addValue(CADCExt.DATEEND, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
+                                                     .format(stopDate));
+        testHeader.addValue(NOAOExt.TIMESYS, "UTC");
+        testHeader.addValue(CADCExt.MJDREFI, mjdValueI);
+        testHeader.addValue(CADCExt.MJDREFF, (mjdValue - mjdValueI));
+
+        final TimeHeaderWCSKeywords testSubject = new TimeHeaderWCSKeywords(testHeader);
+        final double mjdStart = testSubject.getMJDStart();
+
+        Assert.assertEquals("Wrong MJD Start", 56248.05624999991D, mjdStart, 3.0E-5D);
     }
 
-    /**
-     * Obtain the bounds of the given cutout.
-     * @param cutoutBound   The bounds (shape, interval etc.) of the cutout.
-     * @return  long[] array of overlapping bounds, long[0] if all pixels are included, or null if no overlap.
-     *
-     * @throws NoSuchKeywordException Unknown keyword found.
-     * @throws WCSLibRuntimeException WCSLib (C) error.
-     * @throws HeaderCardException  If a FITS Header card couldn't be read.
-     */
-    public abstract long[] getBounds(final T cutoutBound)
-            throws NoSuchKeywordException, WCSLibRuntimeException, HeaderCardException;
+    @Test
+    public void testMJDUnit() throws Exception {
+        final Header testHeader = new Header();
 
-    /**
-     * Clip the given bounds for the bounding range of the given axis.
-     * @param len   The max length to clip at.
-     * @param lower The lower end to check.
-     * @param upper The upper end to check.
-     * @return  The array clipped, or empty array for entire data, or null if no overlap.
-     */
-    long[] clip(final long len, final double lower, final double upper) {
+        testHeader.addValue(CADCExt.TIMEUNIT, "m");
+        final TimeHeaderWCSKeywords testSubject = new TimeHeaderWCSKeywords(testHeader);
+        Assert.assertEquals("Wrong unit.", "m", testSubject.getUnit());
 
-        long x1 = (long) Math.floor(lower);
-        long x2 = (long) Math.ceil(upper);
-
-        if (x1 < 1) {
-            x1 = 1;
-        }
-
-        if (x2 > len) {
-            x2 = len;
-        }
-
-        LOGGER.debug("clip: " + len + " (" + x1 + ":" + x2 + ")");
-
-        // all pixels includes
-        if (x1 == 1 && x2 == len) {
-            LOGGER.warn("clip: all");
-            return new long[0];
-        }
-
-        // no pixels included
-        if (x1 > len || x2 < 1) {
-            LOGGER.warn("clip: none");
-            return null;
-        }
-
-        // an actual cutout
-        return new long[]{x1, x2};
+        Assert.assertEquals("Wrong default unit.", "s",
+                            new TimeHeaderWCSKeywords(new Header()).getUnit());
     }
 }

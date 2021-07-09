@@ -70,6 +70,7 @@ package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.dali.PolarizationState;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.Range;
 import ca.nrc.cadc.dali.Shape;
@@ -160,12 +161,13 @@ public class WCSCutoutUtil {
 
     static PixelRange[] getTemporalBounds(final Header header, final Interval<Number> temporalInterval)
             throws HeaderCardException {
-        throw new UnsupportedOperationException("Temporal not yet implemented.");
+        return WCSCutoutUtil.toPixelRanges(new TimeCutout(header).getBounds(temporalInterval));
     }
 
-    static PixelRange[] getPolarizationBounds(final Header header, final List<String> polarizationStates)
+    static PixelRange[] getPolarizationBounds(final Header header, final List<PolarizationState> polarizationStates)
             throws HeaderCardException {
-        throw new UnsupportedOperationException("Polarization not yet implemented.");
+        return WCSCutoutUtil.toPixelRanges(new PolarizationCutout(header).getBounds(
+                polarizationStates.toArray(new PolarizationState[0])));
     }
 
     /**

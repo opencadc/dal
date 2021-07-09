@@ -68,6 +68,7 @@
 package org.opencadc.soda.server;
 
 import ca.nrc.cadc.dali.Interval;
+import ca.nrc.cadc.dali.PolarizationState;
 import ca.nrc.cadc.dali.Shape;
 
 import java.util.List;
@@ -100,7 +101,7 @@ public class Cutout {
     /**
      * Polarization axis cutout(s).
      */
-    public List<String> pol;
+    public List<PolarizationState> pol;
 
     /**
      * Custom axis to cutout.

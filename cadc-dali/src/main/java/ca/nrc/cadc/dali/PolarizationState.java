@@ -66,95 +66,45 @@
  ************************************************************************
  */
 
-package org.opencadc.fits.slice;
-
-import ca.nrc.cadc.dali.DaliUtil;
-import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
-import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCardException;
-import org.apache.log4j.Logger;
-
+package ca.nrc.cadc.dali;
 
 /**
- * Abstract base class for Cutouts.
- * @param <T>   The type of input to the cutout.
+ * Represents the various Polarization state values to be used when calculating cutouts.
  */
-public abstract class FITSCutout<T> {
-    private static final Logger LOGGER = Logger.getLogger(FITSCutout.class);
-    static final String INPUT_TOO_DISTANT_ERROR_MESSAGE = "One or more of the world coordinates were invalid(9)";
+public enum PolarizationState {
+    I(1), Q(2), U(3), V(4),
+    RR(-1), LL(-2), RL(-3), LR(-4), // Circular
+    XX(-5), YY(-6), XY(-7), YX(-8), // Linear
+    POLI(5),   // linear polarized intensity sqrt(Q^2 + U^2)
+    FPOLI(6), // fractional linear polarization POLI/I, code used in AIPS
+    POLA(7),   // linear polarization angle 1/2 arctan(U,Q), code used in AIPS
+    EPOLI(8), // elliptical polarization intensity sqrt(Q^2 + U^2 + V^2)
+    CPOLI(9), // circular polarization intensity |V|
+    NPOLI(10); // unpolarized intensity I - EPOLI
 
-    protected final FITSHeaderWCSKeywords fitsHeaderWCSKeywords;
+    private final int value;
 
-    public FITSCutout(final Header header) throws HeaderCardException {
-        DaliUtil.assertNotNull("header", header);
-        postProcess(header);
-        this.fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(header);
-    }
 
-    protected FITSCutout(final FITSHeaderWCSKeywords fitsHeaderWCSKeywords) {
-        DaliUtil.assertNotNull("fitsHeaderWCSKeywords", fitsHeaderWCSKeywords);
-        this.fitsHeaderWCSKeywords = fitsHeaderWCSKeywords;
-    }
-
-    /**
-     * Implementors can override this to further process the Header to accommodate different cutout types.  Leave empty
-     * if no further processing needs to be done.
-     * This method MUST be called before the fitsHeaderWCSKeywords is created as that object cannot be modified.
-     * @param header    The Header to modify.
-     * @throws HeaderCardException  if modification fails.
-     */
-    protected void postProcess(final Header header) throws HeaderCardException {
-
+    PolarizationState(final int value) {
+        this.value = value;
     }
 
     /**
-     * Obtain the bounds of the given cutout.
-     * @param cutoutBound   The bounds (shape, interval etc.) of the cutout.
-     * @return  long[] array of overlapping bounds, long[0] if all pixels are included, or null if no overlap.
-     *
-     * @throws NoSuchKeywordException Unknown keyword found.
-     * @throws WCSLibRuntimeException WCSLib (C) error.
-     * @throws HeaderCardException  If a FITS Header card couldn't be read.
+     * Obtain a PolarizationState instance from an integer value.
+     * @param value     The integer to lookup.
+     * @return          PolarizationState instance, or null if no match to the hard-coded values.
      */
-    public abstract long[] getBounds(final T cutoutBound)
-            throws NoSuchKeywordException, WCSLibRuntimeException, HeaderCardException;
-
-    /**
-     * Clip the given bounds for the bounding range of the given axis.
-     * @param len   The max length to clip at.
-     * @param lower The lower end to check.
-     * @param upper The upper end to check.
-     * @return  The array clipped, or empty array for entire data, or null if no overlap.
-     */
-    long[] clip(final long len, final double lower, final double upper) {
-
-        long x1 = (long) Math.floor(lower);
-        long x2 = (long) Math.ceil(upper);
-
-        if (x1 < 1) {
-            x1 = 1;
+    public static PolarizationState fromValue(final int value) {
+        for (final PolarizationState polarizationState : values()) {
+            if (polarizationState.getValue() == value) {
+                return polarizationState;
+            }
         }
 
-        if (x2 > len) {
-            x2 = len;
-        }
+        return null;
+    }
 
-        LOGGER.debug("clip: " + len + " (" + x1 + ":" + x2 + ")");
-
-        // all pixels includes
-        if (x1 == 1 && x2 == len) {
-            LOGGER.warn("clip: all");
-            return new long[0];
-        }
-
-        // no pixels included
-        if (x1 > len || x2 < 1) {
-            LOGGER.warn("clip: none");
-            return null;
-        }
-
-        // an actual cutout
-        return new long[]{x1, x2};
+    public int getValue() {
+        return value;
     }
 }
