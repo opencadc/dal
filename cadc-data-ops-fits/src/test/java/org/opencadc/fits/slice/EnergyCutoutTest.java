@@ -84,6 +84,7 @@ import nom.tam.util.BufferedDataInputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.opencadc.fits.CADCExt;
 
@@ -289,6 +290,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
     }
 
     @Test
+    @Ignore("Until SIP distortions are better understood.")
     public void testSITELLE() throws Exception {
         final long startMillis = System.currentTimeMillis();
 
