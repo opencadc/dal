@@ -69,115 +69,25 @@
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.PolarizationState;
-import ca.nrc.cadc.util.Log4jInit;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 
-public class PolarizationStateListFormatTest {
-    private static final Logger log = Logger.getLogger(PolarizationStateListFormatTest.class);
-
-    static {
-        Log4jInit.setLevel("ca", Level.INFO);
-    }
-
-    @Test
-    public void testNull() throws Exception {
-        final PolarizationStateListFormat format = new PolarizationStateListFormat();
-
-        final String result = format.format(null);
-        log.info("formatted: " + result);
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-
-        final List<PolarizationState> actual = format.parse(result);
-        assertTrue("empty", actual.isEmpty());
-    }
-
-    @Test
-    public void testEmpty() throws Exception {
-        final PolarizationStateListFormat format = new PolarizationStateListFormat();
-        final List<PolarizationState> expected = new ArrayList<>();
-
-        final String result = format.format(expected);
-        log.info("formatted: " + result);
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-
-        final List<PolarizationState> actual = format.parse(result);
-        assertTrue("empty", actual.isEmpty());
-    }
-
-    @Test
-    public void testSingleValue() throws Exception {
-        PolarizationStateListFormat format = new PolarizationStateListFormat();
-        final List<PolarizationState> expected = new ArrayList<>();
-        expected.add(PolarizationState.Q);
-
-        final String result = format.format(expected);
-        log.info("formatted: " + result);
-        assertNotNull(result);
-
-        final List<PolarizationState> actual = format.parse(result);
-        assertFalse("empty", actual.isEmpty());
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testMultipleValue() throws Exception {
-        final PolarizationStateListFormat format = new PolarizationStateListFormat();
-        final List<PolarizationState> expected = new ArrayList<>();
-        expected.add(PolarizationState.I);
-        expected.add(PolarizationState.Q);
-        expected.add(PolarizationState.U);
-        expected.add(PolarizationState.V);
-
-        final String result = format.format(expected);
-        log.info("formatted: " + result);
-        assertNotNull(result);
-
-        final List<PolarizationState> actual = format.parse(result);
-        assertFalse("empty", actual.isEmpty());
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testInvalid() throws Exception {
-        final PolarizationStateListFormat format = new PolarizationStateListFormat();
-
-        String i1 = "|abc";
-        String i2 = "abc|";
-        String i3 = "abc";
-
-        try {
-            format.parse(i1);
-            fail("expected IllegalArgumentException, got list from " + i1);
-        } catch (IllegalArgumentException expected) {
-            log.info("caught: " + expected);
+/**
+ * Format a single PolarizationState instance.
+ */
+public class PolarizationStateFormat implements Format<PolarizationState> {
+    @Override
+    public PolarizationState parse(final String str) {
+        if (str == null) {
+            throw new IllegalArgumentException("null argument passed.");
         }
+        return PolarizationState.valueOf(str);
+    }
 
-        try {
-            format.parse(i2);
-            fail("expected IllegalArgumentException, got list from " + i2);
-        } catch (IllegalArgumentException expected) {
-            log.info("caught: " + expected);
+    @Override
+    public String format(final PolarizationState polarizationState) {
+        if (polarizationState == null) {
+            throw new IllegalArgumentException("null argument passed.");
         }
-
-        try {
-            format.parse(i3);
-            fail("expected IllegalArgumentException, got list from " + i3);
-        } catch (IllegalArgumentException expected) {
-            log.info("caught: " + expected);
-        }
+        return polarizationState.name();
     }
 }
