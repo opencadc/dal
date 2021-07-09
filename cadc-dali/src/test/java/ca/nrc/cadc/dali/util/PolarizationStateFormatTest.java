@@ -68,55 +68,65 @@
 
 package ca.nrc.cadc.dali.util;
 
-import static ca.nrc.cadc.dali.util.StringListFormat.DELIMITER;
-
 import ca.nrc.cadc.dali.PolarizationState;
-import ca.nrc.cadc.util.StringUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-/**
- * Format a list of PolarizationState instances.  Borrows from the StringList formatter.
- */
-public class PolarizationStateListFormat implements Format<List<PolarizationState>> {
-    @Override
-    public List<PolarizationState> parse(final String str) {
-        final List<PolarizationState> ret = new ArrayList<>();
 
-        if (!StringUtil.hasText(str)) {
-            return ret;
-        }
+public class PolarizationStateFormatTest {
+    private static final Logger log = Logger.getLogger(PolarizationStateFormatTest.class);
 
-        String inputString = str.trim();
-
-        if (str.startsWith(DELIMITER) && str.endsWith(DELIMITER)) {
-            inputString = inputString.substring(1, inputString.length() - 1);
-        } else {
-            throw new IllegalArgumentException("missing initial or final delimiter(s) (|): " + inputString);
-        }
-
-        final String[] ss = inputString.split("\\" + DELIMITER); // escape the delimiter
-        for (final String s : ss) {
-            ret.add(PolarizationState.valueOf(s));
-        }
-
-        return ret;
+    static {
+        Log4jInit.setLevel("ca", Level.INFO);
     }
 
-    @Override
-    public String format(final List<PolarizationState> polarizationStates) {
-        if (polarizationStates == null || polarizationStates.isEmpty()) {
-            return "";
-        }
+    @Test
+    public void testNull() throws Exception {
+        final PolarizationStateFormat format = new PolarizationStateFormat();
 
-        // wrapped with DELIM
-        final StringBuilder sb = new StringBuilder(DELIMITER);
-        for (final PolarizationState polarizationState : polarizationStates) {
-            sb.append(polarizationState.name()).append(DELIMITER);
+        try {
+            format.parse(null);
+            fail("expected IllegalArgumentException for null input");
+        } catch (IllegalArgumentException expected) {
+            log.info("caught: " + expected);
         }
+    }
 
-        return sb.toString();
+    @Test
+    public void testValue() throws Exception {
+        final PolarizationStateFormat format = new PolarizationStateFormat();
+        final PolarizationState expected = PolarizationState.I;
+
+        final String result = format.format(expected);
+        log.info("formatted: " + result);
+        assertNotNull(result);
+
+        final PolarizationState actual = format.parse(result);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testInvalid() throws Exception {
+        final PolarizationStateFormat format = new PolarizationStateFormat();
+
+        final String test = "abc";
+
+        try {
+            format.parse(test);
+            fail("expected IllegalArgumentException, got list from " + test);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught: " + expected);
+        }
     }
 }
