@@ -72,7 +72,7 @@ import ca.nrc.cadc.dali.PolarizationState;
 
 
 /**
- * Format a list of PolarizationState instances.  Borrows from the StringList formatter.
+ * Format a single PolarizationState instance.
  */
 public class PolarizationStateFormat implements Format<PolarizationState> {
     @Override
