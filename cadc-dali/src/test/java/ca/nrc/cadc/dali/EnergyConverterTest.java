@@ -140,4 +140,22 @@ public class EnergyConverterTest {
         LOGGER.debug("Calculated A " + angstrom);
         Assert.assertEquals("Wrong A.", 1.399E11D, angstrom, 0.0D);
     }
+
+    @Test
+    public void metresToCM1() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double cm1 = testSubject.fromMetres(5.882352941176471E-07D, "cm-1");
+        LOGGER.debug("Calculated cm-1 " + cm1);
+        Assert.assertEquals("Wrong cm-1.", 17000.0D, cm1, 0.1D);
+    }
+
+    @Test
+    public void cm1ToMetres() {
+        final EnergyConverter testSubject = new EnergyConverter();
+
+        final double metres = testSubject.toMeters(17000.0D, "cm-1");
+        LOGGER.debug("Calculated metres " + metres);
+        Assert.assertEquals("Wrong metres.", 5.882352941176471E-07D, metres, 0.0D);
+    }
 }

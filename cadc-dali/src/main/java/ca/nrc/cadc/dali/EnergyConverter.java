@@ -162,19 +162,34 @@ public class EnergyConverter implements Serializable {
      * @return wavelength in meters
      */
     public double toMeters(double d, String units) {
-        int i = ArrayUtil.matches("^" + units + "$", freqUnits, true);
+        final boolean inverseFlag;
+        final String unit;
+
+        // 1 / the provided unit.
+        if (units.startsWith("/")) {
+            inverseFlag = true;
+            unit = units.substring(1);
+        } else if (!units.contains(" ") && units.endsWith("-1")) {
+            inverseFlag = true;
+            unit = units.substring(0, units.indexOf("-1"));
+        } else {
+            inverseFlag = false;
+            unit = units;
+        }
+
+        int i = ArrayUtil.matches("^" + unit + "$", freqUnits, true);
         if (i != -1) {
             return freqToMeters(d, i);
         }
 
-        i = ArrayUtil.matches("^" + units + "$", enUnits, true);
+        i = ArrayUtil.matches("^" + unit + "$", enUnits, true);
         if (i != -1) {
             return energyToMeters(d, i);
         }
 
-        i = ArrayUtil.matches("^" + units + "$", waveUnits, true);
+        i = ArrayUtil.matches("^" + unit + "$", waveUnits, true);
         if (i != -1) {
-            return wavelengthToMeters(d, i);
+            return wavelengthToMeters(d, i, inverseFlag);
         }
 
         throw new IllegalArgumentException("Unknown units: " + units);
@@ -215,42 +230,36 @@ public class EnergyConverter implements Serializable {
      * @throws IllegalArgumentException For unknown or unusable unit value.
      */
     public double fromMetres(final double metres, final String cunit) {
-        final boolean inverse;
+        final boolean inverseFlag;
         final String unit;
 
         LOGGER.debug("Converting from metres (" + metres + ") to " + cunit);
 
         // 1 / the provided unit.
         if (cunit.startsWith("/")) {
-            inverse = true;
+            inverseFlag = true;
             unit = cunit.substring(1);
         } else if (!cunit.contains(" ") && cunit.endsWith("-1")) {
-            inverse = true;
+            inverseFlag = true;
             unit = cunit.substring(0, cunit.indexOf("-1"));
         } else {
-            inverse = false;
+            inverseFlag = false;
             unit = cunit;
         }
 
         int i = ArrayUtil.matches("^" + unit + "$", freqUnits, true);
         if (i != -1) {
-            final double result = metresToFreq(metres, i);
-            return inverse ? 1.0D / result : result;
+            return metresToFreq(metres, i);
         }
 
         i = ArrayUtil.matches("^" + unit + "$", enUnits, true);
         if (i != -1) {
-            final double result = metresToEnergy(metres, i);
-            return inverse ? 1.0D / result : result;
+            return metresToEnergy(metres, i);
         }
 
         i = ArrayUtil.matches("^" + unit + "$", waveUnits, true);
         if (i != -1) {
-            final double result = metresToWavelength(metres, i);
-            LOGGER.debug("Wavelength " + result);
-            final double conversionResult = inverse ? 1.0D / result : result;
-            LOGGER.debug("Wavelength conversion " + conversionResult);
-            return conversionResult;
+            return metresToWavelength(metres, i, inverseFlag);
         }
 
         throw new IllegalArgumentException("Unknown units: " + unit);
@@ -264,8 +273,15 @@ public class EnergyConverter implements Serializable {
         return ((c * h) / metres) / enMult[factorIndex];
     }
 
-    private double metresToWavelength(double metres, int factorIndex) {
-        return metres / waveMult[factorIndex];
+    private double metresToWavelength(double metres, int factorIndex, final boolean inverseFlag) {
+        final double multiplier = waveMult[factorIndex];
+
+        if (inverseFlag) {
+            LOGGER.debug("Inverse units expected.");
+            return (1.0D / metres) / (1.0D / multiplier);
+        } else {
+            return metres / multiplier;
+        }
     }
 
     /**
@@ -307,7 +323,16 @@ public class EnergyConverter implements Serializable {
     }
 
     private double wavelengthToMeters(double d, int i) {
-        return d * waveMult[i];
+        return wavelengthToMeters(d, i, false);
+    }
+
+    private double wavelengthToMeters(double d, int i, boolean inverseFlag) {
+        final double multiplier = waveMult[i];
+        if (inverseFlag) {
+            return 1.0D / (1.0D / multiplier) / d;
+        } else {
+            return d * multiplier;
+        }
     }
 
     private double freqToHz(double d, int i) {
