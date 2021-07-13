@@ -70,8 +70,10 @@ package org.opencadc.fits;
 import ca.nrc.cadc.io.ReadException;
 import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,6 +81,8 @@ import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.util.Cursor;
 import nom.tam.util.RandomAccessDataObject;
 import org.opencadc.fits.slice.NDimensionalSlicer;
 import org.opencadc.soda.ExtensionSlice;
@@ -127,6 +131,25 @@ public class FitsOperations {
             throw new RuntimeException("invalid fits data: " + src);
         } catch (IOException ex) {
             throw new ReadException("failed to read " + src, ex);
+        }
+    }
+    
+    /**
+     * Write the headers to the given OutputStream.
+     *
+     * @param outputStream      The stream to write to.
+     * @throws IOException      For any errors writing to the stream, or reading the Headers.
+     */
+    public void headersToStream(final OutputStream outputStream) throws IOException {
+        final BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream));
+        for (final Header header : getHeaders()) {
+            for (final Cursor<String, HeaderCard> headerCardCursor = header.iterator();
+                 headerCardCursor.hasNext(); ) {
+                final HeaderCard headerCard = headerCardCursor.next();
+                bufferedWriter.write(headerCard.toString());
+                bufferedWriter.newLine();
+            }
+            bufferedWriter.flush();
         }
     }
 

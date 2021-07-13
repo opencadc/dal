@@ -70,8 +70,13 @@ package org.opencadc.fits;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -154,6 +159,50 @@ public class FitsOperationsTest {
                 log.info("...");
             }
             
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testHeaders() {
+
+        try {
+            try (final RandomAccessDataObject randomAccessDataObject =
+                         new RandomAccessFileExt(FileUtil.getFileFromResource("sample-mef.fits",
+                                                                              FitsOperationsTest.class), "r");
+                 final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                // setup
+                final FitsOperations fop = new FitsOperations(randomAccessDataObject);
+                fop.headersToStream(byteArrayOutputStream);
+
+                final byte[] output = byteArrayOutputStream.toByteArray();
+
+                final File sampleHeaderFile = FileUtil.getFileFromResource("sample-mef.txt",
+                                                                           FitsOperationsTest.class);
+                final List<String> expectedHeaderLines = new ArrayList<>();
+                try (final FileInputStream fileInputStream = new FileInputStream(sampleHeaderFile);
+                     final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream))) {
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        expectedHeaderLines.add(line);
+                    }
+                }
+
+                final List<String> resultHeaderLines = new ArrayList<>();
+                try (final BufferedReader bufferedReader = new BufferedReader(
+                        new InputStreamReader(new ByteArrayInputStream(output)))) {
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        resultHeaderLines.add(line);
+                    }
+                }
+
+                Assert.assertEquals("Wrong headers provided.", expectedHeaderLines, resultHeaderLines);
+            }
+
+
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
