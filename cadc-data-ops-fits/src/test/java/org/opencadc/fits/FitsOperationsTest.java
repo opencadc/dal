@@ -93,6 +93,7 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.opencadc.soda.ExtensionSlice;
+import org.opencadc.soda.server.Cutout;
 
 /**
  *
@@ -227,7 +228,9 @@ public class FitsOperationsTest {
             cut.add(new ExtensionSlice(3));
             cut.add(new ExtensionSlice(106));
             cut.add(new ExtensionSlice(126));
-            fop.cutoutToStream(cut, fileOutputStream);
+            final Cutout cutout = new Cutout();
+            cutout.pixelCutouts = cut;
+            fop.cutoutToStream(cutout, fileOutputStream);
         }
 
         final Fits resultsFits = new Fits(new RandomAccessFileExt(outputFile, "r"));
