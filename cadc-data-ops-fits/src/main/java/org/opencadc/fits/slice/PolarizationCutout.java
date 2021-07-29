@@ -151,15 +151,15 @@ public class PolarizationCutout extends FITSCutout<PolarizationState[]> {
      * @return     Array of PolarizationState objects.  Never null.
      */
     PolarizationState[] getHeaderStates(final int polarizationAxis) {
-        final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
+        final int naxisValue = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(polarizationAxis).key());
         final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(polarizationAxis).key());
         final double crval = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(polarizationAxis).key());
         final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(polarizationAxis).key());
 
         final List<PolarizationState> polarizationStates = new ArrayList<>();
 
-        IntStream.range(1, naxis + 1)
-                 .map(i -> (int) (crpix + (i - crval) / cdelt))
+        IntStream.range(1, naxisValue + 1)
+                 .map(i -> (int) (crval + cdelt * (i - crpix)))
                  .filter(i -> PolarizationState.fromValue(i) != null)
                  .forEach(i -> polarizationStates.add(PolarizationState.fromValue(i)));
 

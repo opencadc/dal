@@ -24,7 +24,7 @@ dependencies {
     compile 'org.opencadc:cadc-soda-server:[1.2.1,2.0)'
     compile 'org.opencadc:cadc-wcs:[2.0,3.0)'
     compile 'org.opencadc:jsky:[1.0.0,2.0.0)'
-    compile 'org.opencadc:nom-tam-fits:[1.16.1,1.17.0)'
+    compile 'org.opencadc:nom-tam-fits:[1.16.2,1.17.0)'
 
     // Use JUnit test framework
     testCompile 'junit:junit:[4.13,5.0)'
