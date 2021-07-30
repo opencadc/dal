@@ -85,6 +85,7 @@ import org.apache.log4j.Logger;
  */
 public class PolarizationCutout extends FITSCutout<PolarizationState[]> {
     private static final Logger LOGGER = Logger.getLogger(PolarizationCutout.class);
+    private static final double DEFAULT_VALUE = 1.0D;
 
     public PolarizationCutout(final Header header) throws HeaderCardException {
         super(header);
@@ -106,16 +107,23 @@ public class PolarizationCutout extends FITSCutout<PolarizationState[]> {
         final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
         final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(polarizationAxis).key());
         final double crval = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(polarizationAxis).key());
-        final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(polarizationAxis).key());
+        final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(polarizationAxis).key(),
+                                                                       DEFAULT_VALUE);
+
+        // Nothing to check.
+        if (crpix == 0.0D || crval == 0.0D) {
+            return null;
+        }
 
         double pix1 = Double.MAX_VALUE;
         double pix2 = Double.MIN_VALUE;
-        for (final PolarizationState headerState : getHeaderStates(polarizationAxis)) {
+        for (final PolarizationState headerState : getHeaderStates(polarizationAxis, crpix, crval, cdelt)) {
             LOGGER.debug("Checking next header state " + headerState.name());
             for (final PolarizationState cutoutState : states) {
                 if (cutoutState.equals(headerState)) {
                     final int value = headerState.getValue();
                     final double pix = crpix + (value - crval) / cdelt;
+                    LOGGER.debug("Found pixel value " + crpix + " + (" + value  + "-" + crval + ") / " + cdelt + " = " + pix);
                     pix1 = Math.min(pix1, pix);
                     pix2 = Math.max(pix2, pix);
 
@@ -150,11 +158,9 @@ public class PolarizationCutout extends FITSCutout<PolarizationState[]> {
      * @param polarizationAxis  The polarization axis to get values from.
      * @return     Array of PolarizationState objects.  Never null.
      */
-    PolarizationState[] getHeaderStates(final int polarizationAxis) {
+    PolarizationState[] getHeaderStates(final int polarizationAxis, final double crpix, final double crval,
+                                        final double cdelt) {
         final int naxisValue = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(polarizationAxis).key());
-        final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(polarizationAxis).key());
-        final double crval = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(polarizationAxis).key());
-        final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(polarizationAxis).key());
 
         final List<PolarizationState> polarizationStates = new ArrayList<>();
 
