@@ -155,10 +155,10 @@ public class PolarizationCutoutTest extends BaseCutoutTest {
         testHeader.addValue(Standard.CRPIXn.n(3), 1.000000000000E+00D);
         testHeader.addValue(CADCExt.CUNITn.n(3), "Hz");
 
-        testHeader.addValue(Standard.NAXISn.n(4), 1);
+        testHeader.addValue(Standard.NAXISn.n(4), 2);
         testHeader.addValue(Standard.CTYPEn.n(4), CoordTypeCode.STOKES.name());
-        testHeader.addValue(Standard.CRVALn.n(4), 1.0D);
-        testHeader.addValue(Standard.CDELTn.n(4), -1.0D);
+        testHeader.addValue(Standard.CRVALn.n(4), -3.0D);
+        testHeader.addValue(Standard.CDELTn.n(4), 1.0D);
         testHeader.addValue(Standard.CRPIXn.n(4), 1.0D);
         testHeader.addValue(CADCExt.CUNITn.n(4), "");
 
@@ -203,7 +203,7 @@ public class PolarizationCutoutTest extends BaseCutoutTest {
 
         testHeader.addValue(Standard.NAXISn.n(4), 1);
         testHeader.addValue(Standard.CTYPEn.n(4), CoordTypeCode.STOKES.name());
-        testHeader.addValue(Standard.CRVALn.n(4), 8.0D);
+        testHeader.addValue(Standard.CRVALn.n(4), -5.0D);
         testHeader.addValue(Standard.CDELTn.n(4), 1.0D);
         testHeader.addValue(Standard.CRPIXn.n(4), 1.0D);
         testHeader.addValue(CADCExt.CUNITn.n(4), "");

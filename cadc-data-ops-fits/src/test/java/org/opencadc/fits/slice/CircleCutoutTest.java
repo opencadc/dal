@@ -70,32 +70,22 @@ package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.Point;
-import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
-import nom.tam.fits.ImageHDU;
 import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.BufferedDataInputStream;
-import nom.tam.util.RandomAccessDataObject;
-import nom.tam.util.RandomAccessFileExt;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class CircleCutoutTest extends BaseCutoutTest {

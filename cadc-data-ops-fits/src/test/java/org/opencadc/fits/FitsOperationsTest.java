@@ -93,6 +93,7 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.opencadc.soda.ExtensionSlice;
+import org.opencadc.soda.server.Cutout;
 
 /**
  *
@@ -227,7 +228,9 @@ public class FitsOperationsTest {
             cut.add(new ExtensionSlice(3));
             cut.add(new ExtensionSlice(106));
             cut.add(new ExtensionSlice(126));
-            fop.cutoutToStream(cut, fileOutputStream);
+            final Cutout cutout = new Cutout();
+            cutout.pixelCutouts = cut;
+            fop.cutoutToStream(cutout, fileOutputStream);
         }
 
         final Fits resultsFits = new Fits(new RandomAccessFileExt(outputFile, "r"));
@@ -247,6 +250,31 @@ public class FitsOperationsTest {
             long nbytes = h.getDataSize();
             log.info("** data size: " + nbytes);
             log.info("...");
+        }
+    }
+
+    @Test
+    public void testNoOverlap() throws Exception {
+        final RandomAccessDataObject randomAccessDataObject =
+                new RandomAccessFileExt(FileUtil.getFileFromResource("test-hst-mef.fits",
+                                                                     FitsOperationsTest.class), "r");
+        final FitsOperations fop = new FitsOperations(randomAccessDataObject);
+        final File outputFile = Files.createTempFile(
+                new File(System.getProperty("user.home")).toPath(),
+                "test-hst-mef-cutout-", ".fits").toFile();
+        outputFile.deleteOnExit();
+
+        // Extension 3 contains non-image Data, but should still be included.
+        try (final FileOutputStream fileOutputStream = new FileOutputStream(outputFile)) {
+            List<ExtensionSlice> cut = new ArrayList<>();
+            // No such extension
+            cut.add(new ExtensionSlice(188));
+            final Cutout cutout = new Cutout();
+            cutout.pixelCutouts = cut;
+            fop.cutoutToStream(cutout, fileOutputStream);
+            Assert.fail("Should throw NoOverlapException");
+        } catch (NoOverlapException noOverlapException) {
+            // Good!
         }
     }
 }

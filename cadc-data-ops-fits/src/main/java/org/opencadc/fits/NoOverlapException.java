@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2020.                            (c) 2020.
+*  (c) 2021.                            (c) 2021.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,118 +62,51 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
+*
 ************************************************************************
 */
 
 package org.opencadc.fits;
 
-import ca.nrc.cadc.io.ReadException;
-import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
-
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.List;
-
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.util.Cursor;
-import nom.tam.util.RandomAccessDataObject;
-import org.apache.log4j.Logger;
-import org.opencadc.fits.slice.NDimensionalSlicer;
-import org.opencadc.soda.server.Cutout;
-
 /**
- * Operations on FITS files.
- * 
- * @author pdowler
+ * Exception thrown to indicate a client error in the supplied cutout.
  */
-public class FitsOperations {
-    private static final Logger log = Logger.getLogger(FitsOperations.class);
-
-    private final RandomAccessDataObject src;
-
-    public FitsOperations(RandomAccessDataObject src) {
-        this.src = src;
-    }
-
-    public Header getPrimaryHeader() throws ReadException {
-        try {
-            Fits fits = new Fits(src);
-            
-            BasicHDU<?> hdu = fits.readHDU();
-            
-            return hdu.getHeader();
-        } catch (FitsException ex) {
-            throw new RuntimeException("invalid fits data: " + src);
-        } catch (IOException ex) {
-            throw new ReadException("failed to read " + src, ex);
-        }
-    }
-    
-    public List<Header> getHeaders() throws ReadException {
-        try {
-            List<Header> ret = new ArrayList<>();
-            
-            Fits fits = new Fits(src);
-            BasicHDU<?> hdu = fits.readHDU();
-            while (hdu != null) {
-                Header h = hdu.getHeader();
-                ret.add(h);
-                hdu = fits.readHDU();
-            }
-            
-            return ret;
-        } catch (FitsException ex) {
-            throw new RuntimeException("invalid fits data: " + src);
-        } catch (IOException ex) {
-            throw new ReadException("failed to read " + src, ex);
-        }
-    }
-    
+public class NoOverlapException extends Exception {
     /**
-     * Write the headers to the given OutputStream.
-     *
-     * @param outputStream      The stream to write to.
-     * @throws IOException      For any errors writing to the stream, or reading the Headers.
+     * Constructs an <code>IllegalArgumentException</code> with the
+     * specified detail message.
      */
-    public void headersToStream(final OutputStream outputStream) throws IOException {
-        final BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(outputStream));
-        for (final Header header : getHeaders()) {
-            for (final Cursor<String, HeaderCard> headerCardCursor = header.iterator();
-                 headerCardCursor.hasNext(); ) {
-                final HeaderCard headerCard = headerCardCursor.next();
-                bufferedWriter.write(headerCard.toString());
-                bufferedWriter.newLine();
-            }
-            bufferedWriter.flush();
-        }
+    public NoOverlapException() {
+        this("No overlap found.");
     }
 
     /**
-     * Implement prototype SODA pixel cutout action.
+     * Constructs an <code>IllegalArgumentException</code> with the
+     * specified detail message.
      *
-     * @param cutout cutout spec
-     * @param outputStream  The Stream to write out to.
-     * @throws NoOverlapException   A valid cutout was provided, but there is no match (overlap).
-     * @throws ReadException        Any errors reading reported by the storage system.
+     * @param s the detail message.
      */
-    public void cutoutToStream(final Cutout cutout, final OutputStream outputStream)
-            throws NoOverlapException, ReadException {
-        log.debug("cutoutToStream() start.");
-        try {
-            final NDimensionalSlicer slicer = new NDimensionalSlicer();
-            slicer.slice(src, cutout, outputStream);
-        } catch (FitsException | NoSuchKeywordException ex) {
-            throw new ReadException("invalid fits data: " + src + " reason: " + ex.getMessage(), ex);
-        } catch (IOException ex) {
-            throw new ReadException("failed to read " + src + " reason: " + ex.getMessage(), ex);
-        }
-        log.debug("cutoutToStream() OK.");
+    public NoOverlapException(String s) {
+        super(s);
+    }
+
+    /**
+     * Constructs a new exception with the specified detail message and
+     * cause.
+     *
+     * <p>Note that the detail message associated with <code>cause</code> is
+     * <i>not</i> automatically incorporated in this exception's detail
+     * message.
+     *
+     * @param message the detail message (which is saved for later retrieval
+     *                by the {@link Throwable#getMessage()} method).
+     * @param cause   the cause (which is saved for later retrieval by the
+     *                {@link Throwable#getCause()} method).  (A {@code null} value
+     *                is permitted, and indicates that the cause is nonexistent or
+     *                unknown.)
+     * @since 1.5
+     */
+    public NoOverlapException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
