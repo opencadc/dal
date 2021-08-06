@@ -92,7 +92,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-import org.opencadc.fits.slice.NoOverlapException;
 import org.opencadc.soda.ExtensionSlice;
 import org.opencadc.soda.server.Cutout;
 

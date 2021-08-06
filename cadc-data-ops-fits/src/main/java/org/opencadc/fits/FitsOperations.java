@@ -86,7 +86,6 @@ import nom.tam.util.Cursor;
 import nom.tam.util.RandomAccessDataObject;
 import org.apache.log4j.Logger;
 import org.opencadc.fits.slice.NDimensionalSlicer;
-import org.opencadc.fits.slice.NoOverlapException;
 import org.opencadc.soda.server.Cutout;
 
 /**
@@ -161,10 +160,11 @@ public class FitsOperations {
      *
      * @param cutout cutout spec
      * @param outputStream  The Stream to write out to.
+     * @throws NoOverlapException   A valid cutout was provided, but there is no match (overlap).
      * @throws ReadException        Any errors reading reported by the storage system.
-     * @throws NoOverlapException   Invalid cutout as there is no match (overlap).
      */
-    public void cutoutToStream(final Cutout cutout, final OutputStream outputStream) throws ReadException {
+    public void cutoutToStream(final Cutout cutout, final OutputStream outputStream)
+            throws NoOverlapException, ReadException {
         log.debug("cutoutToStream() start.");
         try {
             final NDimensionalSlicer slicer = new NDimensionalSlicer();

@@ -66,12 +66,12 @@
 ************************************************************************
 */
 
-package org.opencadc.fits.slice;
+package org.opencadc.fits;
 
 /**
  * Exception thrown to indicate a client error in the supplied cutout.
  */
-public class NoOverlapException extends IllegalArgumentException {
+public class NoOverlapException extends Exception {
     /**
      * Constructs an <code>IllegalArgumentException</code> with the
      * specified detail message.

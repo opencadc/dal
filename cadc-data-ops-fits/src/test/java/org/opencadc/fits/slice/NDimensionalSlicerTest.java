@@ -88,6 +88,7 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.opencadc.fits.FitsTest;
+import org.opencadc.fits.NoOverlapException;
 import org.opencadc.soda.ExtensionSlice;
 import org.opencadc.soda.ExtensionSliceFormat;
 import org.opencadc.soda.server.Cutout;
@@ -251,8 +252,8 @@ public class NDimensionalSlicerTest {
              final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
             slicer.slice(randomAccessDataObject, cutout, hstFileCutoutStream);
             hstFileCutoutStream.flush();
-        } catch (IllegalArgumentException illegalArgumentException) {
-            Assert.assertTrue("Wrong message", illegalArgumentException.getMessage().contains(
+        } catch (NoOverlapException noOverlapException) {
+            Assert.assertTrue("Wrong message", noOverlapException.getMessage().contains(
                     "One or more requested slices could not be found"));
         }
 
