@@ -415,10 +415,11 @@ public class NDimensionalSlicer {
             }
 
             final int nextLength = Math.min((upperBound - lowerBound), maxRegionSize);
-            LOGGER.debug("Length is " + nextLength + " (" + upperBound + " - " + lowerBound + ")");
+            LOGGER.debug("Length is " + nextLength + " (" + upperBound + " - " + lowerBound + "):" + step);
 
-            // Adjust the NAXISn header appropriately.
-            header.setNaxis(i + 1, nextLength);
+            // Adjust the NAXISn header appropriately.  If the step value does not divide perfectly into the length,
+            // then there will be an extra write, so add 1 where necessary.
+            header.setNaxis(i + 1, (nextLength / step) + ((nextLength % step) == 0 ? 0 : 1));
 
             // Need to set the values backwards (reverse order) to match the dimensions.
             corners[corners.length - i - 1] = lowerBound;

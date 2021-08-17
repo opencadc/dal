@@ -95,10 +95,10 @@ import org.opencadc.soda.server.Cutout;
 
 
 public class NDimensionalSlicerTest {
-    private static final Logger LOGGER = Logger.getLogger(NDimensionalSlicer.class);
+    private static final Logger LOGGER = Logger.getLogger(NDimensionalSlicerTest.class);
 
     static {
-        Log4jInit.setLevel("org.opencadc", Level.DEBUG);
+        Log4jInit.setLevel("org.opencadc.fits", Level.DEBUG);
     }
 
     @Test
@@ -129,6 +129,38 @@ public class NDimensionalSlicerTest {
 
         final Fits expectedFits = new Fits(expectedFile);
         final Fits resultFits = new Fits(outputPath.toFile());
+
+        FitsTest.assertFitsEqual(expectedFits, resultFits);
+        Files.deleteIfExists(outputPath);
+    }
+
+    @Test
+    public void testMEFFileSliceStriding() throws Exception {
+        ExtensionSliceFormat fmt = new ExtensionSliceFormat();
+        List<ExtensionSlice> slices = new ArrayList<>();
+        slices.add(fmt.parse("[SCI,10][80:220:2,100:150:2]"));
+        slices.add(fmt.parse("[1][10:16:3,70:90:3]"));
+        final Cutout cutout = new Cutout();
+        cutout.pixelCutouts = slices;
+
+        final NDimensionalSlicer slicer = new NDimensionalSlicer();
+        final File file = FileUtil.getFileFromResource("test-hst-mef.fits", NDimensionalSlicerTest.class);
+
+        final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
+        final String testWriteDir = configuredTestWriteDir == null ? "/tmp" : configuredTestWriteDir;
+
+        final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-hst-mef-striding-cutout", ".fits");
+        LOGGER.debug("Writing out to " + outputPath);
+
+        try (final OutputStream outputStream = new FileOutputStream(outputPath.toFile())) {
+            slicer.slice(file, cutout, outputStream);
+        }
+
+        final Fits resultFits = new Fits(outputPath.toFile());
+
+        final File expectedFile = FileUtil.getFileFromResource("test-hst-mef-striding-cutout.fits",
+                                                               NDimensionalSlicerTest.class);
+        final Fits expectedFits = new Fits(expectedFile);
 
         FitsTest.assertFitsEqual(expectedFits, resultFits);
         Files.deleteIfExists(outputPath);
