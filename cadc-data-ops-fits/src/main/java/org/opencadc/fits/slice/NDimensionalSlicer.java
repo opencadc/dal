@@ -353,7 +353,7 @@ public class NDimensionalSlicer {
                         (StreamingImageData) FitsFactory.dataFactory(headerCopy, true);
                 // The tiler is where the source data comes from.
                 newImageData.setTiler(imageHDU.getTiler());
-                newImageData.setTile(corners, lengths);
+                newImageData.setTile(corners, lengths, steps);
 
                 fitsOutput.addHDU(FitsFactory.hduFactory(headerCopy, newImageData));
             }
@@ -415,10 +415,11 @@ public class NDimensionalSlicer {
             }
 
             final int nextLength = Math.min((upperBound - lowerBound), maxRegionSize);
-            LOGGER.debug("Length is " + nextLength + " (" + upperBound + " - " + lowerBound + ")");
+            LOGGER.debug("Length is " + nextLength + " (" + upperBound + " - " + lowerBound + "):" + step);
 
-            // Adjust the NAXISn header appropriately.
-            header.setNaxis(i + 1, nextLength);
+            // Adjust the NAXISn header appropriately.  If the step value does not divide perfectly into the length,
+            // then there will be an extra write, so add 1 where necessary.
+            header.setNaxis(i + 1, (nextLength / step) + ((nextLength % step) == 0 ? 0 : 1));
 
             // Need to set the values backwards (reverse order) to match the dimensions.
             corners[corners.length - i - 1] = lowerBound;
@@ -610,6 +611,7 @@ public class NDimensionalSlicer {
                     for (final ExtensionSlice extensionSlice : matchedValues) {
                         final List<PixelRange> matchedPixelRange = extensionSlice.getPixelRanges();
                         final List<PixelRange> requestedPixelRange = e.getPixelRanges();
+                        LOGGER.debug("\nMatched: " + matchedPixelRange + "\nRequested: " + requestedPixelRange);
                         if ((matchedPixelRange.isEmpty() && requestedPixelRange.isEmpty())
                             || requestedPixelRange.containsAll(matchedPixelRange)) {
                             contained = true;
@@ -627,7 +629,7 @@ public class NDimensionalSlicer {
     }
 
     private ExtensionSlice getOverlap(final ExtensionSlice extensionSlice, final PixelCutout pixelCutout) {
-        final long[] pixelCutoutBounds = pixelCutout.getBounds(extensionSlice);
+        final PixelRange[] pixelCutoutBounds = pixelCutout.getBounds(extensionSlice);
         if (pixelCutoutBounds == null) {
             return null;
         } else {
@@ -636,10 +638,7 @@ public class NDimensionalSlicer {
                                                                      extensionSlice.extensionVersion)
                                                 : new ExtensionSlice(extensionSlice.extensionIndex);
 
-            for (int i = 0; i < pixelCutoutBounds.length; i += 2) {
-                overlapSlice.getPixelRanges().add(
-                        new PixelRange((int) pixelCutoutBounds[i], (int) pixelCutoutBounds[i + 1]));
-            }
+            overlapSlice.getPixelRanges().addAll(Arrays.asList(pixelCutoutBounds));
 
             return overlapSlice;
         }
