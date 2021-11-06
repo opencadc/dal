@@ -361,6 +361,13 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
             resource.setAttribute("utype", votResource.utype);
         }
 
+        // Create the DESCRIPTION element and add to RESOURCE element.
+        if (votResource.description != null) {
+            Element description = new Element("DESCRIPTION", namespace);
+            description.setText(votResource.description);
+            resource.addContent(description);
+        }
+
         // Create the INFO element and add to the RESOURCE element.
         for (VOTableInfo in : votResource.getInfos()) {
             Element info = new Element("INFO", namespace);
