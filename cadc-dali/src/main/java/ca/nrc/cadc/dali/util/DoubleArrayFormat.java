@@ -130,10 +130,11 @@ public class DoubleArrayFormat implements Format<double[]> {
         if (s == null || s.isEmpty()) {
             return null;
         } else {
-            String[] tokens = s.split(" ");
+            String[] tokens = s.split(" +");
             double[] array = new double[tokens.length];
             for (int i = 0; i < tokens.length; i++) {
-                array[i] = fmt.parse(tokens[i]);
+                String t = tokens[i];
+                array[i] = fmt.parse(t);
             }
             return array;
         }

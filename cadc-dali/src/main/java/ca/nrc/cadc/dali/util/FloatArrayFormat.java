@@ -105,7 +105,7 @@ public class FloatArrayFormat implements Format<float[]> {
         if (s == null || s.isEmpty()) {
             return null;
         } else {
-            String[] tokens = s.split(" ");
+            String[] tokens = s.split(" +");
             float[] array = new float[tokens.length];
             for (int i = 0; i < tokens.length; i++) {
                 array[i] = Float.parseFloat(tokens[i]);

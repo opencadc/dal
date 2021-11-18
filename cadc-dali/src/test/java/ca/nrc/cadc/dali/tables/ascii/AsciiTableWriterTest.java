@@ -69,18 +69,16 @@
 
 package ca.nrc.cadc.dali.tables.ascii;
 
+import ca.nrc.cadc.dali.tables.TableWriter;
+import ca.nrc.cadc.dali.tables.votable.*;
+import ca.nrc.cadc.util.Log4jInit;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.io.StringWriter;
-
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
-
-import ca.nrc.cadc.dali.tables.TableWriter;
-import ca.nrc.cadc.dali.tables.votable.*;
-import ca.nrc.cadc.util.Log4jInit;
 
 /**
  *
@@ -247,6 +245,7 @@ public class AsciiTableWriterTest
     public void testReadWriteWithMax()
     {
         log.debug("testReadWriteWithMax");
+        long maxrec = 3L;
         try
         {
             String resourceName = "VOTable resource name";
@@ -268,7 +267,7 @@ public class AsciiTableWriterTest
             vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos());
             vot.getParams().addAll(VOTableReaderWriterTest.getTestParams());
             vot.getFields().addAll(VOTableReaderWriterTest.getTestFields());
-            vot.setTableData(new VOTableReaderWriterTest.TestTableData());
+            vot.setTableData(new VOTableReaderWriterTest.TestTableData(maxrec + 1));
 
             StringWriter sw = new StringWriter();
             TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
@@ -276,7 +275,7 @@ public class AsciiTableWriterTest
             Assert.assertEquals("Should be csv extension.", "csv",
                                 writer.getExtension());
 
-            writer.write(expected, sw, 3L);
+            writer.write(expected, sw, maxrec);
             String csv = sw.toString();
             log.info("CSV: \n\n" + csv);
 
@@ -286,8 +285,8 @@ public class AsciiTableWriterTest
             {
                 numRows++;
             }
-            // 2 rows plus 1 header row
-            Assert.assertEquals(3, numRows);
+            // 1 header + data rows
+            Assert.assertEquals(maxrec + 1, numRows);
 
         }
         catch(Exception unexpected)

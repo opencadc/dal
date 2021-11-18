@@ -104,7 +104,7 @@ public class ShortArrayFormat implements Format<short[]> {
         if (s == null || s.isEmpty()) {
             return null;
         } else {
-            String[] tokens = s.split(" ");
+            String[] tokens = s.split(" +");
             short[] array = new short[tokens.length];
             for (int i = 0; i < tokens.length; i++) {
                 array[i] = Short.parseShort(tokens[i]);

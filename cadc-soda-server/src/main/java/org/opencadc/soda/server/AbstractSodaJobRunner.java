@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2020.                            (c) 2020.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -91,21 +91,19 @@ import ca.nrc.cadc.uws.server.JobPersistenceException;
 import ca.nrc.cadc.uws.server.JobRunner;
 import ca.nrc.cadc.uws.server.JobUpdater;
 import ca.nrc.cadc.uws.util.JobLogInfo;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
 import org.apache.log4j.Logger;
+import org.opencadc.soda.SodaParamValidator;
 
 /**
  * This JobRunner implements IVOA WD-SODA-1.0 job semantics.
@@ -117,27 +115,16 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
     private static Logger log = Logger.getLogger(AbstractSodaJobRunner.class);
 
     //private static final EnergyConverter conv = new EnergyConverter();
-    static final String PARAM_ID = "ID";
-    static final String PARAM_POS = "POS";
-    static final String PARAM_CIRC = "CIRCLE";
-    static final String PARAM_POLY = "POLYGON";
-    static final String PARAM_BAND = "BAND";
-    static final String PARAM_TIME = "TIME";
-    static final String PARAM_POL = "POL";
-    static final String PARAM_RUNID = "RUNID";
-
+    
     static final String RESULT_OK = "ok";
     static final String RESULT_WARN = "warn";
     static final String RESULT_FAIL = "fail";
 
-    static final List<String> SODA_PARAMS = Arrays.asList(
-        PARAM_ID, PARAM_POS, PARAM_CIRC, PARAM_POLY, PARAM_BAND, PARAM_TIME, PARAM_POL, PARAM_RUNID
-    );
-
     private final Set<String> customCutoutParams = new TreeSet<String>(new CaseInsensitiveStringComparator());
+    private final SodaParamValidator spval = new SodaParamValidator();
     
     private JobUpdater jobUpdater;
-    private SyncOutput syncOutput;
+    protected SyncOutput syncOutput;
     protected Job job;
 
     private WebServiceLogInfo logInfo;
@@ -194,23 +181,30 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
             log.debug(job.getID() + ": QUEUED -> EXECUTING [OK]");
 
             // validate params
-            ParamExtractor pex = new ParamExtractor(SODA_PARAMS);
+            List<String> pnames = new ArrayList<>();
+            pnames.addAll(SodaParamValidator.SODA_PARAMS);
+            pnames.addAll(customCutoutParams);
+            ParamExtractor pex = new ParamExtractor(pnames);
             Map<String, List<String>> params = pex.getParameters(job.getParameterList());
-            log.debug("soda params: " + SODA_PARAMS.size() + " map params: " + params.size());
-            List<String> idList = params.get(PARAM_ID);
+            log.debug("soda params: " + SodaParamValidator.SODA_PARAMS.size() + " map params: " + params.size());
+            List<String> idList = spval.validateID(params);
 
-            List<Cutout<Shape>> posCut = getSpatialCuts(params);
-            List<Cutout<Interval>> bandCut = getIntervalCutouts(PARAM_BAND, params);
-            List<Cutout<Interval>> timeCut = getIntervalCutouts(PARAM_TIME, params);
-            Cutout<List<String>> polCut = getPolarizationCuts(params);
-            List<List<Cutout<Interval>>> customCuts = new ArrayList<>();
+            List<Cutout> posCut = wrapPos(spval.validateAllShapes(params));
+            List<Cutout> bandCut = wrapBand(spval.validateBAND(params));
+            List<Cutout> timeCut = wrapTime(spval.validateTIME(params));
+            Cutout polCut = new Cutout();
+            polCut.pol = spval.validatePOL(params);
+            List<Cutout> customCuts = new ArrayList<>();
             for (String ccp : customCutoutParams) {
-                List<Cutout<Interval>> cc = getIntervalCutouts(ccp, params);
-                if (!cc.isEmpty()) {
-                    customCuts.add(cc);
+                List<Interval> cis = spval.validateNumericInterval(ccp, params);
+                for (Interval ci : cis) {
+                    Cutout c = new Cutout();
+                    c.customAxis = ccp;
+                    c.custom = ci;
+                    customCuts.add(c);
                 }
             }
-            Map<String, List<String>> customParams = pex.getExtraParameters(job.getParameterList());
+            Map<String, List<String>> extraParams = pex.getExtraParameters(job.getParameterList());
             
             
             // check single-valued param limits
@@ -228,48 +222,46 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
                 if (timeCut.size() > 1) {
                     esb.append("found ").append(timeCut.size()).append(" TIME values, expected 0-1\n");
                 }
-            }
-            // limit custom  cuts to one value each in sync and async mode because
-            for (List<Cutout<Interval>> c : customCuts) {
-                Cutout<Interval> f = c.get(0);
-                if (c.size() > 1) {
-                    esb.append("found ").append(c.size()).append(" ").append(f.name).append(" values, expected 0-1");
+                if (customCuts.size() > 1) {
+                    esb.append("found ").append(customCuts.size()).append(" ");
+                    for (Cutout c : customCuts) {
+                        esb.append(c.customAxis).append("|");
+                        // will leave extra | at end
+                    }
+                    esb.append(" values, expected 0-1 custom axis");
                 }
             }
-            List<List<Cutout<Interval>>> orthogonalCustomCuts = flatten(customCuts);
             
             if (esb.length() > 0) {
-                throw new IllegalArgumentException("sync: " + esb.toString());
+                throw new IllegalArgumentException(esb.toString());
             }
 
-            if (idList.isEmpty()) {
-                throw new IllegalArgumentException("missing required param ID");
-            }
-
-            List<URI> ids = new ArrayList<URI>();
+            List<URI> ids = new ArrayList<>();
             esb = new StringBuilder();
             for (String i : idList) {
                 try {
                     ids.add(new URI(i));
                 } catch (URISyntaxException ex) {
-                    esb.append("invalid URI: " + i + "\n");
+                    esb.append("invalid URI: ").append(i).append("\n");
                 }
             }
             if (esb.length() > 0) {
                 throw new IllegalArgumentException("invalid ID(s) found\n" + esb.toString());
             }
 
-            // add  single null element to make subsequent loops easier
+            // add single no-op element to make subsequent loops easier
             if (posCut.isEmpty()) {
-                posCut.add(new Cutout<Shape>());
+                posCut.add(new Cutout());
             }
             if (bandCut.isEmpty()) {
-                bandCut.add(new Cutout<Interval>());
+                bandCut.add(new Cutout());
             }
             if (timeCut.isEmpty()) {
-                timeCut.add(new Cutout<Interval>());
+                timeCut.add(new Cutout());
             }
-            
+            if (customCuts.isEmpty()) {
+                customCuts.add(new Cutout());
+            }
 
             String runID = job.getRunID();
             if (runID == null) {
@@ -280,11 +272,21 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
             List<Result> jobResults = new ArrayList<>();
             int serialNum = 1;
             for (URI id : ids) {
-                for (Cutout<Shape> pos : posCut) {
-                    for (Cutout<Interval> band : bandCut) {
-                        for (Cutout<Interval> time : timeCut) {
-                            for (List<Cutout<Interval>> cust : orthogonalCustomCuts) {
-                                URL url = doit.toURL(serialNum, id, pos, band, time, polCut, cust, customParams);
+                // async mode: cartesian product of pos+band+time+custom
+                // sync mode: each list has 1 entry (possibly no-op for that axis)
+                for (Cutout pos : posCut) {
+                    for (Cutout band : bandCut) {
+                        for (Cutout time : timeCut) {
+                            for (Cutout cust : customCuts) {
+                                // collect 
+                                Cutout cut = new Cutout();
+                                cut.pos = pos.pos;
+                                cut.band = band.band;
+                                cut.time = time.time;
+                                cut.pol = polCut.pol;
+                                cut.customAxis = cust.customAxis;
+                                cut.custom = cust.custom;
+                                URL url = doit.toURL(serialNum, id, cut, extraParams);
                                 log.debug("cutout URL: " + url.toExternalForm());
                                 try {
                                     jobResults.add(new Result(RESULT_OK + "-" + serialNum++, url.toURI()));
@@ -313,108 +315,56 @@ public abstract class AbstractSodaJobRunner implements JobRunner {
         } catch (JobNotFoundException ex) {
             handleError(400, ex.getMessage());
         } catch (IllegalStateException ex) {
-            handleError(500, ex.getMessage());
+            handleError(500, ex.getMessage(), ex);
         } catch (JobPersistenceException ex) {
-            handleError(500, ex.getMessage());
+            handleError(500, ex.getMessage(), ex);
         } catch (TransientException ex) {
-            handleError(503, ex.getMessage());
+            handleError(503, ex.getMessage(), ex);
+        } catch (Throwable unexpected) {
+            handleError(500, "unexpected failure: " + unexpected, unexpected);
         }
     }
     
-    // TODO: implement this and use it instead of flatten to process custom cutout params
-    static List<List<Cutout<Interval>>> ortho(List<List<Cutout<Interval>>> cuts) {
-        throw new UnsupportedOperationException("not implemented");
+    static List<Cutout> wrapPos(List<Shape> inner) {
+        ArrayList<Cutout> ret = new ArrayList<>(inner.size());
+        for (Shape i : inner) {
+            Cutout c = new Cutout();
+            c.pos = i;
+            ret.add(c);
+        }
+        return ret;
     }
     
-    static List<List<Cutout<Interval>>> flatten(List<List<Cutout<Interval>>> cuts) {
-        List<List<Cutout<Interval>>> ret = new ArrayList<>();
-        List<Cutout<Interval>> combo = new ArrayList<>();
-        for (List<Cutout<Interval>> c : cuts) {
-            Cutout<Interval> f = c.get(0);
-            if (c.size() == 1) {
-                combo.add(f);
-            } else {
-                throw new IllegalStateException("BUG: flatten called with multiple values for " + f.name);
-            }
+    static List<Cutout> wrapBand(List<Interval> inner) {
+        ArrayList<Cutout> ret = new ArrayList<>(inner.size());
+        for (Interval i : inner) {
+            Cutout c = new Cutout();
+            c.band = i;
+            ret.add(c);
         }
-        if (!combo.isEmpty()) {
-            ret.add(combo);
+        return ret;
+    }
+    
+    static List<Cutout> wrapTime(List<Interval> inner) {
+        ArrayList<Cutout> ret = new ArrayList<>(inner.size());
+        for (Interval i : inner) {
+            Cutout c = new Cutout();
+            c.time = i;
+            ret.add(c);
         }
         return ret;
     }
 
-    private List<Cutout<Interval>> getIntervalCutouts(String paramName, Map<String, List<String>> params) {
-        List<String> vals = params.get(paramName);
-        DoubleIntervalFormat fmt = new DoubleIntervalFormat();
-        List<Cutout<Interval>> ret = new ArrayList<Cutout<Interval>>();
-        for (String s : vals) {
-            try {
-                Interval i = fmt.parse(s);
-                ret.add(new Cutout<Interval>(paramName, s, i));
-            } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("invalid " + paramName + ": " + s);
-            }
-        }
-
-        return ret;
-    }
-
-    Cutout<List<String>> getPolarizationCuts(Map<String, List<String>> params) {
-        List<String> vals = params.get(PARAM_POL);
-        StringBuilder sb = new StringBuilder();
-        for (String s : vals) {
-            sb.append(s).append("|");
-        }
-        String sval = null;
-        if (sb.length() > 0) {
-            sval = sb.substring(0, sb.length() - 2); // drop trailing |
-        }
-        return new Cutout<List<String>>(PARAM_POL, sval, vals);
-    }
-
-    List<Cutout<Shape>> getSpatialCuts(Map<String, List<String>> params) {
-        List<String> posList = params.get(PARAM_POS);
-        List<String> circList = params.get(PARAM_CIRC);
-        List<String> polyList = params.get(PARAM_POLY);
-        List<Cutout<Shape>> posCut = new ArrayList<>();
-        for (String s : posList) {
-            s = s.trim().toLowerCase();
-            if (s.startsWith("circle")) {
-                s = s.substring(7); // remove keyword
-                circList.add(s);
-            } else if (s.startsWith("polygon")) {
-                s = s.substring(8); // remove keyword
-                posList.add(s);
-            } else {
-                // TODO: support range?
-                throw new IllegalArgumentException("unexpected shape type in: " + s);
-            }
-        }
-        CircleFormat cf = new CircleFormat();
-        for (String s : circList) {
-            try {
-                Circle c = cf.parse(s);
-                posCut.add(new Cutout<Shape>(PARAM_CIRC, s, c));
-            } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("invalid " + PARAM_CIRC + ": " + s);
-            }
-        }
-        PolygonFormat pf = new PolygonFormat();
-        for (String s : polyList) {
-            try {
-                Polygon p = pf.parse(s);
-                posCut.add(new Cutout<Shape>(PARAM_POLY, s, p));
-            } catch (IndexOutOfBoundsException ex) {
-                throw new IllegalArgumentException("invalid " + PARAM_POLY + ": " + s);
-            }
-        }
-
-        return posCut;
+    private void handleError(int code, String msg) throws IOException {
+        handleError(code, msg, null);
     }
     
-    private void handleError(int code, String msg)
-            throws IOException {
+    private void handleError(int code, String msg, Throwable t) throws IOException {
         logInfo.setMessage(msg);
+        if (t != null) {
+            log.error("internal exception", t);
+        }
+        
         if (syncOutput != null) {
             syncOutput.setCode(code);
             syncOutput.setHeader("Content-Type", "text/plain");
