@@ -200,7 +200,7 @@ public class VOTableReaderWriterTest {
             TableWriter<VOTableDocument> writer = new VOTableWriter();
             writer.write(expected, sw, maxrec);
             String xml = sw.toString();
-            log.debug("XML: \n\n" + xml);
+            log.info("XML: \n\n" + xml);
 
             // Read in xml to VOTable with schema validation.
             VOTableReader reader = new VOTableReader();
@@ -878,9 +878,10 @@ public class VOTableReaderWriterTest {
             }
             rowData.add(row2);
 
-            for (int i = 2; i <= numrows; i++) {
+            for (int i = 2; i < numrows; i++) {
                 rowData.add(row1);
             }
+            log.info("TestData: " + rowData.size());
         }
 
         public Iterator<List<Object>> iterator() {
