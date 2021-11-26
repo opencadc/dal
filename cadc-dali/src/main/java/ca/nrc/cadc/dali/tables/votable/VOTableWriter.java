@@ -452,11 +452,13 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         }
 
         @Override
-        public void maxIterationsReached() {
-            log.debug("TabledataMaxIterations.maxIterationsReached: " + maxRec);
-            // DALI overflow
-            info.setAttribute("name", "QUERY_STATUS");
-            info.setAttribute("value", "OVERFLOW");
+        public void maxIterationsReached(boolean moreAvailable) {
+            log.warn("TabledataMaxIterations.maxIterationsReached: " + maxRec + ", more=" + moreAvailable);
+            if (moreAvailable) {
+                // DALI overflow
+                info.setAttribute("name", "QUERY_STATUS");
+                info.setAttribute("value", "OVERFLOW");
+            }
         }
 
     }
