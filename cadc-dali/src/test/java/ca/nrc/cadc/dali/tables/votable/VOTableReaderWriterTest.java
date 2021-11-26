@@ -120,6 +120,7 @@ public class VOTableReaderWriterTest {
             VOTableDocument expected = new VOTableDocument();
 
             VOTableResource vr = new VOTableResource("meta");
+            vr.description = "what is a meta?";
             expected.getResources().add(vr);
             vr.getParams().addAll(getMetaParams());
             vr.getGroups().add(getMetaGroup());
@@ -405,6 +406,8 @@ public class VOTableReaderWriterTest {
 
     public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax) {
         Assert.assertEquals(expected.getName(), actual.getName());
+        
+        Assert.assertEquals(expected.description, actual.description);
 
         compareInfos(expected.getInfos(), actual.getInfos());
 
