@@ -29,6 +29,9 @@ jobs:
     - name: build and test cadc-datalink-server
       run: cd cadc-datalink-server && ../gradlew --info clean build javadoc checkstyleMain install
       
+    - name: build and test cadc-pkg-server
+      run: cd cadc-pkg-server && ../gradlew --info clean build javadoc checkstyleMain install
+
     - name: build and test cadc-soda-server
       run: cd cadc-soda-server && ../gradlew --info clean build javadoc checkstyleMain install
 

@@ -1,4 +1,3 @@
-
 /*
  ************************************************************************
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
@@ -70,13 +69,54 @@
 
 package org.opencadc.pkg.server;
 
+import ca.nrc.cadc.util.StringUtil;
 import java.net.URL;
 
 /**
- * Class to describe a file to be added to a Zip or Tar package.
+ * Class describing information needed in order to add a file to a package.
+ * Member variables:
+ * - URL url - used to access the file named in relativePath.
+ * - String relativePath - filename and relative path of file mentioned in URL parameter.
+ * The relative path is important because it can be used to create the file
+ * structure inside a package.
  */
-public class PackageItem
-{
-    public URL url;
-    public String filename;
+public class PackageItem {
+    private URL url;
+    private String relativePath;
+
+    /**
+     * Instantiate a PackageItem object.
+     * @param url - URL where a file can be accessed for download.
+     * @param relativePath - filename and relative path of the file
+     *                     referenced by url parameter.
+     */
+    PackageItem(URL url, String relativePath) {
+
+        if (url == null) {
+            throw new IllegalArgumentException("parameter url required.");
+        }
+
+        if (!StringUtil.hasText(relativePath)) {
+            throw new IllegalArgumentException("parameter relativePath required.");
+        }
+
+        this.url = url;
+        this.relativePath = relativePath;
+    }
+
+    public URL getURL() {
+        return url;
+    }
+
+    public void setURL(URL url) {
+        this.url = url;
+    }
+
+    public String getRelativePath() {
+        return relativePath;
+    }
+
+    public void setRelativePath(String relativePath) {
+        this.relativePath = relativePath;
+    }
 }

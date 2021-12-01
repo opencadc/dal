@@ -92,82 +92,79 @@ import java.util.Date;
 import java.util.Iterator;
 import org.apache.log4j.Logger;
 
-public abstract class PackageRunner implements JobRunner
-{
+/**
+ * Abstract class PackageRunner: a JobRunner implementation that provides core
+ * functionality for building CADC package files (zip or tar files, for example.)
+ * Job state management and error reporting back to the Job are provided.
+ * <p>
+ * To make a child class, implement these:
+ * - Iterator PackageItem getItems(): Will be used to download files to the package
+ * - String getPackageName(): filename used to create the package.
+ * </p>
+ */
+public abstract class PackageRunner implements JobRunner {
     private static final Logger log = Logger.getLogger(PackageRunner.class);
 
     protected Job job;
 
     protected JobUpdater jobUpdater;
     protected SyncOutput syncOutput;
-    protected ByteCountOutputStream counter;
+    protected ByteCountOutputStream outputStreamCounter;
     protected WebServiceLogInfo logInfo;
+    protected TarWriter writer;
 
-    public PackageRunner() 
-    {
-    }
+    public PackageRunner() {}
 
     /**
-     * Generate the package name
+     * Get filename for package to be created.
      * @return String with package name.
      */
-    protected abstract String generatePackageName();
+    protected abstract String getPackageName();
 
     /**
-     * Build an Iterator<PackageItem> instance, populated with whatever is requested in the Job
-     * provided.
-     * Requires an Iterator<PackageItem> class be implemented that builds the right format of
-     * ArchiveEntry (TarArchiveEntry or ZipArchiveEntry) in it's next() function.
-     * @param job - Job instance containing references to files to be added to the Iterator
-     * @param currentSubject - from the scope of the calling function. Use to derive correct file references.
-     * @return Iterator<PkgItem> instance - populated with references to the files in Job provided.
+     * Build an Iterator of PackageItem. Use the list of files provided
+     * in the Job instance (generated in the base JobRunner class.)
+     * @return PackageItem Iterator instance - populated with references to the files in Job provided.
      */
     protected abstract Iterator<PackageItem> getItems();
 
     @Override
-    public void setJob(Job job)
-    {
+    public void setJob(Job job) {
         this.job = job;
     }
 
     @Override
-    public void setJobUpdater(JobUpdater ju)
-    {
+    public void setJobUpdater(JobUpdater ju) {
         this.jobUpdater = ju;
     }
 
     @Override
-    public void setSyncOutput(SyncOutput so)
-    {
+    public void setSyncOutput(SyncOutput so) {
         this.syncOutput = so;
     }
 
     @Override
-    public void run()
-    {
+    public void run() {
         logInfo = new JobLogInfo(job);
         log.info(logInfo.start());
         long start = System.currentTimeMillis();
 
         doIt();
 
-        if (counter != null)
-        {
-            logInfo.setBytes(counter.getByteCount());
+        if (outputStreamCounter != null) {
+            logInfo.setBytes(outputStreamCounter.getByteCount());
         }
         logInfo.setElapsedTime(System.currentTimeMillis() - start);
         log.info(logInfo.end());
     }
 
-    private void doIt()
-    {
+    private void doIt() {
         ExecutionPhase ep;
-        TarWriter w = null;
-        try
-        {
+        writer = null;
+        try {
             ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
-            if ( !ExecutionPhase.EXECUTING.equals(ep) )
-            {
+
+            if (!ExecutionPhase.EXECUTING.equals(ep)) {
                 ep = jobUpdater.getPhase(job.getID());
                 log.debug(job.getID() + ": QUEUED -> EXECUTING [FAILED] -- DONE");
                 logInfo.setSuccess(false);
@@ -176,15 +173,26 @@ public abstract class PackageRunner implements JobRunner
             }
             log.debug(job.getID() + ": QUEUED -> EXECUTING [OK]");
 
-            // TODO: there will need to be something here to write the
-            // Items out to a tar file.
+            // Build an iterator of PackageItem from the files named
+            // in the local Job instance
             Iterator<PackageItem> packageItems = getItems();
+
+            // TarWriter needs an output stream instantiated.
+            initOutputStream(getPackageName());
+            TarWriter writer = new TarWriter(this.outputStreamCounter);
+
+            while (packageItems.hasNext()) {
+                PackageItem pi = packageItems.next();
+                writer.write(pi);
+            }
+
+            // writer is closed in finally clause
 
             // set final phase, only sync so no results
             log.debug(job.getID() + ": EXECUTING -> COMPLETED...");
             ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.COMPLETED, new Date());
-            if ( !ExecutionPhase.COMPLETED.equals(ep) )
-            {
+
+            if (!ExecutionPhase.COMPLETED.equals(ep)) {
                 ep = jobUpdater.getPhase(job.getID());
                 log.debug(job.getID() + ": EXECUTING -> COMPLETED [FAILED], phase was " + ep);
                 logInfo.setSuccess(false);
@@ -193,68 +201,91 @@ public abstract class PackageRunner implements JobRunner
             }
             log.debug(job.getID() + ": EXECUTING -> COMPLETED [OK]");
 
-        }
-        catch(IllegalArgumentException ex)
-        {
+        } catch (IllegalArgumentException ex) {
             sendError(ex, ex.getMessage(), 400);
-        }
-        catch(UnsupportedOperationException ex)
-        {
+
+        } catch (UnsupportedOperationException ex) {
             sendError(ex, "unsupported operation: " + ex.getMessage(), 400);
-        }
-        catch(Throwable t)
-        {
-            if ( ThrowableUtil.isACause(t, InterruptedException.class) )
-            {
-                try
-                {
+
+        } catch (Throwable t) {
+            if (ThrowableUtil.isACause(t, InterruptedException.class)) {
+                try {
                     ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
-                    if ( !ExecutionPhase.ABORTED.equals(ep) )
+
+                    if (!ExecutionPhase.ABORTED.equals(ep)) {
                         return; // clean exit of aborted job
-                }
-                catch(Exception ex2)
-                {
+                    }
+
+                } catch (Exception ex2) {
                     log.error("failed to check job phase after InterruptedException", ex2);
+
                 }
             }
             sendError(t, 500);
-        }
-        finally
-        {
-            if (w != null)
-                try { w.close(); }
-                catch(Exception ignore) { }
+        } finally {
+            // Finalize and close writer instance
+            if (writer != null) {
+                try {
+                    writer.close();
+                } catch (Exception ignore) {
+                    log.debug("attempt to close writer when it wasn't open");
+                }
+            }
         }
     }
 
-    private void sendError(Throwable t, int code)
-    {
-        if (code >= 500)
+    /**
+     * Initialize syncOutput output stream with the correct content type and disposition,
+     * as provided by the writer class
+     * @param packageName - package name to use
+     * @throws IOException
+     */
+    private void initOutputStream(String packageName) throws IOException {
+        syncOutput.setResponseCode(200);
+
+        // TODO: when a mechanism to select the package type
+        // is included in PackageRunner, the content type and
+        // disposition values will depend on values set on entry to
+        // PackageRunner. For now they're hard coded for tar files.
+        StringBuilder cdisp = new StringBuilder();
+        cdisp.append("inline;filename=");
+        cdisp.append(packageName);
+        cdisp.append(".tar");
+
+        syncOutput.setHeader("Content-Type", "application/x-tar");
+        syncOutput.setHeader("Content-Disposition", cdisp.toString());
+        this.outputStreamCounter = new ByteCountOutputStream(syncOutput.getOutputStream());
+    }
+
+    // ----------- Error handling for Job instance ----------------------
+    /*
+    * all sendError() functions eventually write the reported error into
+    * the Job, setting the Job status accordingly.
+    */
+    private void sendError(Throwable t, int code) {
+        if (code >= 500) {
             log.error("EPIC FAIL", t);
+        }
         sendError(t, "unexpected failure: " + t.toString(), code);
     }
 
-    private void sendError(Throwable t, String s, int code)
-    {
-    	logInfo.setSuccess(false);
+    private void sendError(Throwable t, String s, int code) {
+        logInfo.setSuccess(false);
         logInfo.setMessage(s);
         log.debug("sendError", t);
-        try
-        {
+        try {
             ErrorSummary err = new ErrorSummary(s, ErrorType.FATAL);
             ExecutionPhase ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.ERROR, err, new Date());
-            if ( !ExecutionPhase.ERROR.equals(ep) )
-            {
+            if (!ExecutionPhase.ERROR.equals(ep)) {
                 ep = jobUpdater.getPhase(job.getID());
                 log.debug(job.getID() + ": EXECUTING -> ERROR [FAILED] -- DONE");
-            }
-            else
+
+            } else {
                 log.debug(job.getID() + ": EXECUTING -> ERROR [OK]");
-        }
-        catch(Throwable t2)
-        {
+
+            }
+        } catch (Throwable t2) {
             log.error("failed to persist Job ERROR for " + job.getID(), t2);
         }
-        
     }
 }

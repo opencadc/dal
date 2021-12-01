@@ -69,7 +69,6 @@
 
 package org.opencadc.pkg.server;
 
-
 import org.apache.log4j.Logger;
 
 /**
@@ -77,12 +76,10 @@ import org.apache.log4j.Logger;
  * 
  * @author pdowler
  */
-public class TarProxyException extends Exception 
-{
+public class TarProxyException extends Exception {
     private static final Logger log = Logger.getLogger(TarProxyException.class);
 
-    public TarProxyException(String msg, Throwable cause) 
-    { 
+    public TarProxyException(String msg, Throwable cause) {
         super(msg, cause);
     }
 }
