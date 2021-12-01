@@ -138,17 +138,13 @@ public class TarWriterTest {
             TarArchiveInputStream tar = new TarArchiveInputStream(in);
             Content c1 = getEntry(tar);
             Content c2 = getEntry(tar);
-            Content readme1 = getEntry(tar);
-            Content readme2 = getEntry(tar);
             
             ArchiveEntry te = tar.getNextTarEntry();
             Assert.assertNull(te);
 
             Assert.assertEquals("name", "some/path/GovCanada.gif", c1.name);
             Assert.assertEquals("name", "another/path/SymbolCanada.gif", c2.name);
-            // TarWriter sorts the README entries
-            Assert.assertEquals("name", "another/path/README", readme1.name);
-            Assert.assertEquals("name", "some/path/README", readme2.name);
+
         }
         catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);

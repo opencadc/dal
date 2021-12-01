@@ -74,6 +74,7 @@ import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.io.ByteCountOutputStream;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.rest.SyncOutput;
+import ca.nrc.cadc.util.StringUtil;
 import ca.nrc.cadc.util.ThrowableUtil;
 import ca.nrc.cadc.uws.ErrorSummary;
 import ca.nrc.cadc.uws.ErrorType;
@@ -90,33 +91,28 @@ import java.net.URI;
 import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
+
 import org.apache.log4j.Logger;
 
 /**
  * Abstract class PackageRunner: a JobRunner implementation that provides core
  * functionality for building CADC package files (zip or tar files, for example.)
  * Job state management and error reporting back to the Job are provided.
- * <p>
- * To make a child class, implement these:
- * - Iterator PackageItem getItems(): Will be used to download files to the package
- * - String getPackageName(): filename used to create the package.
- * </p>
  */
 public abstract class PackageRunner implements JobRunner {
     private static final Logger log = Logger.getLogger(PackageRunner.class);
 
-    protected Job job;
+    private JobUpdater jobUpdater;
+    private SyncOutput syncOutput;
+    private ByteCountOutputStream outputStreamCounter;
+    private WebServiceLogInfo logInfo;
 
-    protected JobUpdater jobUpdater;
-    protected SyncOutput syncOutput;
-    protected ByteCountOutputStream outputStreamCounter;
-    protected WebServiceLogInfo logInfo;
-    protected TarWriter writer;
+    protected Job job;
 
     public PackageRunner() {}
 
     /**
-     * Get filename for package to be created.
+     * Get name for package Runner will create.
      * @return String with package name.
      */
     protected abstract String getPackageName();
@@ -160,7 +156,7 @@ public abstract class PackageRunner implements JobRunner {
 
     private void doIt() {
         ExecutionPhase ep;
-        writer = null;
+        TarWriter writer = null;
         try {
             ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
 
@@ -179,7 +175,7 @@ public abstract class PackageRunner implements JobRunner {
 
             // TarWriter needs an output stream instantiated.
             initOutputStream(getPackageName());
-            TarWriter writer = new TarWriter(this.outputStreamCounter);
+            writer = new TarWriter(this.outputStreamCounter);
 
             while (packageItems.hasNext()) {
                 PackageItem pi = packageItems.next();
@@ -241,6 +237,11 @@ public abstract class PackageRunner implements JobRunner {
      * @throws IOException
      */
     private void initOutputStream(String packageName) throws IOException {
+
+        if (!StringUtil.hasText(packageName)) {
+            throw new RuntimeException("BUG: packagaeName can't be null");
+        }
+
         syncOutput.setResponseCode(200);
 
         // TODO: when a mechanism to select the package type

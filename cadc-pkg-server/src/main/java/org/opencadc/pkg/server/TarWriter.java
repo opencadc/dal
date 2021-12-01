@@ -96,100 +96,75 @@ public class TarWriter {
     private static final Logger log = Logger.getLogger(TarWriter.class);
 
     private final TarArchiveOutputStream tout;
-    private final Map<String,List<TarContent>> map = new TreeMap<String,List<TarContent>>();
+//    private final Map<String,List<TarContent>> map = new TreeMap<String,List<TarContent>>();
     
     public TarWriter(OutputStream ostream) {
         this.tout = new TarArchiveOutputStream(ostream);
         tout.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
     }
     
-    private class TarContent {
-        URL url;
-        String filename;
-        String contentMD5;
-        String emsg;
-    }
-    
+//    private class TarContent {
+//        URL url;
+//        String filename;
+//        String contentMD5;
+//        String emsg;
+//    }
+//
     public void close() throws IOException {
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String,List<TarContent>> me : map.entrySet()) {
-
-            for (TarContent tc : me.getValue()) {
-                if (tc.emsg != null) {
-                    sb.append("ERROR ").append(tc.emsg);
-                } else {
-                    sb.append("OK ").append(tc.filename).append(" ").append(tc.contentMD5).append(" ").append(tc.url);
-                }
-                sb.append("\n");
-            }
-            boolean openEntry = false;
-            try {
-                String filename = me.getKey() + "/README";
-                tout.putArchiveEntry(new DynamicTarEntry(filename, sb.length(), new Date()));
-                openEntry = true;
-                PrintWriter pw = new PrintWriter(new TarStreamWrapper(tout));
-                pw.print(sb.toString());
-                pw.flush();
-                pw.close(); // safe
-            } finally {
-                if (openEntry) {
-                    tout.closeArchiveEntry();
-                }
-            }
-        }
-        
         tout.finish();
         tout.close();
     }
     
-    public void addMessage(String path, String msg) {
-        TarContent tc = new TarContent();
-        tc.emsg = msg;
-        addItem(path, tc);
-    }
+//    public void addMessage(String path, String msg) {
+//        TarContent tc = new TarContent();
+//        tc.emsg = msg;
+//        addItem(path, tc);
+//    }
     
-    private void addItem(String path, TarContent tc) {
-        List<TarContent> t = map.get(path);
-        if (t == null) {
-            t = new ArrayList<TarContent>();
-            map.put(path, t);
-        }
-        t.add(tc);
-    }
+//    private void addItem(String path, TarContent tc) {
+//        List<TarContent> t = map.get(path);
+//        if (t == null) {
+//            t = new ArrayList<TarContent>();
+//            map.put(path, t);
+//        }
+//        t.add(tc);
+//    }
 
     public void write(PackageItem packageItem) throws TarProxyException, IOException {
         // Create entry that will be written to the README file
-        TarContent item = new TarContent();
-        item.url = packageItem.getURL();
-        
-        // filename must be stripped from PackageItem relativePath so
-        // the README can be put at the parent directory level
-        String packageRelativePath = packageItem.getRelativePath();
-        String relativePath = packageRelativePath.substring(0,packageRelativePath.lastIndexOf("/"));
-        addItem(relativePath, item);
+//        TarContent item = new TarContent();
+//        item.url = packageItem.getURL();
+
+//        // filename must be stripped from PackageItem relativePath so
+//        // the README can be put at the parent directory level
+//        String packageRelativePath = packageItem.getRelativePath();
+//        String relativePath = packageRelativePath.substring(0,packageRelativePath.lastIndexOf("/"));
+//        addItem(relativePath, item);
 
         boolean openEntry = false;
-        
+
         try {
             // HEAD to get entry metadata
+            URL packageURL = packageItem.getURL();
             ByteArrayOutputStream tmp = new ByteArrayOutputStream();
-            HttpDownload get = new HttpDownload(item.url, tmp);
+            HttpDownload get = new HttpDownload(packageURL, tmp);
             get.setHeadOnly(true);
             get.run();
+
             if (get.getThrowable() != null) {
-                item.emsg = "HEAD " + item.url.toExternalForm() + " failed, reason: " + get.getThrowable().getMessage();
-                throw new TarProxyException("HEAD " + item.url.toExternalForm() + " failed", get.getThrowable());
+                log.info("HEAD " + packageURL.toExternalForm() + " failed, reason: " + get.getThrowable().getMessage());
+                throw new TarProxyException("HEAD " + packageURL.toExternalForm() + " failed", get.getThrowable());
             }
-            item.filename = get.getFilename();
+//            item.filename = get.getFilename();
             String filename =  packageItem.getRelativePath();
             long contentLength = get.getContentLength();
             Date lastModified = get.getLastModified();
-            URI digest = get.getDigest();
-            if ((digest != null) && (digest.getScheme().equals("md5"))) {
-                item.contentMD5 = digest.getRawSchemeSpecificPart();
-            } else {
-                item.contentMD5 = get.getContentMD5();
-            }
+//            URI digest = get.getDigest();
+//            if ((digest != null) && (digest.getScheme().equals("md5"))) {
+//                item.contentMD5 = digest.getRawSchemeSpecificPart();
+//            } else {
+//                item.contentMD5 = get.getContentMD5();
+//            }
 
             // create entry
             log.debug("tar entry: " + filename + "," + contentLength + "," + lastModified);
@@ -199,11 +174,11 @@ public class TarWriter {
             openEntry = true;
 
             // stream content
-            get = new HttpDownload(item.url, new TarStreamWrapper(tout)); // wrapper suppresses close() by HttpDownload
+            get = new HttpDownload(packageURL, new TarStreamWrapper(tout)); // wrapper suppresses close() by HttpDownload
             get.run();
             if (get.getThrowable() != null) {
-                item.emsg = "GET " + item.url.toExternalForm() + " failed, reason: " + get.getThrowable().toString();
-                throw new TarProxyException("GET " + item.url.toExternalForm() + " failed", get.getThrowable());
+                log.info("GET " + packageURL.toExternalForm() + " failed, reason: " + get.getThrowable().toString());
+                throw new TarProxyException("GET " + packageURL.toExternalForm() + " failed", get.getThrowable());
             }
             log.debug("server response: " + get.getResponseCode() + "," + get.getContentLength());
         } finally {

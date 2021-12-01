@@ -81,8 +81,8 @@ import java.net.URL;
  * structure inside a package.
  */
 public class PackageItem {
-    private URL url;
-    private String relativePath;
+    private final URL url;
+    private final String relativePath;
 
     /**
      * Instantiate a PackageItem object.
@@ -108,15 +108,7 @@ public class PackageItem {
         return url;
     }
 
-    public void setURL(URL url) {
-        this.url = url;
-    }
-
     public String getRelativePath() {
         return relativePath;
-    }
-
-    public void setRelativePath(String relativePath) {
-        this.relativePath = relativePath;
     }
 }
