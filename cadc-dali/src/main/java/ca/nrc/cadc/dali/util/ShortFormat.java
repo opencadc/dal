@@ -69,11 +69,25 @@
 
 package ca.nrc.cadc.dali.util;
 
+import org.apache.log4j.Logger;
+
 /**
  * Formats and parses a Short.
  *
  */
 public class ShortFormat implements Format<Short> {
+
+    private static final Logger log = Logger.getLogger(ShortFormat.class);
+
+    private final String nullValue;
+
+    public ShortFormat() {
+        this(null);
+    }
+
+    public ShortFormat(String nullValue) {
+        this.nullValue = nullValue;
+    }
 
     /**
      * Takes the passed in Short and returns the String representation of that Short.
@@ -97,6 +111,11 @@ public class ShortFormat implements Format<Short> {
      */
     public Short parse(String s) {
         if (s == null || s.isEmpty()) {
+            return null;
+        }
+        log.error("parse: " + s + " nullValue=" + this.nullValue);
+        if (this.nullValue != null && this.nullValue.equals(s)) {
+            log.error("return null");
             return null;
         }
         return Short.valueOf(s);

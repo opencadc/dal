@@ -73,6 +73,9 @@ import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
+import ca.nrc.cadc.dali.util.IntegerFormat;
+import ca.nrc.cadc.dali.util.LongFormat;
+import ca.nrc.cadc.dali.util.ShortFormat;
 import ca.nrc.cadc.util.StringUtil;
 import ca.nrc.cadc.xml.XmlUtil;
 import java.io.BufferedReader;
@@ -430,6 +433,10 @@ public class VOTableReader {
                     tableField.getValues().add(option.getAttributeValue("value"));
                 }
             }
+            if (values.hasAttributes()) {
+                String nullValue = values.getAttributeValue("null");
+                tableField.nullValue = nullValue == null ? null : nullValue.trim();
+            }
         }
     }
 
@@ -457,6 +464,10 @@ public class VOTableReader {
                         text = null;
                     }
                     Object o = format.parse(text);
+                    if (format instanceof IntegerFormat || format instanceof ShortFormat
+                        || format instanceof LongFormat) {
+                        log.error("formatted " + text + " - " + o);
+                    }
                     row.add(o);
                 }
                 tableData.getArrayList().add(row);
