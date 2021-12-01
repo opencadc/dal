@@ -89,6 +89,7 @@ public class VOTableResource {
 
     public String utype;
     public String id;
+    public String description;
 
     public VOTableResource(String type) {
         this.type = type;

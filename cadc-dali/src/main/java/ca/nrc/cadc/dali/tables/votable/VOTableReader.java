@@ -261,6 +261,12 @@ public class VOTableReader {
                 votResource.id = idAttr.getValue();
             }
 
+            // DESCRIPTION element
+            Element description = resource.getChild("DESCRIPTION", namespace);
+            if (description != null) {
+                votResource.description = description.getText();
+            }
+
             // INFO elements
             List<Element> infos = resource.getChildren("INFO", namespace);
             log.debug("found resource.info: " + infos.size());
