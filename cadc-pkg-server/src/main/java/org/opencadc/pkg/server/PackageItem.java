@@ -87,10 +87,10 @@ public class PackageItem {
     /**
      * Instantiate a PackageItem object.
      * @param url - URL where a file can be accessed for download.
-     * @param relativePath - filename and relative path of the file
-     *                     referenced by url parameter.
+     * @param relativePath - Relative path of the file referenced by url parameter.
+     *                     Used to build the correct directory structure in the final package.
      */
-    PackageItem(URL url, String relativePath) {
+    public PackageItem(URL url, String relativePath) {
 
         if (url == null) {
             throw new IllegalArgumentException("parameter url required.");
@@ -111,4 +111,5 @@ public class PackageItem {
     public String getRelativePath() {
         return relativePath;
     }
+
 }

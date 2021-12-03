@@ -122,7 +122,7 @@ public abstract class PackageRunner implements JobRunner {
      * in the Job instance (generated in the base JobRunner class.)
      * @return PackageItem Iterator instance - populated with references to the files in Job provided.
      */
-    protected abstract Iterator<PackageItem> getItems();
+    protected abstract Iterator<PackageItem> getItems() throws IOException, PackageRunnerException;
 
     @Override
     public void setJob(Job job) {
@@ -197,11 +197,8 @@ public abstract class PackageRunner implements JobRunner {
             }
             log.debug(job.getID() + ": EXECUTING -> COMPLETED [OK]");
 
-        } catch (IllegalArgumentException ex) {
-            sendError(ex, ex.getMessage(), 400);
-
-        } catch (UnsupportedOperationException ex) {
-            sendError(ex, "unsupported operation: " + ex.getMessage(), 400);
+        } catch (PackageRunnerException pre) {
+            sendError(pre.getCause(), pre.getMessage(), 500);
 
         } catch (Throwable t) {
             if (ThrowableUtil.isACause(t, InterruptedException.class)) {

@@ -122,13 +122,18 @@ public class TarWriter {
                 log.info("HEAD " + packageURL.toExternalForm() + " failed, reason: " + get.getThrowable().getMessage());
                 throw new TarProxyException("HEAD " + packageURL.toExternalForm() + " failed", get.getThrowable());
             }
-            String filename =  packageItem.getRelativePath();
+
+            // Get the filename that comes back wiht the download
+            String filename = get.getFilename();
+            // Prepend the relative path for the item so the tar structure is
+            // built correctly
+            String archiveFilename =  packageItem.getRelativePath() + "/" + filename;
             long contentLength = get.getContentLength();
             Date lastModified = get.getLastModified();
 
             // create entry
             log.debug("tar entry: " + filename + "," + contentLength + "," + lastModified);
-            ArchiveEntry e = new DynamicTarEntry(filename, contentLength, lastModified);
+            ArchiveEntry e = new DynamicTarEntry(archiveFilename, contentLength, lastModified);
 
             tout.putArchiveEntry(e);
             openEntry = true;
