@@ -109,9 +109,9 @@ public class TarWriterTest {
         try {
             // Create PackageItems for testing
             PackageItem pi1 = new PackageItem(new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/GovCanada.gif"),
-                "some/path");
+                "some/path/GovCanada.gif");
             PackageItem pi2 = new PackageItem(new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/SymbolCanada.gif"),
-                "another/path");
+                "another/path/SymbolCanada.gif");
             
             List<PackageItem> packageContents = new ArrayList<PackageItem>();
             packageContents.add(pi1);

@@ -69,104 +69,16 @@
 
 package org.opencadc.pkg.server;
 
-import ca.nrc.cadc.io.MultiBufferIO;
-import ca.nrc.cadc.net.HttpGet;
-import ca.nrc.cadc.net.ResourceAlreadyExistsException;
-import ca.nrc.cadc.net.ResourceNotFoundException;
-import ca.nrc.cadc.net.TransientException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
-import java.util.Date;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.log4j.Logger;
 
-public class TarWriter {
-    private static final Logger log = Logger.getLogger(TarWriter.class);
+/**
+ * Wrapper around underlying exceptions to provide a consistent way of
+ * error reporting to PackageRunner error functions.
+ */
+public class PackageRunnerException extends Exception {
+    private static final Logger log = Logger.getLogger(PackageRunnerException.class);
 
-    private final TarArchiveOutputStream tout;
-    
-    public TarWriter(OutputStream ostream) {
-        this.tout = new TarArchiveOutputStream(ostream);
-        tout.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-    }
-
-    public void close() throws IOException {
-        tout.finish();
-        tout.close();
-    }
-
-    /**
-     * Write the given packageItem to the ArchiveOutputStream local to this TarWriter instance.
-     * @param packageItem - item to be written.
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws ResourceNotFoundException
-     * @throws TransientException
-     * @throws ResourceAlreadyExistsException
-     */
-    public void write(PackageItem packageItem) throws IOException, InterruptedException,
-        ResourceNotFoundException, TransientException, ResourceAlreadyExistsException {
-        boolean openEntry = false;
-
-        try {
-            // HEAD to get entry metadata
-            URL packageURL = packageItem.getURL();
-            HttpGet get = new HttpGet(packageURL, true);
-
-            // write() will throw all errors so they can be
-            // handled by messaging in the PackageRunner.doIt() class
-            get.prepare();
-            InputStream getIOStream = get.getInputStream();
-
-            long contentLength = get.getContentLength();
-            Date lastModified = get.getLastModified();
-
-            log.info(" content length: " + contentLength);
-
-            // create entry
-            log.debug("tar entry: " + packageItem.getRelativePath() + "," + contentLength + "," + lastModified);
-            ArchiveEntry e = new DynamicTarEntry(packageItem.getRelativePath(), contentLength, lastModified);
-
-            // the input stream needs to be written to the output stream that tout holds.
-            // but the Apache Commons Compress library does whatever magic it does when the
-            // file is written. And
-            tout.putArchiveEntry(e);
-
-            // headers for entry have been written, body has not,
-            // so consider this entry 'open'
-            openEntry = true;
-
-            // Copy the get InputStream to the package OutputStream
-            MultiBufferIO multiBufferIO = new MultiBufferIO();
-            multiBufferIO.copy(getIOStream, tout);
-
-        } finally {
-            if (openEntry) {
-                tout.closeArchiveEntry();
-            }
-        }
-    }
-
-    /**
-     * Wrapper for TarArchiveEntry class that enforces that every entry is not a directory
-     */
-    private class DynamicTarEntry extends TarArchiveEntry {
-        public DynamicTarEntry(String name, long size, Date lastModifiedDate) {
-            super(name);
-            log.info("TAR ENTRY VALUES:" + name + size);
-            if (lastModifiedDate != null) {
-                super.setModTime(lastModifiedDate);
-            }
-            super.setSize(size);
-        }
-
-        @Override
-        public boolean isDirectory() {
-            return false;
-        }
+    public PackageRunnerException(String msg, Throwable cause) {
+        super(msg, cause);
     }
 }
