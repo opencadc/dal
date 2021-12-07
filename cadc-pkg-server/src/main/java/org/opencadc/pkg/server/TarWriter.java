@@ -101,15 +101,11 @@ public class TarWriter {
 
     /**
      * Write the given packageItem to the ArchiveOutputStream local to this TarWriter instance.
-     * @param packageItem - item to be written.
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws ResourceNotFoundException
-     * @throws TransientException
-     * @throws ResourceAlreadyExistsException
+     * @param packageItem - item to be written to tar file
      */
     public void write(PackageItem packageItem) throws IOException, InterruptedException,
         ResourceNotFoundException, TransientException, ResourceAlreadyExistsException {
+
         boolean openEntry = false;
 
         try {
@@ -120,7 +116,6 @@ public class TarWriter {
             // write() will throw all errors so they can be
             // handled by messaging in the PackageRunner.doIt() class
             get.prepare();
-            InputStream getIOStream = get.getInputStream();
 
             long contentLength = get.getContentLength();
             Date lastModified = get.getLastModified();
@@ -141,6 +136,7 @@ public class TarWriter {
             openEntry = true;
 
             // Copy the get InputStream to the package OutputStream
+            InputStream getIOStream = get.getInputStream();
             MultiBufferIO multiBufferIO = new MultiBufferIO();
             multiBufferIO.copy(getIOStream, tout);
 
