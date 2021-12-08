@@ -108,21 +108,29 @@ public abstract class PackageRunner implements JobRunner {
     private WebServiceLogInfo logInfo;
 
     protected Job job;
+    protected String packageName;
+
 
     public PackageRunner() {}
 
     /**
-     * Get name for package Runner will create.
-     * @return String with package name.
+     * Perform any functions needed to initialize the Package. (Setting the
+     * package name and validating inputs for example.) Called before any other methods.
      */
-    protected abstract String getPackageName();
+    protected abstract void initPackage() throws IllegalArgumentException;
 
     /**
      * Build an Iterator of PackageItem. Use the list of files provided
      * in the Job instance (generated in the base JobRunner class.)
      * @return PackageItem Iterator instance - populated with references to the files in Job provided.
      */
-    protected abstract Iterator<PackageItem> getItems() throws IOException, PackageRunnerException;
+    protected abstract Iterator<PackageItem> getItems() throws IOException;
+
+    /**
+     * Get name for package Runner will create.
+     * @return String with package name.
+     */
+    protected abstract String getPackageName();
 
     @Override
     public void setJob(Job job) {
@@ -169,12 +177,20 @@ public abstract class PackageRunner implements JobRunner {
             }
             log.debug(job.getID() + ": QUEUED -> EXECUTING [OK]");
 
+            // Package name should be set here, and anything else needed for
+            // package to be created aside from initializing the output stream.
+            initPackage();
+
             // Build an iterator of PackageItem from the files named
             // in the local Job instance
             Iterator<PackageItem> packageItems = getItems();
 
             // TarWriter needs an output stream instantiated.
-            initOutputStream(getPackageName());
+            if (StringUtil.hasText(packageName)) {
+                initOutputStream(packageName);
+            } else {
+                throw new IllegalArgumentException("package name not defined.");
+            }
             writer = new TarWriter(this.outputStreamCounter);
 
             while (packageItems.hasNext()) {
@@ -196,9 +212,6 @@ public abstract class PackageRunner implements JobRunner {
                 return;
             }
             log.debug(job.getID() + ": EXECUTING -> COMPLETED [OK]");
-
-        } catch (PackageRunnerException pre) {
-            sendError(pre.getCause(), pre.getMessage(), 500);
 
         } catch (Throwable t) {
             if (ThrowableUtil.isACause(t, InterruptedException.class)) {
@@ -236,7 +249,7 @@ public abstract class PackageRunner implements JobRunner {
     private void initOutputStream(String packageName) throws IOException {
 
         if (!StringUtil.hasText(packageName)) {
-            throw new RuntimeException("BUG: packagaeName can't be null");
+            throw new RuntimeException("BUG: packageName can't be null");
         }
 
         syncOutput.setResponseCode(200);
