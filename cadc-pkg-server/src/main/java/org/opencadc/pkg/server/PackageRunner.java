@@ -69,8 +69,6 @@
 
 package org.opencadc.pkg.server;
 
-import ca.nrc.cadc.auth.AuthMethod;
-import ca.nrc.cadc.auth.AuthenticationUtil;
 import ca.nrc.cadc.io.ByteCountOutputStream;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.rest.SyncOutput;
@@ -85,10 +83,6 @@ import ca.nrc.cadc.uws.server.JobRunner;
 import ca.nrc.cadc.uws.server.JobUpdater;
 import ca.nrc.cadc.uws.util.JobLogInfo;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.net.URI;
-import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -101,17 +95,34 @@ import org.apache.log4j.Logger;
  */
 public abstract class PackageRunner implements JobRunner {
     private static final Logger log = Logger.getLogger(PackageRunner.class);
+    public final static String TAR_TYPE = "application/x-tar";
+    public final static String ZIP_TYPE = "application/zip";
 
     private JobUpdater jobUpdater;
     private SyncOutput syncOutput;
     private ByteCountOutputStream outputStreamCounter;
     private WebServiceLogInfo logInfo;
+    private String type;
 
     protected Job job;
     protected String packageName;
 
+    // Default C-tor builds a Tar package
+    public PackageRunner() {
+        this(PackageRunner.TAR_TYPE);
+    }
 
-    public PackageRunner() {}
+    public PackageRunner(String type) {
+        if (PackageRunner.TAR_TYPE.equalsIgnoreCase(type) ||
+                PackageRunner.ZIP_TYPE.equalsIgnoreCase(type))
+        {
+            this.type = type;
+        }
+        else
+        {
+            throw new IllegalArgumentException("Type " + type + " not supported.");
+        }
+    }
 
     /**
      * Perform any functions needed to initialize the Package. (Setting the
@@ -131,6 +142,10 @@ public abstract class PackageRunner implements JobRunner {
      * @return String with package name.
      */
     protected abstract String getPackageName();
+
+    public String getType() {
+        return this.type;
+    }
 
     @Override
     public void setJob(Job job) {
@@ -164,7 +179,7 @@ public abstract class PackageRunner implements JobRunner {
 
     private void doIt() {
         ExecutionPhase ep;
-        TarWriter writer = null;
+        ArchiveWriter writer = null;
         try {
             ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
 
@@ -191,7 +206,11 @@ public abstract class PackageRunner implements JobRunner {
             } else {
                 throw new IllegalArgumentException("package name not defined.");
             }
-            writer = new TarWriter(this.outputStreamCounter);
+            if (TAR_TYPE.equalsIgnoreCase(this.type)) {
+                writer = new TarWriter(this.outputStreamCounter);
+            } else {
+                writer = new ZipWriter(this.outputStreamCounter);
+            }
 
             while (packageItems.hasNext()) {
                 PackageItem pi = packageItems.next();

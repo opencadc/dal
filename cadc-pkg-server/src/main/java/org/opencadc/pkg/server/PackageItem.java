@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2021.                            (c) 2021.
+ *  (c) 2022.                            (c) 2022.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -83,14 +83,16 @@ import java.net.URL;
 public class PackageItem {
     private final URL url;
     private final String relativePath;
+    private final boolean isDirectory;
 
     /**
      * Instantiate a PackageItem object.
      * @param url - URL where a file can be accessed for download.
      * @param relativePath - Relative path of the file referenced by url parameter.
      *                     Used to build the correct directory structure in the final package.
+     * @param isDirectory - whether the item represents a directory
      */
-    public PackageItem(URL url, String relativePath) {
+    public PackageItem(URL url, String relativePath, boolean isDirectory) {
 
         if (url == null) {
             throw new IllegalArgumentException("parameter url required.");
@@ -99,10 +101,12 @@ public class PackageItem {
         if (!StringUtil.hasText(relativePath)) {
             throw new IllegalArgumentException("parameter relativePath required.");
         }
-
+        this.isDirectory = isDirectory;
         this.url = url;
         this.relativePath = relativePath;
     }
+
+    public PackageItem(URL url, String relativePath) { this(url, relativePath, false); }
 
     public URL getURL() {
         return url;
@@ -110,6 +114,10 @@ public class PackageItem {
 
     public String getRelativePath() {
         return relativePath;
+    }
+
+    public boolean isDirectory() {
+        return isDirectory;
     }
 
 }

@@ -69,49 +69,83 @@
 
 package org.opencadc.pkg.server;
 
+import ca.nrc.cadc.io.MultiBufferIO;
+import ca.nrc.cadc.net.HttpGet;
+import ca.nrc.cadc.net.ResourceAlreadyExistsException;
+import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.net.TransientException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.log4j.Logger;
 
-public class TarWriter extends ArchiveWriter{
-    private static final Logger log = Logger.getLogger(TarWriter.class);
+public abstract class ArchiveWriter {
+    private static final Logger log = Logger.getLogger(ArchiveWriter.class);
 
-    private OutputStream ostream;
+    ArchiveOutputStream tout;
 
-    public TarWriter(OutputStream ostream) {
-        super(ostream);
-        this.ostream = ostream;
-        TarArchiveOutputStream taos = new TarArchiveOutputStream(ostream);
-        taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-        this.tout = taos;
+    public ArchiveWriter(OutputStream ostream) {
     }
 
-    ArchiveEntry createEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
-        return new DynamicTarEntry(name, size, lastModifiedDate, isDirectory);
+    public void close() throws IOException {
+        tout.finish();
+        tout.close();
     }
 
     /**
-     * Wrapper for TarArchiveEntry class that enforces that every entry is not a directory
+     * Write the given packageItem to the ArchiveOutputStream local to this ArchiveWriter instance.
+     * @param packageItem - item to be written to archive file
      */
-    private class DynamicTarEntry extends TarArchiveEntry {
-        private final boolean isDirectory;
-        public DynamicTarEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
-            super(name);
-            this.isDirectory = isDirectory;
-            log.info("TAR ENTRY VALUES:" + name + size);
-            if (lastModifiedDate != null) {
-                super.setModTime(lastModifiedDate);
-            }
-            super.setSize(size);
-        }
+    public void write(PackageItem packageItem) throws IOException, InterruptedException,
+        ResourceNotFoundException, TransientException, ResourceAlreadyExistsException {
 
-        @Override
-        public boolean isDirectory() {
-            //TODO return this.isDirectory
-            return false;
+        boolean openEntry = false;
+
+        try {
+            //TODO GETs will probably not work with vault
+            // HEAD to get entry metadata
+            URL packageURL = packageItem.getURL();
+            HttpGet get = new HttpGet(packageURL, true);
+
+            // write() will throw all errors so they can be
+            // handled by messaging in the PackageRunner.doIt() class
+            get.prepare();
+
+            long contentLength = get.getContentLength();
+            Date lastModified = get.getLastModified();
+
+            log.info(" content length: " + contentLength);
+
+            // create entry
+            log.debug("archive entry: " + packageItem.getRelativePath() + "," + contentLength + "," + lastModified);
+            ArchiveEntry e = createEntry(packageItem.getRelativePath(), contentLength, lastModified,
+                    packageItem.isDirectory());
+
+            // the input stream needs to be written to the output stream that tout holds.
+            // but the Apache Commons Compress library does whatever magic it does when the
+            // file is written. And
+            tout.putArchiveEntry(e);
+
+            // headers for entry have been written, body has not,
+            // so consider this entry 'open'
+            openEntry = true;
+
+            // Copy the get InputStream to the package OutputStream
+            InputStream getIOStream = get.getInputStream();
+            MultiBufferIO multiBufferIO = new MultiBufferIO();
+            multiBufferIO.copy(getIOStream, tout);
+
+        } finally {
+            if (openEntry) {
+                tout.closeArchiveEntry();
+            }
         }
     }
+
+    abstract ArchiveEntry createEntry(String name, long size, Date lastModifiedDate, boolean isDirectory);
+
 }

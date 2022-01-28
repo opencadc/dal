@@ -70,40 +70,41 @@
 package org.opencadc.pkg.server;
 
 import java.io.OutputStream;
+import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.log4j.Logger;
 
-public class TarWriter extends ArchiveWriter{
-    private static final Logger log = Logger.getLogger(TarWriter.class);
+public class ZipWriter extends ArchiveWriter{
+    private static final Logger log = Logger.getLogger(ZipWriter.class);
 
     private OutputStream ostream;
 
-    public TarWriter(OutputStream ostream) {
+    public ZipWriter(OutputStream ostream) {
         super(ostream);
         this.ostream = ostream;
-        TarArchiveOutputStream taos = new TarArchiveOutputStream(ostream);
-        taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-        this.tout = taos;
+        ZipArchiveOutputStream zaos = new ZipArchiveOutputStream(ostream);
+        this.tout = zaos;
     }
 
     ArchiveEntry createEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
-        return new DynamicTarEntry(name, size, lastModifiedDate, isDirectory);
+        return new DynamicZipEntry(name, size, lastModifiedDate, isDirectory);
     }
 
     /**
-     * Wrapper for TarArchiveEntry class that enforces that every entry is not a directory
+     * Wrapper for ZipArchiveEntry class that enforces that every entry is not a directory
      */
-    private class DynamicTarEntry extends TarArchiveEntry {
+    private class DynamicZipEntry extends ZipArchiveEntry {
         private final boolean isDirectory;
-        public DynamicTarEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
+
+        public DynamicZipEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
             super(name);
             this.isDirectory = isDirectory;
             log.info("TAR ENTRY VALUES:" + name + size);
             if (lastModifiedDate != null) {
-                super.setModTime(lastModifiedDate);
+                super.setLastModifiedTime(FileTime.fromMillis(lastModifiedDate.getTime()));
             }
             super.setSize(size);
         }
