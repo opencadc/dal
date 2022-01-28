@@ -77,7 +77,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.log4j.Logger;
 
-public class ZipWriter extends ArchiveWriter{
+public class ZipWriter extends ArchiveWriter {
     private static final Logger log = Logger.getLogger(ZipWriter.class);
 
     private OutputStream ostream;

@@ -64,6 +64,7 @@
  *
  ************************************************************************
  */
+
 package org.opencadc.pkg.server;
 
 import ca.nrc.cadc.net.HttpGet;
@@ -99,18 +100,7 @@ public class ZipWriterTest {
     static {
         Log4jInit.setLevel("ca.nrc.cadc.caom2.pkg", Level.INFO);
     }
-    
-    //@Test
-    public void testTemplate() {
-        try {
-            
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("Unexpected exception: " + unexpected);
-        }
-        
-    }
-    
+
     @Test
     public void testCreateZip() {
         try {
@@ -125,7 +115,7 @@ public class ZipWriterTest {
             packageContents.add(pi2);
 
             File tmp = File.createTempFile("ziptest", ".zip");
-            FileOutputStream fos=  new FileOutputStream(tmp);
+            FileOutputStream fos =  new FileOutputStream(tmp);
             ArchiveWriter fw = new ZipWriter(fos);
             for (PackageItem pi : packageContents) {
                 fw.write(pi);
@@ -160,8 +150,7 @@ public class ZipWriterTest {
             get2.prepare();
             Assert.assertArrayEquals(c2.content, getUrlPayload(get2));
 
-        }
-        catch (Exception unexpected) {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("Unexpected exception: " + unexpected);
         }
@@ -180,7 +169,7 @@ public class ZipWriterTest {
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        byte buffer[] = new byte[2048];
+        byte[] buffer = new byte[2048];
         int read = 0;
         while ((read = zip.read(buffer)) > 0) {
             out.write(buffer, 0, read);
@@ -191,11 +180,11 @@ public class ZipWriterTest {
 
     private byte[] getUrlPayload(HttpGet get) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        int nRead;
+        int numRead;
         byte[] data = new byte[16384];
 
-        while ((nRead = get.getInputStream().read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, nRead);
+        while ((numRead = get.getInputStream().read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, numRead);
         }
         return buffer.toByteArray();
     }

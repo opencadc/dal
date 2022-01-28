@@ -106,7 +106,9 @@ public class PackageItem {
         this.relativePath = relativePath;
     }
 
-    public PackageItem(URL url, String relativePath) { this(url, relativePath, false); }
+    public PackageItem(URL url, String relativePath) {
+        this(url, relativePath, false);
+    }
 
     public URL getURL() {
         return url;

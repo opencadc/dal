@@ -76,7 +76,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.log4j.Logger;
 
-public class TarWriter extends ArchiveWriter{
+public class TarWriter extends ArchiveWriter {
     private static final Logger log = Logger.getLogger(TarWriter.class);
 
     private OutputStream ostream;
@@ -97,7 +97,9 @@ public class TarWriter extends ArchiveWriter{
      * Wrapper for TarArchiveEntry class that enforces that every entry is not a directory
      */
     private class DynamicTarEntry extends TarArchiveEntry {
+
         private final boolean isDirectory;
+
         public DynamicTarEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
             super(name);
             this.isDirectory = isDirectory;

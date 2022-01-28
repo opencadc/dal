@@ -64,6 +64,7 @@
  *
  ************************************************************************
  */
+
 package org.opencadc.pkg.server;
 
 import ca.nrc.cadc.net.NetUtil;
@@ -92,18 +93,7 @@ public class TarWriterTest {
     static {
         Log4jInit.setLevel("ca.nrc.cadc.caom2.pkg", Level.INFO);
     }
-    
-    //@Test
-    public void testTemplate() {
-        try {
-            
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("Unexpected exception: " + unexpected);
-        }
-        
-    }
-    
+
     @Test
     public void testCreateTar() {
         try {
@@ -118,7 +108,7 @@ public class TarWriterTest {
             packageContents.add(pi2);
 
             File tmp = File.createTempFile("tartest", ".tar");
-            FileOutputStream fos=  new FileOutputStream(tmp);
+            FileOutputStream fos =  new FileOutputStream(tmp);
             TarWriter fw = new TarWriter(fos);
             for (PackageItem pi : packageContents) {
                 fw.write(pi);
@@ -145,8 +135,7 @@ public class TarWriterTest {
             Assert.assertEquals("name", "some/path/GovCanada.gif", c1.name);
             Assert.assertEquals("name", "another/path/SymbolCanada.gif", c2.name);
 
-        }
-        catch (Exception unexpected) {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("Unexpected exception: " + unexpected);
         }

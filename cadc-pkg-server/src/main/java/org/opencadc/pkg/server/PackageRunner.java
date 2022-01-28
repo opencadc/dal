@@ -95,8 +95,8 @@ import org.apache.log4j.Logger;
  */
 public abstract class PackageRunner implements JobRunner {
     private static final Logger log = Logger.getLogger(PackageRunner.class);
-    public final static String TAR_TYPE = "application/x-tar";
-    public final static String ZIP_TYPE = "application/zip";
+    public static final String TAR_TYPE = "application/x-tar";
+    public static final String ZIP_TYPE = "application/zip";
 
     private JobUpdater jobUpdater;
     private SyncOutput syncOutput;
@@ -121,13 +121,10 @@ public abstract class PackageRunner implements JobRunner {
      *             are supported
      */
     public PackageRunner(String type) {
-        if (PackageRunner.TAR_TYPE.equalsIgnoreCase(type) ||
-                PackageRunner.ZIP_TYPE.equalsIgnoreCase(type))
-        {
+        if (PackageRunner.TAR_TYPE.equalsIgnoreCase(type)
+                || PackageRunner.ZIP_TYPE.equalsIgnoreCase(type)) {
             this.type = type;
-        }
-        else
-        {
+        } else {
             throw new IllegalArgumentException("Type " + type + " not supported.");
         }
     }
