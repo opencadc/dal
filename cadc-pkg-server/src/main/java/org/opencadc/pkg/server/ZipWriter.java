@@ -85,8 +85,7 @@ public class ZipWriter extends ArchiveWriter{
     public ZipWriter(OutputStream ostream) {
         super(ostream);
         this.ostream = ostream;
-        ZipArchiveOutputStream zaos = new ZipArchiveOutputStream(ostream);
-        this.tout = zaos;
+        this.aout = new ZipArchiveOutputStream(ostream);;
     }
 
     ArchiveEntry createEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
@@ -102,7 +101,7 @@ public class ZipWriter extends ArchiveWriter{
         public DynamicZipEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
             super(name);
             this.isDirectory = isDirectory;
-            log.info("TAR ENTRY VALUES:" + name + size);
+            log.info("ZIP ENTRY VALUES:" + name + size);
             if (lastModifiedDate != null) {
                 super.setLastModifiedTime(FileTime.fromMillis(lastModifiedDate.getTime()));
             }

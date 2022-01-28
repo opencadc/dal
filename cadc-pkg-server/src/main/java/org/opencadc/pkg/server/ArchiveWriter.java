@@ -86,14 +86,14 @@ import org.apache.log4j.Logger;
 public abstract class ArchiveWriter {
     private static final Logger log = Logger.getLogger(ArchiveWriter.class);
 
-    ArchiveOutputStream tout;
+    ArchiveOutputStream aout;
 
     public ArchiveWriter(OutputStream ostream) {
     }
 
     public void close() throws IOException {
-        tout.finish();
-        tout.close();
+        aout.finish();
+        aout.close();
     }
 
     /**
@@ -106,7 +106,7 @@ public abstract class ArchiveWriter {
         boolean openEntry = false;
 
         try {
-            //TODO GETs will probably not work with vault
+            // TODO these GETs will not work for directories or empty files in vault
             // HEAD to get entry metadata
             URL packageURL = packageItem.getURL();
             HttpGet get = new HttpGet(packageURL, true);
@@ -128,7 +128,7 @@ public abstract class ArchiveWriter {
             // the input stream needs to be written to the output stream that tout holds.
             // but the Apache Commons Compress library does whatever magic it does when the
             // file is written. And
-            tout.putArchiveEntry(e);
+            aout.putArchiveEntry(e);
 
             // headers for entry have been written, body has not,
             // so consider this entry 'open'
@@ -137,11 +137,11 @@ public abstract class ArchiveWriter {
             // Copy the get InputStream to the package OutputStream
             InputStream getIOStream = get.getInputStream();
             MultiBufferIO multiBufferIO = new MultiBufferIO();
-            multiBufferIO.copy(getIOStream, tout);
+            multiBufferIO.copy(getIOStream, aout);
 
         } finally {
             if (openEntry) {
-                tout.closeArchiveEntry();
+                aout.closeArchiveEntry();
             }
         }
     }

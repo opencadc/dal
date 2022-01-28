@@ -107,11 +107,19 @@ public abstract class PackageRunner implements JobRunner {
     protected Job job;
     protected String packageName;
 
-    // Default C-tor builds a Tar package
+    /**
+     * Default C-tor builds a Tar package
+     */
+
     public PackageRunner() {
         this(PackageRunner.TAR_TYPE);
     }
 
+    /**
+     * Ctor
+     * @param type Currently only "PackageRunner.TAR_TYPE" and "PackageRunner.ZIP_TYPE"
+     *             are supported
+     */
     public PackageRunner(String type) {
         if (PackageRunner.TAR_TYPE.equalsIgnoreCase(type) ||
                 PackageRunner.ZIP_TYPE.equalsIgnoreCase(type))

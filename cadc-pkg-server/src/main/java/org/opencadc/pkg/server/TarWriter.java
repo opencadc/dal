@@ -86,7 +86,7 @@ public class TarWriter extends ArchiveWriter{
         this.ostream = ostream;
         TarArchiveOutputStream taos = new TarArchiveOutputStream(ostream);
         taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-        this.tout = taos;
+        this.aout = taos;
     }
 
     ArchiveEntry createEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
