@@ -89,6 +89,10 @@ public class DataLink {
     public enum Term { // TODO: re-use the VocabularyTerm code once extracted from caom2
         THIS("#this"),
 
+        /**
+         * @deprecated See https://www.ivoa.net/documents/DataLink/20150617/REC-DataLink-1.0-20150617.html#toc9 for
+         * properly adding a recursive DataLink entry.
+         */
         @Deprecated
         DATALINK("#datalink"), // recursive
 
@@ -110,12 +114,18 @@ public class DataLink {
         PREVIEW("#preview"),
         PREVIEW_IMAGE("#preview-image"),
         PREVIEW_PLOT("#preview-plot"),
-        THUMBNAIL("http://www.opencadc.org/caom2#thumbnail"),
+        THUMBNAIL("#thumbnail"),
         
         PROC("#proc"),
         CUTOUT("#cutout"),
-        
-        PKG("http://www.opencadc.org/caom2#pkg");
+
+        /**
+         * @deprecated Use PACKAGE instead
+         */
+        @Deprecated
+        PKG("http://www.opencadc.org/caom2#pkg"),
+
+        PACKAGE("#package");
 
         private final String value;
 
