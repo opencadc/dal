@@ -100,6 +100,7 @@ public class DataLink {
         
         PROGENITOR("#progenitor"),
         DERIVATION("#derivation"),
+        DOCUMENTATION("#documentation"),
         
         AUXILIARY("#auxiliary"),
         WEIGHT("#weight"),
