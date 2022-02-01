@@ -95,8 +95,6 @@ public class DataLink {
          */
         @Deprecated
         DATALINK("#datalink"), // recursive
-
-        ALT("#alt"), // Alternative link
         
         PROGENITOR("#progenitor"),
         DERIVATION("#derivation"),
