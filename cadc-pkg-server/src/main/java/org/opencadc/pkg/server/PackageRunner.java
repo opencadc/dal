@@ -99,7 +99,7 @@ public abstract class PackageRunner implements JobRunner {
 
     private JobUpdater jobUpdater;
     private SyncOutput syncOutput;
-    private ByteCountOutputStream outputStreamCounter;
+    private ByteCountOutputStream bcOutputStream;
     private WebServiceLogInfo logInfo;
 
     protected Job job;
@@ -149,8 +149,8 @@ public abstract class PackageRunner implements JobRunner {
 
         doIt();
 
-        if (outputStreamCounter != null) {
-            logInfo.setBytes(outputStreamCounter.getByteCount());
+        if (bcOutputStream != null) {
+            logInfo.setBytes(bcOutputStream.getByteCount());
         }
         logInfo.setElapsedTime(System.currentTimeMillis() - start);
         log.info(logInfo.end());
@@ -250,28 +250,38 @@ public abstract class PackageRunner implements JobRunner {
         String responseFormat = ParameterUtil.findParameterValue("RESPONSEFORMAT", job.getParameterList());
 
         if (!StringUtil.hasLength(responseFormat)) {
-            throw new IllegalArgumentException("RESPONSEFORMAT not found in job");
+            throw new IllegalArgumentException("Missing required parameter: RESPONSEFORMAT");
         } else {
-
-            syncOutput.setResponseCode(200);
 
             StringBuilder cdisp = new StringBuilder();
             cdisp.append("inline;filename=");
             cdisp.append(packageName);
 
+            String mimeType = "";
+
             if (responseFormat.equals(ZipWriter.MIME_TYPE)) {
                 cdisp.append(".zip");
-                syncOutput.setHeader("Content-Type", ZipWriter.MIME_TYPE);
-                syncOutput.setHeader("Content-Disposition", cdisp.toString());
-                this.outputStreamCounter = new ByteCountOutputStream(syncOutput.getOutputStream());
-                return new TarWriter(this.outputStreamCounter);
-
+                mimeType = ZipWriter.MIME_TYPE;
             } else if (responseFormat.equals(TarWriter.MIME_TYPE)) {
                 cdisp.append(".tar");
-                syncOutput.setHeader("Content-Type", TarWriter.MIME_TYPE);
-                syncOutput.setHeader("Content-Disposition", cdisp.toString());
-                this.outputStreamCounter = new ByteCountOutputStream(syncOutput.getOutputStream());
-                return new ZipWriter(this.outputStreamCounter);
+                mimeType = TarWriter.MIME_TYPE;
+            } else {
+                throw new UnsupportedOperationException("RESPONSEFORMAT " + responseFormat + " not supported.");
+            }
+
+            // set up syncOutput response and headers
+            syncOutput.setResponseCode(200);
+            syncOutput.setHeader("Content-Type", mimeType);
+            syncOutput.setHeader("Content-Disposition", cdisp.toString());
+
+            // initialize the output stream
+            this.bcOutputStream = new ByteCountOutputStream(syncOutput.getOutputStream());
+
+            if (responseFormat.equals(ZipWriter.MIME_TYPE)) {
+                return new TarWriter(this.bcOutputStream);
+
+            } else if (responseFormat.equals(TarWriter.MIME_TYPE)) {
+                return new ZipWriter(this.bcOutputStream);
             }
         }
         return null;
