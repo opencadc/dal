@@ -88,8 +88,7 @@ public abstract class PackageWriter {
 
     ArchiveOutputStream aout;
 
-    public PackageWriter(OutputStream ostream) {
-    }
+    public PackageWriter(OutputStream ostream) { }
 
     /**
      * Implement this so the correct type of entry is created for writing.
@@ -121,22 +120,17 @@ public abstract class PackageWriter {
             // Iterator<PackageItem>
             URL packageURL = packageItem.getURL();
             HttpGet get = new HttpGet(packageURL, true);
-
-            // write() will throw all errors so they can be
-            // handled by messaging in the PackageRunner.doIt() class
             get.prepare();
 
             // get information common to all entries
             long contentLength = get.getContentLength();
             Date lastModified = get.getLastModified();
 
-            // create entry
+            // create entry (metadata) to be put to archive stream
             log.debug("next package entry: " + packageItem.getRelativePath() + "," + contentLength + "," + lastModified);
             ArchiveEntry e = createEntry(packageItem.getRelativePath(), contentLength, lastModified);
 
-            // the input stream needs to be written to the output stream that tout holds.
-            // but the Apache Commons Compress library does whatever magic it does when the
-            // file is written. And
+            // put archive entry to stream
             aout.putArchiveEntry(e);
 
             // headers for entry have been written, body has not,
@@ -144,6 +138,7 @@ public abstract class PackageWriter {
             openEntry = true;
 
             // Copy the get InputStream to the package OutputStream
+            // this is 'writing' the content of the file
             InputStream getIOStream = get.getInputStream();
             MultiBufferIO multiBufferIO = new MultiBufferIO();
             multiBufferIO.copy(getIOStream, aout);

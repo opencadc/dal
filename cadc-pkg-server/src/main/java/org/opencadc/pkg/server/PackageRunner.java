@@ -101,7 +101,6 @@ public abstract class PackageRunner implements JobRunner {
     private SyncOutput syncOutput;
     private ByteCountOutputStream outputStreamCounter;
     private WebServiceLogInfo logInfo;
-    private String type;
 
     protected Job job;
     protected String packageName;
@@ -126,10 +125,6 @@ public abstract class PackageRunner implements JobRunner {
      * @return String with package name.
      */
     protected abstract String getPackageName();
-
-    public String getType() {
-        return this.type;
-    }
 
     @Override
     public void setJob(Job job) {
@@ -184,7 +179,6 @@ public abstract class PackageRunner implements JobRunner {
             // in the local Job instance
             Iterator<PackageItem> packageItems = getItems();
 
-            //
             if (StringUtil.hasText(packageName)) {
                 writer = initWriter(packageName);
             } else {
@@ -239,7 +233,7 @@ public abstract class PackageRunner implements JobRunner {
     }
 
     /**
-     * Set up PackageWriter.
+     * Set up PackageWriter and syncoutput for the requested RESPONSEFORMAT value.
      * Initialize syncOutput output stream with the correct content type and disposition
      * as provided by the writer class. Call writer ctor.
      * @param packageName
