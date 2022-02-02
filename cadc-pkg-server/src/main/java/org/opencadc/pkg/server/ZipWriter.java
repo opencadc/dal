@@ -69,6 +69,7 @@
 
 package org.opencadc.pkg.server;
 
+import ca.nrc.cadc.net.HttpGet;
 import java.io.OutputStream;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
@@ -77,8 +78,10 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.log4j.Logger;
 
-public class ZipWriter extends ArchiveWriter {
+public class ZipWriter extends PackageWriter {
     private static final Logger log = Logger.getLogger(ZipWriter.class);
+
+    public static final String MIME_TYPE = "application/zip";
 
     private OutputStream ostream;
 
@@ -88,19 +91,19 @@ public class ZipWriter extends ArchiveWriter {
         this.aout = new ZipArchiveOutputStream(ostream);;
     }
 
-    ArchiveEntry createEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
-        return new DynamicZipEntry(name, size, lastModifiedDate, isDirectory);
+    ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
+        return new DynamicZipEntry(name, size, lastModifiedDate);
     }
 
     /**
-     * Wrapper for ZipArchiveEntry class that enforces that every entry is not a directory
+     * Wrapper for ZipArchiveEntry class.
+     * isDirectory set to false - PackageWriter only writes files.
      */
     private class DynamicZipEntry extends ZipArchiveEntry {
-        private final boolean isDirectory;
 
-        public DynamicZipEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
+        public DynamicZipEntry(String name, long size, Date lastModifiedDate) {
             super(name);
-            this.isDirectory = isDirectory;
+
             log.info("ZIP ENTRY VALUES:" + name + size);
             if (lastModifiedDate != null) {
                 super.setLastModifiedTime(FileTime.fromMillis(lastModifiedDate.getTime()));
@@ -110,7 +113,6 @@ public class ZipWriter extends ArchiveWriter {
 
         @Override
         public boolean isDirectory() {
-            //TODO return this.isDirectory
             return false;
         }
     }

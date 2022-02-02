@@ -91,12 +91,11 @@ import org.apache.log4j.Logger;
 /**
  * Abstract class PackageRunner: a JobRunner implementation that provides core
  * functionality for building CADC package files (zip or tar files, for example.)
+ * To select a package type, RESPONSEFORMAT must be provided as a job parameter.
  * Job state management and error reporting back to the Job are provided.
  */
 public abstract class PackageRunner implements JobRunner {
     private static final Logger log = Logger.getLogger(PackageRunner.class);
-    public static final String TAR_TYPE = "application/x-tar";
-    public static final String ZIP_TYPE = "application/zip";
 
     private JobUpdater jobUpdater;
     private SyncOutput syncOutput;
@@ -107,27 +106,7 @@ public abstract class PackageRunner implements JobRunner {
     protected Job job;
     protected String packageName;
 
-    /**
-     * Default C-tor builds a Tar package
-     */
-
-    public PackageRunner() {
-        this(PackageRunner.TAR_TYPE);
-    }
-
-    /**
-     * Ctor
-     * @param type Currently only "PackageRunner.TAR_TYPE" and "PackageRunner.ZIP_TYPE"
-     *             are supported
-     */
-    public PackageRunner(String type) {
-        if (PackageRunner.TAR_TYPE.equalsIgnoreCase(type)
-                || PackageRunner.ZIP_TYPE.equalsIgnoreCase(type)) {
-            this.type = type;
-        } else {
-            throw new IllegalArgumentException("Type " + type + " not supported.");
-        }
-    }
+    public PackageRunner() {}
 
     /**
      * Perform any functions needed to initialize the Package. (Setting the
@@ -184,7 +163,7 @@ public abstract class PackageRunner implements JobRunner {
 
     private void doIt() {
         ExecutionPhase ep;
-        ArchiveWriter writer = null;
+        PackageWriter writer = null;
         try {
             ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
 
@@ -205,16 +184,11 @@ public abstract class PackageRunner implements JobRunner {
             // in the local Job instance
             Iterator<PackageItem> packageItems = getItems();
 
-            // TarWriter needs an output stream instantiated.
+            //
             if (StringUtil.hasText(packageName)) {
-                initOutputStream(packageName);
+                writer = initWriter(packageName);
             } else {
                 throw new IllegalArgumentException("package name not defined.");
-            }
-            if (TAR_TYPE.equalsIgnoreCase(this.type)) {
-                writer = new TarWriter(this.outputStreamCounter);
-            } else {
-                writer = new ZipWriter(this.outputStreamCounter);
             }
 
             while (packageItems.hasNext()) {
@@ -265,31 +239,49 @@ public abstract class PackageRunner implements JobRunner {
     }
 
     /**
-     * Initialize syncOutput output stream with the correct content type and disposition,
-     * as provided by the writer class
-     * @param packageName - package name to use
+     * Set up PackageWriter.
+     * Initialize syncOutput output stream with the correct content type and disposition
+     * as provided by the writer class. Call writer ctor.
+     * @param packageName
+     * @return
      * @throws IOException
      */
-    private void initOutputStream(String packageName) throws IOException {
+    private PackageWriter initWriter(String packageName) throws IllegalArgumentException, IOException {
 
         if (!StringUtil.hasText(packageName)) {
-            throw new RuntimeException("BUG: packageName can't be null");
+            throw new IllegalArgumentException("packageName not provided");
         }
 
-        syncOutput.setResponseCode(200);
+        // Package type is in RESPONSEFORMAT Job parameter
+        String responseFormat = ParameterUtil.findParameterValue("RESPONSEFORMAT", job.getParameterList());
 
-        // TODO: when a mechanism to select the package type
-        // is included in PackageRunner, the content type and
-        // disposition values will depend on values set on entry to
-        // PackageRunner. For now they're hard coded for tar files.
-        StringBuilder cdisp = new StringBuilder();
-        cdisp.append("inline;filename=");
-        cdisp.append(packageName);
-        cdisp.append(".tar");
+        if (!StringUtil.hasLength(responseFormat)) {
+            throw new IllegalArgumentException("RESPONSEFORMAT not found in job");
+        } else {
 
-        syncOutput.setHeader("Content-Type", "application/x-tar");
-        syncOutput.setHeader("Content-Disposition", cdisp.toString());
-        this.outputStreamCounter = new ByteCountOutputStream(syncOutput.getOutputStream());
+            syncOutput.setResponseCode(200);
+
+            StringBuilder cdisp = new StringBuilder();
+            cdisp.append("inline;filename=");
+            cdisp.append(packageName);
+
+            if (responseFormat.equals(ZipWriter.MIME_TYPE)) {
+                cdisp.append(".zip");
+                syncOutput.setHeader("Content-Type", ZipWriter.MIME_TYPE);
+                syncOutput.setHeader("Content-Disposition", cdisp.toString());
+                this.outputStreamCounter = new ByteCountOutputStream(syncOutput.getOutputStream());
+                return new TarWriter(this.outputStreamCounter);
+
+            } else if (responseFormat.equals(TarWriter.MIME_TYPE)) {
+                cdisp.append(".tar");
+                syncOutput.setHeader("Content-Type", TarWriter.MIME_TYPE);
+                syncOutput.setHeader("Content-Disposition", cdisp.toString());
+                this.outputStreamCounter = new ByteCountOutputStream(syncOutput.getOutputStream());
+                return new ZipWriter(this.outputStreamCounter);
+            }
+        }
+        return null;
+
     }
 
     // ----------- Error handling for Job instance ----------------------

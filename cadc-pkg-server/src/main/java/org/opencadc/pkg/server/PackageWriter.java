@@ -83,13 +83,22 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.log4j.Logger;
 
-public abstract class ArchiveWriter {
-    private static final Logger log = Logger.getLogger(ArchiveWriter.class);
+public abstract class PackageWriter {
+    private static final Logger log = Logger.getLogger(PackageWriter.class);
 
     ArchiveOutputStream aout;
 
-    public ArchiveWriter(OutputStream ostream) {
+    public PackageWriter(OutputStream ostream) {
     }
+
+    /**
+     * Implement this so the correct type of entry is created for writing.
+     * @param name - filename + relative path (needed so directory structure is created)
+     * @param size
+     * @param lastModifiedDate
+     * @return
+     */
+    abstract ArchiveEntry createEntry(String name, long size, Date lastModifiedDate);
 
     public void close() throws IOException {
         aout.finish();
@@ -106,8 +115,10 @@ public abstract class ArchiveWriter {
         boolean openEntry = false;
 
         try {
-            // TODO these GETs will not work for directories or empty files in vault
             // HEAD to get entry metadata
+            // Implementations of PackageRunner that build the PackageItem list
+            // should ensure that files exist before submitting as part of the
+            // Iterator<PackageItem>
             URL packageURL = packageItem.getURL();
             HttpGet get = new HttpGet(packageURL, true);
 
@@ -115,15 +126,13 @@ public abstract class ArchiveWriter {
             // handled by messaging in the PackageRunner.doIt() class
             get.prepare();
 
+            // get information common to all entries
             long contentLength = get.getContentLength();
             Date lastModified = get.getLastModified();
 
-            log.info(" content length: " + contentLength);
-
             // create entry
-            log.debug("archive entry: " + packageItem.getRelativePath() + "," + contentLength + "," + lastModified);
-            ArchiveEntry e = createEntry(packageItem.getRelativePath(), contentLength, lastModified,
-                    packageItem.isDirectory());
+            log.debug("next package entry: " + packageItem.getRelativePath() + "," + contentLength + "," + lastModified);
+            ArchiveEntry e = createEntry(packageItem.getRelativePath(), contentLength, lastModified);
 
             // the input stream needs to be written to the output stream that tout holds.
             // but the Apache Commons Compress library does whatever magic it does when the
@@ -146,6 +155,6 @@ public abstract class ArchiveWriter {
         }
     }
 
-    abstract ArchiveEntry createEntry(String name, long size, Date lastModifiedDate, boolean isDirectory);
+
 
 }

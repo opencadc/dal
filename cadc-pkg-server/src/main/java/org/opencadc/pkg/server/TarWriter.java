@@ -76,8 +76,11 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.log4j.Logger;
 
-public class TarWriter extends ArchiveWriter {
+public class TarWriter extends PackageWriter {
     private static final Logger log = Logger.getLogger(TarWriter.class);
+
+    public static final String MIME_TYPE = "application/x-tar";
+
 
     private OutputStream ostream;
 
@@ -89,20 +92,19 @@ public class TarWriter extends ArchiveWriter {
         this.aout = taos;
     }
 
-    ArchiveEntry createEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
-        return new DynamicTarEntry(name, size, lastModifiedDate, isDirectory);
+    ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
+        return new DynamicTarEntry(name, size, lastModifiedDate);
     }
 
+
     /**
-     * Wrapper for TarArchiveEntry class that enforces that every entry is not a directory
+     * Wrapper for TarArchiveEntry class.
+     * isDirectory set to false - PackageWriter only writes files.
      */
     private class DynamicTarEntry extends TarArchiveEntry {
 
-        private final boolean isDirectory;
-
-        public DynamicTarEntry(String name, long size, Date lastModifiedDate, boolean isDirectory) {
+        public DynamicTarEntry(String name, long size, Date lastModifiedDate) {
             super(name);
-            this.isDirectory = isDirectory;
             log.info("TAR ENTRY VALUES:" + name + size);
             if (lastModifiedDate != null) {
                 super.setModTime(lastModifiedDate);
@@ -112,7 +114,6 @@ public class TarWriter extends ArchiveWriter {
 
         @Override
         public boolean isDirectory() {
-            //TODO return this.isDirectory
             return false;
         }
     }

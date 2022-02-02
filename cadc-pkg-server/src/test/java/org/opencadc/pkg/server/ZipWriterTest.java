@@ -68,9 +68,6 @@
 package org.opencadc.pkg.server;
 
 import ca.nrc.cadc.net.HttpGet;
-import ca.nrc.cadc.net.ResourceAlreadyExistsException;
-import ca.nrc.cadc.net.ResourceNotFoundException;
-import ca.nrc.cadc.net.TransientException;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -84,9 +81,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.log4j.Level;
@@ -116,14 +110,14 @@ public class ZipWriterTest {
 
             File tmp = File.createTempFile("ziptest", ".zip");
             FileOutputStream fos =  new FileOutputStream(tmp);
-            ArchiveWriter fw = new ZipWriter(fos);
+            PackageWriter fw = new ZipWriter(fos);
             for (PackageItem pi : packageContents) {
                 fw.write(pi);
             }
             fw.close();
             
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ArchiveWriter bw = new ZipWriter(bos);
+            PackageWriter bw = new ZipWriter(bos);
             for (PackageItem pi : packageContents) {
                 bw.write(pi);
             }
