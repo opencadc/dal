@@ -95,8 +95,7 @@ public class TarWriter extends PackageWriter {
     ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
         return new DynamicTarEntry(name, size, lastModifiedDate);
     }
-
-
+    
     /**
      * Wrapper for TarArchiveEntry class.
      * isDirectory set to false - PackageWriter only writes files.

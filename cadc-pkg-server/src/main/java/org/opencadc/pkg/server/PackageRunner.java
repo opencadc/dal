@@ -97,12 +97,13 @@ import org.apache.log4j.Logger;
 public abstract class PackageRunner implements JobRunner {
     private static final Logger log = Logger.getLogger(PackageRunner.class);
 
-    private JobUpdater jobUpdater;
     private SyncOutput syncOutput;
     private ByteCountOutputStream bcOutputStream;
     private WebServiceLogInfo logInfo;
+    private JobUpdater jobUpdater;
 
     protected Job job;
+
     protected String packageName;
 
     public PackageRunner() {}
@@ -253,18 +254,19 @@ public abstract class PackageRunner implements JobRunner {
 
     /**
      * Set up PackageWriter and syncoutput for the requested RESPONSEFORMAT value.
-     * Validate RESPONSEFORMAT. Initialize syncOutput output stream with the correct
-     * content type and disposition mas provided by the writer class. Call writer ctor.
+     * Default is 'application/x-tar'. Initialize syncOutput output stream with the correct
+     * content type and disposition as provided by the writer class. Call writer ctor.
      * @return PackageWriter instance
      * @throws IOException
      */
     private PackageWriter initWriter() throws IllegalArgumentException, IOException {
 
-        // Package type is in RESPONSEFORMAT Job parameter
+        // Package type is in RESPONSEFORMAT Job parameter (optional)
         String responseFormat = ParameterUtil.findParameterValue("RESPONSEFORMAT", job.getParameterList());
 
         if (!StringUtil.hasLength(responseFormat)) {
-            throw new IllegalArgumentException("Missing required parameter: RESPONSEFORMAT");
+            // Not provided, set default
+            responseFormat = TarWriter.MIME_TYPE;
         }
 
         StringBuilder cdisp = new StringBuilder();
@@ -278,9 +280,10 @@ public abstract class PackageRunner implements JobRunner {
             return new ZipWriter(bcOutputStream);
 
         } else if (responseFormat.equals(TarWriter.MIME_TYPE)) {
+            // Default for RESPONSEFORMAT is 'application/x-tar'
             cdisp.append(TarWriter.EXTENSION);
             bcOutputStream = initOutputStream(TarWriter.MIME_TYPE, cdisp.toString());
-            return new ZipWriter(bcOutputStream);
+            return new TarWriter(bcOutputStream);
 
         } else {
             throw new UnsupportedOperationException("RESPONSEFORMAT not supported: " + responseFormat);

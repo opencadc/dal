@@ -74,6 +74,7 @@ import ca.nrc.cadc.net.HttpGet;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -149,7 +150,5 @@ public abstract class PackageWriter {
             }
         }
     }
-
-
 
 }
