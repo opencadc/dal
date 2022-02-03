@@ -80,7 +80,7 @@ public class TarWriter extends PackageWriter {
     private static final Logger log = Logger.getLogger(TarWriter.class);
 
     public static final String MIME_TYPE = "application/x-tar";
-
+    public static final String EXTENSION = ".tar";
 
     private OutputStream ostream;
 

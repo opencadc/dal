@@ -82,6 +82,7 @@ public class ZipWriter extends PackageWriter {
     private static final Logger log = Logger.getLogger(ZipWriter.class);
 
     public static final String MIME_TYPE = "application/zip";
+    public static final String EXTENSION = ".zip";
 
     private OutputStream ostream;
 

@@ -179,10 +179,12 @@ public abstract class PackageRunner implements JobRunner {
             // in the local Job instance
             Iterator<PackageItem> packageItems = getItems();
 
+            // packageName should have been set to something useful in initPackage()
+            // as part of an impelmenting class
             if (StringUtil.hasText(packageName)) {
-                writer = initWriter(packageName);
+                writer = initWriter();
             } else {
-                throw new IllegalArgumentException("package name not defined.");
+                throw new IllegalArgumentException("packageName not defined.");
             }
 
             while (packageItems.hasNext()) {
@@ -232,59 +234,57 @@ public abstract class PackageRunner implements JobRunner {
         }
     }
 
+
     /**
-     * Set up PackageWriter and syncoutput for the requested RESPONSEFORMAT value.
-     * Initialize syncOutput output stream with the correct content type and disposition
-     * as provided by the writer class. Call writer ctor.
-     * @param packageName
+     * Set up Syncoutput stream with correct filename and content type. Generate
+     * ByteCountOutputStream using syncoutput.
+     * @param mimeType
+     * @param contentDisposition
      * @return
      * @throws IOException
      */
-    private PackageWriter initWriter(String packageName) throws IllegalArgumentException, IOException {
+    private ByteCountOutputStream initOutputStream(String mimeType, String contentDisposition) throws IOException {
+        // set up syncOutput response and headers
+        syncOutput.setResponseCode(200);
+        syncOutput.setHeader("Content-Type", mimeType);
+        syncOutput.setHeader("Content-Disposition", contentDisposition);
+        return new ByteCountOutputStream(syncOutput.getOutputStream());
+    }
 
-        if (!StringUtil.hasText(packageName)) {
-            throw new IllegalArgumentException("packageName not provided");
-        }
+    /**
+     * Set up PackageWriter and syncoutput for the requested RESPONSEFORMAT value.
+     * Validate RESPONSEFORMAT. Initialize syncOutput output stream with the correct
+     * content type and disposition mas provided by the writer class. Call writer ctor.
+     * @return PackageWriter instance
+     * @throws IOException
+     */
+    private PackageWriter initWriter() throws IllegalArgumentException, IOException {
 
         // Package type is in RESPONSEFORMAT Job parameter
         String responseFormat = ParameterUtil.findParameterValue("RESPONSEFORMAT", job.getParameterList());
 
         if (!StringUtil.hasLength(responseFormat)) {
             throw new IllegalArgumentException("Missing required parameter: RESPONSEFORMAT");
-        } else {
-
-            StringBuilder cdisp = new StringBuilder();
-            cdisp.append("inline;filename=");
-            cdisp.append(packageName);
-
-            String mimeType = "";
-
-            if (responseFormat.equals(ZipWriter.MIME_TYPE)) {
-                cdisp.append(".zip");
-                mimeType = ZipWriter.MIME_TYPE;
-            } else if (responseFormat.equals(TarWriter.MIME_TYPE)) {
-                cdisp.append(".tar");
-                mimeType = TarWriter.MIME_TYPE;
-            } else {
-                throw new UnsupportedOperationException("RESPONSEFORMAT " + responseFormat + " not supported.");
-            }
-
-            // set up syncOutput response and headers
-            syncOutput.setResponseCode(200);
-            syncOutput.setHeader("Content-Type", mimeType);
-            syncOutput.setHeader("Content-Disposition", cdisp.toString());
-
-            // initialize the output stream
-            this.bcOutputStream = new ByteCountOutputStream(syncOutput.getOutputStream());
-
-            if (responseFormat.equals(ZipWriter.MIME_TYPE)) {
-                return new TarWriter(this.bcOutputStream);
-
-            } else if (responseFormat.equals(TarWriter.MIME_TYPE)) {
-                return new ZipWriter(this.bcOutputStream);
-            }
         }
-        return null;
+
+        StringBuilder cdisp = new StringBuilder();
+        cdisp.append("inline;filename=");
+        cdisp.append(packageName);
+
+        // Initialize the writer, underlying syncoutput and output streams.
+        if (responseFormat.equals(ZipWriter.MIME_TYPE)) {
+            cdisp.append(ZipWriter.EXTENSION);
+            bcOutputStream = initOutputStream(ZipWriter.MIME_TYPE, cdisp.toString());
+            return new ZipWriter(bcOutputStream);
+
+        } else if (responseFormat.equals(TarWriter.MIME_TYPE)) {
+            cdisp.append(TarWriter.EXTENSION);
+            bcOutputStream = initOutputStream(TarWriter.MIME_TYPE, cdisp.toString());
+            return new ZipWriter(bcOutputStream);
+
+        } else {
+            throw new UnsupportedOperationException("RESPONSEFORMAT not supported: " + responseFormat);
+        }
 
     }
 
