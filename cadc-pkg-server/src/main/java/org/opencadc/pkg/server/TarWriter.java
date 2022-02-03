@@ -82,20 +82,16 @@ public class TarWriter extends PackageWriter {
     public static final String MIME_TYPE = "application/x-tar";
     public static final String EXTENSION = ".tar";
 
-    private OutputStream ostream;
-
     public TarWriter(OutputStream ostream) {
-        super(ostream);
-        this.ostream = ostream;
-        TarArchiveOutputStream taos = new TarArchiveOutputStream(ostream);
-        taos.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-        this.aout = taos;
+        super(new TarArchiveOutputStream(ostream));
+        TarArchiveOutputStream tmp = (TarArchiveOutputStream)this.aout;
+        tmp.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
     }
 
     ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
         return new DynamicTarEntry(name, size, lastModifiedDate);
     }
-    
+
     /**
      * Wrapper for TarArchiveEntry class.
      * isDirectory set to false - PackageWriter only writes files.

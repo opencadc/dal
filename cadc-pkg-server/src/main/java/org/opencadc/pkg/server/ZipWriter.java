@@ -84,12 +84,8 @@ public class ZipWriter extends PackageWriter {
     public static final String MIME_TYPE = "application/zip";
     public static final String EXTENSION = ".zip";
 
-    private OutputStream ostream;
-
     public ZipWriter(OutputStream ostream) {
-        super(ostream);
-        this.ostream = ostream;
-        this.aout = new ZipArchiveOutputStream(ostream);;
+        super(new ZipArchiveOutputStream(ostream));
     }
 
     ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {

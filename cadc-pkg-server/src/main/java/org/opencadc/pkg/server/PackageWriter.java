@@ -89,7 +89,9 @@ public abstract class PackageWriter {
 
     ArchiveOutputStream aout;
 
-    public PackageWriter(OutputStream ostream) { }
+    public PackageWriter(ArchiveOutputStream archiveOutputStream) {
+        this.aout = archiveOutputStream;
+    }
 
     /**
      * Implement this so the correct type of entry is created for writing.
@@ -101,8 +103,10 @@ public abstract class PackageWriter {
     abstract ArchiveEntry createEntry(String name, long size, Date lastModifiedDate);
 
     public void close() throws IOException {
-        aout.finish();
-        aout.close();
+        if (aout != null) {
+            aout.finish();
+            aout.close();
+        }
     }
 
     /**
@@ -150,5 +154,4 @@ public abstract class PackageWriter {
             }
         }
     }
-
 }
