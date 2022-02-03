@@ -84,8 +84,7 @@ public class TarWriter extends PackageWriter {
 
     public TarWriter(OutputStream ostream) {
         super(new TarArchiveOutputStream(ostream));
-        TarArchiveOutputStream tmp = (TarArchiveOutputStream)this.aout;
-        tmp.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+        ((TarArchiveOutputStream)super.aout).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
     }
 
     ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
