@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2021.                            (c) 2021.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -91,19 +91,19 @@ import org.apache.log4j.Logger;
 /**
  * Abstract class PackageRunner: a JobRunner implementation that provides core
  * functionality for building CADC package files (zip or tar files, for example.)
- * To select a package type, RESPONSEFORMAT must be provided as a job parameter.
+ * To select a package type, RESPONSEFORMAT=(mime type) can be provided as a job parameter.
+ * Default is 'application/x-tar'.
  * Job state management and error reporting back to the Job are provided.
  */
 public abstract class PackageRunner implements JobRunner {
     private static final Logger log = Logger.getLogger(PackageRunner.class);
 
+    private JobUpdater jobUpdater;
     private SyncOutput syncOutput;
     private ByteCountOutputStream bcOutputStream;
     private WebServiceLogInfo logInfo;
-    private JobUpdater jobUpdater;
 
     protected Job job;
-
     protected String packageName;
 
     public PackageRunner() {}
@@ -176,17 +176,17 @@ public abstract class PackageRunner implements JobRunner {
             // package to be created aside from initializing the output stream.
             initPackage();
 
+            if (!StringUtil.hasText(packageName)) {
+                // packageName should have been set to something useful in initPackage()
+                // as part of an impelmenting class
+                throw new RuntimeException("BUG: packageName not defined.");
+            }
+
             // Build an iterator of PackageItem from the files named
             // in the local Job instance
             Iterator<PackageItem> packageItems = getItems();
 
-            // packageName should have been set to something useful in initPackage()
-            // as part of an impelmenting class
-            if (StringUtil.hasText(packageName)) {
-                writer = initWriter();
-            } else {
-                throw new IllegalArgumentException("packageName not defined.");
-            }
+            writer = initWriter();
 
             while (packageItems.hasNext()) {
                 PackageItem pi = packageItems.next();
@@ -276,18 +276,18 @@ public abstract class PackageRunner implements JobRunner {
         // Initialize the writer, underlying syncoutput and output streams.
         if (responseFormat.equals(ZipWriter.MIME_TYPE)) {
             cdisp.append(ZipWriter.EXTENSION);
-            bcOutputStream = initOutputStream(ZipWriter.MIME_TYPE, cdisp.toString());
-            return new ZipWriter(bcOutputStream);
+            this.bcOutputStream = initOutputStream(ZipWriter.MIME_TYPE, cdisp.toString());
+            return new ZipWriter(this.bcOutputStream);
 
         } else if (responseFormat.equals(TarWriter.MIME_TYPE)) {
             // Default for RESPONSEFORMAT is 'application/x-tar'
             cdisp.append(TarWriter.EXTENSION);
-            bcOutputStream = initOutputStream(TarWriter.MIME_TYPE, cdisp.toString());
-            return new TarWriter(bcOutputStream);
+            this.bcOutputStream = initOutputStream(TarWriter.MIME_TYPE, cdisp.toString());
+            return new TarWriter(this.bcOutputStream);
 
-        } else {
-            throw new UnsupportedOperationException("RESPONSEFORMAT not supported: " + responseFormat);
         }
+
+        throw new UnsupportedOperationException("RESPONSEFORMAT not supported: " + responseFormat);
 
     }
 
