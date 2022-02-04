@@ -91,7 +91,6 @@ public class PackageItem {
      *                     Used to build the correct directory structure in the final package.
      */
     public PackageItem(URL url, String relativePath) {
-
         if (url == null) {
             throw new IllegalArgumentException("parameter url required.");
         }
@@ -104,6 +103,7 @@ public class PackageItem {
         this.relativePath = relativePath;
     }
 
+
     public URL getURL() {
         return url;
     }
@@ -111,5 +111,4 @@ public class PackageItem {
     public String getRelativePath() {
         return relativePath;
     }
-
 }
