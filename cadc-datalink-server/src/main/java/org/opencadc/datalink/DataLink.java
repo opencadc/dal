@@ -88,13 +88,6 @@ public class DataLink {
      */
     public enum Term { // TODO: re-use the VocabularyTerm code once extracted from caom2
         THIS("#this"),
-
-        /**
-         * @deprecated See https://www.ivoa.net/documents/DataLink/20150617/REC-DataLink-1.0-20150617.html#toc9 for
-         *      properly adding a recursive DataLink entry.
-         */
-        @Deprecated
-        DATALINK("#datalink"), // recursive
         
         PROGENITOR("#progenitor"),
         DERIVATION("#derivation"),
