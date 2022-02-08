@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2021.                            (c) 2021.
+ *  (c) 2022.                            (c) 2022.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,56 +67,57 @@
 
 package org.opencadc.pkg.server;
 
-import ca.nrc.cadc.net.NetUtil;
-import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.net.HttpGet;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Writer;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.compress.archivers.ArchiveEntry;
-
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TarWriterTest {
-    private static final Logger log = Logger.getLogger(TarWriterTest.class);
+public class ZipWriterTest {
+    private static final Logger log = Logger.getLogger(ZipWriterTest.class);
     
     static {
         Log4jInit.setLevel("ca.nrc.cadc.caom2.pkg", Level.INFO);
     }
 
     @Test
-    public void testCreateTar() {
+    public void testCreateZip() {
         try {
             // Create PackageItems for testing
-            PackageItem pi1 = new PackageItem(new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/GovCanada.gif"),
-                "some/path/GovCanada.gif");
-            PackageItem pi2 = new PackageItem(new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/SymbolCanada.gif"),
-                "another/path/SymbolCanada.gif");
+            URL url1 = new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/GovCanada.gif");
+            PackageItem pi1 = new PackageItem(url1, "some/path/GovCanada.gif");
+            URL url2 = new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/SymbolCanada.gif");
+            PackageItem pi2 = new PackageItem(url2,"another/path/SymbolCanada.gif");
             
             List<PackageItem> packageContents = new ArrayList<PackageItem>();
             packageContents.add(pi1);
             packageContents.add(pi2);
 
-            File tmp = File.createTempFile("tartest", ".tar");
+            File tmp = File.createTempFile("ziptest", ".zip");
             FileOutputStream fos =  new FileOutputStream(tmp);
-            TarWriter fw = new TarWriter(fos);
+            PackageWriter fw = new ZipWriter(fos);
             for (PackageItem pi : packageContents) {
                 fw.write(pi);
             }
             fw.close();
             
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            TarWriter bw = new TarWriter(bos);
+            PackageWriter bw = new ZipWriter(bos);
             for (PackageItem pi : packageContents) {
                 bw.write(pi);
             }
@@ -125,15 +126,23 @@ public class TarWriterTest {
             byte[] content = bos.toByteArray();
             ByteArrayInputStream in = new ByteArrayInputStream(content);
 
-            TarArchiveInputStream tar = new TarArchiveInputStream(in);
-            Content c1 = getEntry(tar);
-            Content c2 = getEntry(tar);
-            
-            ArchiveEntry te = tar.getNextTarEntry();
+            ZipArchiveInputStream zip = new ZipArchiveInputStream(in);
+            Content c1 = getEntry(zip);
+            Content c2 = getEntry(zip);
+
+            ArchiveEntry te = zip.getNextZipEntry();
             Assert.assertNull(te);
 
             Assert.assertEquals("name", "some/path/GovCanada.gif", c1.name);
             Assert.assertEquals("name", "another/path/SymbolCanada.gif", c2.name);
+
+            HttpGet get1 = new HttpGet(url1, true);
+            get1.prepare();
+            Assert.assertArrayEquals(c1.content, getUrlPayload(get1));
+
+            HttpGet get2 = new HttpGet(url2, true);
+            get2.prepare();
+            Assert.assertArrayEquals(c2.content, getUrlPayload(get2));
 
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
@@ -143,20 +152,34 @@ public class TarWriterTest {
 
     class Content {
         String name;
-        String content;
+        byte[] content;
     }
 
-    private Content getEntry(TarArchiveInputStream tar) throws IOException {
+    private Content getEntry(ZipArchiveInputStream zip) throws IOException {
         Content ret = new Content();
         
-        TarArchiveEntry entry = tar.getNextTarEntry();
+        ZipArchiveEntry entry = zip.getNextZipEntry();
         ret.name = entry.getName();
-        
-        byte[] bytes = new byte[(int)entry.getSize()];
-        int n = tar.read(bytes);
-        Assert.assertEquals("bytes in " + ret.name, entry.getSize(), n);
-        
-        ret.content = new String(bytes, "UTF-8");
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        byte[] buffer = new byte[2048];
+        int read = 0;
+        while ((read = zip.read(buffer)) > 0) {
+            out.write(buffer, 0, read);
+        }
+        ret.content = out.toByteArray();
         return ret;
+    }
+
+    private byte[] getUrlPayload(HttpGet get) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int numRead;
+        byte[] data = new byte[16384];
+
+        while ((numRead = get.getInputStream().read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, numRead);
+        }
+        return buffer.toByteArray();
     }
 }

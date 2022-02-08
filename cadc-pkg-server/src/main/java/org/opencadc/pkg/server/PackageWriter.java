@@ -69,46 +69,89 @@
 
 package org.opencadc.pkg.server;
 
+import ca.nrc.cadc.io.MultiBufferIO;
+import ca.nrc.cadc.net.HttpGet;
+import ca.nrc.cadc.net.ResourceAlreadyExistsException;
+import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.net.TransientException;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.log4j.Logger;
 
-public class TarWriter extends PackageWriter {
-    private static final Logger log = Logger.getLogger(TarWriter.class);
+public abstract class PackageWriter {
+    private static final Logger log = Logger.getLogger(PackageWriter.class);
 
-    public static final String MIME_TYPE = "application/x-tar";
-    public static final String EXTENSION = ".tar";
+    ArchiveOutputStream aout;
 
-    public TarWriter(OutputStream ostream) {
-        super(new TarArchiveOutputStream(ostream));
-        ((TarArchiveOutputStream)super.aout).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-    }
-
-    ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
-        return new DynamicTarEntry(name, size, lastModifiedDate);
+    public PackageWriter(ArchiveOutputStream archiveOutputStream) {
+        this.aout = archiveOutputStream;
     }
 
     /**
-     * Wrapper for TarArchiveEntry class.
-     * isDirectory set to false - PackageWriter only writes files.
+     * Implement this so the correct type of entry is created for writing.
+     * @param name - filename + relative path (needed so directory structure is created)
+     * @param size
+     * @param lastModifiedDate
+     * @return
      */
-    private class DynamicTarEntry extends TarArchiveEntry {
+    abstract ArchiveEntry createEntry(String name, long size, Date lastModifiedDate);
 
-        public DynamicTarEntry(String name, long size, Date lastModifiedDate) {
-            super(name);
-            log.info("TAR ENTRY VALUES:" + name + size);
-            if (lastModifiedDate != null) {
-                super.setModTime(lastModifiedDate);
-            }
-            super.setSize(size);
+    public void close() throws IOException {
+        if (aout != null) {
+            aout.finish();
+            aout.close();
         }
+    }
 
-        @Override
-        public boolean isDirectory() {
-            return false;
+    /**
+     * Write the given packageItem to the ArchiveOutputStream local to this ArchiveWriter instance.
+     * @param packageItem - item to be written to archive file
+     */
+    public void write(PackageItem packageItem) throws IOException, InterruptedException,
+        ResourceNotFoundException, TransientException, ResourceAlreadyExistsException {
+
+        boolean openEntry = false;
+
+        try {
+            // HEAD to get entry metadata
+            // Implementations of PackageRunner that build the PackageItem list
+            // should ensure that files exist before submitting as part of the
+            // Iterator<PackageItem>
+            URL packageURL = packageItem.getURL();
+            HttpGet get = new HttpGet(packageURL, true);
+            get.prepare();
+
+            // get information common to all entries
+            long contentLength = get.getContentLength();
+            Date lastModified = get.getLastModified();
+
+            // create entry (metadata) to be put to archive stream
+            log.debug("next package entry: " + packageItem.getRelativePath() + "," + contentLength + "," + lastModified);
+            ArchiveEntry e = createEntry(packageItem.getRelativePath(), contentLength, lastModified);
+
+            // put archive entry to stream
+            aout.putArchiveEntry(e);
+
+            // headers for entry have been written, body has not,
+            // so consider this entry 'open'
+            openEntry = true;
+
+            // Copy the get InputStream to the package OutputStream
+            // this is 'writing' the content of the file
+            InputStream getIOStream = get.getInputStream();
+            MultiBufferIO multiBufferIO = new MultiBufferIO();
+            multiBufferIO.copy(getIOStream, aout);
+
+        } finally {
+            if (openEntry) {
+                aout.closeArchiveEntry();
+            }
         }
     }
 }

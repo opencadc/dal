@@ -69,39 +69,41 @@
 
 package org.opencadc.pkg.server;
 
+import ca.nrc.cadc.net.HttpGet;
 import java.io.OutputStream;
+import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.log4j.Logger;
 
-public class TarWriter extends PackageWriter {
-    private static final Logger log = Logger.getLogger(TarWriter.class);
+public class ZipWriter extends PackageWriter {
+    private static final Logger log = Logger.getLogger(ZipWriter.class);
 
-    public static final String MIME_TYPE = "application/x-tar";
-    public static final String EXTENSION = ".tar";
+    public static final String MIME_TYPE = "application/zip";
+    public static final String EXTENSION = ".zip";
 
-    public TarWriter(OutputStream ostream) {
-        super(new TarArchiveOutputStream(ostream));
-        ((TarArchiveOutputStream)super.aout).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+    public ZipWriter(OutputStream ostream) {
+        super(new ZipArchiveOutputStream(ostream));
     }
 
     ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
-        return new DynamicTarEntry(name, size, lastModifiedDate);
+        return new DynamicZipEntry(name, size, lastModifiedDate);
     }
 
     /**
-     * Wrapper for TarArchiveEntry class.
+     * Wrapper for ZipArchiveEntry class.
      * isDirectory set to false - PackageWriter only writes files.
      */
-    private class DynamicTarEntry extends TarArchiveEntry {
+    private class DynamicZipEntry extends ZipArchiveEntry {
 
-        public DynamicTarEntry(String name, long size, Date lastModifiedDate) {
+        public DynamicZipEntry(String name, long size, Date lastModifiedDate) {
             super(name);
-            log.info("TAR ENTRY VALUES:" + name + size);
+
+            log.info("ZIP ENTRY VALUES:" + name + size);
             if (lastModifiedDate != null) {
-                super.setModTime(lastModifiedDate);
+                super.setLastModifiedTime(FileTime.fromMillis(lastModifiedDate.getTime()));
             }
             super.setSize(size);
         }
