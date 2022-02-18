@@ -121,12 +121,6 @@ public abstract class PackageRunner implements JobRunner {
      */
     protected abstract Iterator<PackageItem> getItems() throws IOException;
 
-    /**
-     * Get name for package Runner will create.
-     * @return String with package name.
-     */
-    protected abstract String getPackageName();
-
     @Override
     public void setJob(Job job) {
         this.job = job;
