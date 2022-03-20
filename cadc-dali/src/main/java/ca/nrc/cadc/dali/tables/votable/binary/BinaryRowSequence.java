@@ -68,7 +68,6 @@
 
 package ca.nrc.cadc.dali.tables.votable.binary;
 
-
 import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.EOFException;
@@ -86,11 +85,11 @@ import java.util.zip.GZIPInputStream;
  */
 public class BinaryRowSequence {
 
-    private final PushbackInputStream pIn_;
-    private final DataInput dataIn_;
-    private final int ncol_;
-    private final BinaryRowSequence.RowReader rowReader_;
-    private Object[] row_;
+    private final PushbackInputStream pushbackInputStream;
+    private final DataInput dataInput;
+    private final int ncol;
+    private final BinaryRowSequence.RowReader rowReader;
+    private Object[] row;
 
     /**
      * Constructs a new row sequence from a set of decoders and a
@@ -104,61 +103,64 @@ public class BinaryRowSequence {
      */
     public BinaryRowSequence(final Decoder[] decoders, InputStream in, String encoding, boolean isBinary2)
             throws IOException {
-        ncol_ = decoders.length;
+        ncol = decoders.length;
         if ("gzip".equals(encoding)) {
             in = new GZIPInputStream(in);
         } else if ("base64".equals(encoding)) {
             in = new Base64InputStream(in);
         }
-        pIn_ = new PushbackInputStream(in);
-        dataIn_ = new DataInputStream(pIn_);
-        rowReader_ = isBinary2
-                     ? new BinaryRowSequence.RowReader() {
-                            final boolean[] nullFlags = new boolean[ncol_];
+        pushbackInputStream = new PushbackInputStream(in);
+        dataInput = new DataInputStream(pushbackInputStream);
 
-                            public void readRow(Object[] row) throws IOException {
-                                FlagIO.readFlags(dataIn_, nullFlags);
-                                for (int icol = 0; icol < ncol_; icol++) {
-                                    Decoder decoder = decoders[icol];
-                                    final Object cell;
-                                    if (nullFlags[icol]) {
-                                        decoder.skipStream(dataIn_);
-                                        cell = null;
-                                    } else {
-                                        cell = decoder.decodeStream(dataIn_);
-                                    }
-                                    row[icol] = cell;
-                                }
-                            }
+        if (isBinary2) {
+            this.rowReader = new BinaryRowSequence.RowReader() {
+                final boolean[] nullFlags = new boolean[ncol];
+
+                public void readRow(Object[] row) throws IOException {
+                    FlagIO.readFlags(dataInput, nullFlags);
+                    for (int icol = 0; icol < ncol; icol++) {
+                        Decoder decoder = decoders[icol];
+                        final Object cell;
+                        if (nullFlags[icol]) {
+                            decoder.skipStream(dataInput);
+                            cell = null;
+                        } else {
+                            cell = decoder.decodeStream(dataInput);
                         }
-                     : row -> {
-                         for (int icol = 0; icol < ncol_; icol++) {
-                             row[icol] = decoders[icol].decodeStream(dataIn_);
-                         }
-                     };
+                        row[icol] = cell;
+                    }
+                }
+            };
+        } else {
+            this.rowReader = row -> {
+                for (int icol = 0; icol < ncol; icol++) {
+                    row[icol] = decoders[icol].decodeStream(dataInput);
+                }
+            };
+        }
     }
 
     public boolean next() throws IOException {
         final int b;
         try {
-            b = pIn_.read();
+            b = pushbackInputStream.read();
         } catch (EOFException e) {
             return false;
         }
         if (b < 0) {
             return false;
         } else {
-            pIn_.unread(b);
-            Object[] row = new Object[ncol_];
-            rowReader_.readRow(row);
-            row_ = row;
+            pushbackInputStream.unread(b);
+            Object[] row = new Object[ncol];
+            rowReader.readRow(row);
+            this.row = row;
             return true;
         }
     }
 
     public Object[] getRow() {
-        if (row_ != null) {
-            return row_;
+        if (row != null) {
+            return row;
         } else {
             throw new IllegalStateException("No next() yet");
         }

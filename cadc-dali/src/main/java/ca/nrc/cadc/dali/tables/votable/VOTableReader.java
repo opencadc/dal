@@ -118,7 +118,7 @@ public class VOTableReader {
 
     // Prefer BINARY2
     protected static final String[] BINARY_TYPES = new String[] {
-            "BINARY2", "BINARY", "FITS"
+        "BINARY2", "BINARY", "FITS"
     };
 
     protected static final String DEFAULT_STREAM_ENCODING = "base64";

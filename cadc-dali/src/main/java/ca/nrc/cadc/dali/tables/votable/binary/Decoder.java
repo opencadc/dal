@@ -90,7 +90,7 @@ import java.util.logging.Logger;
  */
 public abstract class Decoder {
 
-    static Logger logger = Logger.getLogger("uk.ac.starlink.votable");
+    private static final Logger logger = Logger.getLogger("uk.ac.starlink.votable");
     static final long[] SCALAR_SIZE = new long[0];
 
     protected String blankString;
@@ -114,7 +114,7 @@ public abstract class Decoder {
      * @param txt a string encoding one or many values
      * @return an object containing the decoded values
      */
-    abstract public Object decodeString(String txt);
+    public abstract Object decodeString(String txt);
 
     /**
      * Returns an object array read from the next bit of a given input
@@ -122,7 +122,7 @@ public abstract class Decoder {
      *
      * @param strm a DataInput object from which bytes are to be read
      */
-    abstract public Object decodeStream(DataInput strm) throws IOException;
+    public abstract Object decodeStream(DataInput strm) throws IOException;
 
     /**
      * Skips over the bytes in a stream corresponding to a single cell.
@@ -131,7 +131,7 @@ public abstract class Decoder {
      *
      * @param strm a DataInput object from which bytes are to be read
      */
-    abstract public void skipStream(DataInput strm) throws IOException;
+    public abstract void skipStream(DataInput strm) throws IOException;
 
     /**
      * Indicates whether an element of a given array matches the Null value
@@ -141,9 +141,9 @@ public abstract class Decoder {
      * @param index the index into <tt>array</tt> at which the element to
      *              check is
      * @return <tt>true</tt> iff the <tt>index</tt>'th element of <tt>array</tt>
-     * matches the Null value for this decoder
+     *          matches the Null value for this decoder
      */
-    abstract public boolean isNull(Object array, int index);
+    public abstract boolean isNull(Object array, int index);
 
     /**
      * Does required setup for a decoder given its shape.
@@ -223,8 +223,8 @@ public abstract class Decoder {
      * <tt>unicodeChar</tt> decoders package an array of characters as
      * a String.
      *
-     * @return the shape of objects returned by this decoder.
-     * The last element might be negative to indicate variable size
+     * @return the shape of objects returned by this decoder.  The last element might be negative to indicate variable
+     *          size.
      */
     public long[] getDecodedShape() {
         return arraysize;
@@ -236,8 +236,7 @@ public abstract class Decoder {
      * the Decoder implementation returns -1, but character-type decoders
      * override this.
      *
-     * @return notional size of each element an array of values decoded
-     * by this object, or -1 if unknown
+     * @return notional size of each element an array of values decoded by this object, or -1 if unknown
      */
     public int getElementSize() {
         return -1;
@@ -274,14 +273,13 @@ public abstract class Decoder {
                         ? (int) ((InputStream) strm).skip(jskip)
                         : strm.skipBytes(jskip);
                 hasSkipped = true;
-            }
-
-            /* Annoyingly, skipBytes can throw an "Illegal Seek" exception if
-             * the underlying stream does not support seek (e.g. stdin on
-             * Linux).  This behaviour has not always been documented in
-             * the InputStream javadocs (see Sun bug ID 6222822).
-             * If it looks like we've tripped over this here, log a suggested
-             * explanation. */ catch (IOException e) {
+            } catch (IOException e) {
+                /* Annoyingly, skipBytes can throw an "Illegal Seek" exception if
+                 * the underlying stream does not support seek (e.g. stdin on
+                 * Linux).  This behaviour has not always been documented in
+                 * the InputStream javadocs (see Sun bug ID 6222822).
+                 * If it looks like we've tripped over this here, log a suggested
+                 * explanation. */
                 if (!hasSkipped && !(e instanceof EOFException)) {
                     logger.warning("Input stream does not support seeks??");
                 }
@@ -327,8 +325,7 @@ public abstract class Decoder {
      *                  VOTable "datatype" attribute
      * @param arraysize shape of the array
      * @param blank     a string giving the bad value
-     * @return a Decoder object capable of decoding values according to
-     * its name and shape
+     * @return Decoder object capable of decoding values according to its name and shape
      */
     public static Decoder makeDecoder(String datatype, long[] arraysize,
                                       String blank) {
@@ -405,8 +402,7 @@ public abstract class Decoder {
                 break;
             }
             default:
-                logger.warning("Unknown data type " + datatype +
-                               " - treat as string"
+                logger.warning("Unknown data type " + datatype + " - treat as string"
                                + ", but may cause problems");
                 dec = new UnknownDecoder();
                 break;
@@ -451,20 +447,4 @@ public abstract class Decoder {
             return false;
         }
     }
-
-    static int[] longsToInts(long[] larray) {
-        int[] iarray = new int[larray.length];
-        for (int i = 0; i < larray.length; i++) {
-            if (larray[i] < Integer.MIN_VALUE ||
-                larray[i] > Integer.MAX_VALUE) {
-                throw new IndexOutOfBoundsException(
-                        "Long value " + larray[i] + " out of integer range");
-            } else {
-                iarray[i] = (int) larray[i];
-            }
-        }
-        return iarray;
-    }
-
-
 }

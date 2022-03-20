@@ -76,7 +76,7 @@ import java.io.InputStream;
 /**
  * Reads in base-64 encoded input and spits out the raw binary decoding.
  *
- * @author  Mozilla project
+ * @author Mozilla project
  */
 public class Base64InputStream extends FilterInputStream {
 
@@ -90,17 +90,17 @@ public class Base64InputStream extends FilterInputStream {
     // one-time initialization of decoding table
     static {
         int i;
-        for( i=0; i < 256; ++i) {
+        for (i = 0; i < 256; ++i) {
             table[i] = -1;
         }
         int c;
-        for( c = 'A', i=0; c <= 'Z'; ++c, ++i) {
+        for (c = 'A', i = 0; c <= 'Z'; ++c, ++i) {
             table[c] = i;
         }
-        for( c = 'a'; c <= 'z'; ++c, ++i) {
+        for (c = 'a'; c <= 'z'; ++c, ++i) {
             table[c] = i;
         }
-        for( c='0'; c <= '9'; ++c, ++i) {
+        for (c = '0'; c <= '9'; ++c, ++i) {
             table[c] = i;
         }
         table['+'] = 62;
@@ -110,14 +110,16 @@ public class Base64InputStream extends FilterInputStream {
     // prev is the previous significant character read from the in stream.
     // Significant characters are those that are part of the encoded data,
     // as opposed to whitespace.
-    private int prev, savedPrev;
+    private int prev;
+    private int savedPrev;
 
     // state is the current state of our state machine. The states are 1-4,
     // indicating which character of the current 4-character block we
     // are looking for. After state 4 we wrap back to state 1. The state
     // is not advanced when we read an insignificant character (such as
     // whitespace).
-    private int state = 1, savedState;
+    private int state = 1;
+    private int savedState;
 
     public Base64InputStream(InputStream in) {
         super(in);
@@ -125,7 +127,7 @@ public class Base64InputStream extends FilterInputStream {
 
     public long skip(long n) throws IOException {
         long count = 0;
-        while( (count < n) && (read() != -1) ) {
+        while ((count < n) && (read() != -1)) {
             ++count;
         }
         return count;
@@ -135,68 +137,69 @@ public class Base64InputStream extends FilterInputStream {
      * param block Whether or not to block waiting for input.
      */
     private int read(boolean block) throws IOException {
-        int cur, ret=0;
+        int cur = 0;
+        int ret = 0;
         boolean done = false;
-        while(!done) {
-            if( in.available() < 1 && !block) {
+        while (!done) {
+            if (in.available() < 1 && !block) {
                 return WOULD_BLOCK;
             }
             cur = in.read();
-            switch(state) {
+            switch (state) {
                 case 1:
-                    if( cur == -1 ) {
+                    if (cur == -1) {
                         // end of file
                         return -1;
                     }
-                    if( cur == '=' ) {
+                    if (cur == '=') {
                         throw new IOException("Invalid pad character");
                     }
-                    if( table[cur] != -1 ) {
+                    if (table[cur] != -1) {
                         prev = cur;
                         state = 2;
                     }
                     break;
                 case 2:
-                    if( cur == -1 ) {
+                    if (cur == -1) {
                         throw new EOFException("Unexpected end-of-file");
                     }
-                    if( cur == '=' ) {
+                    if (cur == '=') {
                         throw new IOException("Invalid pad character");
                     }
-                    if( table[cur] != -1 ) {
-                        ret = (table[prev]<<2) | ((table[cur]&0x30)>>4);
+                    if (table[cur] != -1) {
+                        ret = (table[prev] << 2) | ((table[cur] & 0x30) >> 4);
                         prev = cur;
                         state = 3;
                         done = true;
                     }
                     break;
                 case 3:
-                    if( cur == -1 ) {
+                    if (cur == -1) {
                         throw new EOFException("Unexpected end-of-file");
                     }
-                    if( cur == '=' ) {
+                    if (cur == '=') {
                         // pad character
                         state = 4;
                         return -1;
                     }
-                    if( table[cur] != -1 ) {
-                        ret = ((table[prev]&0x0f)<<4) | ((table[cur]&0x3c)>>2);
+                    if (table[cur] != -1) {
+                        ret = ((table[prev] & 0x0f) << 4) | ((table[cur] & 0x3c) >> 2);
                         prev = cur;
                         state = 4;
                         done = true;
                     }
                     break;
                 case 4:
-                    if( cur == -1 ) {
+                    if (cur == -1) {
                         throw new EOFException("Unexpected end-of-file");
                     }
-                    if( cur == '=' ) {
+                    if (cur == '=') {
                         // pad character
                         state = 1;
                         return -1;
                     }
-                    if( table[cur] != -1 ) {
-                        ret = ((table[prev]&0x03)<<6) | table[cur];
+                    if (table[cur] != -1) {
+                        ret = ((table[prev] & 0x03) << 6) | table[cur];
                         state = 1;
                         done = true;
                     }
@@ -216,29 +219,29 @@ public class Base64InputStream extends FilterInputStream {
     public int read(byte[] b, int off, int len) throws IOException {
         int count = 0;
 
-        if( len < 0 ) {
+        if (len < 0) {
             throw new IndexOutOfBoundsException("len is negative");
         }
-        if( off < 0 ) {
+        if (off < 0) {
             throw new IndexOutOfBoundsException("off is negative");
         }
 
-        while( count < len ) {
-            int cur = read(count==0);
-            if( cur == -1 ) {
+        while (count < len) {
+            int cur = read(count == 0);
+            if (cur == -1) {
                 // end-of-file
-                if( count == 0 ) {
+                if (count == 0) {
                     return -1;
                 } else {
                     return count;
                 }
             }
-            if( cur == WOULD_BLOCK ) {
-                assert count>0;
+            if (cur == WOULD_BLOCK) {
+                assert count > 0;
                 return count;
             }
             assert cur >= 0 && cur <= 255;
-            b[off+(count++)] = (byte) cur;
+            b[off + (count++)] = (byte) cur;
         }
         return count;
     }
@@ -268,7 +271,6 @@ public class Base64InputStream extends FilterInputStream {
         prev = savedPrev;
         state = savedState;
     }
-
 }
 
 

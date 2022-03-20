@@ -108,6 +108,7 @@ class BooleanDecoder extends NumericDecoder {
                 case '0':
                     flag = Boolean.FALSE;
                     break;
+                default:
             }
         }
         ((boolean[]) array)[index] = flag == Boolean.TRUE;
@@ -167,8 +168,7 @@ class BooleanDecoder extends NumericDecoder {
 
             @Override
             public Object decodeStream(DataInput strm) throws IOException {
-                return decodeChar((char)
-                                          ((char) 0x00ff & (char) strm.readByte()));
+                return decodeChar((char) ((char) 0x00ff & (char) strm.readByte()));
             }
         };
     }

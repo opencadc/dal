@@ -94,7 +94,7 @@ abstract class CharDecoders {
      * as per a given dimensions array.
      *
      * @param arraysize array representing value dimensions - last element
-     *                   may be -1 to indicate unknown
+     *                  may be -1 to indicate unknown
      * @return decoder for <tt>arraysize</tt>-sized array of <tt>char</tt>s
      */
     public static Decoder makeCharDecoder(long[] arraysize) {
@@ -117,7 +117,7 @@ abstract class CharDecoders {
      * as per a given dimensions array.
      *
      * @param arraysize array representing value dimensions - last element
-     *                   may be -1 to indicate unknown
+     *                  may be -1 to indicate unknown
      * @return decoder for <tt>arraysize</tt>-sized array of
      * <tt>unicodeChar</tt>s
      */
@@ -172,36 +172,28 @@ abstract class CharDecoders {
         /* Single character decoder. */
         if (ndim == 0 || ndim == 1 && arraysize[0] == 1) {
             return new CharDecoders.ScalarCharDecoder(cread);
-        }
-
-        /* If we have an assumed arraysize (non-strict VOTable parsing)
-         * behave as if it's a variable-length array, except in the case
-         * where we're decoding from a stream.  Attempting that would
-         * probably be disastrous, since it would likely attempt to read
-         * a character array a random number of bytes long, and fail wth
-         * an OutOfMemoryError. */
-        else if (ndim == 1 &&
-                 arraysize[0] == CharDecoders.ASSUMED_ARRAYSIZE) {
+        } else if (ndim == 1 && arraysize[0] == CharDecoders.ASSUMED_ARRAYSIZE) {
+            /* If we have an assumed arraysize (non-strict VOTable parsing)
+             * behave as if it's a variable-length array, except in the case
+             * where we're decoding from a stream.  Attempting that would
+             * probably be disastrous, since it would likely attempt to read
+             * a character array a random number of bytes long, and fail wth
+             * an OutOfMemoryError. */
             return new CharDecoders.ScalarStringDecoder(arraysize, cread) {
                 public Object decodeStream(DataInput strm) {
-                    throw new RuntimeException(
-                            "Refuse to decode assumed char arraysize - try -D" +
-                            CharDecoders.STRICT_PROPERTY + "=true");
+                    throw new RuntimeException("Refuse to decode assumed char arraysize - try -D"
+                                               + CharDecoders.STRICT_PROPERTY + "=true");
                 }
 
                 public void skipStream(DataInput strm) {
                     decodeStream(strm);
                 }
             };
-        }
-
-        /* Character vector (string) decoder. */
-        else if (ndim == 1) {
+        } else if (ndim == 1) {
+            /* Character vector (string) decoder. */
             return new CharDecoders.ScalarStringDecoder(arraysize, cread);
-        }
-
-        /* String array decoder. */
-        else {
+        } else {
+            /* String array decoder. */
             return new CharDecoders.StringDecoder(arraysize, cread);
         }
     }

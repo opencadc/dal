@@ -68,14 +68,13 @@
 
 package ca.nrc.cadc.dali.tables.votable.binary;
 
-
 import java.io.DataInput;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
 abstract class NumericDecoder extends Decoder {
 
-    private final int size1_;
+    private final int size1;
 
     /**
      * Does required setup for a NumericDecoder.
@@ -90,7 +89,7 @@ abstract class NumericDecoder extends Decoder {
      */
     NumericDecoder(Class<?> clazz, long[] arraysize, int size1) {
         super(clazz, arraysize);
-        size1_ = size1;
+        this.size1 = size1;
     }
 
     /**
@@ -126,7 +125,7 @@ abstract class NumericDecoder extends Decoder {
      *
      * @param array array returned by a previous call to getEmptyArray
      * @param index the element of this array to store the result in
-     * @param strm   the stream to read from
+     * @param strm  the stream to read from
      * @throws IOException if there was a read error
      */
     abstract void decodeStream1(Object array, int index, DataInput strm)
@@ -181,7 +180,7 @@ abstract class NumericDecoder extends Decoder {
 
     public void skipStream(DataInput strm) throws IOException {
         int num = getNumItems(strm);
-        skipBytes(strm, (long) num * size1_);
+        skipBytes(strm, (long) num * size1);
     }
 
     /**
@@ -220,8 +219,7 @@ abstract class NumericDecoder extends Decoder {
             pos++;
         }
         if (leng - pos > 1) {
-            if (txt.charAt(pos + 1) == 'x' &&
-                txt.charAt(pos) == '0') {
+            if (txt.charAt(pos + 1) == 'x' && txt.charAt(pos) == '0') {
                 return Short.parseShort(txt.substring(pos + 2), 16);
             }
         }
@@ -242,8 +240,7 @@ abstract class NumericDecoder extends Decoder {
             pos++;
         }
         if (leng - pos > 1) {
-            if (txt.charAt(pos + 1) == 'x' &&
-                txt.charAt(pos) == '0') {
+            if (txt.charAt(pos + 1) == 'x' && txt.charAt(pos) == '0') {
                 return Integer.parseInt(txt.substring(pos + 2), 16);
             }
         }
@@ -264,8 +261,7 @@ abstract class NumericDecoder extends Decoder {
             pos++;
         }
         if (leng - pos > 1) {
-            if (txt.charAt(pos + 1) == 'x' &&
-                txt.charAt(pos) == '0') {
+            if (txt.charAt(pos + 1) == 'x' && txt.charAt(pos) == '0') {
                 return Long.parseLong(txt.substring(pos + 2), 16);
             }
         }
@@ -288,8 +284,7 @@ abstract class NumericDecoder extends Decoder {
         if (leng - pos == 0) {
             return Float.NaN;
         } else if (leng - pos > 1) {
-            if (txt.charAt(pos + 1) == 'I' &&
-                txt.indexOf("Inf") == 1) {
+            if (txt.charAt(pos + 1) == 'I' && txt.indexOf("Inf") == 1) {
                 return txt.charAt(pos) == '-' ? Float.NEGATIVE_INFINITY
                                               : Float.POSITIVE_INFINITY;
             }
@@ -313,8 +308,7 @@ abstract class NumericDecoder extends Decoder {
         if (leng - pos == 0) {
             return Double.NaN;
         } else if (leng - pos > 1) {
-            if (txt.charAt(pos + 1) == 'I' &&
-                txt.indexOf("Inf") == 1) {
+            if (txt.charAt(pos + 1) == 'I' && txt.indexOf("Inf") == 1) {
                 return txt.charAt(pos) == '-' ? Double.NEGATIVE_INFINITY
                                               : Double.POSITIVE_INFINITY;
             }

@@ -68,12 +68,11 @@
 
 package ca.nrc.cadc.dali.tables;
 
+import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.binary.BinaryRowSequence;
 import ca.nrc.cadc.dali.tables.votable.binary.Decoder;
-import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.util.StringUtil;
-import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -83,6 +82,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+
+import org.apache.log4j.Logger;
 
 
 /**
@@ -160,7 +161,7 @@ public class BinaryTableData implements TableData {
          * (In other words, returns {@code true} if {@link #next} would
          * return an element rather than throwing an exception.)
          *
-         * The rowSequence.next() method will always try to advance, even if getRow() was not called
+         * <p>The rowSequence.next() method will always try to advance, even if getRow() was not called</p>
          *
          * @return {@code true} if the iteration has more elements
          */
