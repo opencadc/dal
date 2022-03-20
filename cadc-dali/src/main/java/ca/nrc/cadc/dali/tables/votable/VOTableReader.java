@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import ca.nrc.cadc.dali.tables.BinaryTableData;
 import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.util.Format;
@@ -79,12 +80,14 @@ import ca.nrc.cadc.dali.util.ShortFormat;
 import ca.nrc.cadc.util.StringUtil;
 import ca.nrc.cadc.xml.XmlUtil;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -112,7 +115,14 @@ public class VOTableReader {
     protected static final String VOTABLE_12_SCHEMA = "VOTable-v1.2.xsd";
     protected static final String VOTABLE_13_SCHEMA = "VOTable-v1.3.xsd";
     protected static final String VOTABLE_14_SCHEMA = "VOTable-v1.4.xsd";
-    
+
+    // Prefer BINARY2
+    protected static final String[] BINARY_TYPES = new String[] {
+            "BINARY2", "BINARY", "FITS"
+    };
+
+    protected static final String DEFAULT_STREAM_ENCODING = "base64";
+
     private static final String votable11SchemaUrl;
     private static final String votable12SchemaUrl;
     private static final String votable13SchemaUrl;
@@ -129,7 +139,7 @@ public class VOTableReader {
 
         votable13SchemaUrl = getSchemaURL(VOTABLE_13_SCHEMA);
         log.debug("votable13SchemaUrl: " + votable13SchemaUrl);
-        
+
         votable14SchemaUrl = getSchemaURL(VOTABLE_14_SCHEMA);
         log.debug("votable14SchemaUrl: " + votable14SchemaUrl);
     }
@@ -141,7 +151,7 @@ public class VOTableReader {
         }
         return url.toString();
     }
-    
+
     private SAXBuilder docBuilder;
 
     /**
@@ -307,11 +317,53 @@ public class VOTableReader {
                 if (data != null) {
                     // TABLEDATA element.
                     Element tableData = data.getChild("TABLEDATA", namespace);
-                    vot.setTableData(getTableData(tableData, namespace, vot.getFields()));
+
+                    if (tableData != null) {
+                        vot.setTableData(getTableData(tableData, namespace, vot.getFields()));
+                    } else {
+                        final Element binaryData = getBinaryData(data, namespace);
+                        if (binaryData == null) {
+                            throw new UnsupportedOperationException("Unknown DATA");
+                        } else {
+                            final Element streamData = binaryData.getChild("STREAM", namespace);
+                            if (streamData == null) {
+                                vot.setTableData(new ListTableData());
+                            } else {
+                                // Default to base64 encoding
+                                // TODO: check for href in which case encoding may be irrelevant?
+                                final String encoding =
+                                        streamData.getAttributeValue("encoding",
+                                                                     VOTableReader.DEFAULT_STREAM_ENCODING);
+                                vot.setTableData(new BinaryTableData(vot.getFields(),
+                                                                     new ByteArrayInputStream(
+                                                                             streamData.getText().getBytes(
+                                                                                     StandardCharsets.UTF_8)),
+                                                                     encoding,
+                                                                     binaryData.getName().equals("BINARY2")));
+                            }
+                        }
+                    }
                 }
             }
         }
         return votable;
+    }
+
+    /**
+     * Check for a BINARY2, BINARY, or FITS stream.
+     * @param dataElement   The parent DATA element.
+     * @param namespace     The Namespace attached.
+     * @return  The binary element that will contain a STREAM child.  Null if none exists.
+     */
+    Element getBinaryData(final Element dataElement, final Namespace namespace) {
+        for (final String nextTagName : VOTableReader.BINARY_TYPES) {
+            final Element nextPotentialBinaryElement = dataElement.getChild(nextTagName, namespace);
+            if (nextPotentialBinaryElement != null) {
+                return nextPotentialBinaryElement;
+            }
+        }
+
+        return null;
     }
 
     /**
