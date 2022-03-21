@@ -95,7 +95,7 @@ abstract class CharDecoders {
      *
      * @param arraysize array representing value dimensions - last element
      *                  may be -1 to indicate unknown
-     * @return decoder for <code>arraysize</tt>-sized array of <tt>char</code>s
+     * @return decoder for <code>arraysize</code>-sized array of <code>char</code>s
      */
     public static Decoder makeCharDecoder(long[] arraysize) {
         CharDecoders.CharReader cread = new CharDecoders.CharReader() {
