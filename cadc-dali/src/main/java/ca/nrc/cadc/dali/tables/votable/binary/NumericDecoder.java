@@ -82,7 +82,7 @@ abstract class NumericDecoder extends Decoder {
      * @param arraysize the dimensions of objects with this type -
      *                  the last element of the array may be negative to
      *                  indicate unknown slowest-varying dimension
-     * @param clazz     class to which all return values of <tt>decode*</tt>
+     * @param clazz     class to which all return values of <code>decode*</code>
      *                  methods will belong
      * @param size1     number of bytes that a call to
      *                  <code>decodeStream1</code> will read
@@ -139,7 +139,7 @@ abstract class NumericDecoder extends Decoder {
      *
      * @param array the raw value read
      * @return the value to be returned by the outside world by the
-     * <tt>decode*</tt> methods
+     * <code>decode*</code> methods
      */
     Object packageArray(Object array) {
         return array;
@@ -189,7 +189,7 @@ abstract class NumericDecoder extends Decoder {
      * if it existed in java.
      *
      * @param txt text string representing a single value
-     * @return decoded value of <tt>txt</tt>
+     * @return decoded value of <code>txt</code>
      */
     Object scalarDecodeString(String txt) {
         if (txt == null || txt.length() == 0) {
@@ -206,10 +206,10 @@ abstract class NumericDecoder extends Decoder {
     }
 
     /**
-     * Interprets a string as a <tt>short</tt>.
+     * Interprets a string as a <code>short</code>.
      *
      * @param txt text string
-     * @return numeric value of <tt>txt</tt>
+     * @return numeric value of <code>txt</code>
      * @throws NumberFormatException if the parse fails
      */
     static short parseShort(String txt) {
@@ -227,10 +227,10 @@ abstract class NumericDecoder extends Decoder {
     }
 
     /**
-     * Interprets a string as an <tt>int</tt>.
+     * Interprets a string as an <code>int</code>.
      *
      * @param txt text string
-     * @return numeric value of <tt>txt</tt>
+     * @return numeric value of <code>txt</code>
      * @throws NumberFormatException if the parse fails
      */
     static int parseInt(String txt) {
@@ -248,10 +248,10 @@ abstract class NumericDecoder extends Decoder {
     }
 
     /**
-     * Interprets a string as a <tt>long</tt>.
+     * Interprets a string as a <code>long</code>.
      *
      * @param txt text string
-     * @return numeric value of <tt>txt</tt>
+     * @return numeric value of <code>txt</code>
      * @throws NumberFormatException if the parse fails
      */
     static long parseLong(String txt) {
@@ -269,10 +269,10 @@ abstract class NumericDecoder extends Decoder {
     }
 
     /**
-     * Interprets a string as a <tt>float</tt>.
+     * Interprets a string as a <code>float</code>.
      *
      * @param txt text string
-     * @return numeric value of <tt>txt</tt>
+     * @return numeric value of <code>txt</code>
      * @throws NumberFormatException if the parse fails
      */
     static float parseFloat(String txt) {
@@ -293,10 +293,10 @@ abstract class NumericDecoder extends Decoder {
     }
 
     /**
-     * Interprets a string as a <tt>double</tt>.
+     * Interprets a string as a <code>double</code>.
      *
      * @param txt text string
-     * @return numeric value of <tt>txt</tt>
+     * @return numeric value of <code>txt</code>
      * @throws NumberFormatException if the parse fails
      */
     static double parseDouble(String txt) {

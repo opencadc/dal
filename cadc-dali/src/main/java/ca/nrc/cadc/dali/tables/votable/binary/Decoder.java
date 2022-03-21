@@ -81,10 +81,10 @@ import java.util.logging.Logger;
  * into the objects they represent.  To construct a decoder use the
  * static {@link #makeDecoder} method.
  *
- * <p>The various <tt>decode</tt> methods turn some kind of representation of
+ * <p>The various <code>decode</code> methods turn some kind of representation of
  * the given object into a standard representation.  The standard
  * representation is in accordance with the recommendations made in
- * the the {@link uk.ac.starlink.table} package.
+ * the StarLink <code>uk.ac.starlink.table</code> package.
  *
  * @author Mark Taylor (Starlink)
  */
@@ -138,9 +138,9 @@ public abstract class Decoder {
      * used by this decoder.
      *
      * @param array the array in which the element to check is
-     * @param index the index into <tt>array</tt> at which the element to
+     * @param index the index into <code>array</code> at which the element to
      *              check is
-     * @return <tt>true</tt> iff the <tt>index</tt>'th element of <tt>array</tt>
+     * @return <code>true</code> iff the <code>index</code>'th element of <code>array</code>
      *          matches the Null value for this decoder
      */
     public abstract boolean isNull(Object array, int index);
@@ -149,7 +149,7 @@ public abstract class Decoder {
      * Does required setup for a decoder given its shape.
      *
      * @param clazz     the class to which all objects returned by the
-     *                  <tt>decode*</tt> methods will belong
+     *                  <code>decode*</code> methods will belong
      * @param arraysize the dimensions of objects with this type -
      *                  the last element of the array may be negative to
      *                  indicate unknown slowest-varying dimension
@@ -180,8 +180,8 @@ public abstract class Decoder {
 
     /**
      * Returns the class for objects returned by this decoder.
-     * Objects returned by the <tt>decode*</tt> methods of this decoder
-     * will be instances of the class returned by this method, or <tt>null</tt>.
+     * Objects returned by the <code>decode*</code> methods of this decoder
+     * will be instances of the class returned by this method, or <code>null</code>.
      *
      * @return object class
      */
@@ -217,10 +217,10 @@ public abstract class Decoder {
 
     /**
      * Gets the shape of items returned by this decoder.  By default this
-     * is the same as the <tt>arraysize</tt>, but decoders may
-     * change the shape from that defined by the <tt>arraysize</tt> attribute
-     * of the FIELD element.  In particular, the <tt>char</tt> and
-     * <tt>unicodeChar</tt> decoders package an array of characters as
+     * is the same as the <code>arraysize</code>, but decoders may
+     * change the shape from that defined by the <code>arraysize</code> attribute
+     * of the FIELD element.  In particular, the <code>char</code> and
+     * <code>unicodeChar</code> decoders package an array of characters as
      * a String.
      *
      * @return the shape of objects returned by this decoder.  The last element might be negative to indicate variable
@@ -300,7 +300,7 @@ public abstract class Decoder {
 
     /**
      * Create a decoder given its datatype, shape and blank (bad) value.
-     * The shape is specified by the <tt>arraysize</tt> parameter,
+     * The shape is specified by the <code>arraysize</code> parameter,
      * which gives array dimensions.   The last element of this array
      * may be negative to indicate an unknown last (slowest varying)
      * dimension.
