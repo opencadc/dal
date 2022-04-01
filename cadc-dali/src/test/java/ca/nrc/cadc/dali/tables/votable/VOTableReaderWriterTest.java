@@ -591,7 +591,7 @@ public class VOTableReaderWriterTest {
                         && ("1".equals(arraysize) || !StringUtil.hasText(arraysize))) {
                         final char[] charArray = ((String) formattedValue).toCharArray();
                         if (charArray.length == 1) {
-                            row.set(i, charArray[0]);
+                            row.set(i, Character.toString(charArray[0]));
                         } else if (charArray.length == 0) {
                             row.set(i, null);
                         } else {
