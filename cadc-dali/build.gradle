@@ -23,6 +23,9 @@ dependencies {
     implementation 'log4j:log4j:[1.2,)'
     implementation 'net.sourceforge.javacsv:javacsv:2.0'
 
+    // Added for its Base64InputStream implementation.
+    implementation 'commons-codec:commons-codec:1.15'
+
     implementation 'org.opencadc:cadc-util:[1.3.18,)'
     implementation 'org.opencadc:cadc-uws:[1.0,)'
 

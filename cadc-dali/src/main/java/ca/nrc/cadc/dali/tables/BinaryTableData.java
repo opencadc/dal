@@ -69,8 +69,6 @@
 package ca.nrc.cadc.dali.tables;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import ca.nrc.cadc.dali.tables.votable.binary.BinaryRowSequence;
-import ca.nrc.cadc.dali.tables.votable.binary.Decoder;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.util.StringUtil;
 
@@ -84,6 +82,8 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.apache.log4j.Logger;
+import uk.ac.starlink.votable.BinaryRowSequence;
+import uk.ac.starlink.votable.Decoder;
 
 
 /**
