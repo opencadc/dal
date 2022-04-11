@@ -34,3 +34,14 @@ dependencies {
 }
 
 apply from: '../opencadc.gradle'
+
+// Exclude unmanaged sources from checkstyle and javadoc.
+checkstyleMain
+        .exclude('uk/ac/starlink/table/*.java')
+        .exclude('uk/ac/starlink/util/*.java')
+        .exclude('uk/ac/starlink/votable/*.java')
+
+javadoc
+        .exclude('uk/ac/starlink/table/*.java')
+        .exclude('uk/ac/starlink/util/*.java')
+        .exclude('uk/ac/starlink/votable/*.java')
