@@ -75,6 +75,16 @@ package ca.nrc.cadc.dali.util;
  */
 public class ShortFormat implements Format<Short> {
 
+    private final String nullValue;
+
+    public ShortFormat() {
+        this(null);
+    }
+
+    public ShortFormat(String nullValue) {
+        this.nullValue = nullValue;
+    }
+
     /**
      * Takes the passed in Short and returns the String representation of that Short.
      * If the Short is null an empty String is returned.
@@ -97,6 +107,9 @@ public class ShortFormat implements Format<Short> {
      */
     public Short parse(String s) {
         if (s == null || s.isEmpty()) {
+            return null;
+        }
+        if (this.nullValue != null && this.nullValue.equals(s)) {
             return null;
         }
         return Short.valueOf(s);

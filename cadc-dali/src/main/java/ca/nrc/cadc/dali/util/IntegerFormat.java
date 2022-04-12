@@ -75,6 +75,16 @@ package ca.nrc.cadc.dali.util;
  */
 public class IntegerFormat implements Format<Integer> {
 
+    private final String nullValue;
+
+    public IntegerFormat() {
+        this(null);
+    }
+
+    public IntegerFormat(String nullValue) {
+        this.nullValue = nullValue;
+    }
+
     /**
      * Takes the passed in Integer and returns the String representation of that Integer.
      * If the Integer is null an empty String is returned.
@@ -97,6 +107,9 @@ public class IntegerFormat implements Format<Integer> {
      */
     public Integer parse(String s) {
         if (s == null || s.isEmpty()) {
+            return null;
+        }
+        if (this.nullValue != null && this.nullValue.equals(s)) {
             return null;
         }
         return Integer.valueOf(s);

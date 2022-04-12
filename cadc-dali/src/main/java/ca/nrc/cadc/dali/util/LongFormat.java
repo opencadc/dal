@@ -69,11 +69,22 @@
 
 package ca.nrc.cadc.dali.util;
 
+
 /**
  * Formats a Double into a String.
  *
  */
 public class LongFormat implements Format<Long> {
+
+    private final String nullValue;
+
+    public LongFormat() {
+        this(null);
+    }
+
+    public LongFormat(String nullValue) {
+        this.nullValue = nullValue;
+    }
 
     /**
      * Takes the passed in Long and returns the String representation of that Long.
@@ -97,6 +108,9 @@ public class LongFormat implements Format<Long> {
      */
     public Long parse(String s) {
         if (s == null || s.isEmpty()) {
+            return null;
+        }
+        if (this.nullValue != null && this.nullValue.equals(s)) {
             return null;
         }
         return Long.valueOf(s);
