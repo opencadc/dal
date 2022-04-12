@@ -69,15 +69,11 @@
 
 package ca.nrc.cadc.dali.util;
 
-import org.apache.log4j.Logger;
-
 /**
  * Formats a Integer into a String.
  *
  */
 public class IntegerFormat implements Format<Integer> {
-
-    private static final Logger log = Logger.getLogger(IntegerFormat.class);
 
     private final String nullValue;
 
@@ -113,9 +109,7 @@ public class IntegerFormat implements Format<Integer> {
         if (s == null || s.isEmpty()) {
             return null;
         }
-        log.error("parse: " + s + " nullValue=" + this.nullValue);
         if (this.nullValue != null && this.nullValue.equals(s)) {
-            log.error("return null");
             return null;
         }
         return Integer.valueOf(s);
