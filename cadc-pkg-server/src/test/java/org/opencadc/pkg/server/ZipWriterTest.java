@@ -77,6 +77,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -96,14 +99,18 @@ public class ZipWriterTest {
     }
 
     @Test
-    public void testCreateZip() {
+    public void testCreateZipFile() {
         try {
             // Create PackageItems for testing
-            URL url1 = new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/GovCanada.gif");
+            // Files are in test/resources
+            URL url1 = getClass().getClassLoader().getResource("GovCanada.gif");
+            log.debug("url1: " + url1.toString());
             PackageItem pi1 = new PackageItem(url1, "some/path/GovCanada.gif");
-            URL url2 = new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/SymbolCanada.gif");
+
+            URL url2 = getClass().getClassLoader().getResource("SymbolCanada.gif");
+            log.debug("url2: " + url2.toString());
             PackageItem pi2 = new PackageItem(url2,"another/path/SymbolCanada.gif");
-            
+
             List<PackageItem> packageContents = new ArrayList<PackageItem>();
             packageContents.add(pi1);
             packageContents.add(pi2);
@@ -115,7 +122,7 @@ public class ZipWriterTest {
                 fw.write(pi);
             }
             fw.close();
-            
+
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             PackageWriter bw = new ZipWriter(bos);
             for (PackageItem pi : packageContents) {
@@ -136,19 +143,21 @@ public class ZipWriterTest {
             Assert.assertEquals("name", "some/path/GovCanada.gif", c1.name);
             Assert.assertEquals("name", "another/path/SymbolCanada.gif", c2.name);
 
-            HttpGet get1 = new HttpGet(url1, true);
-            get1.prepare();
-            Assert.assertArrayEquals(c1.content, getUrlPayload(get1));
+            // Get the files from the local file system and compare
+            Path url1Path = Paths.get(url1.getPath());
+            log.debug("url1Path: " + url1Path.toString());
+            Assert.assertArrayEquals(c1.content, Files.readAllBytes(url1Path));
 
-            HttpGet get2 = new HttpGet(url2, true);
-            get2.prepare();
-            Assert.assertArrayEquals(c2.content, getUrlPayload(get2));
+            Path url2Path = Paths.get(url2.getPath());
+            log.debug("url2Path: " + url2Path.toString());
+            Assert.assertArrayEquals(c2.content, Files.readAllBytes(url2Path));
 
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("Unexpected exception: " + unexpected);
         }
     }
+
 
     class Content {
         String name;
@@ -172,14 +181,4 @@ public class ZipWriterTest {
         return ret;
     }
 
-    private byte[] getUrlPayload(HttpGet get) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        int numRead;
-        byte[] data = new byte[16384];
-
-        while ((numRead = get.getInputStream().read(data, 0, data.length)) != -1) {
-            buffer.write(data, 0, numRead);
-        }
-        return buffer.toByteArray();
-    }
 }

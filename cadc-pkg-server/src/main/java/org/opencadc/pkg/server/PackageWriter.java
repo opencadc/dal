@@ -78,7 +78,12 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -88,6 +93,8 @@ public abstract class PackageWriter {
     private static final Logger log = Logger.getLogger(PackageWriter.class);
 
     ArchiveOutputStream aout;
+    URL packageURL;
+    boolean openEntry;
 
     public PackageWriter(ArchiveOutputStream archiveOutputStream) {
         this.aout = archiveOutputStream;
@@ -109,49 +116,118 @@ public abstract class PackageWriter {
         }
     }
 
+
     /**
-     * Write the given packageItem to the ArchiveOutputStream local to this ArchiveWriter instance.
-     * @param packageItem - item to be written to archive file
+     *  Write the given packageItem to the ArchiveOutputStream local to this ArchiveWriter instance.
+     *
+     * @param packageItem - item to be written to archive
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws ResourceNotFoundException
+     * @throws TransientException
+     * @throws ResourceAlreadyExistsException
      */
     public void write(PackageItem packageItem) throws IOException, InterruptedException,
         ResourceNotFoundException, TransientException, ResourceAlreadyExistsException {
 
-        boolean openEntry = false;
+        // openEntry is set to true after an archive entry header
+        // is successfully written, in either writeFileContentEntry
+        // or write HttpContentEntry.  It's so the stream can be closed
+        // correctly in the 'finally'
+        this.openEntry = false;
 
         try {
-            // HEAD to get entry metadata
             // Implementations of PackageRunner that build the PackageItem list
             // should ensure that files exist before submitting as part of the
             // Iterator<PackageItem>
             URL packageURL = packageItem.getURL();
-            HttpGet get = new HttpGet(packageURL, true);
-            get.prepare();
 
-            // get information common to all entries
-            long contentLength = get.getContentLength();
-            Date lastModified = get.getLastModified();
-
-            // create entry (metadata) to be put to archive stream
-            log.debug("next package entry: " + packageItem.getRelativePath() + "," + contentLength + "," + lastModified);
-            ArchiveEntry e = createEntry(packageItem.getRelativePath(), contentLength, lastModified);
-
-            // put archive entry to stream
-            aout.putArchiveEntry(e);
-
-            // headers for entry have been written, body has not,
-            // so consider this entry 'open'
-            openEntry = true;
-
-            // Copy the get InputStream to the package OutputStream
-            // this is 'writing' the content of the file
-            InputStream getIOStream = get.getInputStream();
-            MultiBufferIO multiBufferIO = new MultiBufferIO();
-            multiBufferIO.copy(getIOStream, aout);
+            if (packageURL.getProtocol().equals("file")) {
+                writeFileContentEntry(packageURL, packageItem.getRelativePath());
+            } else {
+                writeHttpContentEntry(packageURL, packageItem.getRelativePath());
+            }
 
         } finally {
             if (openEntry) {
                 aout.closeArchiveEntry();
             }
         }
+    }
+
+
+    /**
+     * Set up header for ArchiveEntry in the current ArchiveOutputStream.
+     * @param relativePath - relative path of item in the package file
+     * @param contentLength - (long) - bytes to be written
+     * @param lastModified - (Date) - last modified date of item
+     * @return
+     * @throws IOException
+     */
+    private boolean setArchiveEntryHeader(String relativePath, long contentLength, Date lastModified)
+        throws IOException {
+
+        // create entry (metadata) to be put to archive stream
+        log.debug("next package entry: " + relativePath + "," + contentLength + "," + lastModified);
+        ArchiveEntry e = createEntry(relativePath, contentLength, lastModified);
+
+        // put archive entry to stream
+        aout.putArchiveEntry(e);
+
+        // headers for entry have been written, body has not,
+        // so consider this entry 'open'
+        return true;
+    }
+
+    /**
+     * Write the content of a file:// URL to the current ArchiveOutputStream
+     * @param fileURL - URL of file item being written to
+     * @param relativePath - relative path of file inside package beingw written.
+     * @throws IOException
+     */
+    private void writeFileContentEntry(URL fileURL, String relativePath) throws IOException {
+        Path filePath = FileSystems.getDefault().getPath(fileURL.getPath());
+        log.debug("filePath from fileURL: " + filePath.toString() + ": " + fileURL.toString());
+
+        long contentLength = Files.size(filePath);
+        FileTime lastMod = (FileTime)Files.getAttribute(filePath, "lastModifiedTime");
+
+        Date lastModified = new Date(lastMod.toMillis());
+
+        this.openEntry = setArchiveEntryHeader(relativePath, contentLength, lastModified);
+
+        // copy the file to archive output stream
+        Files.copy(filePath, aout);
+    }
+
+    /**
+     * Write the content of an https:// URL to the current ArchiveOutputStream
+     * @param httpURL - URL of file item being written to
+     * @param relativePath - relative path of file inside package beingw written.
+     * @throws IOException
+     */
+    private void writeHttpContentEntry(URL httpURL, String relativePath)
+        throws IOException, InterruptedException,
+        ResourceNotFoundException, TransientException, ResourceAlreadyExistsException {
+
+        log.info("httpURL being written to archive: " + httpURL.toString());
+        // HEAD to get entry metadata
+        HttpGet get = new HttpGet(httpURL, true);
+        get.prepare();
+
+        // get information common to all entries
+        long contentLength = get.getContentLength();
+        Date lastModified = get.getLastModified();
+
+        // headers for entry have been written, body has not,
+        // so consider this entry 'open'
+        this.openEntry = setArchiveEntryHeader(relativePath, contentLength, lastModified);
+
+        // Copy the get InputStream to the package OutputStream
+        // this is 'writing' the content of the file into the
+        // package file
+        InputStream getIOStream = get.getInputStream();
+        MultiBufferIO multiBufferIO = new MultiBufferIO();
+        multiBufferIO.copy(getIOStream, aout);
     }
 }

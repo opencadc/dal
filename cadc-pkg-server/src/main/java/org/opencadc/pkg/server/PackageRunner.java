@@ -118,6 +118,7 @@ public abstract class PackageRunner implements JobRunner {
      * Build an Iterator of PackageItem. Use the list of files provided
      * in the Job instance (generated in the base JobRunner class.)
      * @return PackageItem Iterator instance - populated with references to the files in Job provided.
+     * @throws IOException
      */
     protected abstract Iterator<PackageItem> getItems() throws IOException;
 
