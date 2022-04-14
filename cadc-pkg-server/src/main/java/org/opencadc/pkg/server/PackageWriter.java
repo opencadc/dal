@@ -93,7 +93,6 @@ public abstract class PackageWriter {
     private static final Logger log = Logger.getLogger(PackageWriter.class);
 
     ArchiveOutputStream aout;
-    URL packageURL;
     boolean openEntry;
 
     public PackageWriter(ArchiveOutputStream archiveOutputStream) {
