@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2009.                            (c) 2009.
+ *  (c) 2021.                            (c) 2021.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,57 +62,101 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *  $Revision: 4 $
- *
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.util;
+package org.opencadc.pkg.server;
 
-/**
- * Formats a Integer into a String.
- *
- */
-public class IntegerFormat implements Format<Integer> {
+import ca.nrc.cadc.net.NetUtil;
+import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 
-    private final String nullValue;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
-    public IntegerFormat() {
-        this(null);
+public class TarWriterTest {
+    private static final Logger log = Logger.getLogger(TarWriterTest.class);
+    
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.caom2.pkg", Level.INFO);
     }
 
-    public IntegerFormat(String nullValue) {
-        this.nullValue = nullValue;
-    }
+    @Test
+    public void testCreateTar() {
+        try {
+            // Create PackageItems for testing
+            PackageItem pi1 = new PackageItem(new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/GovCanada.gif"),
+                "some/path/GovCanada.gif");
+            PackageItem pi2 = new PackageItem(new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/SymbolCanada.gif"),
+                "another/path/SymbolCanada.gif");
+            
+            List<PackageItem> packageContents = new ArrayList<PackageItem>();
+            packageContents.add(pi1);
+            packageContents.add(pi2);
 
-    /**
-     * Takes the passed in Integer and returns the String representation of that Integer.
-     * If the Integer is null an empty String is returned.
-     *
-     * @param object Integer to format
-     * @return String representation of the Integer
-     */
-    public String format(Integer object) {
-        if (object == null) {
-            return "";
+            File tmp = File.createTempFile("tartest", ".tar");
+            FileOutputStream fos =  new FileOutputStream(tmp);
+            TarWriter fw = new TarWriter(fos);
+            for (PackageItem pi : packageContents) {
+                fw.write(pi);
+            }
+            fw.close();
+            
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            TarWriter bw = new TarWriter(bos);
+            for (PackageItem pi : packageContents) {
+                bw.write(pi);
+            }
+            bw.close();
+
+            byte[] content = bos.toByteArray();
+            ByteArrayInputStream in = new ByteArrayInputStream(content);
+
+            TarArchiveInputStream tar = new TarArchiveInputStream(in);
+            Content c1 = getEntry(tar);
+            Content c2 = getEntry(tar);
+            
+            ArchiveEntry te = tar.getNextTarEntry();
+            Assert.assertNull(te);
+
+            Assert.assertEquals("name", "some/path/GovCanada.gif", c1.name);
+            Assert.assertEquals("name", "another/path/SymbolCanada.gif", c2.name);
+
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("Unexpected exception: " + unexpected);
         }
-        return object.toString();
     }
 
-    /**
-     * Parses a String to a Integer.
-     *
-     * @param s the String to parse.
-     * @return Integer value of the String.
-     */
-    public Integer parse(String s) {
-        if (s == null || s.isEmpty()) {
-            return null;
-        }
-        if (this.nullValue != null && this.nullValue.equals(s)) {
-            return null;
-        }
-        return Integer.valueOf(s);
+    class Content {
+        String name;
+        String content;
     }
 
+    private Content getEntry(TarArchiveInputStream tar) throws IOException {
+        Content ret = new Content();
+        
+        TarArchiveEntry entry = tar.getNextTarEntry();
+        ret.name = entry.getName();
+        
+        byte[] bytes = new byte[(int)entry.getSize()];
+        int n = tar.read(bytes);
+        Assert.assertEquals("bytes in " + ret.name, entry.getSize(), n);
+        
+        ret.content = new String(bytes, "UTF-8");
+        return ret;
+    }
 }

@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,95 +62,96 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
+*  $Revision: 5 $
 *
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.util;
+package org.opencadc.pkg.server;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-
-import org.apache.log4j.Level;
+import ca.nrc.cadc.io.MultiBufferIO;
+import ca.nrc.cadc.net.HttpGet;
+import ca.nrc.cadc.net.ResourceAlreadyExistsException;
+import ca.nrc.cadc.net.ResourceNotFoundException;
+import ca.nrc.cadc.net.TransientException;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.util.Date;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.log4j.Logger;
-import org.junit.Test;
 
-import ca.nrc.cadc.util.Log4jInit;
+public abstract class PackageWriter {
+    private static final Logger log = Logger.getLogger(PackageWriter.class);
 
-/**
- *
- * @author jburke
- */
-public class LongFormatTest
-{
-    private static final Logger log = Logger.getLogger(LongFormatTest.class);
-    static
-    {
-        Log4jInit.setLevel("ca", Level.INFO);
+    ArchiveOutputStream aout;
+
+    public PackageWriter(ArchiveOutputStream archiveOutputStream) {
+        this.aout = archiveOutputStream;
     }
-
-    public LongFormatTest() { }
 
     /**
-     * Test of format and parse method, of class LongFormat.
+     * Implement this so the correct type of entry is created for writing.
+     * @param name - filename + relative path (needed so directory structure is created)
+     * @param size
+     * @param lastModifiedDate
+     * @return
      */
-    @Test
-    public void testValue()
-    {
-        log.debug("testValue");
-        try
-        {
-            LongFormat format = new LongFormat();
-            Long expected = 12789L;
+    abstract ArchiveEntry createEntry(String name, long size, Date lastModifiedDate);
 
-            String result = format.format(expected);
-            Long actual = format.parse(result);
-
-            assertEquals(expected, actual);
-
-            log.info("testValue passed");
-        }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            fail("unexpected exception: " + unexpected);
+    public void close() throws IOException {
+        if (aout != null) {
+            aout.finish();
+            aout.close();
         }
     }
 
-    @Test
-    public void testNull() throws Exception
-    {
-        log.debug("testNull");
+    /**
+     * Write the given packageItem to the ArchiveOutputStream local to this ArchiveWriter instance.
+     * @param packageItem - item to be written to archive file
+     */
+    public void write(PackageItem packageItem) throws IOException, InterruptedException,
+        ResourceNotFoundException, TransientException, ResourceAlreadyExistsException {
 
-        LongFormat format = new LongFormat();
+        boolean openEntry = false;
 
-        String s = format.format(null);
-        assertEquals("", s);
+        try {
+            // HEAD to get entry metadata
+            // Implementations of PackageRunner that build the PackageItem list
+            // should ensure that files exist before submitting as part of the
+            // Iterator<PackageItem>
+            URL packageURL = packageItem.getURL();
+            HttpGet get = new HttpGet(packageURL, true);
+            get.prepare();
 
-        Long object = format.parse(null);
-        assertNull(object);
+            // get information common to all entries
+            long contentLength = get.getContentLength();
+            Date lastModified = get.getLastModified();
 
-        log.info("testNull passed");
-    }
+            // create entry (metadata) to be put to archive stream
+            log.debug("next package entry: " + packageItem.getRelativePath() + "," + contentLength + "," + lastModified);
+            ArchiveEntry e = createEntry(packageItem.getRelativePath(), contentLength, lastModified);
 
-    @Test
-    public void testNullValue() throws Exception {
-        log.debug("testNullValue");
+            // put archive entry to stream
+            aout.putArchiveEntry(e);
 
-        String nullValue = "-2982734987";
-        LongFormat format = new LongFormat(nullValue);
+            // headers for entry have been written, body has not,
+            // so consider this entry 'open'
+            openEntry = true;
 
-        String result = format.format(123456L);
-        assertEquals("123456", result);
+            // Copy the get InputStream to the package OutputStream
+            // this is 'writing' the content of the file
+            InputStream getIOStream = get.getInputStream();
+            MultiBufferIO multiBufferIO = new MultiBufferIO();
+            multiBufferIO.copy(getIOStream, aout);
 
-        Long actual = format.parse("123456");
-        assertEquals(Long.valueOf(123456L), actual);
-
-        actual = format.parse(nullValue);
-        assertNull(actual);
-
-        log.info("testNullValue passed");
+        } finally {
+            if (openEntry) {
+                aout.closeArchiveEntry();
+            }
+        }
     }
 }

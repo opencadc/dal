@@ -88,14 +88,10 @@ public class DataLink {
      */
     public enum Term { // TODO: re-use the VocabularyTerm code once extracted from caom2
         THIS("#this"),
-
-        @Deprecated
-        DATALINK("#datalink"), // recursive
-
-        ALT("#alt"), // Alternative link
         
         PROGENITOR("#progenitor"),
         DERIVATION("#derivation"),
+        DOCUMENTATION("#documentation"),
         
         AUXILIARY("#auxiliary"),
         WEIGHT("#weight"),
@@ -110,12 +106,18 @@ public class DataLink {
         PREVIEW("#preview"),
         PREVIEW_IMAGE("#preview-image"),
         PREVIEW_PLOT("#preview-plot"),
-        THUMBNAIL("http://www.opencadc.org/caom2#thumbnail"),
+        THUMBNAIL("#thumbnail"),
         
         PROC("#proc"),
         CUTOUT("#cutout"),
-        
-        PKG("http://www.opencadc.org/caom2#pkg");
+
+        /**
+         * @deprecated Use PACKAGE instead
+         */
+        @Deprecated
+        PKG("http://www.opencadc.org/caom2#pkg"),
+
+        PACKAGE("#package");
 
         private final String value;
 

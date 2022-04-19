@@ -120,7 +120,7 @@ public class DataLinkTest {
        
         // OK
         DataLink link = new DataLink(ID, DataLink.Term.THIS);
-        link.addSemantics(DataLink.Term.PKG);
+        link.addSemantics(DataLink.Term.PACKAGE);
         log.info("bare link: " + link);
         
         link.accessURL = new URL("https://www.opencadc.org/files/collection/observation/product/stuff");

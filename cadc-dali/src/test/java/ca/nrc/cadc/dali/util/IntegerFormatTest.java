@@ -131,4 +131,23 @@ public class IntegerFormatTest
         log.info("testNull passed");
     }
 
+    @Test
+    public void testNullValue() throws Exception {
+        log.debug("testNullValue");
+
+        String nullValue = "-32768";
+        IntegerFormat format = new IntegerFormat(nullValue);
+
+        String result = format.format(123456);
+        assertEquals("123456", result);
+
+        Integer actual = format.parse("123456");
+        assertEquals(Integer.valueOf(123456), actual);
+
+        actual = format.parse(nullValue);
+        assertNull(actual);
+
+        log.info("testNullValue passed");
+    }
+
 }

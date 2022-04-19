@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2009.                            (c) 2009.
+ *  (c) 2021.                            (c) 2021.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,57 +62,53 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *  $Revision: 4 $
+ *  $Revision: 5 $
  *
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.util;
+package org.opencadc.pkg.server;
+
+import ca.nrc.cadc.util.StringUtil;
+import java.net.URL;
 
 /**
- * Formats a Integer into a String.
- *
+ * Class describing information needed in order to add a file to a package.
+ * Member variables:
+ * - URL url - used to access the file named in relativePath.
+ * - String relativePath - filename and relative path of file mentioned in URL parameter.
+ * The relative path is important because it can be used to create the file
+ * structure inside a package.
  */
-public class IntegerFormat implements Format<Integer> {
-
-    private final String nullValue;
-
-    public IntegerFormat() {
-        this(null);
-    }
-
-    public IntegerFormat(String nullValue) {
-        this.nullValue = nullValue;
-    }
+public class PackageItem {
+    private final URL url;
+    private final String relativePath;
 
     /**
-     * Takes the passed in Integer and returns the String representation of that Integer.
-     * If the Integer is null an empty String is returned.
-     *
-     * @param object Integer to format
-     * @return String representation of the Integer
+     * Instantiate a PackageItem object.
+     * @param url - URL where a file can be accessed for download.
+     * @param relativePath - Relative path of the file referenced by url parameter.
+     *                     Used to build the correct directory structure in the final package.
      */
-    public String format(Integer object) {
-        if (object == null) {
-            return "";
+    public PackageItem(URL url, String relativePath) {
+        if (url == null) {
+            throw new IllegalArgumentException("parameter url required.");
         }
-        return object.toString();
+
+        if (!StringUtil.hasText(relativePath)) {
+            throw new IllegalArgumentException("parameter relativePath required.");
+        }
+
+        this.url = url;
+        this.relativePath = relativePath;
     }
 
-    /**
-     * Parses a String to a Integer.
-     *
-     * @param s the String to parse.
-     * @return Integer value of the String.
-     */
-    public Integer parse(String s) {
-        if (s == null || s.isEmpty()) {
-            return null;
-        }
-        if (this.nullValue != null && this.nullValue.equals(s)) {
-            return null;
-        }
-        return Integer.valueOf(s);
+
+    public URL getURL() {
+        return url;
     }
 
+    public String getRelativePath() {
+        return relativePath;
+    }
 }

@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2009.                            (c) 2009.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,95 +62,53 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 4 $
+*  $Revision: 5 $
 *
 ************************************************************************
 */
 
-package ca.nrc.cadc.dali.util;
+package org.opencadc.pkg.server;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-
-import org.apache.log4j.Level;
+import java.io.OutputStream;
+import java.util.Date;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.log4j.Logger;
-import org.junit.Test;
 
-import ca.nrc.cadc.util.Log4jInit;
+public class TarWriter extends PackageWriter {
+    private static final Logger log = Logger.getLogger(TarWriter.class);
 
-/**
- *
- * @author jburke
- */
-public class LongFormatTest
-{
-    private static final Logger log = Logger.getLogger(LongFormatTest.class);
-    static
-    {
-        Log4jInit.setLevel("ca", Level.INFO);
+    public static final String MIME_TYPE = "application/x-tar";
+    public static final String EXTENSION = ".tar";
+
+    public TarWriter(OutputStream ostream) {
+        super(new TarArchiveOutputStream(ostream));
+        ((TarArchiveOutputStream)super.aout).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
     }
 
-    public LongFormatTest() { }
+    ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
+        return new DynamicTarEntry(name, size, lastModifiedDate);
+    }
 
     /**
-     * Test of format and parse method, of class LongFormat.
+     * Wrapper for TarArchiveEntry class.
+     * isDirectory set to false - PackageWriter only writes files.
      */
-    @Test
-    public void testValue()
-    {
-        log.debug("testValue");
-        try
-        {
-            LongFormat format = new LongFormat();
-            Long expected = 12789L;
+    private class DynamicTarEntry extends TarArchiveEntry {
 
-            String result = format.format(expected);
-            Long actual = format.parse(result);
-
-            assertEquals(expected, actual);
-
-            log.info("testValue passed");
+        public DynamicTarEntry(String name, long size, Date lastModifiedDate) {
+            super(name);
+            log.info("TAR ENTRY VALUES:" + name + size);
+            if (lastModifiedDate != null) {
+                super.setModTime(lastModifiedDate);
+            }
+            super.setSize(size);
         }
-        catch(Exception unexpected)
-        {
-            log.error("unexpected exception", unexpected);
-            fail("unexpected exception: " + unexpected);
+
+        @Override
+        public boolean isDirectory() {
+            return false;
         }
-    }
-
-    @Test
-    public void testNull() throws Exception
-    {
-        log.debug("testNull");
-
-        LongFormat format = new LongFormat();
-
-        String s = format.format(null);
-        assertEquals("", s);
-
-        Long object = format.parse(null);
-        assertNull(object);
-
-        log.info("testNull passed");
-    }
-
-    @Test
-    public void testNullValue() throws Exception {
-        log.debug("testNullValue");
-
-        String nullValue = "-2982734987";
-        LongFormat format = new LongFormat(nullValue);
-
-        String result = format.format(123456L);
-        assertEquals("123456", result);
-
-        Long actual = format.parse("123456");
-        assertEquals(Long.valueOf(123456L), actual);
-
-        actual = format.parse(nullValue);
-        assertNull(actual);
-
-        log.info("testNullValue passed");
     }
 }

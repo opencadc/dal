@@ -93,6 +93,7 @@ public class VOTableField {
     public String utype;
     public String xtype;
     public String description;
+    public String nullValue;
 
     // TODO: add precision support and use it to configure numeric format objects
     public String id;
