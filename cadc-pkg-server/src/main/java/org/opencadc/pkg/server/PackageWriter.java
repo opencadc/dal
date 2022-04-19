@@ -93,7 +93,6 @@ public abstract class PackageWriter {
     private static final Logger log = Logger.getLogger(PackageWriter.class);
 
     ArchiveOutputStream aout;
-    boolean openEntry;
 
     public PackageWriter(ArchiveOutputStream archiveOutputStream) {
         this.aout = archiveOutputStream;
@@ -129,29 +128,18 @@ public abstract class PackageWriter {
     public void write(PackageItem packageItem) throws IOException, InterruptedException,
         ResourceNotFoundException, TransientException, ResourceAlreadyExistsException {
 
-        // openEntry is set to true after an archive entry header
-        // is successfully written, in either writeFileContentEntry
-        // or write HttpContentEntry.  It's so the stream can be closed
-        // correctly in the 'finally'
-        this.openEntry = false;
+        // Implementations of PackageRunner that build the PackageItem list
+        // should ensure that files exist before submitting as part of the
+        // Iterator<PackageItem>
+        URL packageURL = packageItem.getURL();
 
-        try {
-            // Implementations of PackageRunner that build the PackageItem list
-            // should ensure that files exist before submitting as part of the
-            // Iterator<PackageItem>
-            URL packageURL = packageItem.getURL();
-
-            if (packageURL.getProtocol().equals("file")) {
-                writeFileContentEntry(packageURL, packageItem.getRelativePath());
-            } else {
-                writeHttpContentEntry(packageURL, packageItem.getRelativePath());
-            }
-
-        } finally {
-            if (openEntry) {
-                aout.closeArchiveEntry();
-            }
+        if (packageURL.getProtocol().equals("file")) {
+            writeFileContentEntry(packageURL, packageItem.getRelativePath());
+        } else {
+            writeHttpContentEntry(packageURL, packageItem.getRelativePath());
         }
+
+
     }
 
 
@@ -192,11 +180,21 @@ public abstract class PackageWriter {
         FileTime lastMod = (FileTime)Files.getAttribute(filePath, "lastModifiedTime");
 
         Date lastModified = new Date(lastMod.toMillis());
+        boolean openEntry = false;
 
-        this.openEntry = setArchiveEntryHeader(relativePath, contentLength, lastModified);
+        try {
+            // This gets set to true unless setArchiveEntryHeader throws an error
+            openEntry = setArchiveEntryHeader(relativePath, contentLength, lastModified);
 
-        // copy the file to archive output stream
-        Files.copy(filePath, aout);
+            // copy the file to archive output stream
+            Files.copy(filePath, aout);
+        } finally {
+            if (openEntry) {
+                // header was written but body was not, try to close gracefully
+                aout.closeArchiveEntry();
+            }
+        }
+
     }
 
     /**
@@ -217,16 +215,26 @@ public abstract class PackageWriter {
         // get information common to all entries
         long contentLength = get.getContentLength();
         Date lastModified = get.getLastModified();
+        boolean openEntry = false;
 
-        // headers for entry have been written, body has not,
-        // so consider this entry 'open'
-        this.openEntry = setArchiveEntryHeader(relativePath, contentLength, lastModified);
+        try {
+            // headers for entry have been written, body has not,
+            // so consider this entry 'open'
+            openEntry = setArchiveEntryHeader(relativePath, contentLength, lastModified);
 
-        // Copy the get InputStream to the package OutputStream
-        // this is 'writing' the content of the file into the
-        // package file
-        InputStream getIOStream = get.getInputStream();
-        MultiBufferIO multiBufferIO = new MultiBufferIO();
-        multiBufferIO.copy(getIOStream, aout);
+            // copy the file to archive output stream
+            // copy the get InputStream to the package OutputStream
+            // this is 'writing' the content of the file into the
+            // package file
+            InputStream getIOStream = get.getInputStream();
+            MultiBufferIO multiBufferIO = new MultiBufferIO();
+            multiBufferIO.copy(getIOStream, aout);
+
+        } finally {
+            if (openEntry) {
+                // header was written but body was not, try to close gracefully
+                aout.closeArchiveEntry();
+            }
+        }
     }
 }
