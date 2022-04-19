@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -76,17 +76,15 @@ import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.sia2.SiaRunner;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.PropertiesReader;
+import ca.nrc.cadc.vosi.Availability;
 import ca.nrc.cadc.vosi.AvailabilityPlugin;
-import ca.nrc.cadc.vosi.AvailabilityStatus;
 import ca.nrc.cadc.vosi.avail.CheckException;
 import ca.nrc.cadc.vosi.avail.CheckWebService;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Properties;
-
 import org.apache.log4j.Logger;
 
 
@@ -121,14 +119,14 @@ public class ServiceAvailability implements AvailabilityPlugin {
         return true;
     }
 
-    public AvailabilityStatus getStatus() {
+    public Availability getStatus() {
         boolean isGood = true;
         String note = "service is accepting queries";
 
         try {
             // Test the TAP service
             URL tapBaseURL = ServiceAvailability.getTapBaseURL();
-            String availURL = tapBaseURL.toExternalForm() + "/availability";
+            URL availURL = new URL(tapBaseURL.toExternalForm() + "/availability");
             CheckWebService checkWebService = new CheckWebService(availURL);
             checkWebService.check();
 
@@ -142,7 +140,7 @@ public class ServiceAvailability implements AvailabilityPlugin {
             isGood = false;
             note = String.format("%s test failed, reason: %s", applicationName, t);
         }
-        return new AvailabilityStatus(isGood, null, null, null, note);
+        return new Availability(isGood, note);
     }
 
     public void setState(String string) {
