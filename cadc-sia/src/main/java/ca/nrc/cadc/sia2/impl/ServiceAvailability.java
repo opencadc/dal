@@ -77,7 +77,7 @@ import ca.nrc.cadc.sia2.SiaRunner;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.vosi.AvailabilityPlugin;
-import ca.nrc.cadc.vosi.AvailabilityStatus;
+import ca.nrc.cadc.vosi.Availability;
 import ca.nrc.cadc.vosi.avail.CheckException;
 import ca.nrc.cadc.vosi.avail.CheckWebService;
 
@@ -121,14 +121,15 @@ public class ServiceAvailability implements AvailabilityPlugin {
         return true;
     }
 
-    public AvailabilityStatus getStatus() {
+    public Availability getStatus() {
         boolean isGood = true;
         String note = "service is accepting queries";
 
         try {
             // Test the TAP service
             URL tapBaseURL = ServiceAvailability.getTapBaseURL();
-            String availURL = tapBaseURL.toExternalForm() + "/availability";
+            String availURLstr = tapBaseURL.toExternalForm() + "/availability";
+            URL availURL = new URL(availURLstr);
             CheckWebService checkWebService = new CheckWebService(availURL);
             checkWebService.check();
 
@@ -142,7 +143,7 @@ public class ServiceAvailability implements AvailabilityPlugin {
             isGood = false;
             note = String.format("%s test failed, reason: %s", applicationName, t);
         }
-        return new AvailabilityStatus(isGood, null, null, null, note);
+        return new Availability(isGood, note);
     }
 
     public void setState(String string) {
