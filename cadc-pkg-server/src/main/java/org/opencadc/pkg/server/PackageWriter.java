@@ -177,7 +177,7 @@ public abstract class PackageWriter {
         log.debug("filePath from fileURL: " + filePath.toString() + ": " + fileURL.toString());
 
         long contentLength = Files.size(filePath);
-        FileTime lastMod = (FileTime)Files.getAttribute(filePath, "lastModifiedTime");
+        FileTime lastMod = Files.getLastModifiedTime(filePath);
 
         Date lastModified = new Date(lastMod.toMillis());
         boolean openEntry = false;
