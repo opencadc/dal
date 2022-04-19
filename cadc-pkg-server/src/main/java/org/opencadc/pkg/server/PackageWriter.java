@@ -151,7 +151,7 @@ public abstract class PackageWriter {
      * @return
      * @throws IOException
      */
-    private boolean setArchiveEntryHeader(String relativePath, long contentLength, Date lastModified)
+    private void setArchiveEntryHeader(String relativePath, long contentLength, Date lastModified)
         throws IOException {
 
         // create entry (metadata) to be put to archive stream
@@ -160,10 +160,6 @@ public abstract class PackageWriter {
 
         // put archive entry to stream
         aout.putArchiveEntry(e);
-
-        // headers for entry have been written, body has not,
-        // so consider this entry 'open'
-        return true;
     }
 
     /**
@@ -184,7 +180,9 @@ public abstract class PackageWriter {
 
         try {
             // This gets set to true unless setArchiveEntryHeader throws an error
-            openEntry = setArchiveEntryHeader(relativePath, contentLength, lastModified);
+            setArchiveEntryHeader(relativePath, contentLength, lastModified);
+
+            openEntry = true;
 
             // copy the file to archive output stream
             Files.copy(filePath, aout);
@@ -220,7 +218,9 @@ public abstract class PackageWriter {
         try {
             // headers for entry have been written, body has not,
             // so consider this entry 'open'
-            openEntry = setArchiveEntryHeader(relativePath, contentLength, lastModified);
+            setArchiveEntryHeader(relativePath, contentLength, lastModified);
+
+            openEntry = true;
 
             // copy the file to archive output stream
             // copy the get InputStream to the package OutputStream
