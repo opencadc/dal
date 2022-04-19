@@ -76,17 +76,15 @@ import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.sia2.SiaRunner;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.PropertiesReader;
-import ca.nrc.cadc.vosi.AvailabilityPlugin;
 import ca.nrc.cadc.vosi.Availability;
+import ca.nrc.cadc.vosi.AvailabilityPlugin;
 import ca.nrc.cadc.vosi.avail.CheckException;
 import ca.nrc.cadc.vosi.avail.CheckWebService;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Properties;
-
 import org.apache.log4j.Logger;
 
 
