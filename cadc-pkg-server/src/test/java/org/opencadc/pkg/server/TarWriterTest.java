@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2021.                            (c) 2021.
+ *  (c) 2022.                            (c) 2022.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -76,6 +76,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -97,12 +100,17 @@ public class TarWriterTest {
     @Test
     public void testCreateTar() {
         try {
+
             // Create PackageItems for testing
-            PackageItem pi1 = new PackageItem(new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/GovCanada.gif"),
-                "some/path/GovCanada.gif");
-            PackageItem pi2 = new PackageItem(new URL("https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/SymbolCanada.gif"),
-                "another/path/SymbolCanada.gif");
-            
+            // Files are in test/resources
+            URL url1 = getClass().getClassLoader().getResource("GovCanada.gif");
+            log.debug("url1: " + url1.toString());
+            PackageItem pi1 = new PackageItem(url1, "some/path/GovCanada.gif");
+
+            URL url2 = getClass().getClassLoader().getResource("SymbolCanada.gif");
+            log.debug("url2: " + url2.toString());
+            PackageItem pi2 = new PackageItem(url2,"another/path/SymbolCanada.gif");
+
             List<PackageItem> packageContents = new ArrayList<PackageItem>();
             packageContents.add(pi1);
             packageContents.add(pi2);
@@ -135,6 +143,15 @@ public class TarWriterTest {
             Assert.assertEquals("name", "some/path/GovCanada.gif", c1.name);
             Assert.assertEquals("name", "another/path/SymbolCanada.gif", c2.name);
 
+            // Get the files from the local file system and compare
+            Path url1Path = Paths.get(url1.getPath());
+            log.debug("url1Path: " + url1Path.toString());
+            Assert.assertArrayEquals(c1.content, Files.readAllBytes(url1Path));
+
+            Path url2Path = Paths.get(url2.getPath());
+            log.debug("url2Path: " + url2Path.toString());
+            Assert.assertArrayEquals(c2.content, Files.readAllBytes(url2Path));
+
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("Unexpected exception: " + unexpected);
@@ -143,7 +160,7 @@ public class TarWriterTest {
 
     class Content {
         String name;
-        String content;
+        byte[] content;
     }
 
     private Content getEntry(TarArchiveInputStream tar) throws IOException {
@@ -153,10 +170,14 @@ public class TarWriterTest {
         ret.name = entry.getName();
         
         byte[] bytes = new byte[(int)entry.getSize()];
-        int n = tar.read(bytes);
-        Assert.assertEquals("bytes in " + ret.name, entry.getSize(), n);
-        
-        ret.content = new String(bytes, "UTF-8");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        int read = 0;
+        while ((read = tar.read(bytes)) > 0) {
+            out.write(bytes, 0, read);
+        }
+        ret.content = out.toByteArray();
+
         return ret;
     }
 }
