@@ -38,8 +38,15 @@ jobs:
     - name: build and test cadc-soda-server
       run: cd cadc-soda-server && ../gradlew --info clean build javadoc checkstyleMain install
 
-    - name: install wcslib
-      run: sudo apt-get install -y wcslib
+    - name: install wcslib-5.15 from source (ugh)
+      run: |
+        sudo apt-get update && sudo apt-get install -y curl gcc make \
+        && curl -Lv -o /tmp/wcslib.tar.bz2 https://launchpad.net/ubuntu/+archive/primary/+sourcefiles/wcslib/5.15-1/wcslib_5.15.orig.tar.bz2 \
+        && cd /tmp/ \
+        && tar jxvf wcslib.tar.bz2 \
+        && cd wcslib-5.15 \
+        && ./configure --prefix=/usr \
+        && make && sudo make install
 
     - name: build and test cadc-data-ops-fits
       run: cd cadc-data-ops-fits && ../gradlew --info clean build javadoc checkstyleMain install
