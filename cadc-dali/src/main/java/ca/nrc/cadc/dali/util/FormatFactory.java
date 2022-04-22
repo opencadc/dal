@@ -116,7 +116,6 @@ public class FormatFactory {
                 }
             } else {
                 ret = new ShortFormat(field.nullValue);
-                log.error("new ShortFormat() nullValue = " + field.nullValue);
             }
         } else if (datatype.equalsIgnoreCase("int")) {
             if (isArray(field)) {
@@ -127,7 +126,6 @@ public class FormatFactory {
                 }
             } else {
                 ret = new IntegerFormat(field.nullValue);
-                log.error("new IntegerFormat() nullValue = " + field.nullValue);
             }
         } else if (datatype.equalsIgnoreCase("long")) {
             if (isArray(field)) {
@@ -138,7 +136,6 @@ public class FormatFactory {
                 }
             } else {
                 ret = new LongFormat(field.nullValue);
-                log.error("new LongFormat() nullValue = " + field.nullValue);
             }
         } else if (datatype.equalsIgnoreCase("unicodeChar")) {
             ret = new StringFormat();
