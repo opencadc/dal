@@ -14,15 +14,13 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '0.3'
+version = '0.3.1'
 
 description = 'OpenCADC DALI PostgreSQL+pgSphere library'
 def git_url = 'https://github.com/opencadc/dal'
 
 dependencies {
-    compile 'log4j:log4j:[1.2,1.3)'
-
-    compile 'org.opencadc:cadc-util:[1.0,)'
+    compile 'org.opencadc:cadc-util:[1.6,)'
     compile 'org.opencadc:cadc-dali:[1.1,)'
     compile 'org.postgresql:postgresql:[42.2.8,)'
 
