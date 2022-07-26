@@ -25,6 +25,9 @@ jobs:
       
     - name: build and test cadc-sia
       run: cd cadc-sia && ../gradlew --info clean build javadoc checkstyleMain install
+
+    - name: build and test cadc-conesearch
+      run: cd cadc-conesearch && ../gradlew --info clean build javadoc checkstyleMain install
       
     - name: build and test cadc-datalink
       run: cd cadc-datalink && ../gradlew --info clean build javadoc checkstyleMain install

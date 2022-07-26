@@ -71,13 +71,14 @@ package org.opencadc.conesearch;
 import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.CommonParamValidator;
 import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /**
@@ -89,7 +90,7 @@ public class TAPQueryGenerator extends CommonParamValidator {
     private static final int MIN_VERB_VALUE = 1;
     private static final int MID_VERB_VALUE = 2;
     private static final int MAX_VERB_VALUE = 3;
-    private final static Logger LOGGER = LogManager.getLogger(TAPQueryGenerator.class);
+    private static final Logger LOGGER = LogManager.getLogger(TAPQueryGenerator.class);
 
     protected final String catalog;
     protected final String lowVerbositySelectList;
@@ -213,7 +214,7 @@ public class TAPQueryGenerator extends CommonParamValidator {
      */
     public String getLowVerbositySelectList() {
         return this.lowVerbositySelectList;
-    };
+    }
 
     /**
      * Obtain a select list for the Medium Verbosity (2), which is the default.

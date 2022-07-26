@@ -74,20 +74,21 @@ import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.util.MultiValuedProperties;
 import ca.nrc.cadc.util.PropertiesReader;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /**
  * Configuration of this web application.
  */
 public class ConeSearchConfig {
-    private final static String CONFIG_FILE_NAME = "cadc-conesearch.properties";
-    private final static Logger LOGGER = LogManager.getLogger(ConeSearchConfig.class);
+    private static final String CONFIG_FILE_NAME = "cadc-conesearch.properties";
+    private static final Logger LOGGER = LogManager.getLogger(ConeSearchConfig.class);
 
     private final MultiValuedProperties properties;
 
