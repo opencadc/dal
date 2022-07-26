@@ -149,6 +149,30 @@ public class ConeSearchConfig {
     }
 
     /**
+     * Obtain the configured select list for VERB=1.
+     * @return  String comma-delimited column names (e.g. col_a, col_b, col_c).
+     */
+    public String getLowVerbositySelectList() {
+        return properties.getFirstPropertyValue(ConfigurationParameterNames.LOW_VERBOSITY_SELECT_LIST.getPropertyKey());
+    }
+
+    /**
+     * Obtain the configured select list for VERB=2.
+     * @return  String comma-delimited column names (e.g. col_a, col_b, col_c).
+     */
+    public String getMidVerbositySelectList() {
+        return properties.getFirstPropertyValue(ConfigurationParameterNames.MID_VERBOSITY_SELECT_LIST.getPropertyKey());
+    }
+
+    /**
+     * Obtain the configured select list for VERB=3.
+     * @return  String comma-delimited column names (e.g. *).
+     */
+    public String getHighVerbositySelectList() {
+        return properties.getFirstPropertyValue(ConfigurationParameterNames.HIGH_VERBOSITY_SELECT_LIST.getPropertyKey());
+    }
+
+    /**
      * Obtain the configured TAP URI.
      * @return      String URI value.  Never null.
      */

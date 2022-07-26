@@ -83,7 +83,7 @@ import java.util.Map;
 /**
  * Class to produce an ADQL query from a set of Parameters
  */
-public abstract class TAPQueryGenerator extends CommonParamValidator {
+public class TAPQueryGenerator extends CommonParamValidator {
     private static final int DEF_MAXREC = 1000;
     private static final int MAX_MAXREC = Integer.MAX_VALUE;
     private static final int MIN_VERB_VALUE = 1;
@@ -92,9 +92,16 @@ public abstract class TAPQueryGenerator extends CommonParamValidator {
     private final static Logger LOGGER = LogManager.getLogger(TAPQueryGenerator.class);
 
     protected final String catalog;
+    protected final String lowVerbositySelectList;
+    protected final String midVerbositySelectList;
+    protected final String highVerbositySelectList;
 
-    public TAPQueryGenerator(final String catalog) {
+    public TAPQueryGenerator(final String catalog, final String lowVerbositySelectList,
+                             final String midVerbositySelectList, final String highVerbositySelectList) {
         this.catalog = catalog;
+        this.lowVerbositySelectList = lowVerbositySelectList;
+        this.midVerbositySelectList = midVerbositySelectList;
+        this.highVerbositySelectList = highVerbositySelectList;
     }
 
     /**
@@ -145,7 +152,7 @@ public abstract class TAPQueryGenerator extends CommonParamValidator {
                + " WHERE 1 = CONTAINS("
                + positionColumnName
                + ", "
-               + "CIRCLE("
+               + "CIRCLE('ICRS', "
                + circle.getCenter().getLongitude()
                + ", "
                + circle.getCenter().getLatitude()
@@ -204,19 +211,25 @@ public abstract class TAPQueryGenerator extends CommonParamValidator {
      * @return  String select columns, or "*", never null.
      *          Example: "ra, dec, footprint"
      */
-    public abstract String getLowVerbositySelectList();
+    public String getLowVerbositySelectList() {
+        return this.lowVerbositySelectList;
+    };
 
     /**
      * Obtain a select list for the Medium Verbosity (2), which is the default.
      * @return  String select columns, or "*", never null.
      *          Example: "obs_id, release_date, ra, dec, footprint"
      */
-    public abstract String getMidVerbositySelectList();
+    public String getMidVerbositySelectList() {
+        return this.midVerbositySelectList;
+    }
 
     /**
      * Obtain a select list for the High Verbosity (3).
      * @return  String select columns, or "*", never null.
      *          Example: "*"
      */
-    public abstract String getHighVerbositySelectList();
+    public String getHighVerbositySelectList() {
+        return this.highVerbositySelectList;
+    }
 }

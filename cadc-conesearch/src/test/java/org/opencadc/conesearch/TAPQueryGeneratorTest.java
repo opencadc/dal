@@ -80,7 +80,8 @@ import java.util.Map;
 public class TAPQueryGeneratorTest {
     @Test
     public void testInvalidJobParameters() {
-        final TAPQueryGenerator testSubject = new TestTAPQueryGenerator("badcat");
+        final TAPQueryGenerator testSubject = new TAPQueryGenerator("badcat", "ra, dec",
+                                                                    "obs_id, release_date, ra, dec", "*");
         final Map<String, List<String>> parameters = new HashMap<>();
 
         try {
@@ -143,7 +144,8 @@ public class TAPQueryGeneratorTest {
 
     @Test
     public void testValidJobParameters() {
-        final TAPQueryGenerator testSubject = new TestTAPQueryGenerator("goodcat");
+        final TAPQueryGenerator testSubject = new TAPQueryGenerator("goodcat", "ra, dec",
+                                                                    "obs_id, release_date, ra, dec", "*");
         final Map<String, List<String>> parameters = new HashMap<>();
         parameters.put("RA", Collections.singletonList("12.3"));
         parameters.put("DEC", Collections.singletonList("45.6"));
@@ -157,7 +159,7 @@ public class TAPQueryGeneratorTest {
         Assert.assertEquals("Wrong langauge", "ADQL", tapQueryParameters1.get("LANG"));
         Assert.assertEquals("Wrong query.",
                             "SELECT obs_id, release_date, ra, dec "
-                            + "FROM goodcat WHERE 1 = CONTAINS(point_col, CIRCLE(12.3, 45.6, 0.7))",
+                            + "FROM goodcat WHERE 1 = CONTAINS(point_col, CIRCLE('ICRS', 12.3, 45.6, 0.7))",
                             tapQueryParameters1.get("QUERY"));
         Assert.assertEquals("Wrong max records", 1000, tapQueryParameters1.get("MAXREC"));
 
@@ -177,30 +179,8 @@ public class TAPQueryGeneratorTest {
         Assert.assertEquals("Wrong response format.", "tsv", tapQueryParameters2.get("RESPONSEFORMAT"));
         Assert.assertEquals("Wrong langauge", "ADQL", tapQueryParameters2.get("LANG"));
         Assert.assertEquals("Wrong query.",
-                            "SELECT * FROM goodcat WHERE 1 = CONTAINS(point_col_2, CIRCLE(12.3, 45.6, 0.7))",
+                            "SELECT * FROM goodcat WHERE 1 = CONTAINS(point_col_2, CIRCLE('ICRS', 12.3, 45.6, 0.7))",
                             tapQueryParameters2.get("QUERY"));
         Assert.assertEquals("Wrong max records", 8000, tapQueryParameters2.get("MAXREC"));
-    }
-
-    public static final class TestTAPQueryGenerator extends TAPQueryGenerator {
-
-        public TestTAPQueryGenerator(final String catalog) {
-            super(catalog);
-        }
-
-        @Override
-        public String getLowVerbositySelectList() {
-            return "ra, dec";
-        }
-
-        @Override
-        public String getMidVerbositySelectList() {
-            return "obs_id, release_date, ra, dec";
-        }
-
-        @Override
-        public String getHighVerbositySelectList() {
-            return "*";
-        }
     }
 }

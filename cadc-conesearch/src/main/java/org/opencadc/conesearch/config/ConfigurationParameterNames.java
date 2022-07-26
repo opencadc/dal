@@ -71,7 +71,10 @@ package org.opencadc.conesearch.config;
 public enum ConfigurationParameterNames {
     CATALOG_NAME("catalogName"),
     TAP_URI("tapURI"),
-    POSITION_COLUMN_NAME("positionColumnName");
+    POSITION_COLUMN_NAME("positionColumnName"),
+    LOW_VERBOSITY_SELECT_LIST("lowVerbositySelectList"),
+    MID_VERBOSITY_SELECT_LIST("midVerbositySelectList"),
+    HIGH_VERBOSITY_SELECT_LIST("highVerbositySelectList");
 
     private final String propertyKey;
 
