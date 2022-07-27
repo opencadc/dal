@@ -80,12 +80,12 @@ import java.util.Map;
 public class TAPQueryGeneratorTest {
     @Test
     public void testInvalidJobParameters() {
-        final TAPQueryGenerator testSubject = new TAPQueryGenerator("badcat", "ra, dec",
-                                                                    "obs_id, release_date, ra, dec", "*");
         final Map<String, List<String>> parameters = new HashMap<>();
 
         try {
-            testSubject.getParameterMap("my_point", parameters);
+            new TAPQueryGenerator("badcat", "my_point", "ra, dec",
+                                  "obs_id, release_date, ra, dec", "*",
+                                  parameters);
             Assert.fail("Should throw IllegalArgumentException here.");
         } catch (IllegalArgumentException illegalArgumentException) {
             // Good
@@ -96,7 +96,10 @@ public class TAPQueryGeneratorTest {
         parameters.put("SR", Collections.singletonList("bogus"));
 
         try {
-            testSubject.getParameterMap("my_point_2", parameters);
+            final TAPQueryGenerator testSubject2 = new TAPQueryGenerator("badcat", "my_point", "ra, dec",
+                                                                        "obs_id, release_date, ra, dec", "*",
+                                                                        parameters);
+            testSubject2.getParameterMap();
             Assert.fail("Should throw IllegalArgumentException here.");
         } catch (IllegalArgumentException illegalArgumentException) {
             // Good
@@ -109,7 +112,10 @@ public class TAPQueryGeneratorTest {
         parameters.put("VERB", Collections.singletonList("9"));
 
         try {
-            testSubject.getParameterMap("my_point_3", parameters);
+            final TAPQueryGenerator testSubject3 = new TAPQueryGenerator("badcat", "my_point", "ra, dec",
+                                                                         "obs_id, release_date, ra, dec", "*",
+                                                                         parameters);
+            testSubject3.getParameterMap();
             Assert.fail("Should throw IllegalArgumentException here for VERB.");
         } catch (IllegalArgumentException illegalArgumentException) {
             // Good
@@ -122,7 +128,10 @@ public class TAPQueryGeneratorTest {
         parameters.put("VERB", Collections.singletonList("bogus"));
 
         try {
-            testSubject.getParameterMap("my_point_4", parameters);
+            final TAPQueryGenerator testSubject4 = new TAPQueryGenerator("badcat", "my_point", "ra, dec",
+                                                                         "obs_id, release_date, ra, dec", "*",
+                                                                         parameters);
+            testSubject4.getParameterMap();
             Assert.fail("Should throw IllegalArgumentException here for VERB.");
         } catch (IllegalArgumentException illegalArgumentException) {
             // Good
@@ -135,7 +144,10 @@ public class TAPQueryGeneratorTest {
         parameters.put("VERB", Collections.singletonList("1"));
 
         try {
-            testSubject.getParameterMap("my_point_5", parameters);
+            final TAPQueryGenerator testSubject5 = new TAPQueryGenerator("badcat", "my_point", "ra, dec",
+                                                                         "obs_id, release_date, ra, dec", "*",
+                                                                         parameters);
+            testSubject5.getParameterMap();
             Assert.fail("Should throw IllegalArgumentException here for invalid circle.");
         } catch (IllegalArgumentException illegalArgumentException) {
             // Good (invalid circle)
@@ -143,20 +155,20 @@ public class TAPQueryGeneratorTest {
     }
 
     @Test
-    public void testValidJobParameters() {
-        final TAPQueryGenerator testSubject = new TAPQueryGenerator("goodcat", "ra, dec",
-                                                                    "obs_id, release_date, ra, dec", "*");
+    public void testValidParameters() {
         final Map<String, List<String>> parameters = new HashMap<>();
         parameters.put("RA", Collections.singletonList("12.3"));
         parameters.put("DEC", Collections.singletonList("45.6"));
         parameters.put("SR", Collections.singletonList("0.7"));
-        
 
-        final Map<String, Object> tapQueryParameters1 = testSubject.getParameterMap("point_col",
-                                                                                    parameters);
+        final TAPQueryGenerator testSubject = new TAPQueryGenerator("goodcat", "point_col", "ra, dec",
+                                                                    "obs_id, release_date, ra, dec", "*",
+                                                                    parameters);
+
+        final Map<String, Object> tapQueryParameters1 = testSubject.getParameterMap();
         Assert.assertEquals("Wrong response format.", VOTableWriter.CONTENT_TYPE,
                             tapQueryParameters1.get("RESPONSEFORMAT"));
-        Assert.assertEquals("Wrong langauge", "ADQL", tapQueryParameters1.get("LANG"));
+        Assert.assertEquals("Wrong language", "ADQL", tapQueryParameters1.get("LANG"));
         Assert.assertEquals("Wrong query.",
                             "SELECT obs_id, release_date, ra, dec "
                             + "FROM goodcat WHERE 1 = CONTAINS(point_col, CIRCLE('ICRS', 12.3, 45.6, 0.7))",
@@ -172,10 +184,11 @@ public class TAPQueryGeneratorTest {
         parameters.put("RESPONSEFORMAT", Collections.singletonList("tsv"));
         parameters.put("MAXREC", Collections.singletonList("8000"));
         parameters.put("VERB", Collections.singletonList("3"));
-        
 
-        final Map<String, Object> tapQueryParameters2 = testSubject.getParameterMap("point_col_2",
-                                                                                    parameters);
+        final TAPQueryGenerator testSubject2 = new TAPQueryGenerator("goodcat", "point_col_2", "ra, dec",
+                                                                    "obs_id, release_date, ra, dec", "*",
+                                                                     parameters);
+        final Map<String, Object> tapQueryParameters2 = testSubject2.getParameterMap();
         Assert.assertEquals("Wrong response format.", "tsv", tapQueryParameters2.get("RESPONSEFORMAT"));
         Assert.assertEquals("Wrong langauge", "ADQL", tapQueryParameters2.get("LANG"));
         Assert.assertEquals("Wrong query.",

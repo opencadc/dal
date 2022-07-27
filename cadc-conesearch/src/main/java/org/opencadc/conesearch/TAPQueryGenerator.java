@@ -69,14 +69,13 @@
 package org.opencadc.conesearch;
 
 import ca.nrc.cadc.dali.Circle;
-import ca.nrc.cadc.dali.CommonParamValidator;
 import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ca.nrc.cadc.util.StringUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -84,74 +83,86 @@ import org.apache.logging.log4j.Logger;
 /**
  * Class to produce an ADQL query from a set of Parameters
  */
-public class TAPQueryGenerator extends CommonParamValidator {
+public class TAPQueryGenerator {
     private static final int DEF_MAXREC = 1000;
     private static final int MAX_MAXREC = Integer.MAX_VALUE;
-    private static final int MIN_VERB_VALUE = 1;
-    private static final int MID_VERB_VALUE = 2;
-    private static final int MAX_VERB_VALUE = 3;
     private static final Logger LOGGER = LogManager.getLogger(TAPQueryGenerator.class);
 
-    protected final String catalog;
+    protected final String tableName;
+    protected final String positionColumnName;
     protected final String lowVerbositySelectList;
     protected final String midVerbositySelectList;
     protected final String highVerbositySelectList;
+    protected final Map<String, List<String>> parameters;
 
-    public TAPQueryGenerator(final String catalog, final String lowVerbositySelectList,
-                             final String midVerbositySelectList, final String highVerbositySelectList) {
-        this.catalog = catalog;
+
+    /**
+     *
+     * @param tableName          The name of the Catalog Table to query.
+     * @param positionColumnName The name of the positional column to compare against the cone's position,
+     *                           preferably spatially indexed.@param positionColumnName
+     * @param lowVerbositySelectList    The query select list for VERB=1
+     * @param midVerbositySelectList    The query select list for VERB=2
+     * @param highVerbositySelectList    The query select list for VERB=3
+     */
+    public TAPQueryGenerator(final String tableName, final String positionColumnName,
+                             final String lowVerbositySelectList, final String midVerbositySelectList,
+                             final String highVerbositySelectList, final Map<String, List<String>> parameters) {
+        if (!StringUtil.hasText(tableName) || !StringUtil.hasText(positionColumnName)
+            || !StringUtil.hasText(lowVerbositySelectList) || !StringUtil.hasText(midVerbositySelectList)
+            || !StringUtil.hasText(highVerbositySelectList) || parameters == null || parameters.isEmpty()) {
+            throw new IllegalArgumentException("tableName, positionColumnName, lowVerbositySelectList, "
+                                               + "midVerbositySelectList, highVerbositySelectList, and parameters "
+                                               + "are all required.\n"
+                                               + "(" + tableName + ", " + positionColumnName + ", "
+                                               + lowVerbositySelectList + ", " + midVerbositySelectList + ", "
+                                               + highVerbositySelectList + ", " + parameters + ")");
+        }
+
+        this.tableName = tableName;
+        this.positionColumnName = positionColumnName;
         this.lowVerbositySelectList = lowVerbositySelectList;
         this.midVerbositySelectList = midVerbositySelectList;
         this.highVerbositySelectList = highVerbositySelectList;
+        this.parameters = parameters;
     }
 
     /**
-     * Map with the REQUEST, LANG, and QUERY parameters.
+     * Map with supported Simple Cone Search 1.1 parameters.
+     * <a href="https://www.ivoa.net/documents/ConeSearch/20200828/WD-ConeSearch-1.1-20200828.html#tth_sEc2.1">...</a>
      *
-     * @param positionColumnName The name of the positional column to compare against the cone's position,
-     *                           preferably spatially indexed.
      * @return map of parameter names and values
      */
-    public Map<String, Object> getParameterMap(final String positionColumnName,
-                                               final Map<String, List<String>> parameters) {
+    public Map<String, Object> getParameterMap() {
         final Map<String, Object> queryParameterMap = new HashMap<>();
+        final ConeParameterValidator coneParameterValidator = new ConeParameterValidator();
 
         // Obtain and, if necessary, provide a default RESPONSEFORMAT.
-        final String requestedResponseFormat = getFirstParameter(ParameterNames.RESPONSEFORMAT.name(), parameters,
-                                                                 VOTableWriter.CONTENT_TYPE);
-        queryParameterMap.put(ParameterNames.RESPONSEFORMAT.name(), requestedResponseFormat);
+        queryParameterMap.put(ConeParameterValidator.RESPONSEFORMAT,
+                              coneParameterValidator.getResponseFormat(parameters, VOTableWriter.CONTENT_TYPE));
 
         // Obtain and validate the VERB (verbosity) output.
-        final String requestedOutputVerbosity = getFirstParameter(ParameterNames.VERB.name(), parameters,
-                                                                  Integer.toString(MID_VERB_VALUE));
-        final NumberParameterValidator outputVerbosityValidator =
-                new NumberParameterValidator(false, TAPQueryGenerator.MIN_VERB_VALUE,
-                                             TAPQueryGenerator.MAX_VERB_VALUE, TAPQueryGenerator.MID_VERB_VALUE);
-        final int outputVerbosity = outputVerbosityValidator.validate(requestedOutputVerbosity);
+        final int outputVerbosity = coneParameterValidator.validateVERB(parameters);
 
         // Obtain and validate the MAXREC value with a default if necessary.
-        final String requestedMaxRecords = getFirstParameter(ParameterNames.MAXREC.name(), parameters,
-                                                             Integer.toString(TAPQueryGenerator.DEF_MAXREC));
-        final NumberParameterValidator maxRecordsValidator =
-                new NumberParameterValidator(true, 0, TAPQueryGenerator.MAX_MAXREC,
-                                             TAPQueryGenerator.DEF_MAXREC);
-        final int maxRecordCount = maxRecordsValidator.validate(requestedMaxRecords);
-        queryParameterMap.put(ParameterNames.MAXREC.name(), maxRecordCount);
+        final int maxRecordCount = coneParameterValidator.getMaxRec(parameters, TAPQueryGenerator.DEF_MAXREC,
+                                                                    TAPQueryGenerator.MAX_MAXREC);
+        queryParameterMap.put(ConeParameterValidator.MAXREC, maxRecordCount);
 
         queryParameterMap.put("LANG", "ADQL");
-        final String query = getQuery(positionColumnName, outputVerbosity, validateConePositionCenter(parameters));
+        final String query = getQuery(outputVerbosity, coneParameterValidator.validateCone(parameters));
         LOGGER.debug("Cone Search TAP query:\n" + query);
         queryParameterMap.put("QUERY", query);
         return queryParameterMap;
     }
 
-    private String getQuery(final String positionColumnName, final int outputVerbosity, final Circle circle) {
+    private String getQuery(final int outputVerbosity, final Circle circle) {
         return "SELECT "
                + getSelectList(outputVerbosity)
                + " FROM "
-               + this.catalog
+               + this.tableName
                + " WHERE 1 = CONTAINS("
-               + positionColumnName
+               + this.positionColumnName
                + ", "
                + "CIRCLE('ICRS', "
                + circle.getCenter().getLongitude()
@@ -162,41 +173,14 @@ public class TAPQueryGenerator extends CommonParamValidator {
                + "))";
     }
 
-    private String getFirstParameter(final String key, final Map<String, List<String>> requestParameters,
-                                     final String defaultValue) {
-        final List<String> values = requestParameters.get(key);
-        return (values == null || values.isEmpty()) ? defaultValue : values.get(0);
-    }
-
-    private Circle validateConePositionCenter(final Map<String, List<String>> requestParameters) {
-        final String raValue = getFirstParameter(ParameterNames.RA.name(), requestParameters, null);
-        final String decValue = getFirstParameter(ParameterNames.DEC.name(), requestParameters, null);
-        final String searchRadiusValue = getFirstParameter(ParameterNames.SR.name(), requestParameters, null);
-        final Map<String, List<String>> circleValidateParams = new HashMap<>();
-        circleValidateParams.put(CommonParamValidator.CIRCLE, Collections.singletonList(
-                String.format("%s %s %s", raValue, decValue, searchRadiusValue)));
-
-        try {
-            final List<Circle> validCircles = super.validateCircle(circleValidateParams);
-
-            if (validCircles.isEmpty()) {
-                throw new IllegalArgumentException("No valid input cone position center provided.");
-            } else {
-                return validCircles.get(0);
-            }
-        } catch (NumberFormatException numberFormatException) {
-            throw new IllegalArgumentException("Cannot create cone position center from non-numeric input.");
-        }
-    }
-
 
     private String getSelectList(final int outputVerbosity) {
         switch (outputVerbosity) {
-            case TAPQueryGenerator.MIN_VERB_VALUE: {
+            case ConeParameterValidator.MIN_VERB_VALUE: {
                 return getLowVerbositySelectList();
             }
 
-            case TAPQueryGenerator.MAX_VERB_VALUE: {
+            case ConeParameterValidator.MAX_VERB_VALUE: {
                 return getHighVerbositySelectList();
             }
 

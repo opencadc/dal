@@ -68,68 +68,66 @@
 
 package org.opencadc.conesearch;
 
-import org.junit.Assert;
-import org.junit.Test;
+import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.CommonParamValidator;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class NumberParameterValidatorTest {
-    @Test
-    public void testConstructor() {
-        try {
-            new NumberParameterValidator(false, 6, 1, 0);
-            Assert.fail("Should throw IllegalArgumentException.");
-        } catch (IllegalArgumentException illegalArgumentException) {
-            // Good!
-        }
+/**
+ * Validator for Cone Search parameters.
+ */
+public class ConeParameterValidator extends CommonParamValidator {
+    public static final String VERB_PARAM = "VERB";
+    public static final String RA_PARAM = "RA";
+    public static final String DEC_PARAM = "DEC";
+    public static final String SR_PARAM = "SR";
+    static final int MIN_VERB_VALUE = 1;
+    static final int MID_VERB_VALUE = 2;
+    static final int MAX_VERB_VALUE = 3;
 
-        try {
-            new NumberParameterValidator(false, 1, 6, 0);
-            Assert.fail("Should throw IllegalArgumentException for default being lower than minimum.");
-        } catch (IllegalArgumentException illegalArgumentException) {
-            // Good!
-        }
-
-        try {
-            new NumberParameterValidator(false, 1, 6, 10);
-            Assert.fail("Should throw IllegalArgumentException for default being higher than maximum.");
-        } catch (IllegalArgumentException illegalArgumentException) {
-            // Good!
-        }
-    }
-
-    @Test
-    public void testInputNoCap() {
-        final NumberParameterValidator testSubject = new NumberParameterValidator(false, 1, 6, 1);
-
-        Assert.assertEquals("Should be set to 2", 2, testSubject.validate("2"));
-        Assert.assertEquals("Should be set to 1", 1, testSubject.validate("1"));
-        Assert.assertEquals("Should be set to 6", 6, testSubject.validate("6"));
-        Assert.assertEquals("Should default to 0", 1, testSubject.validate(null));
+    public Circle validateCone(final Map<String, List<String>> parameters) {
+        final String raValue = getFirstParameter(ConeParameterValidator.RA_PARAM, parameters);
+        final String decValue = getFirstParameter(ConeParameterValidator.DEC_PARAM, parameters);
+        final String searchRadiusValue = getFirstParameter(ConeParameterValidator.SR_PARAM, parameters);
+        final Map<String, List<String>> circleValidateParams = new HashMap<>();
+        circleValidateParams.put(CommonParamValidator.CIRCLE, Collections.singletonList(
+                String.format("%s %s %s", raValue, decValue, searchRadiusValue)));
 
         try {
-            testSubject.validate("-1");
-            Assert.fail("Should throw IllegalArgumentException.");
-        } catch (IllegalArgumentException illegalArgumentException) {
-            // Good!
-        }
+            final List<Circle> validCircles = validateCircle(circleValidateParams);
 
-        try {
-            testSubject.validate("9");
-            Assert.fail("Should throw IllegalArgumentException.");
-        } catch (IllegalArgumentException illegalArgumentException) {
-            // Good!
+            if (validCircles.isEmpty()) {
+                throw new IllegalArgumentException("No valid input cone position center provided.");
+            } else {
+                return validCircles.get(0);
+            }
+        } catch (NumberFormatException numberFormatException) {
+            throw new IllegalArgumentException("Cannot create cone position center from non-numeric input.");
         }
     }
 
-    @Test
-    public void testInputWithCap() {
-        final NumberParameterValidator testSubject = new NumberParameterValidator(true, 1, 6, 1);
+    public int validateVERB(final Map<String, List<String>> parameters) {
+        // If not VERB provided, default to 2.
+        if (parameters.containsKey(VERB_PARAM)) {
+            final List<Integer> validIntegers = validateInteger(VERB_PARAM, parameters, Arrays.asList(MIN_VERB_VALUE,
+                                                                                                      MID_VERB_VALUE,
+                                                                                                      MAX_VERB_VALUE));
+            if (validIntegers.isEmpty()) {
+                throw new IllegalArgumentException("VERB must be 1, 2, or 3.");
+            } else {
+                return validIntegers.get(0);
+            }
+        } else {
+            return MID_VERB_VALUE;
+        }
+    }
 
-        Assert.assertEquals("Should be set to 2", 2, testSubject.validate("2"));
-        Assert.assertEquals("Should be set to 1", 1, testSubject.validate("1"));
-        Assert.assertEquals("Should be set to 6", 6, testSubject.validate("6"));
-        Assert.assertEquals("Should default to 0", 1, testSubject.validate(null));
-        Assert.assertEquals("Should default to 6", 6, testSubject.validate("9"));
-        Assert.assertEquals("Should default to 1", 1, testSubject.validate("0"));
+    private String getFirstParameter(final String key, final Map<String, List<String>> requestParameters) {
+        final List<String> values = requestParameters.get(key);
+        return (values == null || values.isEmpty()) ? null : values.get(0);
     }
 }

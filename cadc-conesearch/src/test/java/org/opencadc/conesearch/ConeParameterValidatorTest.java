@@ -68,60 +68,37 @@
 
 package org.opencadc.conesearch;
 
-import ca.nrc.cadc.util.StringUtil;
+import org.junit.Assert;
+import org.junit.Test;
 
-public class NumberParameterValidator {
-    private final boolean capValue;
-    private final int minValue;
-    private final int maxValue;
-    private final int defaultValue;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
-    /**
-     * Constructor.
-     *
-     * @param capValue  Set to true to cap the upper value to the max
-     */
-    public NumberParameterValidator(final boolean capValue, final int minValue, final int maxValue,
-                                    final int defaultValue) {
+/**
+ * Test cone parameter validation.  The validateCone() is tested in TAPQueryGeneratorTest.
+ */
+public class ConeParameterValidatorTest {
+    @Test
+    public void testValidateVerb() {
+        final ConeParameterValidator testSubject = new ConeParameterValidator();
+        final Map<String, List<String>> parameters = new HashMap<>();
 
-        if (minValue > maxValue) {
-            throw new IllegalArgumentException("Min value must be less than or equal to Max value.");
-        } else if (defaultValue > maxValue || defaultValue < minValue) {
-            throw new IllegalArgumentException("Default value does not fall between specified min and max values ("
-                                               + minValue + " and " + maxValue + ").");
+        Assert.assertEquals("Should be set to 2", 2, testSubject.validateVERB(parameters));
+
+        parameters.clear();
+        parameters.put("VERB", Collections.singletonList("1"));
+        Assert.assertEquals("Should be set to 1", 1, testSubject.validateVERB(parameters));
+
+        parameters.clear();
+        parameters.put("VERB", Collections.singletonList("6"));
+        try {
+            testSubject.validateVERB(parameters);
+            Assert.fail("6 is not a valid VERB.");
+        } catch (IllegalArgumentException illegalArgumentException) {
+            // Good
         }
-
-        this.capValue = capValue;
-        this.minValue = minValue;
-        this.maxValue = maxValue;
-        this.defaultValue = defaultValue;
-    }
-
-    public int validate(final String parameterNumberValue) {
-        final int integerValue;
-        if (StringUtil.hasText(parameterNumberValue)) {
-            try {
-                final int parsedValue = Integer.parseInt(parameterNumberValue);
-                if (parsedValue > maxValue && capValue) {
-                    integerValue = maxValue;
-                } else if (parsedValue < minValue && capValue) {
-                    integerValue = minValue;
-                } else {
-                    integerValue = parsedValue;
-                }
-            } catch (NumberFormatException numberFormatException) {
-                throw new IllegalArgumentException("Cannot parse number value (not a valid number)");
-            }
-
-            if (integerValue < minValue || integerValue > maxValue) {
-                throw new IllegalArgumentException(
-                        "Input MUST be a value between " + minValue + " and " + maxValue + ".");
-            }
-        } else {
-            integerValue = defaultValue;
-        }
-
-        return integerValue;
     }
 }
