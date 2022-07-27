@@ -70,12 +70,12 @@ package org.opencadc.conesearch;
 
 import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
+import ca.nrc.cadc.util.StringUtil;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import ca.nrc.cadc.util.StringUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
