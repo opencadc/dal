@@ -112,7 +112,7 @@ public class ConeParameterValidator extends CommonParamValidator {
 
     public int validateVERB(final Map<String, List<String>> parameters) {
         // If not VERB provided, default to 2.
-        if (parameters.containsKey(VERB_PARAM)) {
+        if (parameters.get(VERB_PARAM) != null && !parameters.get(VERB_PARAM).isEmpty()) {
             final List<Integer> validIntegers = validateInteger(VERB_PARAM, parameters, Arrays.asList(MIN_VERB_VALUE,
                                                                                                       MID_VERB_VALUE,
                                                                                                       MAX_VERB_VALUE));
