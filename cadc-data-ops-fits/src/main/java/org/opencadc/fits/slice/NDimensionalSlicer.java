@@ -287,7 +287,7 @@ public class NDimensionalSlicer {
                              final boolean mefOutput, final boolean firstHDUAlreadyWritten, final int nextEndSize)
             throws FitsException, NoOverlapException {
         final ImageHDU imageHDU = (hdu instanceof CompressedImageHDU)
-                                  ? ((CompressedImageHDU) hdu).asImageHDU() : (ImageHDU) hdu;
+                                  ? ((CompressedImageHDU) hdu).asImageHDU(true) : (ImageHDU) hdu;
         final Header header = imageHDU.getHeader();
         final int[] dimensions = imageHDU.getAxes();
 

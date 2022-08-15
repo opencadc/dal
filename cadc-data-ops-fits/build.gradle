@@ -12,7 +12,7 @@ repositories {
 
 sourceCompatibility = 1.8
 group = 'org.opencadc'
-version = '0.2.5'
+version = '0.2.6'
 
 description = 'OpenCADC FITS cutout library'
 def git_url = 'https://github.com/opencadc/dal'
@@ -23,7 +23,7 @@ dependencies {
     compile 'org.opencadc:cadc-soda-server:[1.2.1,2.0)'
     compile 'org.opencadc:cadc-wcs:[2.0,3.0)'
     compile 'org.opencadc:jsky:[1.0.0,2.0.0)'
-    compile 'org.opencadc:nom-tam-fits:[1.16.4,1.17.0)'
+    compile 'org.opencadc:nom-tam-fits:[1.16.5,1.17.0)'
 
     // Use JUnit test framework
     testCompile 'junit:junit:[4.13,5.0)'
