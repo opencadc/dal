@@ -152,7 +152,7 @@ public class NDimensionalSlicerTest {
         final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-hst-mef-striding-cutout", ".fits");
         LOGGER.debug("Writing out to " + outputPath);
 
-        try (final OutputStream outputStream = new FileOutputStream(outputPath.toFile())) {
+        try (final OutputStream outputStream = Files.newOutputStream(outputPath.toFile().toPath())) {
             slicer.slice(file, cutout, outputStream);
         }
 
