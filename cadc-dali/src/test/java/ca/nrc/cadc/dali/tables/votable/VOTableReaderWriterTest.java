@@ -80,19 +80,27 @@ import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.dali.util.PointFormat;
 import ca.nrc.cadc.dali.util.ShortFormat;
 import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
+
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.StringWriter;
+import java.lang.reflect.Array;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+
+import ca.nrc.cadc.util.StringUtil;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
- *
+ * 
  * @author jburke
  */
 public class VOTableReaderWriterTest {
@@ -120,6 +128,7 @@ public class VOTableReaderWriterTest {
             VOTableDocument expected = new VOTableDocument();
 
             VOTableResource vr = new VOTableResource("meta");
+            vr.description = "what is a meta?";
             expected.getResources().add(vr);
             vr.getParams().addAll(getMetaParams());
             vr.getGroups().add(getMetaGroup());
@@ -388,7 +397,240 @@ public class VOTableReaderWriterTest {
     }
 
     /**
+     * Returns a test table that matches the output BINARY file's table.
      *
+     * The table returned here MUST match the file represented in
+     * src/test/resources/VOTableReaderWriterTest_testReadVOTableBinaryData.xml.
+     *
+     * Ideally this test would create a table and write out the BINARY STREAM data, but no such logic exists yet
+     * (outside of the Starjava library), so this test will rely on an existing table with a known structure.
+     *
+     * @return A VOTableDocument representing the test file.
+     */
+    VOTableDocument createExpectedUploadTable() {
+        final int nrow = 23;
+        /* Set up data arrays per column. */
+        short[] shortData = new short[nrow];
+        int[] intData = new int[nrow];
+        long[] longData = new long[nrow];
+        float[] floatData = new float[nrow];
+        double[] doubleData = new double[nrow];
+        char[] charData = new char[nrow];
+        String[] stringData = new String[nrow];
+        String[] timeData = new String[nrow];
+        final DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC);
+
+        /* Initialise values for each element of each data array. */
+        /* I've avoided byte types here because STIL is not comfortable
+         * with them; it tends to convert them to shorts when writing
+         * VOTables.  That is probably a deficiency in STIL. */
+        for (int ir = 0; ir < nrow; ir++) {
+            shortData[ir] = (short) ir;
+            intData[ir] = ir;
+            longData[ir] = ir;
+            floatData[ir] = 1.125F * ir;
+            doubleData[ir] = 1.125D * ir;
+            charData[ir] = (char) ('A' + ir);
+            stringData[ir] = Integer.toString(ir);
+            timeData[ir] = dateFormat.format(DateUtil.fromModifiedJulianDate(51544.0D + 1.01D * ir));
+        }
+
+        /* Construct a table based on the data arrays. */
+        final VOTableDocument voTableDocument = new VOTableDocument();
+        final VOTableResource voTableResource = new VOTableResource("meta");
+        final VOTableTable voTableTable = new VOTableTable();
+
+        final List<VOTableField> fields = new ArrayList<>();
+        fields.add(makeField("d_short", shortData, null));
+        fields.add(makeField("d_int", intData, null));
+        fields.add(makeField("d_long", longData, null));
+        fields.add(makeField("d_float", floatData, null));
+        fields.add(makeField("d_double", doubleData, null));
+
+        // Having arraysize="1" is still allowed but deprecated with warnings in VOTable 1.3.
+        final VOTableField dCharField = makeField("d_char", charData, null);
+        dCharField.arraysize = "1";
+        dCharField.arrayShape = VOTableUtil.getArrayShape(dCharField.getArraysize());
+        fields.add(dCharField);
+
+        fields.add(makeField("d_string", stringData, null));
+        fields.add(makeField("d_time", timeData, "adql:TIMESTAMP"));
+        voTableTable.getFields().addAll(fields);
+
+        final ListTableData listTableData = new ListTableData();
+
+        final List<List<Object>> arrayList = listTableData.getArrayList();
+
+        for (int r = 0; r < nrow; r++) {
+            final List<Object> row = new ArrayList<>();
+            row.add(shortData[r]);
+            row.add(intData[r]);
+            row.add(longData[r]);
+            row.add(floatData[r]);
+            row.add(doubleData[r]);
+            row.add(charData[r]);
+            row.add(stringData[r]);
+            row.add(timeData[r]);
+            arrayList.add(row);
+        }
+
+        // Populate the file row with blank values, where appropriate.
+        final List<Object> emptyRow = new ArrayList<>();
+        final List<Object> lastRow = arrayList.get(nrow - 1);
+
+        for (int i = 0; i < fields.size(); i++) {
+            final VOTableField field = fields.get(i);
+
+            // char fields are not considered nullable in the data.
+            if (!"char".equals(field.getDatatype())) {
+                emptyRow.add(null);
+            } else {
+                emptyRow.add(lastRow.get(i));
+            }
+        }
+
+        arrayList.set(nrow - 1, emptyRow);
+
+        voTableTable.setTableData(listTableData);
+        voTableResource.setTable(voTableTable);
+        voTableDocument.getResources().add(voTableResource);
+
+        return voTableDocument;
+    }
+
+    /**
+     * Returns a new VOTableField for the given data.
+     *
+     * @param name      Field name.
+     * @param data      The data to be expected in this field.
+     * @param xtype     The optional xtype.
+     * @return  VOTableField instance.  Never null.
+     */
+    VOTableField makeField(final String name, final Object data, final String xtype) {
+        final String datatype;
+        final Class<?> contentClass = data.getClass().getComponentType();
+
+        if (contentClass == byte.class) {
+            datatype = "unsignedByte";
+        } else if (contentClass == short.class) {
+            datatype = "short";
+        } else if (contentClass == int.class) {
+            datatype = "int";
+        } else if (contentClass == long.class) {
+            datatype = "long";
+        } else if (contentClass == float.class) {
+            datatype = "float";
+        } else if (contentClass == double.class) {
+            datatype = "double";
+        } else if (contentClass == char.class || contentClass.equals(String.class)) {
+            datatype = "char";
+        } else if (contentClass == boolean.class) {
+            datatype = "boolean";
+        } else {
+            throw new AssertionError("Unsupported type " + contentClass);
+        }
+
+        final VOTableField voTableField;
+
+        if (contentClass == String.class) {
+            String[] sdata = (String[]) data;
+            int size = 0;
+            for (String sdatum : sdata) {
+                size = Math.max(size, sdatum.length());
+            }
+            voTableField = new VOTableField(name, datatype, Integer.toString(size));
+        } else if (contentClass.isArray()) {
+            int size = 0;
+            for (int i = 0; i < Array.getLength(data); i++) {
+                Object item = Array.get(data, i);
+                size = Math.max(size, Array.getLength(item));
+            }
+            voTableField = new VOTableField(name, datatype, Integer.toString(size));
+        } else {
+            voTableField = new VOTableField(name, datatype);
+        }
+        voTableField.xtype = xtype;
+        voTableField.nullValue = null;
+        return voTableField;
+    }
+
+    /**
+     * Uses a BINARY element with a base64 encoded STREAM to emulate the taplint test.
+     *
+     * @throws Exception For any issues to report.
+     */
+    @Test
+    public void testReadVOTableBinaryData() throws Exception {
+        final File tempFile = FileUtil.getFileFromResource(getClass().getSimpleName()
+                                                           + "_testReadVOTableBinaryData.xml", getClass());
+        final VOTableDocument resultTable;
+        try (final FileInputStream fileInputStream = new FileInputStream(tempFile)) {
+            final VOTableReader voTableReader = new VOTableReader();
+            resultTable = voTableReader.read(fileInputStream);
+        }
+
+        final VOTableDocument expectedVOTableDocument = createExpectedUploadTable();
+        final VOTableResource expectedVOTableResource = expectedVOTableDocument.getResources().get(0);
+        final VOTableTable expectedVOTableTable = expectedVOTableResource.getTable();
+        final List<VOTableField> expectedFields = expectedVOTableTable.getFields();
+        final List<List<Object>> expectedRows = new ArrayList<>();
+        final FormatFactory formatFactory = new FormatFactory();
+        expectedVOTableTable.getTableData().iterator().forEachRemaining(expectedRows::add);
+
+        // Match the formatting.
+        for (final List<Object> row : expectedRows) {
+            for (int i = 0; i < expectedFields.size(); i++) {
+                final VOTableField field = expectedFields.get(i);
+                final Object o = row.get(i);
+                if (o != null) {
+                    final Object formattedValue = formatFactory.getFormat(field).parse(o.toString());
+                    final String arraysize = field.getArraysize();
+                    // Where an arraysize="1" (or absent) and the datatype is char, then the value set must be of
+                    // char.class.
+                    if ((formattedValue instanceof String)
+                        && ("1".equals(arraysize) || !StringUtil.hasText(arraysize))) {
+                        final char[] charArray = ((String) formattedValue).toCharArray();
+                        if (charArray.length == 1) {
+                            row.set(i, Character.toString(charArray[0]));
+                        } else if (charArray.length == 0) {
+                            row.set(i, null);
+                        } else {
+                            throw new IllegalStateException("Expected char but got char array.");
+                        }
+                    } else {
+                        row.set(i, formattedValue);
+                    }
+                }
+            }
+        }
+
+        final VOTableResource resultResource = resultTable.getResources().get(0);
+        final List<List<Object>> resultRows = new ArrayList<>();
+        resultResource.getTable().getTableData().iterator().forEachRemaining(resultRows::add);
+
+        compareFields(expectedFields, resultResource.getTable().getFields());
+
+        for (int i = 0; i < expectedRows.size(); i++) {
+            final List<Object> expectedRow = expectedRows.get(i);
+            final List<Object> resultRow = resultRows.get(i);
+
+            for (int f = 0; f < expectedFields.size(); f++) {
+                final VOTableField field = expectedFields.get(f);
+                final String xtype = field.xtype;
+                if ("adql:TIMESTAMP".equals(xtype) || "timestamp".equals(xtype)) {
+                    final Date expectedDate = (Date) expectedRow.get(f);
+                    final Date resultDate = (Date) resultRow.get(f);
+                    Assert.assertEquals("Row date value (" + i + ") and field (" + f + ") don't match.",
+                                        expectedDate.getTime(), resultDate.getTime(), 1000.0D);
+                } else {
+                    Assert.assertEquals("Row value (" + i + ") and field (" + f + ") don't match.",
+                                        expectedRow.get(f), resultRow.get(f));
+                }
+            }
+        }
+    }
+
+    /**
      * Test might be a bit dodgy since it's assuming the VOTable
      * elements will be written and read in the same order.
      */
@@ -405,6 +647,8 @@ public class VOTableReaderWriterTest {
 
     public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax) {
         Assert.assertEquals(expected.getName(), actual.getName());
+        
+        Assert.assertEquals(expected.description, actual.description);
 
         compareInfos(expected.getInfos(), actual.getInfos());
 
@@ -488,7 +732,7 @@ public class VOTableReaderWriterTest {
                     Assert.assertEquals(STC.format(expectedRegion), STC.format(actualRegion));
                 }
                  */ else {
-                    Assert.assertEquals(expectedObject, actualObject);
+                    Assert.assertEquals("Incorrect value at " + i, expectedObject, actualObject);
                 }
             }
         }

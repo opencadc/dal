@@ -130,5 +130,25 @@ public class ShortFormatTest
 
         log.info("testNull passed");
     }
-    
+
+    @Test
+    public void testNullValue() throws Exception {
+        log.debug("testNullValue");
+
+        String nullValue = "-8874";
+        ShortFormat format = new ShortFormat(nullValue);
+
+        short testVal = 961;
+        String result = format.format(testVal);
+        assertEquals("961", result);
+
+        Short actual = format.parse("287");
+        short expectedVal = 287;
+        assertEquals(Short.valueOf(expectedVal), actual);
+
+        actual = format.parse(nullValue);
+        assertNull(actual);
+
+        log.info("testNullValue passed");
+    }
 }

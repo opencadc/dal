@@ -115,7 +115,7 @@ public class FormatFactory {
                     ret = new ShortArrayFormat();
                 }
             } else {
-                ret = new ShortFormat();
+                ret = new ShortFormat(field.nullValue);
             }
         } else if (datatype.equalsIgnoreCase("int")) {
             if (isArray(field)) {
@@ -125,7 +125,7 @@ public class FormatFactory {
                     ret = new IntArrayFormat();
                 }
             } else {
-                ret = new IntegerFormat();
+                ret = new IntegerFormat(field.nullValue);
             }
         } else if (datatype.equalsIgnoreCase("long")) {
             if (isArray(field)) {
@@ -135,7 +135,7 @@ public class FormatFactory {
                     ret = new LongArrayFormat();
                 }
             } else {
-                ret = new LongFormat();
+                ret = new LongFormat(field.nullValue);
             }
         } else if (datatype.equalsIgnoreCase("unicodeChar")) {
             ret = new StringFormat();

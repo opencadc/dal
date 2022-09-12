@@ -287,7 +287,7 @@ public class NDimensionalSlicer {
                              final boolean mefOutput, final boolean firstHDUAlreadyWritten, final int nextEndSize)
             throws FitsException, NoOverlapException {
         final ImageHDU imageHDU = (hdu instanceof CompressedImageHDU)
-                                  ? ((CompressedImageHDU) hdu).asImageHDU() : (ImageHDU) hdu;
+                                  ? ((CompressedImageHDU) hdu).asImageHDU(true) : (ImageHDU) hdu;
         final Header header = imageHDU.getHeader();
         final int[] dimensions = imageHDU.getAxes();
 
@@ -322,8 +322,17 @@ public class NDimensionalSlicer {
                     if (crPixCard != null) {
                         // Need to run backwards (reverse order) to match the dimensions.
                         final double nextValue = corners[corners.length - i - 1];
+                        final int stepValue = steps[corners.length - i - 1];
+                        final double crPixValue = (Double.parseDouble(crPixCard.getValue()) - nextValue) / stepValue;
 
-                        crPixCard.setValue(Double.parseDouble(crPixCard.getValue()) - nextValue);
+                        if (stepValue > 1) {
+                            crPixCard.setValue(crPixValue + (1.0 - (1.0 / stepValue)));
+                            LOGGER.debug("Adjusted " + crPixCard.getKey() + " to "
+                                         + (crPixValue + (1.0 - (1.0 / stepValue))));
+                        } else {
+                            crPixCard.setValue(crPixValue);
+                            LOGGER.debug("Set " + crPixCard.getKey() + " to " + crPixValue);
+                        }
                     }
                 }
 

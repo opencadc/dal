@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2011.                            (c) 2011.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,83 +62,24 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
+*  $Revision: 5 $
+*
 ************************************************************************
 */
 
-package org.opencadc.datalink;
+package org.opencadc.pkg.server;
 
-import ca.nrc.cadc.util.Log4jInit;
-import java.net.MalformedURLException;
-import java.net.URL;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
- *
+ * Wrapper around underlying exceptions when trying to proxy downloads.
+ * 
  * @author pdowler
  */
-public class DataLinkTest {
-    private static final Logger log = Logger.getLogger(DataLinkTest.class);
+public class TarProxyException extends Exception {
+    private static final Logger log = Logger.getLogger(TarProxyException.class);
 
-    static {
-        Log4jInit.setLevel("org.opencadc.datalink", Level.INFO);
-    }
-
-    static String ID = "ivo://org.opencadc/collection?observation/product";
-
-    public DataLinkTest() { 
-    }
-    
-    @Test
-    public void testCtor() {
-       
-        // OK
-        DataLink ok = new DataLink(ID, DataLink.Term.THIS);
-        log.info("bare link: " + ok);
-        
-        try {
-            // null ID
-            DataLink oops = new DataLink(null, DataLink.Term.THIS);
-            Assert.fail("expected IllegalArgumentException, got: " + oops);
-        } catch (IllegalArgumentException expected) {
-            log.info("caught expected: " + expected);
-        }
-        
-        try {
-            // null semantics
-            DataLink oops = new DataLink(ID, null);
-            Assert.fail("expected IllegalArgumentException, got: " + oops);
-        } catch (IllegalArgumentException expected) {
-            log.info("caught expected: " + expected);
-        }
-    }
-    
-    @Test
-    public void testToString() throws MalformedURLException {
-       
-        // OK
-        DataLink link = new DataLink(ID, DataLink.Term.THIS);
-        link.addSemantics(DataLink.Term.PKG);
-        log.info("bare link: " + link);
-        
-        link.accessURL = new URL("https://www.opencadc.org/files/collection/observation/product/stuff");
-        String surl = link.toString();
-        log.info("link w/ accessURL: " + link);
-        Assert.assertTrue("accessURL", surl.contains(link.accessURL.toExternalForm()));
-        link.accessURL = null;
-        
-        link.serviceDef = "blah-blah";
-        String sd = link.toString();
-        log.info("link w/ serviceDef: " + link);
-        Assert.assertTrue("serviceDef", sd.contains(link.serviceDef));
-        link.serviceDef = null;
-        
-        link.errorMessage = "oops";
-        String se = link.toString();
-        log.info("link w/ errorMessage: " + link);
-        Assert.assertTrue("errorMessage", se.contains(link.errorMessage));
-        link.errorMessage = null;
+    public TarProxyException(String msg, Throwable cause) {
+        super(msg, cause);
     }
 }
