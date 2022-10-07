@@ -134,7 +134,8 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
      *      or null if the circle does not intersect the WCS
      */
     private long[] getPositionBounds(final Polygon polygon) throws NoSuchKeywordException {
-        final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
+        final int[] dimensions = getDimensions();
+        final int naxis = dimensions.length;
         final CoordSys coordSys = inferCoordSys();
 
         // No coordsys could be inferred, or there is no data array, so no cutout available.
@@ -143,14 +144,13 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
         }
 
         LOGGER.debug("CoordSys found: " + coordSys);
+        LOGGER.debug("Dimensions are: " + Arrays.toString(dimensions));
 
         // detect necessary conversion of target coords to native WCS coordSys
         final boolean gal = CoordSys.GAL.equals(coordSys.getName());
         final boolean fk4 = CoordSys.FK4.equals(coordSys.getName());
-        final long naxisLongitude =
-                this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(coordSys.longitudeAxis).key());
-        final long naxisLatitude =
-                this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(coordSys.latitudeAxis).key());
+        final long naxisLongitude = dimensions[coordSys.longitudeAxis - 1];
+        final long naxisLatitude = dimensions[coordSys.latitudeAxis - 1];
 
         if (!CoordSys.ICRS.equals(coordSys.getName())
             && !CoordSys.FK5.equals(coordSys.getName())
@@ -206,7 +206,7 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
             // Fill in the rest of the world coordinates.
             for (int i = 0; i < worldCoords.length; i++) {
                 if (i != spatialLongitudeAxisIndex && i != spatialLatitudeAxisIndex) {
-                    worldCoords[i] = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(i + 1).key());
+                    worldCoords[i] = dimensions[i];
                 }
             }
 
@@ -245,7 +245,7 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
             for (int i = clippedBox.length; i < entireBounds.length; i += 2) {
                 final int axis = (i + 2) / 2;
                 entireBounds[i] = 1L;
-                entireBounds[i + 1] = (long) this.fitsHeaderWCSKeywords.getDoubleValue(Standard.NAXISn.n(axis).key());
+                entireBounds[i + 1] = dimensions[axis - 1];
             }
         }
 
