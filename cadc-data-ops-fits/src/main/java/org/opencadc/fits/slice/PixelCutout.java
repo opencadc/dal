@@ -142,10 +142,10 @@ public class PixelCutout {
 
         // no pixels included
         if (x1 > len || x2 < 1) {
-            LOGGER.warn("clip: none");
+            LOGGER.debug("clip: none");
             return null;
         } else if (x1 == 1 && x2 == len) {
-            LOGGER.warn("clip: all");
+            LOGGER.debug("clip: all");
             return new long[0];
         } else {
             // an actual cutout
