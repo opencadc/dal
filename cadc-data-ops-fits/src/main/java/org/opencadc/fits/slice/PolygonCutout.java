@@ -82,6 +82,7 @@ import jsky.coords.wcscon;
 
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
@@ -134,7 +135,8 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
      *      or null if the circle does not intersect the WCS
      */
     private long[] getPositionBounds(final Polygon polygon) throws NoSuchKeywordException {
-        final int[] dimensions = getDimensions();
+        final int[] dimensions = this.fitsHeaderWCSKeywords.containsKey(Compression.ZIMAGE.key())
+                                 ? getUncompressedDimensions() : getDimensions();
         final int naxis = dimensions.length;
         final CoordSys coordSys = inferCoordSys();
 

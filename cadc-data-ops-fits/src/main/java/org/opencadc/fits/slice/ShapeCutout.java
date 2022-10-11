@@ -72,7 +72,6 @@ import ca.nrc.cadc.dali.Shape;
 
 import java.io.Serializable;
 
-import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Compression;
@@ -88,8 +87,6 @@ import org.apache.log4j.Logger;
 public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
     private static final Logger LOGGER = Logger.getLogger(ShapeCutout.class);
 
-    private static final int MAX_NAXIS_ALLOWED = 999;
-
     public ShapeCutout(final Header header) throws HeaderCardException {
         super(header);
     }
@@ -99,28 +96,47 @@ public abstract class ShapeCutout<T extends Shape> extends FITSCutout<T> {
     }
 
     /**
-     * Ensure the proper axis values are used in the case of a compressed HDU (ZNAXISn) or a regular Image HDU.
+     * Ensure the proper axis values are used in the case of a compressed HDU (ZNAXISn).
      *
-     * @return the dimensions of the axis.  Returns an empty array for no NAXIS values.
+     * @return the dimensions of the axis.  Returns an empty array for no ZNAXIS values.
      */
-    int[] getDimensions() {
-        final int nAxis = this.fitsHeaderWCSKeywords.getIntValue(Compression.ZNAXIS.key(),
-                                                                 this.fitsHeaderWCSKeywords.getIntValue(
-                                                                         Standard.NAXIS.key()));
+    int[] getUncompressedDimensions() {
+        final int nAxis = this.fitsHeaderWCSKeywords.getIntValue(Compression.ZNAXIS.key());
 
+        // Zero is the default value if no header is found.
         if (nAxis == 0) {
             return new int[0];
         }
 
         final int[] axes = new int[nAxis];
         for (int i = 1; i <= nAxis; i++) {
-            axes[i - 1] = this.fitsHeaderWCSKeywords.getIntValue(Compression.ZNAXISn.n(i).key(),
-                                                                 this.fitsHeaderWCSKeywords.getIntValue(
-                                                                         Standard.NAXISn.n(i).key()));
+            axes[i - 1] = this.fitsHeaderWCSKeywords.getIntValue(Compression.ZNAXISn.n(i).key());
         }
 
         return axes;
     }
+
+    /**
+     * Obtain the axes assoicated with this cutout's header.
+     *
+     * @return the dimensions of the axis.  Returns an empty array for no NAXIS values.
+     */
+    int[] getDimensions() {
+        final int nAxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
+
+        // Zero is the default value if no header is found.
+        if (nAxis == 0) {
+            return new int[0];
+        }
+
+        final int[] axes = new int[nAxis];
+        for (int i = 1; i <= nAxis; i++) {
+            axes[i - 1] = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(i).key());
+        }
+
+        return axes;
+    }
+
 
     /**
      * Deduce the Coordinate System used.  This will scan the Header for CTYPEn values.
