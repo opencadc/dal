@@ -79,11 +79,13 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
@@ -286,10 +288,19 @@ public class NDimensionalSlicer {
     private void writeSlices(final BasicHDU<?> hdu, List<ExtensionSlice> extensionSliceList, final Fits fitsOutput,
                              final boolean mefOutput, final boolean firstHDUAlreadyWritten, final int nextEndSize)
             throws FitsException, NoOverlapException {
+        final int[] dimensions;
+        if (hdu instanceof CompressedImageHDU) {
+            // Follow the ZNAXISn values, if present.
+            dimensions = ((CompressedImageHDU) hdu).getOriginalAxes();
+        } else {
+            dimensions = hdu.getAxes();
+        }
+
+        LOGGER.debug("Writing slices with dimensions of " + Arrays.toString(dimensions));
+
         final ImageHDU imageHDU = (hdu instanceof CompressedImageHDU)
                                   ? ((CompressedImageHDU) hdu).asImageHDU(true) : (ImageHDU) hdu;
         final Header header = imageHDU.getHeader();
-        final int[] dimensions = imageHDU.getAxes();
 
         for (final ExtensionSlice extensionSliceValue : extensionSliceList) {
             if (extensionSliceValue.getPixelRanges().isEmpty()) {
@@ -549,7 +560,19 @@ public class NDimensionalSlicer {
                         throw new UnsupportedOperationException(
                                 "Unable to slice from HDU of type: " + hdu.getClass().getSimpleName());
                     } else {
-                        final PixelCutout pixelCutout = new PixelCutout(hdu.getHeader());
+                        final int[] dims;
+                        if (hdu instanceof CompressedImageHDU) {
+                            // Follow the ZNAXISn values, if present.
+                            dims = ((CompressedImageHDU) hdu).getOriginalAxes();
+                        } else {
+                            dims = hdu.getAxes();
+                        }
+                        // We need to reverse this as it comes back from nom-tam-fits
+                        final int[] dimensions =
+                                IntStream.range(0, dims.length).map(i -> dims[dims.length - i - 1]).toArray();
+                        LOGGER.debug("Dimensions are " + Arrays.toString(dimensions));
+
+                        final PixelCutout pixelCutout = new PixelCutout(dimensions);
                         final ExtensionSlice overlapSlice = getOverlap(slice, pixelCutout);
                         if (overlapSlice != null) {
                             overlappingSlices.add(overlapSlice);
@@ -622,7 +645,7 @@ public class NDimensionalSlicer {
                         final List<PixelRange> requestedPixelRange = e.getPixelRanges();
                         LOGGER.debug("\nMatched: " + matchedPixelRange + "\nRequested: " + requestedPixelRange);
                         if ((matchedPixelRange.isEmpty() && requestedPixelRange.isEmpty())
-                            || requestedPixelRange.containsAll(matchedPixelRange)) {
+                            || new HashSet<>(requestedPixelRange).containsAll(matchedPixelRange)) {
                             contained = true;
                             break;
                         }
