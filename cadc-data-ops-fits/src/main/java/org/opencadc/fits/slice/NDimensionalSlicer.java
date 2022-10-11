@@ -288,10 +288,19 @@ public class NDimensionalSlicer {
     private void writeSlices(final BasicHDU<?> hdu, List<ExtensionSlice> extensionSliceList, final Fits fitsOutput,
                              final boolean mefOutput, final boolean firstHDUAlreadyWritten, final int nextEndSize)
             throws FitsException, NoOverlapException {
+        final int[] dimensions;
+        if (hdu instanceof CompressedImageHDU) {
+            // Follow the ZNAXISn values, if present.
+            dimensions = ((CompressedImageHDU) hdu).getOriginalAxes();
+        } else {
+            dimensions = hdu.getAxes();
+        }
+
+        LOGGER.debug("Writing slices with dimensions of " + Arrays.toString(dimensions));
+
         final ImageHDU imageHDU = (hdu instanceof CompressedImageHDU)
                                   ? ((CompressedImageHDU) hdu).asImageHDU(true) : (ImageHDU) hdu;
         final Header header = imageHDU.getHeader();
-        final int[] dimensions = imageHDU.getAxes();
 
         for (final ExtensionSlice extensionSliceValue : extensionSliceList) {
             if (extensionSliceValue.getPixelRanges().isEmpty()) {
