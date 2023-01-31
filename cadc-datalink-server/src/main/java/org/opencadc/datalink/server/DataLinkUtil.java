@@ -137,10 +137,26 @@ public abstract class DataLinkUtil {
         f.unit = "byte";
         f.ucd = "phys.size;meta.file";
         fields.add(f);
+        
+        f = new VOTableField("content_qualifier", "char", "*");
+        f.ucd = null; // TODO: some indication that this is a vocabulary term??
+        f.description = "the nature of the thing the link will deliver (DataLink-1.1)";
+        fields.add(f);
 
+        f = new VOTableField("link_auth", "char", "*");
+        f.ucd = "meta.code";
+        f.description = "link supports authentication (DataLink-1.1)";
+        fields.add(f);
+        
+        f = new VOTableField("link_authorized", "boolean");
+        f.ucd = "meta.code";
+        f.description = "the current authenticated identity is authorized (DataLink-1.1)";
+        fields.add(f);
+        
         // custom
         f = new VOTableField("readable", "boolean");
-        f.description = "the caller is allowed to use this link with the current authenticated identity";
+        f.description = "equivalent to link_authorized; backwards compat support";
+        f.ucd = "meta.code";
         fields.add(f);
 
         return fields;
@@ -191,19 +207,18 @@ public abstract class DataLinkUtil {
     }
 
     public static List<Object> linkToRow(DataLink dl) {
-        StringBuilder sb = new StringBuilder();
-        for (DataLink.Term t : dl.getSemantics()) {
-            sb.append(t.getValue()).append(" ");
-        }
         List vals = new ArrayList();
         vals.add(dl.getID());
         vals.add(safeToString(dl.accessURL));
         vals.add(dl.serviceDef);
         vals.add(dl.errorMessage);
-        vals.add(sb.toString());
+        vals.add(dl.getSemantics().getValue());
         vals.add(dl.description);
         vals.add(dl.contentType);
         vals.add(dl.contentLength);
+        vals.add(dl.contentQualifier);
+        vals.add(safeToString(dl.linkAuth));
+        vals.add(dl.linkAuthorized);
         vals.add(dl.readable);
         
         return vals;
@@ -225,7 +240,19 @@ public abstract class DataLinkUtil {
             len = Integer.toString(val.length());
             metaResource.getParams().add(new VOTableParam("standardID", "char", len, val));
         }
-
+        if (sd.contentType != null) {
+            val = sd.contentType;
+            len = Integer.toString(val.length());
+            metaResource.getParams().add(new VOTableParam("contentType", "char", len, val));
+        }
+        if (sd.exampleURL != null) {
+            val = sd.exampleURL.toExternalForm();
+            len = Integer.toString(val.length());
+            VOTableParam ex = new VOTableParam("exampleURL", "char", len, val);
+            ex.description = sd.exampleDescription;
+            metaResource.getParams().add(ex);
+        }
+        
         val = sd.getAccessURL().toExternalForm();
         len = Integer.toString(val.length());
         metaResource.getParams().add(new VOTableParam("accessURL", "char", len, val));
@@ -265,4 +292,10 @@ public abstract class DataLinkUtil {
         return url.toExternalForm();
     }
 
+    private static String safeToString(DataLink.LinkAuthTerm t) {
+        if (t == null) {
+            return null;
+        }
+        return t.getValue();
+    }
 }
