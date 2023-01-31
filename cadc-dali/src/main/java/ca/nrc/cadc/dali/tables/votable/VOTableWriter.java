@@ -101,6 +101,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
     private static final Logger log = Logger.getLogger(VOTableWriter.class);
 
     public static final String CONTENT_TYPE = "application/x-votable+xml";
+    public static final String CONTENT_TYPE_ALT = "text/xml";
 
     // VOTable Version number.
     public static final String VOTABLE_VERSION = "1.4";

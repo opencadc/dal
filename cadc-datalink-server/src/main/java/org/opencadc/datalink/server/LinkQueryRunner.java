@@ -79,6 +79,7 @@ import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.net.ContentType;
 import ca.nrc.cadc.net.TransientException;
+import ca.nrc.cadc.rest.SyncInput;
 import ca.nrc.cadc.rest.SyncOutput;
 import ca.nrc.cadc.util.ThrowableUtil;
 import ca.nrc.cadc.uws.ErrorSummary;
@@ -240,9 +241,11 @@ public abstract class LinkQueryRunner implements JobRunner {
 
             TableWriter<VOTableDocument> writer;
             
-            if (fmt.equals(DEFAULT_FORMAT) || fmt.getBaseType().equals(VOTableWriter.CONTENT_TYPE)) {
+            if (fmt.equals(DEFAULT_FORMAT) 
+                    || fmt.getBaseType().equals(VOTableWriter.CONTENT_TYPE)
+                    || fmt.getBaseType().equals(VOTableWriter.CONTENT_TYPE_ALT)) {
                 writer = new VOTableWriter();
-                syncOutput.setHeader("Content-Type", DEFAULT_FORMAT.getValue());
+                syncOutput.setHeader("Content-Type", fmt.getValue());
             } else if (fmt.equals(MANIFEST_FORMAT)) {
                 writer = new ManifestWriter(0, 1, 3); // these values rely on column order in DataLink.iterator
                 syncOutput.setHeader("Content-Type", MANIFEST_FORMAT.getValue());
