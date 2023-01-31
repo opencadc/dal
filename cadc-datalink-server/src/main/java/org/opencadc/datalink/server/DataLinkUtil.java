@@ -71,9 +71,11 @@ import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableGroup;
+import ca.nrc.cadc.dali.tables.votable.VOTableInfo;
 import ca.nrc.cadc.dali.tables.votable.VOTableParam;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableTable;
+import ca.nrc.cadc.reg.Standards;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -165,6 +167,7 @@ public abstract class DataLinkUtil {
     public static VOTableDocument createVOTable() {
         VOTableDocument vot = new VOTableDocument();
         VOTableResource vr = new VOTableResource("results");
+        vr.getInfos().add(new VOTableInfo("standardID", Standards.DATALINK_LINKS_10.toASCIIString()));
         vot.getResources().add(vr);
         VOTableTable tab = new VOTableTable();
         vr.setTable(tab);
