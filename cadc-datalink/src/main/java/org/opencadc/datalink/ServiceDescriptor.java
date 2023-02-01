@@ -102,6 +102,19 @@ public class ServiceDescriptor {
      * Optional: IVOA resource identifier if the service is registered in an IVOA registry.
      */
     public URI resourceIdentifier;
+    
+    /**
+     * Optional: content-type of the output from the service (DataLink-1.1).
+     */
+    public String contentType;
+    
+    /**
+     * Optional: working example URL (DataLink-1.1).
+     */
+    public URL exampleURL;
+    
+    public String exampleDescription;
+    
 
     public ServiceDescriptor(URL accessURL) {
         if (accessURL == null) {

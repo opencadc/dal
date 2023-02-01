@@ -70,9 +70,6 @@
 package org.opencadc.datalink;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * A single result output by the data link service. Exactly one of accessURL, serviceDef,
@@ -83,8 +80,7 @@ import java.util.List;
 public class DataLink {
 
     /**
-     * Terms from the http://www.ivoa.net/rdf/datalink/core vocabulary plus
-     * CAOM extensions.
+     * Terms from the http://www.ivoa.net/rdf/datalink/core vocabulary
      */
     public enum Term { // TODO: re-use the VocabularyTerm code once extracted from caom2
         THIS("#this"),
@@ -110,13 +106,6 @@ public class DataLink {
         
         PROC("#proc"),
         CUTOUT("#cutout"),
-
-        /**
-         * @deprecated Use PACKAGE instead
-         */
-        @Deprecated
-        PKG("http://www.opencadc.org/caom2#pkg"),
-
         PACKAGE("#package");
 
         private final String value;
@@ -130,9 +119,25 @@ public class DataLink {
         }
     }
 
+    public enum LinkAuthTerm {
+        FALSE("false"),
+        OPTIONAL("optional"),
+        TRUE("true");
+        
+        private final String value;
+
+        private LinkAuthTerm(String value) {
+            this.value = value;
+        }
+        
+        public String getValue() {
+            return value;
+        }
+    }
+    
     // standard DataLink fields
     private final String id;
-    private final List<Term> semantics = new ArrayList<Term>();
+    private final Term semantics;
 
     /**
      * The access_url field for downloads. Exactly one of accessURL, serviceDef,
@@ -155,17 +160,21 @@ public class DataLink {
     public String description;
     public String contentType;
     public Long contentLength;
-
+    public String contentQualifier; // DataLink-1.1
+    public LinkAuthTerm linkAuth;        // DataLink-1.1
+    public Boolean linkAuthorized; // DataLink-1.1
+    
     /**
      * If the serviceDef specifies a link-specific service descriptor, this is it.
      */
     public ServiceDescriptor descriptor;
 
-    // custom CADC fields
-    public Boolean readable; // predict that the current user is allowed to download
+    // custom CADC field equivalent to linkAuthorized retained for temporary backwards compat
+    public Boolean readable; 
 
     /**
-     * Constructor. There must be at least one semantics tag for each link.
+     * Constructor. The caller must also assign a value to exactly one of:
+     * accessURL, serviceDef, errorMessage before output.
      *
      * @param id Input ID value
      * @param semantics single semantics tag for this link
@@ -178,15 +187,9 @@ public class DataLink {
             throw new IllegalArgumentException("semantics cannot be null");
         }
         this.id = id;
-        this.semantics.add(semantics);
+        this.semantics = semantics;
     }
-
-    public void addSemantics(Term semantics) {
-        if (semantics == null) {
-            throw new IllegalArgumentException("semantics cannot be null");
-        }
-        this.semantics.add(semantics);
-    }
+    
     
     /**
      * @return the ID value
@@ -195,21 +198,18 @@ public class DataLink {
         return id;
     }
 
-    /** 
-     * @return unmodifiable list of semantics tags
+    /**
+     * @return the semantics tag
      */
-    public List<Term> getSemantics() {
-        return Collections.unmodifiableList(semantics);
+    public Term getSemantics() {
+        return semantics;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("DataLink[").append(id).append(",[");
-        for (Term t : semantics) {
-            sb.append(t.getValue()).append(",");
-        }
-        sb.setCharAt(sb.length() - 1, ']'); // replace last comma
+        sb.append("DataLink[").append(id);
+        sb.append(",").append(semantics.getValue());
         
         if (accessURL != null) {
             sb.append(",a=").append(accessURL.toExternalForm());
