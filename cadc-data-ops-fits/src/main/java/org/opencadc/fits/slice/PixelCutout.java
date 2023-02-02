@@ -72,9 +72,6 @@ import ca.nrc.cadc.dali.DaliUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 import org.opencadc.soda.ExtensionSlice;
 import org.opencadc.soda.PixelRange;
@@ -86,11 +83,12 @@ import org.opencadc.soda.PixelRange;
 public class PixelCutout {
     private static final Logger LOGGER = Logger.getLogger(PixelCutout.class);
 
-    private final FITSHeaderWCSKeywords fitsHeaderWCSKeywords;
+    // Contains the maximum dimensions of the image.  Used for clipping.
+    private final int[] imageDimensions;
 
-    public PixelCutout(final Header header) throws HeaderCardException {
-        DaliUtil.assertNotNull("header", header);
-        this.fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(header);
+    public PixelCutout(final int[] imageDimensions) {
+        DaliUtil.assertNotNull("imageDimensions", imageDimensions);
+        this.imageDimensions = imageDimensions;
     }
 
 
@@ -101,16 +99,11 @@ public class PixelCutout {
      * @return PixelRange array of matching values, or null if no overlap.
      */
     public PixelRange[] getBounds(final ExtensionSlice cutoutBound) {
-
-        // The HDU matches a requested one, now check if pixels overlap
-        final int naxis = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXIS.key());
-
         final List<PixelRange> pixelRanges = cutoutBound.getPixelRanges();
         final List<PixelRange> pixelCutoutBounds = new ArrayList<>();
 
-        for (int i = 0; i < naxis; i++) {
-            final int axisKey = i + 1;
-            final int maxUpperBound = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(axisKey).key());
+        for (int i = 0; i < this.imageDimensions.length; i++) {
+            final int maxUpperBound = this.imageDimensions[i];
 
             if (pixelRanges.isEmpty()) {
                 pixelCutoutBounds.add(new PixelRange(1, maxUpperBound));
@@ -118,9 +111,10 @@ public class PixelCutout {
                 final int lowBound = pixelRanges.get(i).lowerBound;
                 final int hiBound = pixelRanges.get(i).upperBound;
                 final int step = pixelRanges.get(i).step;
-                LOGGER.debug("Requested pixel range (" + lowBound + ":" + hiBound + ":" + step + ")");
+                LOGGER.debug("Requested pixel range (" + lowBound + ":" + hiBound + ":" + step + ") - Max: "
+                             + maxUpperBound);
                 if (lowBound < maxUpperBound) {
-                    final long[] clip = clip(axisKey, lowBound, Math.min(maxUpperBound, hiBound));
+                    final long[] clip = clip(maxUpperBound, lowBound, Math.min(maxUpperBound, hiBound));
                     if (clip != null) {
                         final long[] overlap = clip.length == 0 ? new long[] {lowBound, hiBound} : clip;
                         pixelCutoutBounds.add(new PixelRange((int) overlap[0], (int) overlap[1], step));
@@ -132,9 +126,7 @@ public class PixelCutout {
         return pixelCutoutBounds.isEmpty() ? null : pixelCutoutBounds.toArray(new PixelRange[0]);
     }
 
-    private long[] clip(final int axis, final long lower, final long upper) {
-        final long len = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(axis).key());
-
+    private long[] clip(final int len, final long lower, final long upper) {
         long x1 = lower;
         long x2 = upper;
 
@@ -150,10 +142,10 @@ public class PixelCutout {
 
         // no pixels included
         if (x1 > len || x2 < 1) {
-            LOGGER.warn("clip: none");
+            LOGGER.debug("clip: none");
             return null;
         } else if (x1 == 1 && x2 == len) {
-            LOGGER.warn("clip: all");
+            LOGGER.debug("clip: all");
             return new long[0];
         } else {
             // an actual cutout

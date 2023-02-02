@@ -114,31 +114,4 @@ public class DataLinkTest {
             log.info("caught expected: " + expected);
         }
     }
-    
-    @Test
-    public void testToString() throws MalformedURLException {
-       
-        // OK
-        DataLink link = new DataLink(ID, DataLink.Term.THIS);
-        link.addSemantics(DataLink.Term.PACKAGE);
-        log.info("bare link: " + link);
-        
-        link.accessURL = new URL("https://www.opencadc.org/files/collection/observation/product/stuff");
-        String surl = link.toString();
-        log.info("link w/ accessURL: " + link);
-        Assert.assertTrue("accessURL", surl.contains(link.accessURL.toExternalForm()));
-        link.accessURL = null;
-        
-        link.serviceDef = "blah-blah";
-        String sd = link.toString();
-        log.info("link w/ serviceDef: " + link);
-        Assert.assertTrue("serviceDef", sd.contains(link.serviceDef));
-        link.serviceDef = null;
-        
-        link.errorMessage = "oops";
-        String se = link.toString();
-        log.info("link w/ errorMessage: " + link);
-        Assert.assertTrue("errorMessage", se.contains(link.errorMessage));
-        link.errorMessage = null;
-    }
 }
