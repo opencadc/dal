@@ -161,16 +161,14 @@ public class DataLink {
     public String contentType;
     public Long contentLength;
     public String contentQualifier; // DataLink-1.1
-    public LinkAuthTerm linkAuth;        // DataLink-1.1
-    public Boolean linkAuthorized; // DataLink-1.1
+    public LinkAuthTerm linkAuth;   // DataLink-1.1
+    public Boolean linkAuthorized;  // DataLink-1.1
+    public String localSemantics;   // DataLink-1.1
     
     /**
      * If the serviceDef specifies a link-specific service descriptor, this is it.
      */
     public ServiceDescriptor descriptor;
-
-    // custom CADC field equivalent to linkAuthorized retained for temporary backwards compat
-    public Boolean readable; 
 
     /**
      * Constructor. The caller must also assign a value to exactly one of:
