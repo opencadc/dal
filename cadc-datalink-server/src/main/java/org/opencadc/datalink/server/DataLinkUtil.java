@@ -79,7 +79,6 @@ import ca.nrc.cadc.reg.Standards;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.log4j.Logger;
@@ -126,6 +125,11 @@ public abstract class DataLinkUtil {
         f = new VOTableField("semantics", "char", "*");
         f.ucd = "meta.code";
         fields.add(f);
+        
+        f = new VOTableField("local_semantics", "char", "*");
+        f.ucd = "meta.code";
+        f.description = "local tag indicating equivalent meaning or role of this link (DataLink-1.1)";
+        fields.add(f);
 
         f = new VOTableField("description", "char", "*");
         f.ucd = "meta.note";
@@ -155,19 +159,13 @@ public abstract class DataLinkUtil {
         f.description = "the current authenticated identity is authorized (DataLink-1.1)";
         fields.add(f);
         
-        // custom
-        f = new VOTableField("readable", "boolean");
-        f.description = "equivalent to link_authorized; backwards compat support";
-        f.ucd = "meta.code";
-        fields.add(f);
-
         return fields;
     }
 
     public static VOTableDocument createVOTable() {
         VOTableDocument vot = new VOTableDocument();
         VOTableResource vr = new VOTableResource("results");
-        vr.getInfos().add(new VOTableInfo("standardID", Standards.DATALINK_LINKS_10.toASCIIString()));
+        vr.getInfos().add(new VOTableInfo("standardID", Standards.DATALINK_LINKS_11.toASCIIString()));
         vot.getResources().add(vr);
         VOTableTable tab = new VOTableTable();
         vr.setTable(tab);
@@ -216,13 +214,13 @@ public abstract class DataLinkUtil {
         vals.add(dl.serviceDef);
         vals.add(dl.errorMessage);
         vals.add(dl.getSemantics().getValue());
+        vals.add(dl.localSemantics);
         vals.add(dl.description);
         vals.add(dl.contentType);
         vals.add(dl.contentLength);
         vals.add(dl.contentQualifier);
         vals.add(safeToString(dl.linkAuth));
         vals.add(dl.linkAuthorized);
-        vals.add(dl.readable);
         
         return vals;
     }
