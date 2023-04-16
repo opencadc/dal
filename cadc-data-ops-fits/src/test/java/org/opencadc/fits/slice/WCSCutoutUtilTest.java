@@ -74,8 +74,7 @@ import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.BufferedDataInputStream;
+import nom.tam.fits.HeaderCard;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -83,15 +82,18 @@ import org.junit.Test;
 import org.opencadc.soda.PixelRange;
 import org.opencadc.soda.server.Cutout;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
 
 
 public class WCSCutoutUtilTest extends BaseCutoutTest {
     private static final Logger LOGGER = Logger.getLogger(WCSCutoutUtilTest.class);
 
     static {
+        Log4jInit.setLevel("ca.nrc.cadc.wcs", Level.DEBUG);
         Log4jInit.setLevel("org.opencadc.fits.slice", Level.DEBUG);
     }
 
@@ -105,9 +107,14 @@ public class WCSCutoutUtilTest extends BaseCutoutTest {
         cutout.pos = new Circle(new Point(128.638D, 17.33D), 0.01D);
         cutout.band = new Interval<>(1.3606E-3D, 1.3616E-3D);
 
-        try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
-            final Header testHeader = Header.readHeader(arrayDataInput);
+        try (final InputStream inputStream = Files.newInputStream(testFile.toPath());
+             final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+            final Header testHeader = new Header();
+            final char[] buff = new char[80];
+            while (bufferedReader.read(buff) >= 0) {
+                testHeader.addLine(HeaderCard.create(new String(buff)));
+            }
+
             final PixelRange[] resultRanges = WCSCutoutUtil.getBounds(testHeader, cutout);
 
             // Combined Circle cutout (axes 1 & 2), as well as Band cutout on axis 3.

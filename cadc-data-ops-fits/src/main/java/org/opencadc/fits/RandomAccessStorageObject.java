@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2021.                            (c) 2021.
+ *  (c) 2023.                            (c) 2023.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -66,53 +66,27 @@
  ************************************************************************
  */
 
-package org.opencadc.fits.slice;
+package org.opencadc.fits;
 
-import ca.nrc.cadc.util.Log4jInit;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
+import nom.tam.util.RandomAccessFileIO;
 
-import java.util.Arrays;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
-public abstract class BaseCutoutTest {
-    private static final Logger LOGGER = Logger.getLogger(BaseCutoutTest.class);
-
-    // Concrete tests can set this if desired.
-    long padding = 2;
-
-    static {
-        Log4jInit.setLevel("org.opecadc.fits.slice", Level.DEBUG);
+public class RandomAccessStorageObject extends RandomAccessFile implements RandomAccessFileIO {
+    public RandomAccessStorageObject(File file, String mode) throws FileNotFoundException {
+        super(file, mode);
     }
 
-    /**
-     * Ensure the pixel values match with a +-padding grace.
-     * @param message   The fail message.
-     * @param expected  The expected values.
-     * @param result    The resulting values.
-     */
-    void assertFuzzyPixelArrayEquals(final String message, final long[] expected, final long[] result) {
-        if (result == null && expected != null) {
-            Assert.fail("Result array is null but expected " + Arrays.toString(expected)
-                        + "\nMessage from test: " + message);
-        } else if (result != null && expected == null) {
-            Assert.fail("Expected null but got " + Arrays.toString(result) + "\nMessage from test: " + message);
-        } else if (result != null) {
-            LOGGER.debug("\n*****\nChecking array \n" + Arrays.toString(result) + "\nagainst\n"
-                         + Arrays.toString(expected) + "\n allowing a difference of " + padding + ".\n****");
-            Assert.assertEquals(message, result.length, expected.length);
-            for (int i = 0; i < expected.length; i++) {
-                final long expectedPixelValue = expected[i];
-                final long resultPixelValue = result[i];
+    @Override
+    public long position() throws IOException {
+        return super.getFilePointer();
+    }
 
-                // Assert
-                final boolean condition = (resultPixelValue <= expectedPixelValue + padding)
-                                          && (resultPixelValue >= expectedPixelValue - padding);
-                LOGGER.debug("Checking " + resultPixelValue + " against " + expectedPixelValue + " diff = "
-                             + Math.abs(expectedPixelValue - resultPixelValue));
-                Assert.assertTrue(message + "\nExpected " + expectedPixelValue + "(+/-" + padding
-                                  + "), but received " + resultPixelValue + "\n", condition);
-            }
-        }
+    @Override
+    public void position(long n) throws IOException {
+        super.seek(n);
     }
 }

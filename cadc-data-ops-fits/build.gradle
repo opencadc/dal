@@ -12,21 +12,21 @@ repositories {
 
 sourceCompatibility = 1.8
 group = 'org.opencadc'
-version = '0.2.9'
+version = '0.3.0'
 
 description = 'OpenCADC FITS cutout library'
 def git_url = 'https://github.com/opencadc/dal'
 
 dependencies {
-    compile 'org.opencadc:cadc-dali:[1.2.10,2.0.0)'
-    compile 'org.opencadc:cadc-util:[1.6,2.0)'
-    compile 'org.opencadc:cadc-soda-server:[1.2.1,2.0)'
-    compile 'org.opencadc:cadc-wcs:[2.0,3.0)'
-    compile 'org.opencadc:jsky:[1.0.0,2.0.0)'
-    compile 'org.opencadc:nom-tam-fits:[1.16.8,1.17.0)'
+    implementation 'org.opencadc:cadc-dali:[1.2.10,2.0.0)'
+    implementation 'org.opencadc:cadc-util:[1.6,2.0)'
+    implementation 'org.opencadc:cadc-soda-server:[1.2.1,2.0)'
+    implementation 'org.opencadc:cadc-wcs:[2.1.4,3.0)'
+    implementation 'org.opencadc:jsky:[1.0.0,2.0.0)'
+    implementation 'gov.nasa.gsfc.heasarc:nom-tam-fits:1.18.0-SNAPSHOT'
 
     // Use JUnit test framework
-    testCompile 'junit:junit:[4.13,5.0)'
+    testImplementation 'junit:junit:[4.13,5.0)'
 }
 
 apply from: '../opencadc.gradle'

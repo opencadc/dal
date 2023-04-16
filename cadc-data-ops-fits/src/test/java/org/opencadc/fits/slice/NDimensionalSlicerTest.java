@@ -72,7 +72,6 @@ import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,14 +80,15 @@ import java.util.List;
 
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
-import nom.tam.util.RandomAccessDataObject;
-import nom.tam.util.RandomAccessFileExt;
+import nom.tam.util.FitsOutputStream;
+import nom.tam.util.RandomAccessFileIO;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 import org.opencadc.fits.FitsTest;
 import org.opencadc.fits.NoOverlapException;
+import org.opencadc.fits.RandomAccessStorageObject;
 import org.opencadc.soda.ExtensionSlice;
 import org.opencadc.soda.ExtensionSliceFormat;
 import org.opencadc.soda.server.Cutout;
@@ -123,7 +123,7 @@ public class NDimensionalSlicerTest {
         final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-hst-mef-cutout", ".fits");
         LOGGER.debug("Writing out to " + outputPath);
 
-        try (final OutputStream outputStream = new FileOutputStream(outputPath.toFile())) {
+        try (final OutputStream outputStream = Files.newOutputStream(outputPath.toFile().toPath())) {
             slicer.slice(file, cutout, outputStream);
         }
 
@@ -187,8 +187,8 @@ public class NDimensionalSlicerTest {
         final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-hst-mef-cutout", ".fits");
         LOGGER.debug("Writing out to " + outputPath);
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
-             final OutputStream outputStream = new FileOutputStream(outputPath.toFile());
+        try (final RandomAccessFileIO randomAccessDataObject = new RandomAccessStorageObject(file, "r");
+             final OutputStream outputStream = Files.newOutputStream(outputPath.toFile().toPath());
              final OutputStream hstFileCutoutStream = new DataOutputStream(outputStream)) {
             slicer.slice(randomAccessDataObject, cutout, hstFileCutoutStream);
             hstFileCutoutStream.flush();
@@ -222,8 +222,8 @@ public class NDimensionalSlicerTest {
         final String testWriteDir = configuredTestWriteDir == null ? "/tmp" : configuredTestWriteDir;
         final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-simple-iris-cutout", ".fits");
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
-             final OutputStream outputStream = new FileOutputStream(outputPath.toFile())) {
+        try (final RandomAccessFileIO randomAccessDataObject = new RandomAccessStorageObject(file, "r");
+             final OutputStream outputStream = Files.newOutputStream(outputPath.toFile().toPath())) {
             slicer.slice(randomAccessDataObject, cutout, outputStream);
             outputStream.flush();
         }
@@ -252,8 +252,8 @@ public class NDimensionalSlicerTest {
         final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-simple-hst-cutout", ".fits");
         LOGGER.debug("Writing out to " + outputPath);
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
-             final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
+        try (final RandomAccessFileIO randomAccessDataObject = new RandomAccessStorageObject(file, "r");
+             final OutputStream hstFileCutoutStream = Files.newOutputStream(outputPath.toFile().toPath())) {
             slicer.slice(randomAccessDataObject, cutout, hstFileCutoutStream);
             hstFileCutoutStream.flush();
         }
@@ -280,8 +280,8 @@ public class NDimensionalSlicerTest {
         final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "test-simple-hst-cutout", ".fits");
         LOGGER.debug("Writing out to " + outputPath);
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
-             final OutputStream hstFileCutoutStream = new FileOutputStream(outputPath.toFile())) {
+        try (final RandomAccessFileIO randomAccessDataObject = new RandomAccessStorageObject(file, "r");
+             final OutputStream hstFileCutoutStream = Files.newOutputStream(outputPath.toFile().toPath())) {
             slicer.slice(randomAccessDataObject, cutout, hstFileCutoutStream);
             hstFileCutoutStream.flush();
         } catch (NoOverlapException noOverlapException) {
@@ -307,9 +307,8 @@ public class NDimensionalSlicerTest {
 
         final NDimensionalSlicer slicer = new NDimensionalSlicer();
         final File file = Files.createTempFile("test-data-primary-", ".fits").toFile();
-        try (final DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(file));
+        try (final FitsOutputStream fitsOutputStream = new FitsOutputStream(Files.newOutputStream(file.toPath()));
              final Fits fits = new Fits()) {
-            fits.setStreamWrite(true);
             for (int i = 0; i < 101; i += 1) {
                 for (int j = 0; j < 101; j += 1) {
                     data0[i][j] = i * j;
@@ -329,9 +328,10 @@ public class NDimensionalSlicerTest {
                     data2[i][j] = i * j;
                 }
             }
-            fits.addHDU(Fits.makeHDU(data2));
 
-            fits.write(dataOutputStream);
+            fits.addHDU(Fits.makeHDU(data2));
+            fits.write(fitsOutputStream);
+            fitsOutputStream.flush();
         }
 
         final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
@@ -344,8 +344,8 @@ public class NDimensionalSlicerTest {
 
         LOGGER.debug("Writing out to " + outputPath);
 
-        try (final RandomAccessDataObject randomAccessDataObject = new RandomAccessFileExt(file, "r");
-             final OutputStream outputStream = new FileOutputStream(outputPath.toFile())) {
+        try (final RandomAccessFileIO randomAccessDataObject = new RandomAccessStorageObject(file, "r");
+             final OutputStream outputStream = Files.newOutputStream(outputPath.toFile().toPath())) {
             slicer.slice(randomAccessDataObject, cutout, outputStream);
             outputStream.flush();
         } catch (IllegalArgumentException illegalArgumentException) {
@@ -354,7 +354,6 @@ public class NDimensionalSlicerTest {
         }
 
         try (final Fits checkFits = new Fits(outputPath.toFile())) {
-            checkFits.setStreamWrite(true);
             checkFits.read();
 
             int index = 0;
