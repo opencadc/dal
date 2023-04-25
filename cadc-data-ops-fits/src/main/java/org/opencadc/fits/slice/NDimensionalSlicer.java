@@ -320,8 +320,8 @@ public class NDimensionalSlicer {
         if (hdu instanceof CompressedImageHDU) {
             final CompressedImageHDU compressedImageHDU = (CompressedImageHDU) hdu;
             // Follow the ZNAXISn values, if present.
-            dimensions = compressedImageHDU.getDecompressedAxes();
-            header = compressedImageHDU.getGenericHeader();
+            dimensions = compressedImageHDU.getImageAxes();
+            header = compressedImageHDU.getImageHeader();
 
             final Header originalHeader = compressedImageHDU.getHeader();
 
@@ -630,7 +630,7 @@ public class NDimensionalSlicer {
                         final int[] dims;
                         if (hdu instanceof CompressedImageHDU) {
                             // Follow the ZNAXISn values, if present.
-                            dims = ((CompressedImageHDU) hdu).getDecompressedAxes();
+                            dims = ((CompressedImageHDU) hdu).getImageAxes();
                         } else {
                             dims = hdu.getAxes();
                         }
