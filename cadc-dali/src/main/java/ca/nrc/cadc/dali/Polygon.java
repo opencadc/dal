@@ -75,7 +75,10 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 /**
- * DALI polygon class with port of CAOM-2.4 polygon validation code.
+ * DALI polygon class with port of CAOM-2.4 polygon validation code.  Note: the code
+ * in this class assumes that polygons are small (flat) enough that cartesian math is
+ * a reasonable approximation and it will give wrong answers for polygons that are too
+ * large (10s of degrees across??) and especially for those larger than half the sphere.
  * 
  * @author pdowler
  */
@@ -130,6 +133,7 @@ public class Polygon implements Shape {
 
     /**
      * Validate this polygon for conformance to IVOA DALI polygon rules.
+     * 
      * @throws InvalidPolygonException violation of DALI spec
      */
     public final void validate() throws InvalidPolygonException {
@@ -142,6 +146,18 @@ public class Polygon implements Shape {
         if (!ccw) {
             throw new InvalidPolygonException("clockwise winding direction");
         }
+    }
+    
+    /**
+     * Check if the polygon is counter-clockwise.
+     * 
+     * @return true if counter-clockwise (valid), false is clockwise (invalid)
+     */
+    public boolean getCounterClockwise() {
+        if (ccw == null) {
+            initProps();
+        }
+        return ccw;
     }
     
     public Point getCenter() {

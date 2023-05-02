@@ -99,6 +99,8 @@ public class PolygonTest {
 
             p.validate();
 
+            Assert.assertTrue("CCW", p.getCounterClockwise());
+            
             Point c = p.getCenter();
             Assert.assertNotNull(c);
             Assert.assertEquals(2.0, c.getLongitude(), 0.01);
@@ -189,6 +191,8 @@ public class PolygonTest {
             p.getVertices().add(new Point(2.0, 2.0));
             p.getVertices().add(new Point(3.0, 3.0));
             p.getVertices().add(new Point(1.0, 4.0));
+            
+            Assert.assertFalse("CCW", p.getCounterClockwise());
 
             p.validate();
             Assert.fail("expected InvalidPolygonException, created: " + p);
