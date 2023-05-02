@@ -79,7 +79,6 @@ import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 import ca.nrc.cadc.log.WebServiceLogInfo;
 import ca.nrc.cadc.net.ContentType;
 import ca.nrc.cadc.net.TransientException;
-import ca.nrc.cadc.rest.SyncInput;
 import ca.nrc.cadc.rest.SyncOutput;
 import ca.nrc.cadc.util.ThrowableUtil;
 import ca.nrc.cadc.uws.ErrorSummary;
