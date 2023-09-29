@@ -23,12 +23,12 @@
         <init-param>
             <param-name>logLevelPackages</param-name>
             <param-value>
-                oprg.opencadc.sia2
+                org.opencadc.sia2
                 ca.nrc.cadc.uws
                 ca.nrc.cadc.rest
-                ca.nrc.cadc.sia
-                ca.nrc.cadc.sia2
                 ca.nrc.cadc.vosi
+                ca.nrc.cadc.auth
+                org.opencadc.auth
             </param-value>
         </init-param>
         
@@ -38,6 +38,10 @@
         <load-on-startup>3</load-on-startup>
         <servlet-name>SiaServlet</servlet-name>
         <servlet-class>ca.nrc.cadc.uws.server.JobServlet</servlet-class>
+        <init-param>
+            <param-name>init</param-name>
+            <param-value>org.opencadc.sia2.UWSInitAction</param-value>
+        </init-param>
         <init-param>
             <param-name>get</param-name>
             <param-value>ca.nrc.cadc.uws.web.SyncGetAction</param-value>

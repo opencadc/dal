@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2023.                            (c) 2023.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,46 +62,38 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
 package org.opencadc.sia2;
 
-import ca.nrc.cadc.auth.AuthenticationUtil;
-import ca.nrc.cadc.auth.IdentityManager;
-import ca.nrc.cadc.uws.server.JobExecutor;
-import ca.nrc.cadc.uws.server.JobPersistence;
-import ca.nrc.cadc.uws.server.SimpleJobManager;
-import ca.nrc.cadc.uws.server.SyncJobExecutor;
-import ca.nrc.cadc.uws.server.impl.PostgresJobPersistence;
+import ca.nrc.cadc.db.DBUtil;
+import ca.nrc.cadc.rest.InitAction;
+import ca.nrc.cadc.uws.server.impl.InitDatabaseUWS;
+import javax.sql.DataSource;
 import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class QueryJobManager extends SimpleJobManager {
+public class UWSInitAction extends InitAction {
+    private static final Logger log = Logger.getLogger(UWSInitAction.class);
 
-    private static final Logger log = Logger.getLogger(QueryJobManager.class);
-
-    private static final Long MAX_EXEC_DURATION = 600L;
-    private static final Long MAX_DESTRUCTION = 7 * 24 * 3600L; // 1 week
-    private static final Long MAX_QUOTE = 600L; // same as exec since we don't queue
-
-    public QueryJobManager() {
-        super();
-        IdentityManager im = AuthenticationUtil.getIdentityManager();
-        JobPersistence jobPersist = new PostgresJobPersistence(im);
-
-        // exec jobs in request thread using custom SiaRunner
-        JobExecutor jobExec = new SyncJobExecutor(jobPersist, SiaRunner.class);
-
-        super.setJobPersistence(jobPersist);
-        super.setJobExecutor(jobExec);
-        super.setMaxExecDuration(MAX_EXEC_DURATION);
-        super.setMaxDestruction(MAX_DESTRUCTION);
-        super.setMaxQuote(MAX_QUOTE);
+    public UWSInitAction() { 
     }
+
+    @Override
+    public void doInit() {
+        try {
+            DataSource uws = DBUtil.findJNDIDataSource("jdbc/uws");
+            InitDatabaseUWS uwsi = new InitDatabaseUWS(uws, null, "uws");
+            uwsi.doInit();
+            log.info("init uws: OK");
+        } catch (Exception ex) {
+            throw new RuntimeException("INIT FAIL", ex);
+        }
+    }
+    
+    
 }
