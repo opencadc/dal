@@ -83,7 +83,7 @@ import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.util.Cursor;
-import nom.tam.util.RandomAccessDataObject;
+import nom.tam.util.RandomAccessFileIO;
 import org.apache.log4j.Logger;
 import org.opencadc.fits.slice.NDimensionalSlicer;
 import org.opencadc.soda.server.Cutout;
@@ -96,9 +96,9 @@ import org.opencadc.soda.server.Cutout;
 public class FitsOperations {
     private static final Logger log = Logger.getLogger(FitsOperations.class);
 
-    private final RandomAccessDataObject src;
+    private final RandomAccessFileIO src;
 
-    public FitsOperations(RandomAccessDataObject src) {
+    public FitsOperations(RandomAccessFileIO src) {
         this.src = src;
     }
 
