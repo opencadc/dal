@@ -162,11 +162,12 @@ public class SiaRunner implements JobRunner {
             mv.setMaxValue(MAX_MAXREC);
             Integer maxrec = mv.validate();
 
+            SiaConfig conf = new SiaConfig();
             ParamExtractor pe = new ParamExtractor(SiaParamValidator.QUERY_PARAMS);
             Map<String, List<String>> queryParams = pe.getParameters(job.getParameterList());
 
             // Get the ADQL request parameters.
-            AdqlQueryGenerator queryGenerator = new AdqlQueryGenerator(queryParams);
+            AdqlQueryGenerator queryGenerator = new AdqlQueryGenerator(queryParams, conf.getTableName());
             Map<String, Object> parameters = queryGenerator.getParameterMap();
             parameters.put("FORMAT", VOTableWriter.CONTENT_TYPE);
             if (maxrec != null) {
@@ -175,7 +176,6 @@ public class SiaRunner implements JobRunner {
 
             // the implementation assumes that the /tap/sync service follows the 
             // POST-redirect-GET (PrG) pattern; cadcUWS SyncServlet does
-            SiaConfig conf = new SiaConfig();
             URL tapSyncURL = conf.getTapSyncURL();
 
             // POST ADQL query to TAP but do not follow redirect to execute it.

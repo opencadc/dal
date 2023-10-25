@@ -108,7 +108,7 @@ public class AdqlQueryGeneratorTest {
 
         try {
             Map<String, List<String>> params = new TreeMap<String, List<String>>(new CaseInsensitiveStringComparator());
-            AdqlQueryGenerator gen = new AdqlQueryGenerator(params);
+            AdqlQueryGenerator gen = new AdqlQueryGenerator(params, "ivoa.ObsCore");
             Map<String, Object> tapParams = gen.getParameterMap();
 
             String lang = (String) tapParams.get("LANG");
@@ -132,7 +132,7 @@ public class AdqlQueryGeneratorTest {
             params.put("BAND", Arrays.asList("550e-9"));
             params.put("TIME", Arrays.asList("54321.0"));
 
-            AdqlQueryGenerator gen = new AdqlQueryGenerator(params);
+            AdqlQueryGenerator gen = new AdqlQueryGenerator(params, "ivoa.ObsCore");
             Map<String, Object> tapParams = gen.getParameterMap();
 
             String lang = (String) tapParams.get("LANG");
@@ -176,7 +176,7 @@ public class AdqlQueryGeneratorTest {
             params.put("SPECRP", Arrays.asList("-inf 500"));
             params.put("FORMAT", Arrays.asList("application/fits"));
 
-            AdqlQueryGenerator gen = new AdqlQueryGenerator(params);
+            AdqlQueryGenerator gen = new AdqlQueryGenerator(params, "ivoa.ObsCore");
             String adql = gen.getQuery();
             log.info("testSingleParams ADQL:\n" + adql);
 
@@ -233,7 +233,7 @@ public class AdqlQueryGeneratorTest {
             params.put("SPECRP", Arrays.asList("-Inf 500", "200 300"));
             params.put("FORMAT", Arrays.asList("application/fits", "text/xml"));
 
-            AdqlQueryGenerator gen = new AdqlQueryGenerator(params);
+            AdqlQueryGenerator gen = new AdqlQueryGenerator(params, "ivoa.ObsCore");
             String adql = gen.getQuery();
             log.info("testMultipleParams ADQL:\n" + adql);
 
@@ -273,10 +273,31 @@ public class AdqlQueryGeneratorTest {
             Map<String, List<String>> params = new TreeMap<String, List<String>>(new CaseInsensitiveStringComparator());
             params.put("POS", Arrays.asList("RANGE 0 360 -2 2", "RANGE 10 20 -90 90", "RANGE 1 2 3 4"));
 
-            AdqlQueryGenerator gen = new AdqlQueryGenerator(params);
+            AdqlQueryGenerator gen = new AdqlQueryGenerator(params, "ivoa.ObsCore");
             String adql = gen.getQuery();
             log.info("testCoordRanges ADQL:\n" + adql);
 
+            Assert.assertTrue("dataproduct_type", adql.contains("dataproduct_type"));
+            Assert.assertTrue("s_region", adql.contains("s_region"));
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testAltTableNames() {
+
+        try {
+            Map<String, List<String>> params = new TreeMap<String, List<String>>(new CaseInsensitiveStringComparator());
+            params.put("POS", Arrays.asList("RANGE 0 360 -2 2", "RANGE 10 20 -90 90", "RANGE 1 2 3 4"));
+
+            AdqlQueryGenerator gen = new AdqlQueryGenerator(params, "schema.TableName");
+            String adql = gen.getQuery();
+            log.info("testCoordRanges ADQL:\n" + adql);
+
+            String selectStmt = "SELECT * FROM schema.TableName WHERE";
+            Assert.assertTrue("schema.TableName", adql.contains(selectStmt));
             Assert.assertTrue("dataproduct_type", adql.contains("dataproduct_type"));
             Assert.assertTrue("s_region", adql.contains("s_region"));
         } catch (Exception unexpected) {
