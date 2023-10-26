@@ -90,15 +90,18 @@ public class AdqlQueryGenerator {
 
     private static Logger log = Logger.getLogger(AdqlQueryGenerator.class);
 
+    private String tableName;
     private Map<String, List<String>> queryParams;
 
     /**
      * The input SIA query parameters as structured by the ParamExtractor in cadcDALI.
      *
      * @param query query input parameters
+     * @param tableName ivoa.ObsCore table name
      * @see ca.nrc.cadc.dali.ParamExtractor
      */
-    public AdqlQueryGenerator(Map<String, List<String>> query) {
+    public AdqlQueryGenerator(Map<String, List<String>> query, String tableName) {
+        this.tableName = tableName;
         this.queryParams = query;
     }
 
@@ -118,7 +121,9 @@ public class AdqlQueryGenerator {
 
     protected String getQuery() {
         StringBuilder query = new StringBuilder();
-        query.append("SELECT * FROM ivoa.ObsCore WHERE dataproduct_type IN ( 'image', 'cube' )");
+        query.append("SELECT * FROM ");
+        query.append(tableName);
+        query.append(" WHERE dataproduct_type IN ( 'image', 'cube' )");
 
         SiaParamValidator sia = new SiaParamValidator();
         List<Shape> pos = sia.validatePOS(queryParams);
