@@ -74,6 +74,7 @@ import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.tar.TarConstants;
 import org.apache.log4j.Logger;
 
 public class TarWriter extends PackageWriter {
@@ -84,31 +85,37 @@ public class TarWriter extends PackageWriter {
 
     public TarWriter(OutputStream ostream) {
         super(new TarArchiveOutputStream(ostream));
-        ((TarArchiveOutputStream)super.aout).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+        ((TarArchiveOutputStream)super.archiveOutputStream).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
     }
 
-    ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
-        return new DynamicTarEntry(name, size, lastModifiedDate);
-    }
+    ArchiveEntry createFileEntry(String relativePath, long size, Date lastModifiedDate) {
+        log.debug(String.format("file ArchiveEntry: %s %s %s", relativePath, size, lastModifiedDate));
 
-    /**
-     * Wrapper for TarArchiveEntry class.
-     * isDirectory set to false - PackageWriter only writes files.
-     */
-    private class DynamicTarEntry extends TarArchiveEntry {
-
-        public DynamicTarEntry(String name, long size, Date lastModifiedDate) {
-            super(name);
-            log.info("TAR ENTRY VALUES:" + name + size);
-            if (lastModifiedDate != null) {
-                super.setModTime(lastModifiedDate);
-            }
-            super.setSize(size);
+        TarArchiveEntry entry = new TarArchiveEntry(relativePath, TarConstants.LF_NORMAL);
+        entry.setSize(size);
+        if (lastModifiedDate != null) {
+            entry.setModTime(lastModifiedDate);
         }
-
-        @Override
-        public boolean isDirectory() {
-            return false;
-        }
+        return entry;
     }
+
+    ArchiveEntry createDirectoryEntry(String relativePath) {
+        log.debug("directory ArchiveEntry: " + relativePath);
+
+        return new TarArchiveEntry(relativePath, TarConstants.LF_DIR);
+    }
+
+    ArchiveEntry createLinkEntry(String relativePath, String linkRelativePath, Date lastModifiedDate) {
+        log.debug(String.format("symbolic link ArchiveEntry: %s %s %s",
+                relativePath, linkRelativePath, lastModifiedDate));
+
+        TarArchiveEntry entry = new TarArchiveEntry(relativePath, TarConstants.LF_SYMLINK);
+        entry.setLinkName(linkRelativePath);
+        entry.setSize(linkRelativePath.length());
+        if (lastModifiedDate != null) {
+            entry.setModTime(lastModifiedDate);
+        }
+        return entry;
+    }
+
 }

@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2022.                            (c) 2022.
+ *  (c) 2023.                            (c) 2023.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,8 +67,6 @@
 
 package org.opencadc.pkg.server;
 
-import ca.nrc.cadc.net.NetUtil;
-import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -82,7 +80,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.compress.archivers.ArchiveEntry;
-
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.log4j.Level;
@@ -94,28 +91,45 @@ public class TarWriterTest {
     private static final Logger log = Logger.getLogger(TarWriterTest.class);
     
     static {
-        Log4jInit.setLevel("ca.nrc.cadc.caom2.pkg", Level.INFO);
+        Log4jInit.setLevel("org.opencadc.pkg.server", Level.INFO);
     }
 
     @Test
     public void testCreateTar() {
         try {
-
             // Create PackageItems for testing
             // Files are in test/resources
-            URL url1 = getClass().getClassLoader().getResource("GovCanada.gif");
-            log.debug("url1: " + url1.toString());
-            PackageItem pi1 = new PackageItem(url1, "some/path/GovCanada.gif");
+            String dir1Path = "some/path/";
+            DirectoryPackageItem dir1 = new DirectoryPackageItem(dir1Path);
+            log.debug(dir1);
 
-            URL url2 = getClass().getClassLoader().getResource("SymbolCanada.gif");
-            log.debug("url2: " + url2.toString());
-            PackageItem pi2 = new PackageItem(url2,"another/path/SymbolCanada.gif");
+            String dir2Path = "some/empty/path/";
+            DirectoryPackageItem dir2 = new DirectoryPackageItem(dir2Path);
+            log.debug(dir2);
 
-            List<PackageItem> packageContents = new ArrayList<PackageItem>();
-            packageContents.add(pi1);
-            packageContents.add(pi2);
+            String file1Path = "some/path/GovCanada.gif";
+            URL file1URL = getClass().getClassLoader().getResource("GovCanada.gif");
+            FilePackageItem file1 = new FilePackageItem(file1Path, file1URL);
+            log.debug(file1);
+
+            String file2Path = "another/path/SymbolCanada.gif";
+            URL file2URL = getClass().getClassLoader().getResource("SymbolCanada.gif");
+            FilePackageItem file2 = new FilePackageItem(file2Path, file2URL);
+            log.debug(file2);
+
+            String link1Path = "some/path/link2SymbolCanada.gif";
+            SymbolicLinkPackageItem link1 = new SymbolicLinkPackageItem(link1Path, file2Path, file2URL);
+            log.debug(link1);
+
+            List<PackageItem> packageContents = new ArrayList<>();
+            packageContents.add(dir1);
+            packageContents.add(dir2);
+            packageContents.add(file1);
+            packageContents.add(file2);
+            packageContents.add(link1);
 
             File tmp = File.createTempFile("tartest", ".tar");
+            log.debug("tmp file: " + tmp.getAbsolutePath());
             FileOutputStream fos =  new FileOutputStream(tmp);
             TarWriter fw = new TarWriter(fos);
             for (PackageItem pi : packageContents) {
@@ -130,27 +144,37 @@ public class TarWriterTest {
             }
             bw.close();
 
-            byte[] content = bos.toByteArray();
-            ByteArrayInputStream in = new ByteArrayInputStream(content);
-
+            ByteArrayInputStream in = new ByteArrayInputStream(bos.toByteArray());
             TarArchiveInputStream tar = new TarArchiveInputStream(in);
-            Content c1 = getEntry(tar);
-            Content c2 = getEntry(tar);
-            
-            ArchiveEntry te = tar.getNextTarEntry();
-            Assert.assertNull(te);
 
-            Assert.assertEquals("name", "some/path/GovCanada.gif", c1.name);
-            Assert.assertEquals("name", "another/path/SymbolCanada.gif", c2.name);
+            // some/path/
+            Entry entry = getEntry(tar);
+            Assert.assertEquals("name", dir1Path, entry.name);
 
-            // Get the files from the local file system and compare
-            Path url1Path = Paths.get(url1.getPath());
+            // some/empty/path
+            entry = getEntry(tar);
+            Assert.assertEquals("name", dir2Path, entry.name);
+
+            // some/path/GovCanada.gif
+            entry = getEntry(tar);
+            Assert.assertEquals("name", file1Path, entry.name);
+            Path url1Path = Paths.get(file1URL.getPath());
             log.debug("url1Path: " + url1Path.toString());
-            Assert.assertArrayEquals(c1.content, Files.readAllBytes(url1Path));
+            Assert.assertArrayEquals(entry.content, Files.readAllBytes(url1Path));
 
-            Path url2Path = Paths.get(url2.getPath());
+            // another/path/SymbolCanada.gif
+            entry = getEntry(tar);
+            Assert.assertEquals("name", file2Path, entry.name);
+            Path url2Path = Paths.get(file2URL.getPath());
             log.debug("url2Path: " + url2Path.toString());
-            Assert.assertArrayEquals(c2.content, Files.readAllBytes(url2Path));
+            Assert.assertArrayEquals(entry.content, Files.readAllBytes(url2Path));
+
+            // some/path/link2SymbolCanada.gif
+            entry = getEntry(tar);
+            Assert.assertEquals("name", link1Path, entry.name);
+
+            ArchiveEntry archiveEntry = tar.getNextEntry();
+            Assert.assertNull(archiveEntry);
 
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
@@ -158,20 +182,19 @@ public class TarWriterTest {
         }
     }
 
-    class Content {
+    static class Entry {
         String name;
         byte[] content;
     }
 
-    private Content getEntry(TarArchiveInputStream tar) throws IOException {
-        Content ret = new Content();
+    private Entry getEntry(TarArchiveInputStream tar) throws IOException {
+        Entry ret = new Entry();
         
-        TarArchiveEntry entry = tar.getNextTarEntry();
+        TarArchiveEntry entry = tar.getNextEntry();
         ret.name = entry.getName();
-        
-        byte[] bytes = new byte[(int)entry.getSize()];
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
 
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] bytes = new byte[(int)entry.getSize()];
         int read = 0;
         while ((read = tar.read(bytes)) > 0) {
             out.write(bytes, 0, read);
@@ -180,4 +203,5 @@ public class TarWriterTest {
 
         return ret;
     }
+
 }

@@ -62,37 +62,45 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *  $Revision: 5 $
+ *  : 5 $
  *
  ************************************************************************
  */
 
 package org.opencadc.pkg.server;
 
-import ca.nrc.cadc.util.StringUtil;
+import java.net.URL;
 
 /**
- * Base class that describes the path to a resource in a package.
+ * Class that describes a file in an package.
  */
-public abstract class PackageItem {
+public class FilePackageItem extends PackageItem {
 
-    private final String relativePath;
+    private final URL fileURL;
 
     /**
-     * Creates a resource for a package. The relative path is used to create
-     * the file structure inside a package.
+     * Describes a file in a package.
+     * The relative path for a file must end with the filename.
+     * The fileURL is used to copy the file into the package.
      *
-     * @param relativePath path to the resource in the package.
+     * @param relativePath path to the file in the package.
+     * @param fileURL url to the file.
      */
-    public PackageItem(String relativePath) {
-        if (!StringUtil.hasText(relativePath)) {
-            throw new IllegalArgumentException("null or empty relative path");
+    public FilePackageItem(String relativePath, URL fileURL) {
+        super(relativePath);
+        if (fileURL == null) {
+            throw new IllegalArgumentException("null file URL");
         }
-        this.relativePath = relativePath;
+        this.fileURL = fileURL;
     }
 
-    public String getRelativePath() {
-        return this.relativePath;
+    public URL getFileURL() {
+        return this.fileURL;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("FilePackageItem[%s, %s]", getRelativePath(), fileURL);
     }
 
 }

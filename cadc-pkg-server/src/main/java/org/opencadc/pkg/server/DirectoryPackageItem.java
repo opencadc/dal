@@ -62,37 +62,35 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *  $Revision: 5 $
+ *  : 5 $
  *
  ************************************************************************
  */
 
 package org.opencadc.pkg.server;
 
-import ca.nrc.cadc.util.StringUtil;
-
 /**
- * Base class that describes the path to a resource in a package.
+ * Class that describes a directory in a package.
  */
-public abstract class PackageItem {
-
-    private final String relativePath;
+public class DirectoryPackageItem extends PackageItem {
 
     /**
-     * Creates a resource for a package. The relative path is used to create
-     * the file structure inside a package.
+     * Describes a directory in a package. The relative path
+     * for a directory must end with a forward slash '/'.
      *
-     * @param relativePath path to the resource in the package.
+     * @param relativePath path to the directory in the package.
      */
-    public PackageItem(String relativePath) {
-        if (!StringUtil.hasText(relativePath)) {
-            throw new IllegalArgumentException("null or empty relative path");
+    public DirectoryPackageItem(String relativePath) {
+        super(relativePath);
+
+        if (!relativePath.endsWith("/")) {
+            throw new IllegalArgumentException("relative path must end with a /");
         }
-        this.relativePath = relativePath;
     }
 
-    public String getRelativePath() {
-        return this.relativePath;
+    @Override
+    public String toString() {
+        return String.format("DirectoryPackageItem[%s]", getRelativePath());
     }
 
 }

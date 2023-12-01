@@ -62,7 +62,7 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *  $Revision: 5 $
+ *  : 5 $
  *
  ************************************************************************
  */
@@ -70,29 +70,49 @@
 package org.opencadc.pkg.server;
 
 import ca.nrc.cadc.util.StringUtil;
+import java.net.URL;
 
 /**
- * Base class that describes the path to a resource in a package.
+ * Class that describes a symbolic link in an package.
  */
-public abstract class PackageItem {
+public class SymbolicLinkPackageItem extends PackageItem {
 
-    private final String relativePath;
+    private final String targetRelativePath;
+    private final URL targetURL;
 
     /**
-     * Creates a resource for a package. The relative path is used to create
-     * the file structure inside a package.
+     * Describes a symbolic link in a package.
+     * The relative path is the path to the symbolic link in the package.
+     * The target relative path the is the path to the symbolic link target in the package.
+     * The targetURL is the url to link target, used for target metadata.
      *
-     * @param relativePath path to the resource in the package.
+     * @param relativePath path to the symbolic link in the package.
+     * @param targetRelativePath path to the symbolic link target in the package.
+     * @param targetURL url to the symbolic link target.
      */
-    public PackageItem(String relativePath) {
+    public SymbolicLinkPackageItem(String relativePath, String targetRelativePath, URL targetURL) {
+        super(relativePath);
         if (!StringUtil.hasText(relativePath)) {
-            throw new IllegalArgumentException("null or empty relative path");
+            throw new IllegalArgumentException("null or empty target relative path");
         }
-        this.relativePath = relativePath;
+        if (targetURL == null) {
+            throw new IllegalArgumentException("null target URL");
+        }
+        this.targetRelativePath = targetRelativePath;
+        this.targetURL = targetURL;
     }
 
-    public String getRelativePath() {
-        return this.relativePath;
+    public String getTargetRelativePath() {
+        return this.targetRelativePath;
+    }
+
+    public URL getTargetURL() {
+        return this.targetURL;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("SymbolicLinkPackageItem[%s, %s ,%s]", getRelativePath(), targetRelativePath, targetURL);
     }
 
 }

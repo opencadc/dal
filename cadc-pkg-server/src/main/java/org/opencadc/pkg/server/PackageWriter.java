@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2022.                            (c) 2022.
+*  (c) 2023.                            (c) 2023.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -74,12 +74,10 @@ import ca.nrc.cadc.net.HttpGet;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
 import ca.nrc.cadc.net.TransientException;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -92,28 +90,31 @@ import org.apache.log4j.Logger;
 public abstract class PackageWriter {
     private static final Logger log = Logger.getLogger(PackageWriter.class);
 
-    ArchiveOutputStream aout;
+    ArchiveOutputStream archiveOutputStream;
 
     public PackageWriter(ArchiveOutputStream archiveOutputStream) {
-        this.aout = archiveOutputStream;
+        this.archiveOutputStream = archiveOutputStream;
     }
 
     /**
      * Implement this so the correct type of entry is created for writing.
-     * @param name - filename + relative path (needed so directory structure is created)
-     * @param size
-     * @param lastModifiedDate
-     * @return
+     * @param relativePath - relative path + filename (needed so directory structure is created)
+     * @param size - entry size
+     * @param lastModifiedDate - entry last modified date
+     * @return ArchiveEntry
      */
-    abstract ArchiveEntry createEntry(String name, long size, Date lastModifiedDate);
+    abstract ArchiveEntry createFileEntry(String relativePath, long size, Date lastModifiedDate);
+
+    abstract ArchiveEntry createDirectoryEntry(String relativePath);
+
+    abstract ArchiveEntry createLinkEntry(String relativePath, String linkRelativePath, Date lastModifiedDate);
 
     public void close() throws IOException {
-        if (aout != null) {
-            aout.finish();
-            aout.close();
+        if (archiveOutputStream != null) {
+            archiveOutputStream.finish();
+            archiveOutputStream.close();
         }
     }
-
 
     /**
      *  Write the given packageItem to the ArchiveOutputStream local to this ArchiveWriter instance.
@@ -131,47 +132,31 @@ public abstract class PackageWriter {
         // Implementations of PackageRunner that build the PackageItem list
         // should ensure that files exist before submitting as part of the
         // Iterator<PackageItem>
-        URL packageURL = packageItem.getURL();
-
-        if (packageURL.getProtocol().equals("file")) {
-            writeFileContentEntry(packageURL, packageItem.getRelativePath());
+        if (packageItem instanceof FilePackageItem) {
+            FilePackageItem filePackageItem = (FilePackageItem) packageItem;
+            if (filePackageItem.getFileURL().getProtocol().equals("file")) {
+                writeFileContent(filePackageItem);
+            } else {
+                writeHTTPFileContent(filePackageItem);
+            }
+        } else if (packageItem instanceof DirectoryPackageItem) {
+            writeDirectoryContent((DirectoryPackageItem) packageItem);
         } else {
-            writeHttpContentEntry(packageURL, packageItem.getRelativePath());
+            SymbolicLinkPackageItem symlinkPackageItem = (SymbolicLinkPackageItem) packageItem;
+            if (symlinkPackageItem.getTargetURL().getProtocol().equals("file")) {
+                writeLinkContent(symlinkPackageItem);
+            } else {
+                writeHTTPLinkContent(symlinkPackageItem);
+            }
         }
-
-
     }
 
+    private void writeFileContent(FilePackageItem packageItem)
+            throws IOException {
+        log.debug(String.format("write file %s to %s", packageItem.getFileURL(), packageItem.getRelativePath()));
 
-    /**
-     * Set up header for ArchiveEntry in the current ArchiveOutputStream.
-     * @param relativePath - relative path of item in the package file
-     * @param contentLength - (long) - bytes to be written
-     * @param lastModified - (Date) - last modified date of item
-     * @return
-     * @throws IOException
-     */
-    private void setArchiveEntryHeader(String relativePath, long contentLength, Date lastModified)
-        throws IOException {
-
-        // create entry (metadata) to be put to archive stream
-        log.debug("next package entry: " + relativePath + "," + contentLength + "," + lastModified);
-        ArchiveEntry e = createEntry(relativePath, contentLength, lastModified);
-
-        // put archive entry to stream
-        aout.putArchiveEntry(e);
-    }
-
-    /**
-     * Write the content of a file:// URL to the current ArchiveOutputStream
-     * @param fileURL - URL of file item being written to
-     * @param relativePath - relative path of file inside package beingw written.
-     * @throws IOException
-     */
-    private void writeFileContentEntry(URL fileURL, String relativePath) throws IOException {
+        URL fileURL = packageItem.getFileURL();
         Path filePath = FileSystems.getDefault().getPath(fileURL.getPath());
-        log.debug("filePath from fileURL: " + filePath.toString() + ": " + fileURL.toString());
-
         long contentLength = Files.size(filePath);
         FileTime lastMod = Files.getLastModifiedTime(filePath);
 
@@ -180,46 +165,45 @@ public abstract class PackageWriter {
 
         try {
             // This gets set to true unless setArchiveEntryHeader throws an error
-            setArchiveEntryHeader(relativePath, contentLength, lastModified);
+            // create entry (metadata) to be put to archive stream
+            String relativePath = packageItem.getRelativePath();
+            ArchiveEntry archiveEntry = createFileEntry(relativePath, contentLength, lastModified);
 
+            // put archive entry to stream
+            archiveOutputStream.putArchiveEntry(archiveEntry);
             openEntry = true;
 
             // copy the file to archive output stream
-            Files.copy(filePath, aout);
+            Files.copy(filePath, archiveOutputStream);
         } finally {
             if (openEntry) {
                 // header was written but body was not, try to close gracefully
-                aout.closeArchiveEntry();
+                archiveOutputStream.closeArchiveEntry();
             }
         }
-
     }
 
-    /**
-     * Write the content of an https:// URL to the current ArchiveOutputStream
-     * @param httpURL - URL of file item being written to
-     * @param relativePath - relative path of file inside package beingw written.
-     * @throws IOException
-     */
-    private void writeHttpContentEntry(URL httpURL, String relativePath)
-        throws IOException, InterruptedException,
-        ResourceNotFoundException, TransientException, ResourceAlreadyExistsException {
+    private void writeHTTPFileContent(FilePackageItem packageItem)
+            throws IOException, InterruptedException, ResourceNotFoundException,
+            TransientException, ResourceAlreadyExistsException {
+        log.debug(String.format("write file %s to %s", packageItem.getFileURL(), packageItem.getRelativePath()));
 
-        log.info("httpURL being written to archive: " + httpURL.toString());
         // HEAD to get entry metadata
-        HttpGet get = new HttpGet(httpURL, true);
+        HttpGet get = new HttpGet(packageItem.getFileURL(), true);
         get.prepare();
 
-        // get information common to all entries
+        String relativePath = packageItem.getRelativePath();
         long contentLength = get.getContentLength();
         Date lastModified = get.getLastModified();
         boolean openEntry = false;
-
         try {
             // headers for entry have been written, body has not,
             // so consider this entry 'open'
-            setArchiveEntryHeader(relativePath, contentLength, lastModified);
+            // create entry (metadata) to be put to archive stream
+            ArchiveEntry archiveEntry = createFileEntry(relativePath, contentLength, lastModified);
 
+            // put archive entry to stream
+            archiveOutputStream.putArchiveEntry(archiveEntry);
             openEntry = true;
 
             // copy the file to archive output stream
@@ -228,13 +212,99 @@ public abstract class PackageWriter {
             // package file
             InputStream getIOStream = get.getInputStream();
             MultiBufferIO multiBufferIO = new MultiBufferIO();
-            multiBufferIO.copy(getIOStream, aout);
+            multiBufferIO.copy(getIOStream, archiveOutputStream);
 
         } finally {
             if (openEntry) {
                 // header was written but body was not, try to close gracefully
-                aout.closeArchiveEntry();
+                archiveOutputStream.closeArchiveEntry();
             }
         }
     }
+
+    private void writeDirectoryContent(DirectoryPackageItem packageItem)
+            throws IOException {
+        log.debug("write directory: " + packageItem.getRelativePath());
+        boolean openEntry = false;
+        try {
+            // This gets set to true unless setArchiveEntryHeader throws an error
+            // create entry (metadata) to be put to archive stream
+            String relativePath = packageItem.getRelativePath();
+            ArchiveEntry archiveEntry = createDirectoryEntry(relativePath);
+
+            // put archive entry to stream
+            archiveOutputStream.putArchiveEntry(archiveEntry);
+            openEntry = true;
+        } finally {
+            if (openEntry) {
+                // header was written but body was not, try to close gracefully
+                archiveOutputStream.closeArchiveEntry();
+            }
+        }
+    }
+
+    private void writeLinkContent(SymbolicLinkPackageItem packageItem)
+            throws IOException {
+        log.debug(String.format("write link %s to %s for %s",
+                packageItem.getRelativePath(), packageItem.getTargetRelativePath(), packageItem.getTargetURL()));
+
+        String linkRelativePath = packageItem.getRelativePath();
+        String targetRelativePath = packageItem.getTargetRelativePath();
+        Path targetPath = FileSystems.getDefault().getPath(packageItem.getTargetURL().getPath());
+        FileTime lastMod = Files.getLastModifiedTime(targetPath);
+        Date lastModified = new Date(lastMod.toMillis());
+
+        boolean openEntry = false;
+        try {
+            // This gets set to true unless setArchiveEntryHeader throws an error
+            // create entry (metadata) to be put to archive stream
+            ArchiveEntry archiveEntry = createLinkEntry(linkRelativePath, targetRelativePath, lastModified);
+
+            // put archive entry to stream
+            archiveOutputStream.putArchiveEntry(archiveEntry);
+
+            // entry content is the symbolic link target path
+            archiveOutputStream.write(targetRelativePath.getBytes(StandardCharsets.UTF_8));
+            openEntry = true;
+        } finally {
+            if (openEntry) {
+                // header was written but body was not, try to close gracefully
+                archiveOutputStream.closeArchiveEntry();
+            }
+        }
+    }
+
+    private void writeHTTPLinkContent(SymbolicLinkPackageItem packageItem)
+            throws IOException, InterruptedException, ResourceNotFoundException,
+            TransientException, ResourceAlreadyExistsException {
+        log.debug(String.format("write link %s to %s for %s",
+                packageItem.getRelativePath(), packageItem.getTargetRelativePath(), packageItem.getTargetURL()));
+
+        // HEAD to get entry metadata
+        HttpGet get = new HttpGet(packageItem.getTargetURL(), true);
+        get.prepare();
+
+        // get information common to all entries
+        String linkRelativePath = packageItem.getRelativePath();
+        String targetRelativePath = packageItem.getTargetRelativePath();
+        Date lastModified = get.getLastModified();
+        boolean openEntry = false;
+        try {
+            // headers for entry have been written, body has not,
+            // so consider this entry 'open'
+            // create entry (metadata) to be put to archive stream
+            ArchiveEntry archiveEntry = createLinkEntry(linkRelativePath, targetRelativePath, lastModified);
+
+            // put archive entry to stream
+            archiveOutputStream.putArchiveEntry(archiveEntry);
+            archiveOutputStream.write(targetRelativePath.getBytes(StandardCharsets.UTF_8));
+            openEntry = true;
+        } finally {
+            if (openEntry) {
+                // header was written but body was not, try to close gracefully
+                archiveOutputStream.closeArchiveEntry();
+            }
+        }
+    }
+
 }
