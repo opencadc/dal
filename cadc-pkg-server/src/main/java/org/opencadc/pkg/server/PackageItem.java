@@ -70,29 +70,122 @@
 package org.opencadc.pkg.server;
 
 import ca.nrc.cadc.util.StringUtil;
+import java.net.URL;
 
 /**
  * Base class that describes the path to a resource in a package.
  */
-public abstract class PackageItem {
+public class PackageItem {
 
     private final String relativePath;
+    private final String linkTarget;
+    private final URL content;
+
+    /**
+     * Creates a PackageItem for a directory. The relative path is the path to the directory within the package.
+     *
+     * @param relativePath path to directory in the package.
+     */
+    public PackageItem(String relativePath) {
+        if (!StringUtil.hasText(relativePath)) {
+            throw new IllegalArgumentException("relativePath is null or empty");
+        }
+        this.relativePath = relativePath;
+        this.linkTarget = null;
+        this.content = null;
+    }
 
     /**
      * Creates a resource for a package. The relative path is used to create
      * the file structure inside a package.
      *
      * @param relativePath path to the resource in the package.
+     * @param content URL to the file.
      */
-    public PackageItem(String relativePath) {
+    public PackageItem(String relativePath, URL content) {
         if (!StringUtil.hasText(relativePath)) {
-            throw new IllegalArgumentException("null or empty relative path");
+            throw new IllegalArgumentException("relativePath is null or empty");
+        }
+        if (content == null) {
+            throw new IllegalArgumentException("content is null");
         }
         this.relativePath = relativePath;
+        this.content = content;
+        this.linkTarget = null;
     }
 
+    /**
+     * Creates a resource for a package. The relative path is used to create
+     * the file structure inside a package.
+     *
+     * @param relativePath path to the resource in the package.
+     * @param linkTarget path to the resource in the package.
+     */
+    public PackageItem(String relativePath, String linkTarget) {
+        if (!StringUtil.hasText(relativePath)) {
+            throw new IllegalArgumentException("relativePath is null or empty");
+        }
+        if (!StringUtil.hasText(relativePath)) {
+            throw new IllegalArgumentException("linkTarget is null or empty");
+        }
+        this.relativePath = relativePath;
+        this.linkTarget = linkTarget;
+        this.content = null;
+    }
+
+    /**
+     * Get the relative path of the item (directory, file, or symbolic link) within the package archive.
+     *
+     * @return relative path to the item.
+     */
     public String getRelativePath() {
         return this.relativePath;
+    }
+
+    /**
+     * Get the relative path within the package archive for the target of a symbolic link item.
+     *
+     * @return relative path of the symbolic link target, null if the item is a file or directory.
+     */
+    public String getLinkTarget() {
+        return this.linkTarget;
+    }
+
+    /**
+     * Get the URL to the content of a file item.
+     *
+     * @return URL to the content for a file, null if the item is a directory or symbolic link.
+     */
+    public URL getContent() {
+        return this.content;
+    }
+
+
+    /**
+     * Check if the item is a directory.
+     *
+     * @return  true if the item is a directory, false otherwise.
+     */
+    public boolean isDirectory() {
+        return this.relativePath != null && this.linkTarget == null && this.content == null;
+    }
+
+    /**
+     * Check if the item is a file.
+     *
+     * @return true if the item is a file, false otherwise.
+     */
+    public boolean isFile() {
+        return this.relativePath != null && this.linkTarget == null && this.content != null;
+    }
+
+    /**
+     * Check if the item is a symbolic link.
+     *
+     * @return true if the item is a symbolic link, false otherwise.
+     */
+    public boolean isSymbolicLink() {
+        return this.relativePath != null && this.linkTarget != null && this.content == null;
     }
 
 }

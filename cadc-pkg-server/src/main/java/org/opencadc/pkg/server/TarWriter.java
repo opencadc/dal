@@ -105,16 +105,12 @@ public class TarWriter extends PackageWriter {
         return new TarArchiveEntry(relativePath, TarConstants.LF_DIR);
     }
 
-    ArchiveEntry createLinkEntry(String relativePath, String linkRelativePath, Date lastModifiedDate) {
-        log.debug(String.format("symbolic link ArchiveEntry: %s %s %s",
-                relativePath, linkRelativePath, lastModifiedDate));
+    ArchiveEntry createSymbolicLinkEntry(String relativePath, String linkTarget) {
+        log.debug(String.format("symbolic link ArchiveEntry: %s -> %s", relativePath, linkTarget));
 
         TarArchiveEntry entry = new TarArchiveEntry(relativePath, TarConstants.LF_SYMLINK);
-        entry.setLinkName(linkRelativePath);
-        entry.setSize(linkRelativePath.length());
-        if (lastModifiedDate != null) {
-            entry.setModTime(lastModifiedDate);
-        }
+        entry.setLinkName(linkTarget);
+        entry.setSize(linkTarget.length());
         return entry;
     }
 

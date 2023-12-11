@@ -100,25 +100,25 @@ public class ZipWriterTest {
             // Create PackageItems for testing
             // Files are in test/resources
             String dir1Path = "some/path/";
-            DirectoryPackageItem dir1 = new DirectoryPackageItem(dir1Path);
+            PackageItem dir1 = new PackageItem(dir1Path);
             log.debug(dir1);
 
             String dir2Path = "some/empty/path/";
-            DirectoryPackageItem dir2 = new DirectoryPackageItem(dir2Path);
+            PackageItem dir2 = new PackageItem(dir2Path);
             log.debug(dir2);
 
             String file1Path = "some/path/GovCanada.gif";
             URL file1URL = getClass().getClassLoader().getResource("GovCanada.gif");
-            FilePackageItem file1 = new FilePackageItem(file1Path, file1URL);
+            PackageItem file1 = new PackageItem(file1Path, file1URL);
             log.debug(file1);
 
             String file2Path = "another/path/SymbolCanada.gif";
             URL file2URL = getClass().getClassLoader().getResource("SymbolCanada.gif");
-            FilePackageItem file2 = new FilePackageItem(file2Path, file2URL);
+            PackageItem file2 = new PackageItem(file2Path, file2URL);
             log.debug(file2);
 
             String link1Path = "some/path/link2SymbolCanada.gif";
-            SymbolicLinkPackageItem link1 = new SymbolicLinkPackageItem(link1Path, file2Path, file2URL);
+            PackageItem link1 = new PackageItem(link1Path, file2Path);
             log.debug(link1);
 
             List<PackageItem> packageContents = new ArrayList<>();

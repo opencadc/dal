@@ -92,7 +92,7 @@ public class ZipWriter extends PackageWriter {
         log.debug(String.format("file ArchiveEntry: %s %s %s", relativePath, size, lastModifiedDate));
 
         ZipArchiveEntry entry = new ZipArchiveEntry(relativePath);
-        entry.setUnixMode(entry.getUnixMode() | UnixStat.FILE_FLAG);
+        entry.setUnixMode(UnixStat.FILE_FLAG);
         entry.setSize(size);
         if (lastModifiedDate != null) {
             entry.setLastModifiedTime(FileTime.fromMillis(lastModifiedDate.getTime()));
@@ -104,19 +104,15 @@ public class ZipWriter extends PackageWriter {
         log.debug("directory ArchiveEntry: " + relativePath);
 
         ZipArchiveEntry entry =  new ZipArchiveEntry(relativePath);
-        entry.setUnixMode(entry.getUnixMode() | UnixStat.DIR_FLAG);
+        entry.setUnixMode(UnixStat.DIR_FLAG);
         return entry;
     }
 
-    ArchiveEntry createLinkEntry(String relativePath, String linkRelativePath, Date lastModifiedDate) {
-        log.debug(String.format("symbolic link ArchiveEntry: %s %s %s",
-                relativePath, linkRelativePath, lastModifiedDate));
+    ArchiveEntry createSymbolicLinkEntry(String relativePath, String linkRelativePath) {
+        log.debug(String.format("symbolic link ArchiveEntry: %s -> %s", relativePath, linkRelativePath));
 
         ZipArchiveEntry entry = new ZipArchiveEntry(relativePath);
-        entry.setUnixMode(entry.getUnixMode() | UnixStat.LINK_FLAG);
-        if (lastModifiedDate != null) {
-            entry.setLastModifiedTime(FileTime.fromMillis(lastModifiedDate.getTime()));
-        }
+        entry.setUnixMode(UnixStat.LINK_FLAG);
         return entry;
     }
 
