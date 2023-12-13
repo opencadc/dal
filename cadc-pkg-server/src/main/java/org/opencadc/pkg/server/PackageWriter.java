@@ -162,7 +162,7 @@ public abstract class PackageWriter {
      * Write a file to the archive with the file content is a local file.
      */
     private void writeFile(PackageItem packageItem)
-            throws IOException {
+            throws IOException, InterruptedException {
         log.debug(String.format("write file %s to %s", packageItem.getContent(), packageItem.getRelativePath()));
 
         URL fileURL = packageItem.getContent();
@@ -178,7 +178,9 @@ public abstract class PackageWriter {
         archiveOutputStream.putArchiveEntry(archiveEntry);
 
         // copy the file to archive output stream
-        Files.copy(filePath, archiveOutputStream);
+        InputStream stream = fileURL.openStream();
+        MultiBufferIO multiBufferIO = new MultiBufferIO();
+        multiBufferIO.copy(stream, archiveOutputStream);
         archiveOutputStream.closeArchiveEntry();
     }
 

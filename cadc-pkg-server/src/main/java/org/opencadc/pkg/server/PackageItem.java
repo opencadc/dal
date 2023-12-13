@@ -139,7 +139,7 @@ public class PackageItem {
      * @return relative path to the item.
      */
     public String getRelativePath() {
-        return this.relativePath;
+        return relativePath;
     }
 
     /**
@@ -148,7 +148,7 @@ public class PackageItem {
      * @return relative path of the symbolic link target, null if the item is a file or directory.
      */
     public String getLinkTarget() {
-        return this.linkTarget;
+        return linkTarget;
     }
 
     /**
@@ -157,7 +157,7 @@ public class PackageItem {
      * @return URL to the content for a file, null if the item is a directory or symbolic link.
      */
     public URL getContent() {
-        return this.content;
+        return content;
     }
 
 
@@ -167,7 +167,7 @@ public class PackageItem {
      * @return  true if the item is a directory, false otherwise.
      */
     public boolean isDirectory() {
-        return this.relativePath != null && this.linkTarget == null && this.content == null;
+        return linkTarget == null && content == null;
     }
 
     /**
@@ -176,7 +176,7 @@ public class PackageItem {
      * @return true if the item is a file, false otherwise.
      */
     public boolean isFile() {
-        return this.relativePath != null && this.linkTarget == null && this.content != null;
+        return content != null;
     }
 
     /**
@@ -185,7 +185,7 @@ public class PackageItem {
      * @return true if the item is a symbolic link, false otherwise.
      */
     public boolean isSymbolicLink() {
-        return this.relativePath != null && this.linkTarget != null && this.content == null;
+        return linkTarget != null;
     }
 
 }
