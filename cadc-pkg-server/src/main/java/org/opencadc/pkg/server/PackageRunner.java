@@ -156,16 +156,16 @@ public abstract class PackageRunner implements JobRunner {
         ExecutionPhase ep;
         PackageWriter writer = null;
         try {
-            ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
+            ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.SUSPENDED, ExecutionPhase.EXECUTING, new Date());
 
             if (!ExecutionPhase.EXECUTING.equals(ep)) {
                 ep = jobUpdater.getPhase(job.getID());
-                log.debug(job.getID() + ": QUEUED -> EXECUTING [FAILED] -- DONE");
+                log.debug(job.getID() + ": SUSPENDED -> EXECUTING [FAILED] -- DONE");
                 logInfo.setSuccess(false);
                 logInfo.setMessage("Could not set job phase to executing, was: " + ep);
                 return;
             }
-            log.debug(job.getID() + ": QUEUED -> EXECUTING [OK]");
+            log.debug(job.getID() + ": SUSPENDED -> EXECUTING [OK]");
 
             // Package name should be set here, and anything else needed for
             // package to be created aside from initializing the output stream.
@@ -206,7 +206,7 @@ public abstract class PackageRunner implements JobRunner {
         } catch (Throwable t) {
             if (ThrowableUtil.isACause(t, InterruptedException.class)) {
                 try {
-                    ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
+                    ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.SUSPENDED, ExecutionPhase.EXECUTING, new Date());
 
                     if (!ExecutionPhase.ABORTED.equals(ep)) {
                         return; // clean exit of aborted job
