@@ -152,20 +152,23 @@ public abstract class PackageRunner implements JobRunner {
         log.info(logInfo.end());
     }
 
+    protected ExecutionPhase getInitialPhase() {
+        return ExecutionPhase.QUEUED;
+    }
+
     private void doIt() {
         ExecutionPhase ep;
         PackageWriter writer = null;
         try {
-            ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
-
+            ep = jobUpdater.setPhase(job.getID(), getInitialPhase(), ExecutionPhase.EXECUTING, new Date());
             if (!ExecutionPhase.EXECUTING.equals(ep)) {
                 ep = jobUpdater.getPhase(job.getID());
-                log.debug(job.getID() + ": QUEUED -> EXECUTING [FAILED] -- DONE");
+                log.debug(String.format("%s: %s -> EXECUTING [FAILED] -- DONE", job.getID(), getInitialPhase()));
                 logInfo.setSuccess(false);
                 logInfo.setMessage("Could not set job phase to executing, was: " + ep);
                 return;
             }
-            log.debug(job.getID() + ": QUEUED -> EXECUTING [OK]");
+            log.debug(String.format("%s: %s -> EXECUTING [OK]", job.getID(), getInitialPhase()));
 
             // Package name should be set here, and anything else needed for
             // package to be created aside from initializing the output stream.
@@ -204,18 +207,10 @@ public abstract class PackageRunner implements JobRunner {
             log.debug(job.getID() + ": EXECUTING -> COMPLETED [OK]");
 
         } catch (Throwable t) {
-            if (ThrowableUtil.isACause(t, InterruptedException.class)) {
-                try {
-                    ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
-
-                    if (!ExecutionPhase.ABORTED.equals(ep)) {
-                        return; // clean exit of aborted job
-                    }
-
-                } catch (Exception ex2) {
-                    log.error("failed to check job phase after InterruptedException", ex2);
-
-                }
+            try {
+                ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.ERROR, new Date());
+            } catch (Exception ex) {
+                log.error("failed to update job phase to ERROR after exception", ex);
             }
             sendError(t, 500);
         } finally {
@@ -242,7 +237,7 @@ public abstract class PackageRunner implements JobRunner {
     private ByteCountOutputStream initOutputStream(String mimeType, String contentDisposition)
             throws IOException {
         // set up syncOutput response and headers
-        syncOutput.setResponseCode(200);
+        syncOutput.setCode(200);
         syncOutput.setHeader("Content-Type", mimeType);
         syncOutput.setHeader("Content-Disposition", contentDisposition);
         return new ByteCountOutputStream(syncOutput.getOutputStream());
