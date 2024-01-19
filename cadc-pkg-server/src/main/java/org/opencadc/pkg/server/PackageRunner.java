@@ -161,7 +161,6 @@ public abstract class PackageRunner implements JobRunner {
         PackageWriter writer = null;
         try {
             ep = jobUpdater.setPhase(job.getID(), getInitialPhase(), ExecutionPhase.EXECUTING, new Date());
-
             if (!ExecutionPhase.EXECUTING.equals(ep)) {
                 ep = jobUpdater.getPhase(job.getID());
                 log.debug(String.format("%s: %s -> EXECUTING [FAILED] -- DONE", job.getID(), getInitialPhase()));
@@ -208,20 +207,12 @@ public abstract class PackageRunner implements JobRunner {
             log.debug(job.getID() + ": EXECUTING -> COMPLETED [OK]");
 
         } catch (Throwable t) {
-            if (ThrowableUtil.isACause(t, InterruptedException.class)) {
-                try {
-                    ep = jobUpdater.setPhase(job.getID(), getInitialPhase(), ExecutionPhase.EXECUTING, new Date());
-
-                    if (!ExecutionPhase.ABORTED.equals(ep)) {
-                        return; // clean exit of aborted job
-                    }
-
-                } catch (Exception ex2) {
-                    log.error("failed to check job phase after InterruptedException", ex2);
-
-                }
+            try {
+                ep = jobUpdater.setPhase(job.getID(), job.getExecutionPhase(), ExecutionPhase.ERROR, new Date());
+            } catch (Exception ex) {
+                log.error("failed to update job phase to ERROR after exception", ex);
             }
-            sendError(t, 500);
+            sendError(t, t.getMessage(), 500);
         } finally {
             // Finalize and close writer instance
             if (writer != null) {
