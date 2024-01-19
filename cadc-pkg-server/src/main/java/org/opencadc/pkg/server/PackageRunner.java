@@ -152,20 +152,24 @@ public abstract class PackageRunner implements JobRunner {
         log.info(logInfo.end());
     }
 
+    protected ExecutionPhase getInitialPhase() {
+        return ExecutionPhase.QUEUED;
+    }
+
     private void doIt() {
         ExecutionPhase ep;
         PackageWriter writer = null;
         try {
-            ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.SUSPENDED, ExecutionPhase.EXECUTING, new Date());
+            ep = jobUpdater.setPhase(job.getID(), getInitialPhase(), ExecutionPhase.EXECUTING, new Date());
 
             if (!ExecutionPhase.EXECUTING.equals(ep)) {
                 ep = jobUpdater.getPhase(job.getID());
-                log.debug(job.getID() + ": SUSPENDED -> EXECUTING [FAILED] -- DONE");
+                log.debug(String.format("%s: %s -> EXECUTING [FAILED] -- DONE", job.getID(), getInitialPhase()));
                 logInfo.setSuccess(false);
                 logInfo.setMessage("Could not set job phase to executing, was: " + ep);
                 return;
             }
-            log.debug(job.getID() + ": SUSPENDED -> EXECUTING [OK]");
+            log.debug(String.format("%s: %s -> EXECUTING [OK]", job.getID(), getInitialPhase()));
 
             // Package name should be set here, and anything else needed for
             // package to be created aside from initializing the output stream.
@@ -206,7 +210,7 @@ public abstract class PackageRunner implements JobRunner {
         } catch (Throwable t) {
             if (ThrowableUtil.isACause(t, InterruptedException.class)) {
                 try {
-                    ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.SUSPENDED, ExecutionPhase.EXECUTING, new Date());
+                    ep = jobUpdater.setPhase(job.getID(), getInitialPhase(), ExecutionPhase.EXECUTING, new Date());
 
                     if (!ExecutionPhase.ABORTED.equals(ep)) {
                         return; // clean exit of aborted job
@@ -242,7 +246,7 @@ public abstract class PackageRunner implements JobRunner {
     private ByteCountOutputStream initOutputStream(String mimeType, String contentDisposition)
             throws IOException {
         // set up syncOutput response and headers
-        syncOutput.setResponseCode(200);
+        syncOutput.setCode(200);
         syncOutput.setHeader("Content-Type", mimeType);
         syncOutput.setHeader("Content-Disposition", contentDisposition);
         return new ByteCountOutputStream(syncOutput.getOutputStream());
