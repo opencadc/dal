@@ -208,11 +208,11 @@ public abstract class PackageRunner implements JobRunner {
 
         } catch (Throwable t) {
             try {
-                ep = jobUpdater.setPhase(job.getID(), job.getExecutionPhase(), ExecutionPhase.ERROR, new Date());
+                ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.ERROR, new Date());
             } catch (Exception ex) {
                 log.error("failed to update job phase to ERROR after exception", ex);
             }
-            sendError(t, t.getMessage(), 500);
+            sendError(t, 500);
         } finally {
             // Finalize and close writer instance
             if (writer != null) {
