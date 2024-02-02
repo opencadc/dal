@@ -152,20 +152,23 @@ public abstract class PackageRunner implements JobRunner {
         log.info(logInfo.end());
     }
 
+    protected ExecutionPhase getInitialPhase() {
+        return ExecutionPhase.QUEUED;
+    }
+
     private void doIt() {
         ExecutionPhase ep;
         PackageWriter writer = null;
         try {
-            ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
-
+            ep = jobUpdater.setPhase(job.getID(), getInitialPhase(), ExecutionPhase.EXECUTING, new Date());
             if (!ExecutionPhase.EXECUTING.equals(ep)) {
                 ep = jobUpdater.getPhase(job.getID());
-                log.debug(job.getID() + ": QUEUED -> EXECUTING [FAILED] -- DONE");
+                log.debug(String.format("%s: %s -> EXECUTING [FAILED] -- DONE", job.getID(), getInitialPhase()));
                 logInfo.setSuccess(false);
                 logInfo.setMessage("Could not set job phase to executing, was: " + ep);
                 return;
             }
-            log.debug(job.getID() + ": QUEUED -> EXECUTING [OK]");
+            log.debug(String.format("%s: %s -> EXECUTING [OK]", job.getID(), getInitialPhase()));
 
             // Package name should be set here, and anything else needed for
             // package to be created aside from initializing the output stream.
@@ -173,7 +176,7 @@ public abstract class PackageRunner implements JobRunner {
 
             if (!StringUtil.hasText(packageName)) {
                 // packageName should have been set to something useful in initPackage()
-                // as part of an impelmenting class
+                // as part of an implementing class
                 throw new RuntimeException("BUG: packageName not defined.");
             }
 
@@ -204,18 +207,10 @@ public abstract class PackageRunner implements JobRunner {
             log.debug(job.getID() + ": EXECUTING -> COMPLETED [OK]");
 
         } catch (Throwable t) {
-            if (ThrowableUtil.isACause(t, InterruptedException.class)) {
-                try {
-                    ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.QUEUED, ExecutionPhase.EXECUTING, new Date());
-
-                    if (!ExecutionPhase.ABORTED.equals(ep)) {
-                        return; // clean exit of aborted job
-                    }
-
-                } catch (Exception ex2) {
-                    log.error("failed to check job phase after InterruptedException", ex2);
-
-                }
+            try {
+                ep = jobUpdater.setPhase(job.getID(), ExecutionPhase.EXECUTING, ExecutionPhase.ERROR, new Date());
+            } catch (Exception ex) {
+                log.error("failed to update job phase to ERROR after exception", ex);
             }
             sendError(t, 500);
         } finally {
@@ -232,29 +227,32 @@ public abstract class PackageRunner implements JobRunner {
 
 
     /**
-     * Set up Syncoutput stream with correct filename and content type. Generate
-     * ByteCountOutputStream using syncoutput.
-     * @param mimeType
-     * @param contentDisposition
-     * @return
-     * @throws IOException
+     * Set up the SyncOutput headers. Generate the ByteCountOutputStream using the SyncOutput stream.
+     *
+     * @param mimeType the stream Content-Type.
+     * @param contentDisposition the stream Content_Disposition.
+     * @return ByteCountOutputStream
+     * @throws IOException if error getting the SyncOutput OutputStream.
      */
-    private ByteCountOutputStream initOutputStream(String mimeType, String contentDisposition) throws IOException {
+    private ByteCountOutputStream initOutputStream(String mimeType, String contentDisposition)
+            throws IOException {
         // set up syncOutput response and headers
-        syncOutput.setResponseCode(200);
+        syncOutput.setCode(200);
         syncOutput.setHeader("Content-Type", mimeType);
         syncOutput.setHeader("Content-Disposition", contentDisposition);
         return new ByteCountOutputStream(syncOutput.getOutputStream());
     }
 
     /**
-     * Set up PackageWriter and syncoutput for the requested RESPONSEFORMAT value.
+     * Set up PackageWriter and SyncOutput for the requested RESPONSEFORMAT value.
      * Default is 'application/x-tar'. Initialize syncOutput output stream with the correct
      * content type and disposition as provided by the writer class. Call writer ctor.
+     *
      * @return PackageWriter instance
-     * @throws IOException
+     * @throws IOException for an error initializing the OutputStream.
      */
-    private PackageWriter initWriter() throws IllegalArgumentException, IOException {
+    private PackageWriter initWriter()
+            throws IOException {
 
         // Package type is in RESPONSEFORMAT Job parameter (optional)
         String responseFormat = ParameterUtil.findParameterValue("RESPONSEFORMAT", job.getParameterList());

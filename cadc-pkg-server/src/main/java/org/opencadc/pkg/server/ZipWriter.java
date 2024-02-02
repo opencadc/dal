@@ -69,11 +69,11 @@
 
 package org.opencadc.pkg.server;
 
-import ca.nrc.cadc.net.HttpGet;
 import java.io.OutputStream;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.zip.UnixStat;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.log4j.Logger;
@@ -88,29 +88,32 @@ public class ZipWriter extends PackageWriter {
         super(new ZipArchiveOutputStream(ostream));
     }
 
-    ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
-        return new DynamicZipEntry(name, size, lastModifiedDate);
+    ArchiveEntry createFileEntry(String relativePath, long size, Date lastModifiedDate) {
+        log.debug(String.format("file ArchiveEntry: %s %s %s", relativePath, size, lastModifiedDate));
+
+        ZipArchiveEntry entry = new ZipArchiveEntry(relativePath);
+        entry.setUnixMode(UnixStat.FILE_FLAG);
+        entry.setSize(size);
+        if (lastModifiedDate != null) {
+            entry.setLastModifiedTime(FileTime.fromMillis(lastModifiedDate.getTime()));
+        }
+        return entry;
     }
 
-    /**
-     * Wrapper for ZipArchiveEntry class.
-     * isDirectory set to false - PackageWriter only writes files.
-     */
-    private class DynamicZipEntry extends ZipArchiveEntry {
+    ArchiveEntry createDirectoryEntry(String relativePath) {
+        log.debug("directory ArchiveEntry: " + relativePath);
 
-        public DynamicZipEntry(String name, long size, Date lastModifiedDate) {
-            super(name);
-
-            log.info("ZIP ENTRY VALUES:" + name + size);
-            if (lastModifiedDate != null) {
-                super.setLastModifiedTime(FileTime.fromMillis(lastModifiedDate.getTime()));
-            }
-            super.setSize(size);
-        }
-
-        @Override
-        public boolean isDirectory() {
-            return false;
-        }
+        ZipArchiveEntry entry =  new ZipArchiveEntry(relativePath);
+        entry.setUnixMode(UnixStat.DIR_FLAG);
+        return entry;
     }
+
+    ArchiveEntry createSymbolicLinkEntry(String relativePath, String linkRelativePath) {
+        log.debug(String.format("symbolic link ArchiveEntry: %s -> %s", relativePath, linkRelativePath));
+
+        ZipArchiveEntry entry = new ZipArchiveEntry(relativePath);
+        entry.setUnixMode(UnixStat.LINK_FLAG);
+        return entry;
+    }
+
 }
