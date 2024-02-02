@@ -188,4 +188,19 @@ public class PackageItem {
         return linkTarget != null;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("PackageItem[path=").append(relativePath);
+        if (isDirectory()) {
+            sb.append(",type=directory");
+        } else if (isFile()) {
+            sb.append(",type=file");
+        } else {
+            sb.append(",type=link,target=").append(linkTarget);
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
 }
