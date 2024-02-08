@@ -103,6 +103,13 @@ public class ZipWriter extends PackageWriter {
     ArchiveEntry createDirectoryEntry(String relativePath) {
         log.debug("directory ArchiveEntry: " + relativePath);
 
+        if (relativePath.startsWith("/")) {
+            relativePath = relativePath.substring(1);
+        }
+        if (!relativePath.endsWith("/")) {
+            relativePath = relativePath + "/";
+        }
+
         ZipArchiveEntry entry =  new ZipArchiveEntry(relativePath);
         entry.setUnixMode(UnixStat.DIR_FLAG);
         return entry;

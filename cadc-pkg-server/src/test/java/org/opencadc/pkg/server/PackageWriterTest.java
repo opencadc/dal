@@ -69,17 +69,23 @@
 
 package org.opencadc.pkg.server;
 
+import ca.nrc.cadc.util.Log4jInit;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class PackageWriterTest {
     private static final Logger log = Logger.getLogger(PackageWriterTest.class);
+
+    static {
+        Log4jInit.setLevel("org.opencadc.pkg.server", Level.INFO);
+    }
 
     @Test
     public void testCreateTarFile() {

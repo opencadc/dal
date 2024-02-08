@@ -141,8 +141,10 @@ public abstract class PackageWriter {
             } else {
                 writeHTTPFile(packageItem);
             }
-        } else {
+        } else if (packageItem.isSymbolicLink()) {
             writeSymbolicLink(packageItem);
+        } else {
+            throw new IllegalArgumentException("Unknown PackageItem type: " + packageItem);
         }
     }
 
@@ -181,6 +183,7 @@ public abstract class PackageWriter {
         InputStream stream = fileURL.openStream();
         MultiBufferIO multiBufferIO = new MultiBufferIO();
         multiBufferIO.copy(stream, archiveOutputStream);
+        stream.close();
         archiveOutputStream.closeArchiveEntry();
     }
 
@@ -211,6 +214,7 @@ public abstract class PackageWriter {
         InputStream getIOStream = get.getInputStream();
         MultiBufferIO multiBufferIO = new MultiBufferIO();
         multiBufferIO.copy(getIOStream, archiveOutputStream);
+        getIOStream.close();
         archiveOutputStream.closeArchiveEntry();
     }
 

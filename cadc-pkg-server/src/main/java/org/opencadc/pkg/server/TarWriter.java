@@ -69,7 +69,10 @@
 
 package org.opencadc.pkg.server;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -101,6 +104,13 @@ public class TarWriter extends PackageWriter {
 
     ArchiveEntry createDirectoryEntry(String relativePath) {
         log.debug("directory ArchiveEntry: " + relativePath);
+
+        if (relativePath.startsWith("/")) {
+            relativePath = relativePath.substring(1);
+        }
+        if (!relativePath.endsWith("/")) {
+            relativePath = relativePath + "/";
+        }
 
         return new TarArchiveEntry(relativePath, TarConstants.LF_DIR);
     }
