@@ -84,7 +84,7 @@ public class PackageWriterTest {
     private static final Logger log = Logger.getLogger(PackageWriterTest.class);
 
     static {
-        Log4jInit.setLevel("org.opencadc.pkg.server", Level.INFO);
+        Log4jInit.setLevel("org.opencadc.pkg.server", Level.DEBUG);
     }
 
     @Test
@@ -140,34 +140,57 @@ public class PackageWriterTest {
     protected List<PackageItem> getTestPackageItems() {
         // Create PackageItems for testing
         // Files are in test/resources
-        String dir1Path = "some/path/";
-        PackageItem dir1 = new PackageItem(dir1Path);
-        log.debug(dir1);
+        String some = "some/";
+        PackageItem someDir = new PackageItem(some);
+        log.debug(someDir);
 
-        String dir2Path = "some/empty/path/";
-        PackageItem dir2 = new PackageItem(dir2Path);
-        log.debug(dir2);
+        String somePath = "some/path/";
+        PackageItem somePathDir = new PackageItem(somePath);
+        log.debug(somePathDir);
 
-        String file1Path = "some/path/GovCanada.gif";
-        URL file1URL = getClass().getClassLoader().getResource("GovCanada.gif");
-        PackageItem file1 = new PackageItem(file1Path, file1URL);
-        log.debug(file1);
+        String someEmpty = "some/empty/";
+        PackageItem someEmptyDir = new PackageItem(someEmpty);
+        log.debug(someEmptyDir);
 
-        String file2Path = "another/path/SymbolCanada.gif";
-        URL file2URL = getClass().getClassLoader().getResource("SymbolCanada.gif");
-        PackageItem file2 = new PackageItem(file2Path, file2URL);
-        log.debug(file2);
+        String someEmptyPath = "some/empty/path/";
+        PackageItem someEmptyPathDir = new PackageItem(someEmptyPath);
+        log.debug(someEmptyPathDir);
 
-        String link1Path = "some/path/link2SymbolCanada.gif";
-        PackageItem link1 = new PackageItem(link1Path, file2Path);
-        log.debug(link1);
+        String govCanadaGif = "some/path/GovCanada.gif";
+        URL govCanadaURL = getClass().getClassLoader().getResource("GovCanada.gif");
+        PackageItem govCanadaFile = new PackageItem(govCanadaGif, govCanadaURL);
+        log.debug(govCanadaFile);
+
+        String another = "another/";
+        PackageItem anotherDir = new PackageItem(another);
+        log.debug(anotherDir);
+
+        String anotherPath = "another/path/";
+        PackageItem anotherPathDir = new PackageItem(anotherPath);
+        log.debug(anotherPathDir);
+
+        String symbolCanadaGif = "another/path/SymbolCanada.gif";
+        URL symbolCanadaURL = getClass().getClassLoader().getResource("SymbolCanada.gif");
+        PackageItem symbolCanadaFile = new PackageItem(symbolCanadaGif, symbolCanadaURL);
+        log.debug(symbolCanadaFile);
+
+        String linkPath = "some/path/link2SymbolCanada.gif";
+        PackageItem link = new PackageItem(linkPath, "../../another/path/SymbolCanada.gif");
+        log.debug(link);
 
         List<PackageItem> packageItems = new ArrayList<>();
-        packageItems.add(dir1);
-        packageItems.add(dir2);
-        packageItems.add(file1);
-        packageItems.add(file2);
-        packageItems.add(link1);
+        packageItems.add(someDir);
+        packageItems.add(somePathDir);
+        packageItems.add(someEmptyPathDir);
+        packageItems.add(govCanadaFile);
+        packageItems.add(anotherDir);
+        packageItems.add(anotherPathDir);
+        packageItems.add(symbolCanadaFile);
+        packageItems.add(link);
+
+        String fooPath = "foo";
+        PackageItem foo = new PackageItem(fooPath);
+        packageItems.add(foo);
 
         return packageItems;
     }
