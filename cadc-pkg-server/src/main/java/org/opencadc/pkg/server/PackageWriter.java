@@ -85,6 +85,7 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.log4j.Logger;
 
 public abstract class PackageWriter {
@@ -141,8 +142,10 @@ public abstract class PackageWriter {
             } else {
                 writeHTTPFile(packageItem);
             }
-        } else {
+        } else if (packageItem.isSymbolicLink()) {
             writeSymbolicLink(packageItem);
+        } else {
+            throw new IllegalArgumentException("Unknown PackageItem type: " + packageItem);
         }
     }
 
@@ -181,6 +184,7 @@ public abstract class PackageWriter {
         InputStream stream = fileURL.openStream();
         MultiBufferIO multiBufferIO = new MultiBufferIO();
         multiBufferIO.copy(stream, archiveOutputStream);
+        stream.close();
         archiveOutputStream.closeArchiveEntry();
     }
 
@@ -211,6 +215,7 @@ public abstract class PackageWriter {
         InputStream getIOStream = get.getInputStream();
         MultiBufferIO multiBufferIO = new MultiBufferIO();
         multiBufferIO.copy(getIOStream, archiveOutputStream);
+        getIOStream.close();
         archiveOutputStream.closeArchiveEntry();
     }
 
@@ -229,7 +234,9 @@ public abstract class PackageWriter {
         archiveOutputStream.putArchiveEntry(archiveEntry);
 
         // entry content is the symbolic link target path
-        archiveOutputStream.write(linkTarget.getBytes(StandardCharsets.UTF_8));
+        if (archiveEntry instanceof ZipArchiveEntry) {
+            archiveOutputStream.write(linkTarget.getBytes(StandardCharsets.UTF_8));
+        }
         archiveOutputStream.closeArchiveEntry();
     }
 

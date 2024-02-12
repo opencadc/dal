@@ -152,8 +152,29 @@ public abstract class PackageRunner implements JobRunner {
         log.info(logInfo.end());
     }
 
+    /**
+     * Get the expected initial ExecutionPhase of the Job when the PackageRunner runs.
+     *
+     * @return ExecutionPhase
+     */
     protected ExecutionPhase getInitialPhase() {
         return ExecutionPhase.QUEUED;
+    }
+
+    /**
+     * Get the MIME type of the package. Defaults to application/x-tar
+     * if the RESPONSEFORMAT job parameter is not provided.
+     *
+     * @return MIME type
+     */
+    protected String getResponseFormat() {
+        // Package type is in RESPONSEFORMAT Job parameter (optional)
+        String responseFormat = ParameterUtil.findParameterValue("RESPONSEFORMAT", job.getParameterList());
+        if (!StringUtil.hasLength(responseFormat)) {
+            // Not provided, set default
+            responseFormat = TarWriter.MIME_TYPE;
+        }
+        return responseFormat;
     }
 
     private void doIt() {
@@ -254,19 +275,12 @@ public abstract class PackageRunner implements JobRunner {
     private PackageWriter initWriter()
             throws IOException {
 
-        // Package type is in RESPONSEFORMAT Job parameter (optional)
-        String responseFormat = ParameterUtil.findParameterValue("RESPONSEFORMAT", job.getParameterList());
-
-        if (!StringUtil.hasLength(responseFormat)) {
-            // Not provided, set default
-            responseFormat = TarWriter.MIME_TYPE;
-        }
-
         StringBuilder cdisp = new StringBuilder();
         cdisp.append("inline;filename=");
         cdisp.append(packageName);
 
         // Initialize the writer, underlying syncoutput and output streams.
+        String responseFormat = getResponseFormat();
         if (responseFormat.equals(ZipWriter.MIME_TYPE)) {
             cdisp.append(ZipWriter.EXTENSION);
             this.bcOutputStream = initOutputStream(ZipWriter.MIME_TYPE, cdisp.toString());
