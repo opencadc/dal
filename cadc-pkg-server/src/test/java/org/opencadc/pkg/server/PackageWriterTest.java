@@ -93,7 +93,7 @@ public class PackageWriterTest {
             List<PackageItem> testPackageItems = getTestPackageItems();
 
             File tarFile = File.createTempFile("tartest", ".tar");
-            log.debug("tar archive: " + tarFile.getAbsolutePath());
+            log.info("tar archive: " + tarFile.getAbsolutePath());
             FileOutputStream fos =  new FileOutputStream(tarFile);
             TarWriter fw = new TarWriter(fos);
             for (PackageItem pi : testPackageItems) {
@@ -118,7 +118,7 @@ public class PackageWriterTest {
             List<PackageItem> testPackageItems = getTestPackageItems();
 
             File zipFile = File.createTempFile("ziptest", ".zip");
-            log.debug("zip archive: " + zipFile.getAbsolutePath());
+            log.info("zip archive: " + zipFile.getAbsolutePath());
             FileOutputStream fos =  new FileOutputStream(zipFile);
             PackageWriter fw = new ZipWriter(fos);
             for (PackageItem pi : testPackageItems) {

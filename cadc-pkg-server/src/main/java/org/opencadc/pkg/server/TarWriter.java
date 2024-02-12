@@ -91,6 +91,7 @@ public class TarWriter extends PackageWriter {
         ((TarArchiveOutputStream)super.archiveOutputStream).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
     }
 
+    @Override
     ArchiveEntry createFileEntry(String relativePath, long size, Date lastModifiedDate) {
         log.debug(String.format("file ArchiveEntry: %s %s %s", relativePath, size, lastModifiedDate));
 
@@ -102,6 +103,7 @@ public class TarWriter extends PackageWriter {
         return entry;
     }
 
+    @Override
     ArchiveEntry createDirectoryEntry(String relativePath) {
         log.debug("directory ArchiveEntry: " + relativePath);
 
@@ -115,12 +117,12 @@ public class TarWriter extends PackageWriter {
         return new TarArchiveEntry(relativePath, TarConstants.LF_DIR);
     }
 
+    @Override
     ArchiveEntry createSymbolicLinkEntry(String relativePath, String linkTarget) {
         log.debug(String.format("symbolic link ArchiveEntry: %s -> %s", relativePath, linkTarget));
 
         TarArchiveEntry entry = new TarArchiveEntry(relativePath, TarConstants.LF_SYMLINK);
         entry.setLinkName(linkTarget);
-        entry.setSize(linkTarget.length());
         return entry;
     }
 

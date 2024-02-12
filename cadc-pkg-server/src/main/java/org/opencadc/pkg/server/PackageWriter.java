@@ -85,6 +85,7 @@ import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.log4j.Logger;
 
 public abstract class PackageWriter {
@@ -233,7 +234,9 @@ public abstract class PackageWriter {
         archiveOutputStream.putArchiveEntry(archiveEntry);
 
         // entry content is the symbolic link target path
-        archiveOutputStream.write(linkTarget.getBytes(StandardCharsets.UTF_8));
+        if (archiveEntry instanceof ZipArchiveEntry) {
+            archiveOutputStream.write(linkTarget.getBytes(StandardCharsets.UTF_8));
+        }
         archiveOutputStream.closeArchiveEntry();
     }
 

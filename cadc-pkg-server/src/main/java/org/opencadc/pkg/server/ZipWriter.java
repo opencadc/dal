@@ -88,6 +88,7 @@ public class ZipWriter extends PackageWriter {
         super(new ZipArchiveOutputStream(ostream));
     }
 
+    @Override
     ArchiveEntry createFileEntry(String relativePath, long size, Date lastModifiedDate) {
         log.debug(String.format("file ArchiveEntry: %s %s %s", relativePath, size, lastModifiedDate));
 
@@ -100,6 +101,7 @@ public class ZipWriter extends PackageWriter {
         return entry;
     }
 
+    @Override
     ArchiveEntry createDirectoryEntry(String relativePath) {
         log.debug("directory ArchiveEntry: " + relativePath);
 
@@ -115,6 +117,7 @@ public class ZipWriter extends PackageWriter {
         return entry;
     }
 
+    @Override
     ArchiveEntry createSymbolicLinkEntry(String relativePath, String linkRelativePath) {
         log.debug(String.format("symbolic link ArchiveEntry: %s -> %s", relativePath, linkRelativePath));
 
