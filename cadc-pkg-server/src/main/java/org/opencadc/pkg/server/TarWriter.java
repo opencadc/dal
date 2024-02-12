@@ -69,7 +69,10 @@
 
 package org.opencadc.pkg.server;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -88,6 +91,7 @@ public class TarWriter extends PackageWriter {
         ((TarArchiveOutputStream)super.archiveOutputStream).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
     }
 
+    @Override
     ArchiveEntry createFileEntry(String relativePath, long size, Date lastModifiedDate) {
         log.debug(String.format("file ArchiveEntry: %s %s %s", relativePath, size, lastModifiedDate));
 
@@ -99,18 +103,26 @@ public class TarWriter extends PackageWriter {
         return entry;
     }
 
+    @Override
     ArchiveEntry createDirectoryEntry(String relativePath) {
         log.debug("directory ArchiveEntry: " + relativePath);
+
+        if (relativePath.startsWith("/")) {
+            relativePath = relativePath.substring(1);
+        }
+        if (!relativePath.endsWith("/")) {
+            relativePath = relativePath + "/";
+        }
 
         return new TarArchiveEntry(relativePath, TarConstants.LF_DIR);
     }
 
+    @Override
     ArchiveEntry createSymbolicLinkEntry(String relativePath, String linkTarget) {
         log.debug(String.format("symbolic link ArchiveEntry: %s -> %s", relativePath, linkTarget));
 
         TarArchiveEntry entry = new TarArchiveEntry(relativePath, TarConstants.LF_SYMLINK);
         entry.setLinkName(linkTarget);
-        entry.setSize(linkTarget.length());
         return entry;
     }
 
