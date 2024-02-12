@@ -84,7 +84,7 @@ public class PackageWriterTest {
     private static final Logger log = Logger.getLogger(PackageWriterTest.class);
 
     static {
-        Log4jInit.setLevel("org.opencadc.pkg.server", Level.DEBUG);
+        Log4jInit.setLevel("org.opencadc.pkg.server", Level.INFO);
     }
 
     @Test
