@@ -128,9 +128,18 @@ public class FitsTest {
             if (expectedCard == null) {
                 Assert.assertNull("Card " + headerCardKey.key() + " should be null.", resultCard);
             } else {
+                final Class<?> valueType = expectedCard.valueType();
                 Assert.assertNotNull("Header " + headerCardKey.key() + " should not be null.", resultCard);
-                Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
-                                    expectedCard.getValue(), resultCard.getValue());
+
+                // Floats have varying decimal place specifications, so compare them separately.
+                if (valueType == Float.class) {
+                    Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
+                                        Float.parseFloat(expectedCard.getValue()),
+                                        Float.parseFloat(resultCard.getValue()), 0.0F);
+                } else {
+                    Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
+                                        expectedCard.getValue(), resultCard.getValue());
+                }
             }
         });
 

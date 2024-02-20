@@ -86,8 +86,7 @@ import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.util.Cursor;
-import nom.tam.util.RandomAccessDataObject;
-import nom.tam.util.RandomAccessFileExt;
+import nom.tam.util.RandomAccessFileIO;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -113,8 +112,8 @@ public class FitsOperationsTest {
     public void testGetPrimaryHeader() {
         try {
             // setup
-            final RandomAccessDataObject randomAccessDataObject =
-                    new RandomAccessFileExt(FileUtil.getFileFromResource("sample-mef.fits",
+            final RandomAccessFileIO randomAccessDataObject =
+                    new RandomAccessStorageObject(FileUtil.getFileFromResource("sample-mef.fits",
                                                                          FitsOperationsTest.class), "r");
 
             FitsOperations fop = new FitsOperations(randomAccessDataObject);
@@ -140,8 +139,8 @@ public class FitsOperationsTest {
     public void testGetHeaders() {
         try {
             // setup
-            final RandomAccessDataObject randomAccessDataObject =
-                    new RandomAccessFileExt(FileUtil.getFileFromResource("sample-mef.fits",
+            final RandomAccessFileIO randomAccessDataObject =
+                    new RandomAccessStorageObject(FileUtil.getFileFromResource("sample-mef.fits",
                                                                          FitsOperationsTest.class), "r");
             
             FitsOperations fop = new FitsOperations(randomAccessDataObject);
@@ -167,54 +166,63 @@ public class FitsOperationsTest {
     }
 
     @Test
-    public void testHeaders() {
+    public void testHeaders() throws Exception {
+        try (final RandomAccessFileIO randomAccessDataObject =
+                     new RandomAccessStorageObject(FileUtil.getFileFromResource("sample-mef.fits",
+                                                                                FitsOperationsTest.class), "r");
+             final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+            // setup
+            final FitsOperations fop = new FitsOperations(randomAccessDataObject);
+            fop.headersToStream(byteArrayOutputStream);
 
-        try {
-            try (final RandomAccessDataObject randomAccessDataObject =
-                         new RandomAccessFileExt(FileUtil.getFileFromResource("sample-mef.fits",
-                                                                              FitsOperationsTest.class), "r");
-                 final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
-                // setup
-                final FitsOperations fop = new FitsOperations(randomAccessDataObject);
-                fop.headersToStream(byteArrayOutputStream);
+            final byte[] output = byteArrayOutputStream.toByteArray();
 
-                final byte[] output = byteArrayOutputStream.toByteArray();
-
-                final File sampleHeaderFile = FileUtil.getFileFromResource("sample-mef.txt",
-                                                                           FitsOperationsTest.class);
-                final List<String> expectedHeaderLines = new ArrayList<>();
-                try (final FileInputStream fileInputStream = new FileInputStream(sampleHeaderFile);
-                     final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream))) {
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        expectedHeaderLines.add(line);
-                    }
+            final File sampleHeaderFile = FileUtil.getFileFromResource("sample-mef.txt",
+                                                                       FitsOperationsTest.class);
+            final List<String> expectedHeaderLines = new ArrayList<>();
+            try (final FileInputStream fileInputStream = new FileInputStream(sampleHeaderFile);
+                 final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(fileInputStream))) {
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    expectedHeaderLines.add(line);
                 }
-
-                final List<String> resultHeaderLines = new ArrayList<>();
-                try (final BufferedReader bufferedReader = new BufferedReader(
-                        new InputStreamReader(new ByteArrayInputStream(output)))) {
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        resultHeaderLines.add(line);
-                    }
-                }
-
-                Assert.assertEquals("Wrong headers provided.", expectedHeaderLines, resultHeaderLines);
             }
 
+            final List<String> resultHeaderLines = new ArrayList<>();
+            try (final BufferedReader bufferedReader = new BufferedReader(
+                    new InputStreamReader(new ByteArrayInputStream(output)))) {
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    resultHeaderLines.add(line);
+                }
+            }
 
+            for (int i = 0; i < expectedHeaderLines.size(); i++) {
+                final String nextExpectedHeaderLine = expectedHeaderLines.get(i);
+                final String nextResultHeaderLine = resultHeaderLines.get(i);
+
+                final HeaderCard expectedHeaderCard = HeaderCard.create(nextExpectedHeaderLine);
+                final HeaderCard resultHeaderCard = HeaderCard.create(nextResultHeaderLine);
+
+                Assert.assertEquals("Wrong header key at '" + nextExpectedHeaderLine + "' == '"
+                                    + nextResultHeaderLine + "': " + i, expectedHeaderCard.getKey(),
+                                    resultHeaderCard.getKey());
+
+                Assert.assertEquals("Wrong header value at '" + nextExpectedHeaderLine + "' == '"
+                                    + nextResultHeaderLine + "': " + i, expectedHeaderCard.getValue(),
+                                    resultHeaderCard.getValue());
+            }
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
+            throw unexpected;
         }
     }
 
     @Test
     public void testSlice() throws Exception {
         // setup
-        final RandomAccessDataObject randomAccessDataObject =
-                new RandomAccessFileExt(FileUtil.getFileFromResource("test-hst-mef.fits",
+        final RandomAccessFileIO randomAccessDataObject =
+                new RandomAccessStorageObject(FileUtil.getFileFromResource("test-hst-mef.fits",
                                                                      FitsOperationsTest.class), "r");
         final FitsOperations fop = new FitsOperations(randomAccessDataObject);
         final File outputFile = Files.createTempFile(
@@ -233,7 +241,7 @@ public class FitsOperationsTest {
             fop.cutoutToStream(cutout, fileOutputStream);
         }
 
-        final Fits resultsFits = new Fits(new RandomAccessFileExt(outputFile, "r"));
+        final Fits resultsFits = new Fits(new RandomAccessStorageObject(outputFile, "r"));
         resultsFits.read();
 
         Assert.assertEquals("Wrong HDU count.  Extensions 3, 106, and 126 should be available.", 4,
@@ -255,8 +263,8 @@ public class FitsOperationsTest {
 
     @Test
     public void testNoOverlap() throws Exception {
-        final RandomAccessDataObject randomAccessDataObject =
-                new RandomAccessFileExt(FileUtil.getFileFromResource("test-hst-mef.fits",
+        final RandomAccessFileIO randomAccessDataObject =
+                new RandomAccessStorageObject(FileUtil.getFileFromResource("test-hst-mef.fits",
                                                                      FitsOperationsTest.class), "r");
         final FitsOperations fop = new FitsOperations(randomAccessDataObject);
         final File outputFile = Files.createTempFile(

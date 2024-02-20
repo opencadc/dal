@@ -73,12 +73,10 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
-import java.io.File;
 import java.util.Arrays;
 
 public abstract class BaseCutoutTest {
     private static final Logger LOGGER = Logger.getLogger(BaseCutoutTest.class);
-    final static File DEFAULT_DATA_DIR = new File(System.getProperty("user.home") + "/.config/test-data");
 
     // Concrete tests can set this if desired.
     long padding = 2;
@@ -95,9 +93,10 @@ public abstract class BaseCutoutTest {
      */
     void assertFuzzyPixelArrayEquals(final String message, final long[] expected, final long[] result) {
         if (result == null && expected != null) {
-            Assert.fail("Result array is null but expected " + Arrays.toString(expected));
+            Assert.fail("Result array is null but expected " + Arrays.toString(expected)
+                        + "\nMessage from test: " + message);
         } else if (result != null && expected == null) {
-            Assert.fail("Expected null but got " + Arrays.toString(result));
+            Assert.fail("Expected null but got " + Arrays.toString(result) + "\nMessage from test: " + message);
         } else if (result != null) {
             LOGGER.debug("\n*****\nChecking array \n" + Arrays.toString(result) + "\nagainst\n"
                          + Arrays.toString(expected) + "\n allowing a difference of " + padding + ".\n****");

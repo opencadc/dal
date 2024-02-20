@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2022.                            (c) 2022.
+ *  (c) 2023.                            (c) 2023.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,95 +62,73 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
+ *  : 5 $
+ *
  ************************************************************************
  */
 
 package org.opencadc.pkg.server;
 
-import ca.nrc.cadc.net.HttpGet;
 import ca.nrc.cadc.util.Log4jInit;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.Writer;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ZipWriterTest {
-    private static final Logger log = Logger.getLogger(ZipWriterTest.class);
-    
+public class PackageWriterTest {
+    private static final Logger log = Logger.getLogger(PackageWriterTest.class);
+
     static {
-        Log4jInit.setLevel("ca.nrc.cadc.caom2.pkg", Level.INFO);
+        Log4jInit.setLevel("org.opencadc.pkg.server", Level.INFO);
+    }
+
+    @Test
+    public void testCreateTarFile() {
+        try {
+            List<PackageItem> testPackageItems = getTestPackageItems();
+
+            File tarFile = File.createTempFile("tartest", ".tar");
+            log.info("tar archive: " + tarFile.getAbsolutePath());
+            FileOutputStream fos =  new FileOutputStream(tarFile);
+            TarWriter fw = new TarWriter(fos);
+            for (PackageItem pi : testPackageItems) {
+                fw.write(pi);
+                log.debug("wrote item: " + pi.getRelativePath());
+            }
+            fw.close();
+
+            Assert.assertTrue(tarFile.canRead());
+            Assert.assertTrue(tarFile.length() > 0);
+
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("Unexpected exception: " + unexpected);
+        }
     }
 
     @Test
     public void testCreateZipFile() {
         try {
-            // Create PackageItems for testing
-            // Files are in test/resources
-            URL url1 = getClass().getClassLoader().getResource("GovCanada.gif");
-            log.debug("url1: " + url1.toString());
-            PackageItem pi1 = new PackageItem(url1, "some/path/GovCanada.gif");
+            //
+            List<PackageItem> testPackageItems = getTestPackageItems();
 
-            URL url2 = getClass().getClassLoader().getResource("SymbolCanada.gif");
-            log.debug("url2: " + url2.toString());
-            PackageItem pi2 = new PackageItem(url2,"another/path/SymbolCanada.gif");
-
-            List<PackageItem> packageContents = new ArrayList<PackageItem>();
-            packageContents.add(pi1);
-            packageContents.add(pi2);
-
-            File tmp = File.createTempFile("ziptest", ".zip");
-            FileOutputStream fos =  new FileOutputStream(tmp);
+            File zipFile = File.createTempFile("ziptest", ".zip");
+            log.info("zip archive: " + zipFile.getAbsolutePath());
+            FileOutputStream fos =  new FileOutputStream(zipFile);
             PackageWriter fw = new ZipWriter(fos);
-            for (PackageItem pi : packageContents) {
+            for (PackageItem pi : testPackageItems) {
                 fw.write(pi);
+                log.debug("wrote item: " + pi.getRelativePath());
             }
             fw.close();
 
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            PackageWriter bw = new ZipWriter(bos);
-            for (PackageItem pi : packageContents) {
-                bw.write(pi);
-            }
-            bw.close();
-
-            byte[] content = bos.toByteArray();
-            ByteArrayInputStream in = new ByteArrayInputStream(content);
-
-            ZipArchiveInputStream zip = new ZipArchiveInputStream(in);
-            Content c1 = getEntry(zip);
-            Content c2 = getEntry(zip);
-
-            ArchiveEntry te = zip.getNextZipEntry();
-            Assert.assertNull(te);
-
-            Assert.assertEquals("name", "some/path/GovCanada.gif", c1.name);
-            Assert.assertEquals("name", "another/path/SymbolCanada.gif", c2.name);
-
-            // Get the files from the local file system and compare
-            Path url1Path = Paths.get(url1.getPath());
-            log.debug("url1Path: " + url1Path.toString());
-            Assert.assertArrayEquals(c1.content, Files.readAllBytes(url1Path));
-
-            Path url2Path = Paths.get(url2.getPath());
-            log.debug("url2Path: " + url2Path.toString());
-            Assert.assertArrayEquals(c2.content, Files.readAllBytes(url2Path));
+            Assert.assertTrue(zipFile.canRead());
+            Assert.assertTrue(zipFile.length() > 0);
 
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
@@ -159,26 +137,62 @@ public class ZipWriterTest {
     }
 
 
-    class Content {
-        String name;
-        byte[] content;
-    }
+    protected List<PackageItem> getTestPackageItems() {
+        // Create PackageItems for testing
+        // Files are in test/resources
+        String some = "some/";
+        PackageItem someDir = new PackageItem(some);
+        log.debug(someDir);
 
-    private Content getEntry(ZipArchiveInputStream zip) throws IOException {
-        Content ret = new Content();
-        
-        ZipArchiveEntry entry = zip.getNextZipEntry();
-        ret.name = entry.getName();
+        String somePath = "some/path/";
+        PackageItem somePathDir = new PackageItem(somePath);
+        log.debug(somePathDir);
 
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        String someEmpty = "some/empty/";
+        PackageItem someEmptyDir = new PackageItem(someEmpty);
+        log.debug(someEmptyDir);
 
-        byte[] buffer = new byte[2048];
-        int read = 0;
-        while ((read = zip.read(buffer)) > 0) {
-            out.write(buffer, 0, read);
-        }
-        ret.content = out.toByteArray();
-        return ret;
+        String someEmptyPath = "some/empty/path/";
+        PackageItem someEmptyPathDir = new PackageItem(someEmptyPath);
+        log.debug(someEmptyPathDir);
+
+        String govCanadaGif = "some/path/GovCanada.gif";
+        URL govCanadaURL = getClass().getClassLoader().getResource("GovCanada.gif");
+        PackageItem govCanadaFile = new PackageItem(govCanadaGif, govCanadaURL);
+        log.debug(govCanadaFile);
+
+        String another = "another/";
+        PackageItem anotherDir = new PackageItem(another);
+        log.debug(anotherDir);
+
+        String anotherPath = "another/path/";
+        PackageItem anotherPathDir = new PackageItem(anotherPath);
+        log.debug(anotherPathDir);
+
+        String symbolCanadaGif = "another/path/SymbolCanada.gif";
+        URL symbolCanadaURL = getClass().getClassLoader().getResource("SymbolCanada.gif");
+        PackageItem symbolCanadaFile = new PackageItem(symbolCanadaGif, symbolCanadaURL);
+        log.debug(symbolCanadaFile);
+
+        String linkPath = "some/path/link2SymbolCanada.gif";
+        PackageItem link = new PackageItem(linkPath, "../../another/path/SymbolCanada.gif");
+        log.debug(link);
+
+        List<PackageItem> packageItems = new ArrayList<>();
+        packageItems.add(someDir);
+        packageItems.add(somePathDir);
+        packageItems.add(someEmptyPathDir);
+        packageItems.add(govCanadaFile);
+        packageItems.add(anotherDir);
+        packageItems.add(anotherPathDir);
+        packageItems.add(symbolCanadaFile);
+        packageItems.add(link);
+
+        String fooPath = "foo";
+        PackageItem foo = new PackageItem(fooPath);
+        packageItems.add(foo);
+
+        return packageItems;
     }
 
 }

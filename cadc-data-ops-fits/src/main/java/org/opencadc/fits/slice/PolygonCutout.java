@@ -83,7 +83,6 @@ import jsky.coords.wcscon;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Compression;
-import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
 
@@ -126,7 +125,7 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
     /**
      * Compute the range of pixel indices that correspond to the supplied
      * polygon. This method computes the cutout ranges within the image. The
-     * returned value is null if there is no intersection, an long[NAXIS] for a
+     * returned value is null if there is no intersection, a long[NAXIS] for a
      * cutout, and an int[0] when the image is wholly contained within the
      * polygon (and no cutout is necessary).
      *
@@ -215,7 +214,7 @@ public class PolygonCutout extends ShapeCutout<Polygon> {
             LOGGER.debug("Coordinates to transform are " + Arrays.toString(worldCoords));
             final Transform.Result tr = transform.sky2pix(worldCoords);
 
-            // if tr is null, it was a long way away from the WCS and does not
+            // if <code>tr</code> is null, it was a long way away from the WCS and does not
             // impose a limit/cutout - so we can safely skip it
             if (tr != null) {
                 LOGGER.debug("Transformed coordinates: " + Arrays.toString(tr.coordinates));

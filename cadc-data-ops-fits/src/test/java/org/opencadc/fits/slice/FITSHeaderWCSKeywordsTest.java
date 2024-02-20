@@ -72,12 +72,12 @@ import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
-import nom.tam.util.RandomAccessDataObject;
-import nom.tam.util.RandomAccessFileExt;
+import nom.tam.util.RandomAccessFileIO;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
+import org.opencadc.fits.RandomAccessStorageObject;
 
 import java.math.BigDecimal;
 import java.util.Iterator;
@@ -117,9 +117,9 @@ public class FITSHeaderWCSKeywordsTest {
     @Test
     public void testGet() throws Exception {
         final long startMillis = System.currentTimeMillis();
-        try (final RandomAccessDataObject randomAccessDataObject =
-                     new RandomAccessFileExt(FileUtil.getFileFromResource("sample-mef.fits",
-                                                                          FITSHeaderWCSKeywordsTest.class), "r");
+        try (final RandomAccessFileIO randomAccessDataObject =
+                     new RandomAccessStorageObject(FileUtil.getFileFromResource("sample-mef.fits",
+                                                                                FITSHeaderWCSKeywordsTest.class), "r");
              final Fits fits = new Fits(randomAccessDataObject)) {
 
             // Just to cache it up front, and ensure that it can be read.
@@ -137,6 +137,9 @@ public class FITSHeaderWCSKeywordsTest {
                 if (valueType == Integer.class) {
                     Assert.assertEquals("Wrong integer value.", Integer.parseInt(headerCardValue),
                                         testSubject.getIntValue(headerCardKey));
+                } else if (valueType == Float.class) {
+                    Assert.assertEquals("Wrong float value.", Float.parseFloat(headerCardValue),
+                                        testSubject.getFloatValue(headerCardKey), 0.0F);
                 } else if (valueType == Double.class || valueType == BigDecimal.class) {
                     Assert.assertEquals("Wrong double value.", Double.parseDouble(headerCardValue),
                                         testSubject.getDoubleValue(headerCardKey), 0.0D);
@@ -157,8 +160,8 @@ public class FITSHeaderWCSKeywordsTest {
     @Test
     public void testIterator() throws Exception {
         final long startMillis = System.currentTimeMillis();
-        try (final RandomAccessDataObject randomAccessDataObject =
-                     new RandomAccessFileExt(FileUtil.getFileFromResource("sample-mef.fits",
+        try (final RandomAccessFileIO randomAccessDataObject =
+                     new RandomAccessStorageObject(FileUtil.getFileFromResource("sample-mef.fits",
                                                                           FITSHeaderWCSKeywordsTest.class), "r");
              final Fits fits = new Fits(randomAccessDataObject)) {
 

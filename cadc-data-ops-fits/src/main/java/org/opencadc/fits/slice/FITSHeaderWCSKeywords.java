@@ -78,6 +78,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import nom.tam.fits.FitsFactory;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
@@ -407,39 +408,54 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
         return destination;
     }
 
+    /**
+     * Copy a header card with some potential modifications.  COMMENT and HISTORY cards are truncated to the
+     * maximum length.
+     * @param destination       The Header to write to.
+     * @param headerCardKey     The current key.
+     * @param valueType         The class type of the value.
+     * @param comment           The comment value for COMMENT or HISTORY values.
+     * @param value             The string value.
+     * @throws HeaderCardException
+     */
     private void cloneHeaderCard(final Header destination, final String headerCardKey, final Class<?> valueType,
                                  final String comment, final String value) throws HeaderCardException {
         // Check for blank lines or just plain comments that are not standard FITS comments.
         if (!StringUtil.hasText(headerCardKey)) {
             destination.addValue(headerCardKey, (String) null, comment);
         } else if (Standard.COMMENT.key().equals(headerCardKey)) {
-            destination.insertComment(comment);
+            if (StringUtil.hasText(comment) && comment.length() > HeaderCard.MAX_COMMENT_CARD_COMMENT_LENGTH) {
+                destination.insertComment(comment.substring(0, HeaderCard.MAX_COMMENT_CARD_COMMENT_LENGTH));
+            } else {
+                destination.insertComment(comment);
+            }
         } else if (Standard.HISTORY.key().equals(headerCardKey)) {
-            destination.insertHistory(comment);
+            if (StringUtil.hasText(comment) && comment.length() > HeaderCard.MAX_COMMENT_CARD_COMMENT_LENGTH) {
+                destination.insertHistory(comment.substring(0, HeaderCard.MAX_COMMENT_CARD_COMMENT_LENGTH));
+            } else {
+                destination.insertHistory(comment);
+            }
         } else if (headerCardKey.startsWith(CADCExt.CDELT.key())) {
             // CDELT values cannot be zero.
             final double cdeltValue = Double.parseDouble(value);
-            destination.addValue(headerCardKey, cdeltValue == 0.0D ? 1.0D : cdeltValue,
-                                 comment);
+            destination.addValue(headerCardKey, cdeltValue == 0.0D ? 1.0D : cdeltValue, comment);
         } else {
             if (valueType == String.class || valueType == null) {
                 destination.addValue(headerCardKey, value, comment);
             } else if (valueType == Boolean.class) {
                 destination.addValue(headerCardKey, Boolean.parseBoolean(value) || value.equals("T"), comment);
             } else if (valueType == Integer.class) {
-                destination.addValue(headerCardKey, Integer.parseInt(value),
-                                     comment);
+                destination.addValue(headerCardKey, Integer.parseInt(value), comment);
             } else if (valueType == BigInteger.class) {
                 destination.addValue(headerCardKey, new BigInteger(value), comment);
             } else if (valueType == Long.class) {
-                destination.addValue(headerCardKey, Long.parseLong(value),
-                                     comment);
+                destination.addValue(headerCardKey, Long.parseLong(value), comment);
             } else if (valueType == Double.class) {
-                destination.addValue(headerCardKey, Double.parseDouble(value),
-                                     comment);
+                destination.addValue(headerCardKey, Double.parseDouble(value), comment);
             } else if (valueType == BigDecimal.class) {
-                destination.addValue(headerCardKey, new BigDecimal(value),
-                                     comment);
+                destination.addValue(headerCardKey, new BigDecimal(value), comment);
+            } else if (valueType == Float.class) {
+                destination.addValue(headerCardKey, Float.parseFloat(value), comment);
             }
         }
     }

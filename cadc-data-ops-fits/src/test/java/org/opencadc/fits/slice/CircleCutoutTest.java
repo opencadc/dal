@@ -73,17 +73,19 @@ import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
 import nom.tam.util.ArrayDataInput;
-import nom.tam.util.BufferedDataInputStream;
+import nom.tam.util.FitsInputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,8 +109,8 @@ public class CircleCutoutTest extends BaseCutoutTest {
         final String headerFileName = "test-alma-cube-header.txt";
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
-        try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+        try (final InputStream inputStream = Files.newInputStream(testFile.toPath());
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final Circle circle = new Circle(new Point(246.52D, -24.33D), 0.01D);
@@ -139,9 +141,15 @@ public class CircleCutoutTest extends BaseCutoutTest {
 
             LOGGER.debug("Reading header file " + headerFileName);
 
-            try (final InputStream inputStream = new FileInputStream(testFile);
-                 final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
-                final Header testHeader = Header.readHeader(arrayDataInput);
+            try (final InputStream inputStream = Files.newInputStream(testFile.toPath());
+                 final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+
+                final Header testHeader = new Header();
+                final char[] buff = new char[80];
+                while (bufferedReader.read(buff) >= 0) {
+                    testHeader.addLine(HeaderCard.create(new String(buff)));
+                }
+
                 final Circle circle = new Circle(new Point(309.8D, 42.7D), 0.3D);
                 final CircleCutout circleCutout = new CircleCutout(testHeader);
 
@@ -155,36 +163,14 @@ public class CircleCutoutTest extends BaseCutoutTest {
     }
 
     @Test
-    @Ignore("Bad header information?  Pixels are off by ~5.")
-    public void testIRIS() throws Exception {
-        final long startMillis = System.currentTimeMillis();
-
-        final String headerFileName = "test-iris-header.txt";
-        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
-
-        try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
-
-            final Header testHeader = Header.readHeader(arrayDataInput);
-            final Circle circle = new Circle(new Point(250.0D, 75.2D), 0.3D);
-            final CircleCutout circleCutout = new CircleCutout(testHeader);
-
-            final long[] expected = new long[]{431, 463, 79, 110};
-            final long[] result = circleCutout.getBounds(circle);
-            assertFuzzyPixelArrayEquals("Wrong IRIS circle bounds.", expected, result);
-        }
-        LOGGER.debug("CircleCutoutTest.testComputeIRIS OK: " + (System.currentTimeMillis() - startMillis) + " ms");
-    }
-
-    @Test
     public void testOMM() throws Exception {
         final long startMillis = System.currentTimeMillis();
 
         final String headerFileName = "test-omm-header.txt";
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
-        try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+        try (final InputStream inputStream = Files.newInputStream(testFile.toPath());
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final Circle circle = new Circle(new Point(20.89D, -59.47D), 0.1D);
@@ -226,8 +212,8 @@ public class CircleCutoutTest extends BaseCutoutTest {
             final File testFile = FileUtil.getFileFromResource("test-hst-mef/" + headerFileName,
                                                                CircleCutoutTest.class);
 
-            try (final InputStream inputStream = new FileInputStream(testFile);
-                 final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+            try (final InputStream inputStream = Files.newInputStream(testFile.toPath());
+                 final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
                 final Header testHeader = Header.readHeader(arrayDataInput);
 
                 LOGGER.debug("Looking at HDU " + hduIndex);
@@ -270,8 +256,8 @@ public class CircleCutoutTest extends BaseCutoutTest {
 
             LOGGER.debug("Reading header file " + headerFileName);
 
-            try (final InputStream inputStream = new FileInputStream(testFile);
-                 final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+            try (final InputStream inputStream = Files.newInputStream(testFile.toPath());
+                 final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
                 final Header testHeader = Header.readHeader(arrayDataInput);
                 final CircleCutout circleCutout = new CircleCutout(testHeader);
                 assertFuzzyPixelArrayEquals("Should be empty.", null, circleCutout.getBounds(circle));

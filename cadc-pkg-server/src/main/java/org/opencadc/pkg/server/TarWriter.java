@@ -69,11 +69,15 @@
 
 package org.opencadc.pkg.server;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.tar.TarConstants;
 import org.apache.log4j.Logger;
 
 public class TarWriter extends PackageWriter {
@@ -84,31 +88,42 @@ public class TarWriter extends PackageWriter {
 
     public TarWriter(OutputStream ostream) {
         super(new TarArchiveOutputStream(ostream));
-        ((TarArchiveOutputStream)super.aout).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+        ((TarArchiveOutputStream)super.archiveOutputStream).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
     }
 
-    ArchiveEntry createEntry(String name, long size, Date lastModifiedDate) {
-        return new DynamicTarEntry(name, size, lastModifiedDate);
+    @Override
+    ArchiveEntry createFileEntry(String relativePath, long size, Date lastModifiedDate) {
+        log.debug(String.format("file ArchiveEntry: %s %s %s", relativePath, size, lastModifiedDate));
+
+        TarArchiveEntry entry = new TarArchiveEntry(relativePath, TarConstants.LF_NORMAL);
+        entry.setSize(size);
+        if (lastModifiedDate != null) {
+            entry.setModTime(lastModifiedDate);
+        }
+        return entry;
     }
 
-    /**
-     * Wrapper for TarArchiveEntry class.
-     * isDirectory set to false - PackageWriter only writes files.
-     */
-    private class DynamicTarEntry extends TarArchiveEntry {
+    @Override
+    ArchiveEntry createDirectoryEntry(String relativePath) {
+        log.debug("directory ArchiveEntry: " + relativePath);
 
-        public DynamicTarEntry(String name, long size, Date lastModifiedDate) {
-            super(name);
-            log.info("TAR ENTRY VALUES:" + name + size);
-            if (lastModifiedDate != null) {
-                super.setModTime(lastModifiedDate);
-            }
-            super.setSize(size);
+        if (relativePath.startsWith("/")) {
+            relativePath = relativePath.substring(1);
+        }
+        if (!relativePath.endsWith("/")) {
+            relativePath = relativePath + "/";
         }
 
-        @Override
-        public boolean isDirectory() {
-            return false;
-        }
+        return new TarArchiveEntry(relativePath, TarConstants.LF_DIR);
     }
+
+    @Override
+    ArchiveEntry createSymbolicLinkEntry(String relativePath, String linkTarget) {
+        log.debug(String.format("symbolic link ArchiveEntry: %s -> %s", relativePath, linkTarget));
+
+        TarArchiveEntry entry = new TarArchiveEntry(relativePath, TarConstants.LF_SYMLINK);
+        entry.setLinkName(linkTarget);
+        return entry;
+    }
+
 }
