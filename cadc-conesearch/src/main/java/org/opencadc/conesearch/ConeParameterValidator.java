@@ -76,6 +76,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Validator for Cone Search parameters.
@@ -85,6 +86,9 @@ public class ConeParameterValidator extends CommonParamValidator {
     public static final String RA_PARAM = "RA";
     public static final String DEC_PARAM = "DEC";
     public static final String SR_PARAM = "SR";
+
+    public static final String MAXREC = "MAXREC";
+
     static final int MIN_VERB_VALUE = 1;
     static final int MID_VERB_VALUE = 2;
     static final int MAX_VERB_VALUE = 3;
@@ -124,6 +128,17 @@ public class ConeParameterValidator extends CommonParamValidator {
         } else {
             return MID_VERB_VALUE;
         }
+    }
+
+    int getMaxRec(final Map<String, List<String>> parameters, final int defaultValue, final int maxValue) {
+        return validateInteger(ConeParameterValidator.MAXREC, parameters).stream().filter(i -> i > maxValue)
+                                                                         .findFirst().orElse(defaultValue);
+    }
+
+    private List<Integer> validateInteger(final String verbParam, final Map<String, List<String>> parameters,
+                                          final List<Integer> validValues) {
+        return super.validateInteger(verbParam, parameters).stream().filter(validValues::contains)
+                    .collect(Collectors.toList());
     }
 
     private String getFirstParameter(final String key, final Map<String, List<String>> requestParameters) {
