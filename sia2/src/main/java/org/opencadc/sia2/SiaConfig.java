@@ -92,8 +92,10 @@ public class SiaConfig {
     
     private static final String BASE_KEY = "org.opencadc.sia2";
     private static final String QUERY_KEY = BASE_KEY + ".queryService";
+    private static final String TABLE_KEY = BASE_KEY + ".table";
     
     private final URI queryService;
+    private final String tableName;
     
     public SiaConfig() {
         StringBuilder sb = new StringBuilder();
@@ -119,11 +121,22 @@ public class SiaConfig {
                 throw new InvalidConfigException("invalid config: " + sb.toString());
             }
             this.queryService = qsURI;
+
+	    String tn = props.getFirstPropertyValue(TABLE_KEY);
+	    if (tn == null) {
+		this.tableName = "ivoa.ObsCore";
+	    } else {
+                this.tableName = tn;
+	    }
         } catch (InvalidConfigException ex) {
             throw ex;
         }
     }
     
+    public String getTableName() {
+	return tableName;
+    }
+
     public URI getQueryService() {
         return queryService;
     }
