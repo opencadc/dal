@@ -69,6 +69,7 @@
 package org.opencadc.conesearch;
 
 import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 import ca.nrc.cadc.util.StringUtil;
 
 import java.util.HashMap;
@@ -138,7 +139,7 @@ public class TAPQueryGenerator {
 
         // Obtain and, if necessary, provide a default RESPONSEFORMAT.
         queryParameterMap.put(ConeParameterValidator.RESPONSEFORMAT,
-                              coneParameterValidator.getResponseFormat(parameters));
+                              coneParameterValidator.getResponseFormat(parameters, VOTableWriter.CONTENT_TYPE));
 
         // Obtain and validate the VERB (verbosity) output.
         final int outputVerbosity = coneParameterValidator.validateVERB(parameters);

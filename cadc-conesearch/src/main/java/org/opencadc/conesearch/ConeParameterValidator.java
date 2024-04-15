@@ -131,18 +131,31 @@ public class ConeParameterValidator extends CommonParamValidator {
     }
 
     int getMaxRec(final Map<String, List<String>> parameters, final int defaultValue, final int maxValue) {
-        return validateInteger(ConeParameterValidator.MAXREC, parameters).stream().filter(i -> i > maxValue)
-                                                                         .findFirst().orElse(defaultValue);
+        return validateInteger(ConeParameterValidator.MAXREC, parameters)
+                .stream()
+                .filter(i -> i <= maxValue)
+                .filter(i -> i > 0)
+                .findFirst()
+                .orElse(defaultValue);
     }
 
     private List<Integer> validateInteger(final String verbParam, final Map<String, List<String>> parameters,
                                           final List<Integer> validValues) {
-        return super.validateInteger(verbParam, parameters).stream().filter(validValues::contains)
+        return super.validateInteger(verbParam, parameters)
+                    .stream()
+                    .filter(validValues::contains)
                     .collect(Collectors.toList());
     }
 
     private String getFirstParameter(final String key, final Map<String, List<String>> requestParameters) {
         final List<String> values = requestParameters.get(key);
         return (values == null || values.isEmpty()) ? null : values.get(0);
+    }
+
+    public String getResponseFormat(final Map<String, List<String>> parameters, final String contentType) {
+        return validateString(ConeParameterValidator.RESPONSEFORMAT, parameters, null)
+                .stream()
+                .findFirst()
+                .orElse(contentType);
     }
 }
