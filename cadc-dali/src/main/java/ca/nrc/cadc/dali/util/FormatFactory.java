@@ -147,6 +147,8 @@ public class FormatFactory {
                     ret = new CircleFormat();
                 } else if ("polygon".equalsIgnoreCase(field.xtype)) {
                     ret = new PolygonFormat();
+                } else if ("multipolygon".equalsIgnoreCase(field.xtype)) {
+                    ret = new MultiPolygonFormat();
                 } else if ("interval".equalsIgnoreCase(field.xtype)) {
                     ret = new DoubleIntervalFormat();
                 } else if (field.getArrayShape().length == 1) {
@@ -163,6 +165,8 @@ public class FormatFactory {
                     ret = new CircleFormat();
                 } else if ("polygon".equalsIgnoreCase(field.xtype)) {
                     ret = new PolygonFormat();
+                } else if ("multipolygon".equalsIgnoreCase(field.xtype)) {
+                    ret = new MultiPolygonFormat();
                 } else if ("interval".equalsIgnoreCase(field.xtype)) {
                     if (field.getArrayShape().length == 1 && field.getArrayShape()[0] == 2) {
                         ret = new DoubleIntervalFormat();
@@ -185,7 +189,7 @@ public class FormatFactory {
             if (isArray(field)) {
                 if ("timestamp".equalsIgnoreCase(field.xtype)) { // DALI-1.1
                     ret = new UTCTimestampFormat();
-                } else if (field.xtype != null && field.xtype.endsWith("shape")) { // DALI-1.2 prototype, ignore prefix
+                } else if (field.xtype != null && field.xtype.endsWith("shape")) { // DALI-1.2
                     ret = new ShapeFormat();
                 } else if ("adql:timestamp".equalsIgnoreCase(field.xtype)) {
                     ret = new UTCTimestampFormat();
@@ -193,9 +197,9 @@ public class FormatFactory {
                     ret = new STCPositionFormat();
                 } else if ("adql:region".equalsIgnoreCase(field.xtype)) {
                     ret = new STCRegionFormat();
-                } else if ("uuid".equalsIgnoreCase(field.xtype)) { // custom
+                } else if ("uuid".equalsIgnoreCase(field.xtype)) { // DALI-1.2
                     ret = new UUIDFormat();
-                } else if ("uri".equalsIgnoreCase(field.xtype)) { // custom
+                } else if ("uri".equalsIgnoreCase(field.xtype)) { // DALI-1.2
                     ret = new URIFormat();
                 }
             }
