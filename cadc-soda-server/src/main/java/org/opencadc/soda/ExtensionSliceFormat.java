@@ -91,7 +91,7 @@ public class ExtensionSliceFormat implements Format<ExtensionSlice> {
     private static final String PIXEL_AXIS_DELIMITER = ",";
     private static final String PIXEL_VALUE_DELIMITER = ":";
     
-    private final Pattern singleRangePattern = Pattern.compile("\\*?(\\d+)?(:\\d+)?(:\\d*)?");
+    private final Pattern singleRangePattern = Pattern.compile("\\*?(\\d+)?(:\\d+)?(:-?\\d*)?");
 
     public ExtensionSliceFormat() {
     }

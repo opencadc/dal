@@ -83,6 +83,8 @@ public class MultiPolygonFormat implements Format<MultiPolygon> {
     private final PolygonFormat pf = new PolygonFormat();
     private final DoubleArrayFormat fmt = new DoubleArrayFormat();
     
+    private static final String MP_SEPARATOR = " NaN NaN ";
+
     public MultiPolygonFormat() { 
     }
 
@@ -96,7 +98,12 @@ public class MultiPolygonFormat implements Format<MultiPolygon> {
             return null;
         }
         
-        return parseSingleNaN(s); // format is single NaN
+        double[] dd = fmt.parse(s);
+        return parseDoubleNaN(dd, s);
+    }
+    
+    public MultiPolygon build(double[] dd) {
+        return parseDoubleNaN(dd, null);
     }
     
     MultiPolygon parseSingleNaN(String s) {
@@ -115,10 +122,9 @@ public class MultiPolygonFormat implements Format<MultiPolygon> {
         
         return ret;
     }
-    
-    MultiPolygon parseDoubleNaN(String s) {
-        double[] dd = fmt.parse(s);
 
+    // string rep is for error messages
+    MultiPolygon parseDoubleNaN(double[] dd, String s) {
         MultiPolygon ret = new MultiPolygon();
         Polygon poly = new Polygon();
         try {
@@ -163,7 +169,7 @@ public class MultiPolygonFormat implements Format<MultiPolygon> {
         while (i.hasNext()) {
             sb.append(pf.format(i.next()));
             if (i.hasNext()) {
-                sb.append(" NaN ");
+                sb.append(MP_SEPARATOR);
             }
         }
         return sb.toString();
