@@ -77,6 +77,7 @@ import java.util.TimeZone;
 
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.header.DateTime;
 import org.apache.log4j.Logger;
 import org.opencadc.fits.CADCExt;
 
@@ -113,21 +114,21 @@ public class TimeHeaderWCSKeywords {
             && this.fitsHeaderWCSKeywords.containsKey(CADCExt.MJDREFF.key())) {
             mjdRef = this.fitsHeaderWCSKeywords.getIntValue(CADCExt.MJDREFI.key())
                      + this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.MJDREFF.key());
-        } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.MJDREF.key())) {
-            mjdRef = this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.MJDREF.key());
+        } else if (this.fitsHeaderWCSKeywords.containsKey(DateTime.MJDREF.key())) {
+            mjdRef = this.fitsHeaderWCSKeywords.getDoubleValue(DateTime.MJDREF.key());
         } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.JDREFI.key())
                    && this.fitsHeaderWCSKeywords.containsKey(CADCExt.JDREFF.key())) {
             final double jdRef = this.fitsHeaderWCSKeywords.getIntValue(CADCExt.JDREFI.key())
                                  + this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.JDREFF.key());
             mjdRef = DateUtil.toModifiedJulianDate(jdRef);
-        } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.JDREF.key())) {
-            mjdRef = DateUtil.toModifiedJulianDate(this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.JDREF.key()));
-        } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.DATEREF.key())) {
-            LOGGER.debug("Using DATEREF: " + this.fitsHeaderWCSKeywords.getStringValue(CADCExt.DATEREF.key()));
+        } else if (this.fitsHeaderWCSKeywords.containsKey(DateTime.JDREF.key())) {
+            mjdRef = DateUtil.toModifiedJulianDate(this.fitsHeaderWCSKeywords.getDoubleValue(DateTime.JDREF.key()));
+        } else if (this.fitsHeaderWCSKeywords.containsKey(DateTime.DATEREF.key())) {
+            LOGGER.debug("Using DATEREF: " + this.fitsHeaderWCSKeywords.getStringValue(DateTime.DATEREF.key()));
             final String timeSystem = getSystem();
             final TimeZone timeZone = TimeZone.getTimeZone(timeSystem);
             final Date date = DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, timeZone).parse(
-                    this.fitsHeaderWCSKeywords.getStringValue(CADCExt.DATEREF.key()));
+                    this.fitsHeaderWCSKeywords.getStringValue(DateTime.DATEREF.key()));
             mjdRef = DateUtil.toModifiedJulianDate(date, timeZone);
         } else {
             mjdRef = 0.0D;
@@ -141,27 +142,27 @@ public class TimeHeaderWCSKeywords {
     public double getMJDStart() throws ParseException {
         final double startMJD;
 
-        if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.MJDBEG.key())) {
-            startMJD = this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.MJDBEG.key());
-        } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.MJDOBS.key())) {
-            startMJD = this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.MJDOBS.key());
+        if (this.fitsHeaderWCSKeywords.containsKey(DateTime.MJD_BEG.key())) {
+            startMJD = this.fitsHeaderWCSKeywords.getDoubleValue(DateTime.MJD_BEG.key());
+        } else if (this.fitsHeaderWCSKeywords.containsKey(DateTime.MJD_OBS.key())) {
+            startMJD = this.fitsHeaderWCSKeywords.getDoubleValue(DateTime.MJD_OBS.key());
         } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.JDBEG.key())) {
             startMJD = DateUtil.toModifiedJulianDate(
                     this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.JDBEG.key()));
         } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.JDOBS.key())) {
             startMJD = DateUtil.toModifiedJulianDate(
                     this.fitsHeaderWCSKeywords.getDoubleValue(CADCExt.JDOBS.key()));
-        } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.DATEOBS.key())) {
+        } else if (this.fitsHeaderWCSKeywords.containsKey(DateTime.DATE_OBS.key())) {
             final String timeSystem = getSystem();
             final TimeZone timeZone = TimeZone.getTimeZone(timeSystem);
             final Date date = DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, timeZone).parse(
-                    this.fitsHeaderWCSKeywords.getStringValue(CADCExt.DATEOBS.key()));
+                    this.fitsHeaderWCSKeywords.getStringValue(DateTime.DATE_OBS.key()));
             startMJD = DateUtil.toModifiedJulianDate(date, timeZone);
-        } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.DATEBEG.key())) {
+        } else if (this.fitsHeaderWCSKeywords.containsKey(DateTime.DATE_BEG.key())) {
             final String timeSystem = getSystem();
             final TimeZone timeZone = TimeZone.getTimeZone(timeSystem);
             final Date date = DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, timeZone).parse(
-                    this.fitsHeaderWCSKeywords.getStringValue(CADCExt.DATEBEG.key()));
+                    this.fitsHeaderWCSKeywords.getStringValue(DateTime.DATE_BEG.key()));
             startMJD = DateUtil.toModifiedJulianDate(date, timeZone);
         } else if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.TSTART.key())) {
             final String unit = getUnit();
@@ -188,17 +189,19 @@ public class TimeHeaderWCSKeywords {
     }
 
     private String getSystem() {
-        return this.fitsHeaderWCSKeywords.containsKey(CADCExt.TIMESYS.key())
-               ? this.fitsHeaderWCSKeywords.getStringValue(CADCExt.TIMESYS.key()) : DEFAULT_TIME_SYSTEM;
+        return this.fitsHeaderWCSKeywords.containsKey(DateTime.TIMESYS.key())
+               ? this.fitsHeaderWCSKeywords.getStringValue(DateTime.TIMESYS.key()) : DEFAULT_TIME_SYSTEM;
     }
 
     public String getUnit() {
         final String unit;
-        final String cUnitKey = CADCExt.CUNITn.n(this.fitsHeaderWCSKeywords.getTemporalAxis()).key();
+        final int temporalAxis = this.fitsHeaderWCSKeywords.getTemporalAxis();
 
-        if (this.fitsHeaderWCSKeywords.containsKey(CADCExt.TIMEUNIT.key())) {
-            unit = this.fitsHeaderWCSKeywords.getStringValue(CADCExt.TIMEUNIT.key());
-        } else if (this.fitsHeaderWCSKeywords.containsKey(cUnitKey)) {
+        final String cUnitKey = temporalAxis < 0 ? null : CADCExt.CUNITn.n(temporalAxis).key();
+
+        if (this.fitsHeaderWCSKeywords.containsKey(DateTime.TIMEUNIT.key())) {
+            unit = this.fitsHeaderWCSKeywords.getStringValue(DateTime.TIMEUNIT.key());
+        } else if (cUnitKey != null && this.fitsHeaderWCSKeywords.containsKey(cUnitKey)) {
             unit = this.fitsHeaderWCSKeywords.getStringValue(cUnitKey);
         } else {
             unit = DEFAULT_TIME_UNIT;

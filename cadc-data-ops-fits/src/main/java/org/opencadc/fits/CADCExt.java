@@ -99,33 +99,18 @@ public enum CADCExt implements IFitsHeader {
     SPECSYS(HDU.IMAGE, VALUE.STRING, ""),
 
     // Temporal values.
-    MJDREF(HDU.IMAGE, VALUE.REAL, "Reference time in MJD"),
     MJDREFI(HDU.IMAGE, VALUE.REAL, "Integer part of reference time in MJD"),
     MJDREFF(HDU.IMAGE, VALUE.REAL, "Fractional part of reference time in MJD"),
-    JDREF(HDU.IMAGE, VALUE.REAL, "Reference time in JD"),
     JDREFI(HDU.IMAGE, VALUE.REAL, "Integer part of reference time in JD"),
     JDREFF(HDU.IMAGE, VALUE.REAL, "Fractional part of reference time in JD"),
-    DATEBEG("DATE-BEG", HDU.PRIMARY_EXTENSION, VALUE.REAL, "Start time of data in iso-8601"),
-    DATEOBS("DATE-OBS", HDU.PRIMARY_EXTENSION, VALUE.REAL, "Time (or start time) of data in iso-8601"),
-    DATEEND("DATE-END", HDU.PRIMARY_EXTENSION, VALUE.REAL, "Stop time of data in iso-8601"),
-
     JDBEG("JD-BEG", HDU.PRIMARY_EXTENSION, VALUE.REAL, "Start time of data in JD"),
     JDOBS("JD-OBS", HDU.PRIMARY_EXTENSION, VALUE.REAL, "Time (or start time) of data in JD"),
     JDEND("JD-END", HDU.PRIMARY_EXTENSION, VALUE.REAL, "Stop time of data in JD"),
 
-    MJDBEG("MJD-BEG", HDU.PRIMARY_EXTENSION, VALUE.REAL, "Start time of data in MJD"),
-    MJDOBS("MJD-OBS", HDU.PRIMARY_EXTENSION, VALUE.REAL, "Time (or start time) of data in MJD"),
-    MJDEND("MJD-END", HDU.PRIMARY_EXTENSION, VALUE.REAL, "Stop time of data in MJD"),
-
     TSTART(HDU.PRIMARY_EXTENSION, VALUE.REAL,
            "Start time of data in units of TIMEUNIT relative to MJDREF, JDREF or DATEREF according to TIMESYS."),
     TSTOP(HDU.PRIMARY_EXTENSION, VALUE.REAL,
-          "Stop time of data in units of TIMEUNIT relative to MJDREF, JDREF or DATEREF according to TIMESYS."),
-
-    DATEREF(HDU.IMAGE, VALUE.REAL, "Reference time in ISO-8601"),
-
-    TIMESYS(HDU.PRIMARY_EXTENSION, VALUE.STRING, "Time scale.  Defaults to UTC."),
-    TIMEUNIT(HDU.ANY, VALUE.STRING, "Unit of elapsed time.");
+          "Stop time of data in units of TIMEUNIT relative to MJDREF, JDREF or DATEREF according to TIMESYS.");
 
     private final IFitsHeader key;
 

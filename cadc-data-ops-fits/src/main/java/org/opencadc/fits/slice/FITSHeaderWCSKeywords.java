@@ -70,18 +70,16 @@ package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.util.StringUtil;
 import ca.nrc.cadc.wcs.WCSKeywords;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import nom.tam.fits.FitsFactory;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.header.DateTime;
 import nom.tam.fits.header.Standard;
 import nom.tam.fits.header.extra.NOAOExt;
 import nom.tam.util.Cursor;
@@ -103,7 +101,8 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Empty constructor.
-     * @throws HeaderCardException  If cloning the header fails.
+     *
+     * @throws HeaderCardException If cloning the header fails.
      */
     public FITSHeaderWCSKeywords() throws HeaderCardException {
         this(new Header());
@@ -411,11 +410,12 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
     /**
      * Copy a header card with some potential modifications.  COMMENT and HISTORY cards are truncated to the
      * maximum length.
-     * @param destination       The Header to write to.
-     * @param headerCardKey     The current key.
-     * @param valueType         The class type of the value.
-     * @param comment           The comment value for COMMENT or HISTORY values.
-     * @param value             The string value.
+     *
+     * @param destination   The Header to write to.
+     * @param headerCardKey The current key.
+     * @param valueType     The class type of the value.
+     * @param comment       The comment value for COMMENT or HISTORY values.
+     * @param value         The string value.
      * @throws HeaderCardException
      */
     private void cloneHeaderCard(final Header destination, final String headerCardKey, final Class<?> valueType,
@@ -484,8 +484,8 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
                 }
 
                 if (x == temporalAxis && !destination.containsKey(CADCExt.CUNITn.n(x))
-                    && !destination.containsKey(CADCExt.TIMEUNIT)) {
-                    destination.addValue(CADCExt.TIMEUNIT.key(), "s", CADCExt.TIMEUNIT.comment());
+                    && !destination.containsKey(DateTime.TIMEUNIT)) {
+                    destination.addValue(DateTime.TIMEUNIT.key(), "s", DateTime.TIMEUNIT.comment());
                 }
             }
 
@@ -502,6 +502,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Obtain the spatial longitude axis value.
+     *
      * @return int axis, or -1 if no spectral axis present.
      */
     int getSpatialLongitudeAxis() {
@@ -510,8 +511,9 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Obtain the two spatial axis value.
-     * @param h    The header to check for the axes.
-     * @return  int of longitude axis numbers, or -1 if none found.
+     *
+     * @param h The header to check for the axes.
+     * @return int of longitude axis numbers, or -1 if none found.
      */
     int getSpatialLongitudeAxis(final Header h) {
         final int naxis = h.getIntValue(Standard.NAXIS);
@@ -529,6 +531,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Obtain the spatial longitude axis value.
+     *
      * @return int axis, or -1 if no spectral axis present.
      */
     int getSpatialLatitudeAxis() {
@@ -537,8 +540,9 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
 
     /**
      * Obtain the two spatial axis value.
-     * @param h    The header to check for the axes.
-     * @return  int of longitude axis numbers, or -1 if none found.
+     *
+     * @param h The header to check for the axes.
+     * @return int of longitude axis numbers, or -1 if none found.
      */
     int getSpatialLatitudeAxis(final Header h) {
         final int naxis = h.getIntValue(Standard.NAXIS);
@@ -566,7 +570,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
     /**
      * Obtain the energy (1-based) axis from the given header.  Return -1 if none found that match the Spectral types.
      *
-     * @param   h   The header to search in
+     * @param h The header to search in
      * @return integer axis, or -1 if not found.
      */
     int getSpectralAxis(final Header h) {
@@ -594,7 +598,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
     /**
      * Obtain the time (1-based) axis from the given header.  Return -1 if none found that match the Temporal types.
      *
-     * @param   h   The header to search in
+     * @param h The header to search in
      * @return integer axis, or -1 if not found.
      */
     int getTemporalAxis(final Header h) {
@@ -622,7 +626,7 @@ public class FITSHeaderWCSKeywords implements WCSKeywords {
     /**
      * Obtain the time (1-based) axis from the given header.  Return -1 if none found that match the Temporal types.
      *
-     * @param   h   The header to search in
+     * @param h The header to search in
      * @return integer axis, or -1 if not found.
      */
     int getPolarizationAxis(final Header h) {
