@@ -207,7 +207,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         testHeader.addValue(Standard.CRPIXn.n(1), 1.000000000000E+00D);
         testHeader.addValue(CADCExt.CUNITn.n(1), "Hz");
         testHeader.addValue(CADCExt.PC1_1, 1.000000000000E+00D);
-        testHeader.addValue(CADCExt.RESTFRQ, 1.152712000000E+11D);
+        testHeader.addValue(Standard.RESTFRQ, 1.152712000000E+11D);
         testHeader.addValue(CADCExt.SPECSYS, "LSRK");
         testHeader.addValue(Standard.BSCALE, 1.000000000000E+00D);
         testHeader.addValue(Standard.BZERO, 0.000000000000E+00D);
