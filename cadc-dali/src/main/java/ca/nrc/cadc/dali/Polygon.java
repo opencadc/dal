@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2023.                            (c) 2023.
+*  (c) 2024.                            (c) 2024.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.dali;
 
+import ca.nrc.cadc.dali.impl.CartesianTransform;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -85,7 +86,7 @@ import org.apache.log4j.Logger;
 public class Polygon implements Shape {
     private static final Logger log = Logger.getLogger(Polygon.class);
     
-    private final List<Point> points = new ArrayList<Point>();
+    private final List<Point> vertices = new ArrayList<>();
     
     // lazily computed
     private transient Point center;
@@ -100,7 +101,7 @@ public class Polygon implements Shape {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Polygon[");
-        for (Point v : points) {
+        for (Point v : vertices) {
             sb.append(v.getLongitude()).append(" ").append(v.getLatitude()).append(" ");
         }
         sb.setCharAt(sb.length() - 1, ']');
@@ -108,7 +109,7 @@ public class Polygon implements Shape {
     }
 
     public List<Point> getVertices() {
-        return points;
+        return vertices;
     }
 
     @Override
@@ -118,12 +119,12 @@ public class Polygon implements Shape {
         }
         Polygon rhs = (Polygon) obj;
 
-        if (this.points.size() != rhs.points.size()) {
+        if (this.vertices.size() != rhs.vertices.size()) {
             return false;
         }
-        for (int i = 0; i < points.size(); i++) {
-            Point tp = this.points.get(i);
-            Point rp = rhs.points.get(i);
+        for (int i = 0; i < vertices.size(); i++) {
+            Point tp = this.vertices.get(i);
+            Point rp = rhs.vertices.get(i);
             if (!tp.equals(rp)) {
                 return false;
             }
@@ -137,10 +138,9 @@ public class Polygon implements Shape {
      * @throws InvalidPolygonException violation of DALI spec
      */
     public final void validate() throws InvalidPolygonException {
-        //validatePoints();
         validateSegments();
         initProps();
-        // DALI polygons are always CCW 
+        // DALI polygons are always "inside on the left" aka CCW
         // unsupported: if we detect CW here it is equivalent to the region 
         // outside with area = 4*pi - area and larger than half the sphere
         if (!ccw) {
@@ -215,13 +215,11 @@ public class Polygon implements Shape {
         double a = 0.0;
         double cx = 0.0;
         double cy = 0.0;
-        int lastMoveTo = 0; // start of simple polygon
         Iterator<Point> pi = tpoly.getVertices().iterator();
         Point start = pi.next();
         Point v1 = start;
         while (pi.hasNext()) {
             Point v2 = pi.next();
-            //log.warn("props: " + v1 + " " + v2);
             double tmp = v1.getLongitude() * v2.getLatitude() - v2.getLongitude() * v1.getLatitude();
             a += tmp;
             cx += (v1.getLongitude() + v2.getLongitude()) * tmp;
@@ -229,7 +227,6 @@ public class Polygon implements Shape {
             v1 = v2;
             if (!pi.hasNext()) {
                 v2 = start;
-                //log.warn("props/implicit close: " + v1 + " " + v2);
                 tmp = v1.getLongitude() * v2.getLatitude() - v2.getLongitude() * v1.getLatitude();
                 a += tmp;
                 cx += (v1.getLongitude() + v2.getLongitude()) * tmp;
@@ -237,11 +234,10 @@ public class Polygon implements Shape {
             }
         }
         
-        //log.warn("raw props: " + cx + "," + cy + " a=" + a);
         a *= 0.5;
         cx = cx / (6.0 * a);
         cy = cy / (6.0 * a);
-        //log.warn("props: " + cx + "," + cy + " a=" + a);
+        log.debug("props: " + cx + "," + cy + " a=" + a);
         
 
         // quick and dirty minimum spanning circle computation
@@ -259,14 +255,12 @@ public class Polygon implements Shape {
                     d = dd;
                     e1 = vi;
                     e2 = vj;
-
                 }
             }
         }
 
         PolygonProperties ret = new PolygonProperties();
         ret.windCounterClockwise = (a < 0.0); // RA-DEC increases left-up
-        //log.warn("a: " + a + " ccw: " + ret.windCounterClockwise);
         if (a < 0.0) {
             a *= -1.0;
         }
@@ -287,30 +281,6 @@ public class Polygon implements Shape {
         return ret;
     }
 
-    /* not needed because dali.Point checks coordinate range
-    private void validatePoints() throws InvalidPolygonException {
-        if (points.size() < 3) {
-            throw new InvalidPolygonException(
-                    "polygon has " + points.size() + " points: minimum 3");
-        }
-        StringBuilder msg = new StringBuilder("invalid Polygon: ");
-        for (Point p : points) {
-            boolean flong = p.getLongitude() < 0.0 || p.getLongitude() > 360.0;
-            boolean flat = p.getLatitude() < -90.0 || p.getLatitude() > 90.0;
-            if (flong && flat) {
-                msg.append("longitude,latitude not in [0,360],[-90,90]: ").append(p.getLongitude()).append(",").append(p.getLatitude());
-            } else if (flong) {
-                msg.append("longitude not in [0,360]: ").append(p.getLongitude());
-            } else if (flat) {
-                msg.append("latitude not in [-90,90]: ").append(p.getLatitude());
-            }
-            if (flong || flat) {
-                throw new InvalidPolygonException(msg.toString());
-            }
-        }
-    }
-    */
-    
     private void validateSegments() throws InvalidPolygonException {
         CartesianTransform trans = CartesianTransform.getTransform(this);
         Polygon tpoly = trans.transform(this);
