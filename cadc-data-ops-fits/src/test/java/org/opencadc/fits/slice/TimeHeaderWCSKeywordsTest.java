@@ -70,16 +70,16 @@ package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Log4jInit;
+import java.util.Calendar;
+import java.util.Date;
 import nom.tam.fits.Header;
+import nom.tam.fits.header.DateTime;
 import nom.tam.fits.header.Standard;
 import nom.tam.fits.header.extra.NOAOExt;
 import org.apache.log4j.Level;
 import org.junit.Assert;
 import org.junit.Test;
 import org.opencadc.fits.CADCExt;
-
-import java.util.Calendar;
-import java.util.Date;
 
 
 public class TimeHeaderWCSKeywordsTest {
@@ -102,8 +102,8 @@ public class TimeHeaderWCSKeywordsTest {
         testHeader.addValue(Standard.CRPIXn.n(1), 1.0);
         testHeader.addValue(Standard.CDELTn.n(1), 0.369);
         testHeader.addValue(Standard.CTYPEn.n(1), "UTC");
-        testHeader.addValue(CADCExt.DATEREF, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
-                                                     .format(calendar.getTime()));
+        testHeader.addValue(DateTime.DATEREF, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
+                                                      .format(calendar.getTime()));
 
         final FITSHeaderWCSKeywords fitsHeaderWCSKeywords = new FITSHeaderWCSKeywords(testHeader);
         final TimeHeaderWCSKeywords testSubject = new TimeHeaderWCSKeywords(fitsHeaderWCSKeywords);
@@ -135,9 +135,9 @@ public class TimeHeaderWCSKeywordsTest {
         testHeader.addValue(Standard.CRVALn.n(1), 40.0D); // Forty seconds long exposure
         testHeader.addValue(Standard.CRPIXn.n(1), 1.0);
         testHeader.addValue(Standard.CDELTn.n(1), 0.369);
-        testHeader.addValue(CADCExt.DATEBEG, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
+        testHeader.addValue(DateTime.DATE_BEG, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
                                                      .format(startDate));
-        testHeader.addValue(CADCExt.DATEEND, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
+        testHeader.addValue(DateTime.DATE_END, DateUtil.getDateFormat(DateUtil.ISO8601_DATE_FORMAT_LOCAL, DateUtil.UTC)
                                                      .format(stopDate));
         testHeader.addValue(NOAOExt.TIMESYS, "UTC");
         testHeader.addValue(CADCExt.MJDREFI, mjdValueI);
@@ -150,10 +150,10 @@ public class TimeHeaderWCSKeywordsTest {
     }
 
     @Test
-    public void testMJDUnit() throws Exception {
+    public void testMJDUnit() {
         final Header testHeader = new Header();
 
-        testHeader.addValue(CADCExt.TIMEUNIT, "m");
+        testHeader.addValue(DateTime.TIMEUNIT, "m");
         final TimeHeaderWCSKeywords testSubject = new TimeHeaderWCSKeywords(testHeader);
         Assert.assertEquals("Wrong unit.", "m", testSubject.getUnit());
 
