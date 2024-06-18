@@ -104,12 +104,8 @@ public class FitsTest {
             final BasicHDU<?> nextExpectedHDU = expectedHDUList[expectedIndex];
             final BasicHDU<?> nextResultHDU = resultHDUList[expectedIndex];
 
-            try {
-                FitsTest.assertHDUEqual(nextExpectedHDU, nextResultHDU);
-            } catch (AssertionError assertionError) {
-                LOGGER.error("On Extension at index " + expectedIndex);
-                throw assertionError;
-            }
+            LOGGER.debug("On Extension at index " + expectedIndex);
+            FitsTest.assertHDUEqual(nextExpectedHDU, nextResultHDU);
         }
     }
 
