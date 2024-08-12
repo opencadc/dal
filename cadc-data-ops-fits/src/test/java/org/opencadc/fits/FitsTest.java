@@ -77,6 +77,8 @@ import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
+import nom.tam.fits.header.WCS;
+import nom.tam.fits.header.extra.NOAOExt;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -91,7 +93,7 @@ public class FitsTest {
 
     private static final IFitsHeader[] HEADER_CARD_KEYS_TO_CHECK = new IFitsHeader[]{
             Standard.BITPIX, Standard.NAXIS, Standard.EXTNAME, Standard.XTENSION, Standard.SIMPLE, Standard.EXTVER,
-            Standard.BSCALE, Standard.BUNIT
+            Standard.BSCALE, Standard.BUNIT, NOAOExt.CD1_1
     };
 
     public static void assertFitsEqual(final Fits expected, final Fits result) throws Exception {
@@ -121,6 +123,8 @@ public class FitsTest {
             final HeaderCard expectedCard = expectedHeader.findCard(headerCardKey);
             final HeaderCard resultCard = resultHeader.findCard(headerCardKey);
 
+            LOGGER.info("Checking " + headerCardKey.key());
+
             if (expectedCard == null) {
                 Assert.assertNull("Card " + headerCardKey.key() + " should be null.", resultCard);
             } else {
@@ -132,6 +136,10 @@ public class FitsTest {
                     Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
                                         Float.parseFloat(expectedCard.getValue()),
                                         Float.parseFloat(resultCard.getValue()), 0.0F);
+                } else if (valueType == Double.class) {
+                    Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
+                                        Double.parseDouble(expectedCard.getValue()),
+                                        Double.parseDouble(resultCard.getValue()), 0.0D);
                 } else {
                     Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
                                         expectedCard.getValue(), resultCard.getValue());

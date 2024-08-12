@@ -102,6 +102,35 @@ public class NDimensionalSlicerTest {
     }
 
     @Test
+    public void testIncorrectWCS() throws Exception {
+        ExtensionSliceFormat fmt = new ExtensionSliceFormat();
+        List<ExtensionSlice> slices = new ArrayList<>();
+        slices.add(fmt.parse("[1][*:20,*:20]"));
+        final Cutout cutout = new Cutout();
+        cutout.pixelCutouts = slices;
+
+        final NDimensionalSlicer slicer = new NDimensionalSlicer();
+        final File file = FileUtil.getFileFromResource("2490246p.fits.fz", NDimensionalSlicerTest.class);
+
+        final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
+        final String testWriteDir = configuredTestWriteDir == null ? "/tmp" : configuredTestWriteDir;
+        final File expectedFile = FileUtil.getFileFromResource("2490246p-cutout.fits",
+                                                               NDimensionalSlicerTest.class);
+        final Path outputPath = Files.createTempFile(new File(testWriteDir).toPath(), "2490246p-cutout", ".fits");
+        LOGGER.debug("Writing out to " + outputPath);
+
+        try (final OutputStream outputStream = Files.newOutputStream(outputPath.toFile().toPath())) {
+            slicer.slice(file, cutout, outputStream);
+        }
+
+        final Fits expectedFits = new Fits(expectedFile);
+        final Fits resultFits = new Fits(outputPath.toFile());
+
+        FitsTest.assertFitsEqual(expectedFits, resultFits);
+//        Files.deleteIfExists(outputPath);
+    }
+
+    @Test
     public void testMEFFileSlice() throws Exception {
         ExtensionSliceFormat fmt = new ExtensionSliceFormat();
         List<ExtensionSlice> slices = new ArrayList<>();
