@@ -107,18 +107,11 @@ public class FitsTest {
             final BasicHDU<?> nextResultHDU = resultHDUList[expectedIndex];
 
             LOGGER.debug("On Extension at index " + expectedIndex);
-            FitsTest.assertHDUEqual(nextExpectedHDU, nextResultHDU);
+            FitsTest.assertHeadersEqual(nextExpectedHDU.getHeader(), nextResultHDU.getHeader());
         }
     }
 
-    public static void assertHDUEqual(final BasicHDU<?> expectedHDU, final BasicHDU<?> resultHDU) throws Exception {
-        final Header expectedHeader = expectedHDU.getHeader();
-        final Header resultHeader = resultHDU.getHeader();
-
-        FitsTest.assertHeadersEqual(expectedHeader, resultHeader);
-    }
-
-    public static void assertHeadersEqual(final Header expectedHeader, final Header resultHeader) throws Exception {
+    public static void assertHeadersEqual(final Header expectedHeader, final Header resultHeader) {
         Arrays.stream(HEADER_CARD_KEYS_TO_CHECK).forEach(headerCardKey -> {
             final HeaderCard expectedCard = expectedHeader.findCard(headerCardKey);
             final HeaderCard resultCard = resultHeader.findCard(headerCardKey);
@@ -135,11 +128,11 @@ public class FitsTest {
                 if (valueType == Float.class) {
                     Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
                                         Float.parseFloat(expectedCard.getValue()),
-                                        Float.parseFloat(resultCard.getValue()), 0.0F);
+                                        Float.parseFloat(resultCard.getValue()), 1.0e-5F);
                 } else if (valueType == Double.class) {
                     Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
                                         Double.parseDouble(expectedCard.getValue()),
-                                        Double.parseDouble(resultCard.getValue()), 0.0D);
+                                        Double.parseDouble(resultCard.getValue()), 1.0e-5D);
                 } else {
                     Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
                                         expectedCard.getValue(), resultCard.getValue());

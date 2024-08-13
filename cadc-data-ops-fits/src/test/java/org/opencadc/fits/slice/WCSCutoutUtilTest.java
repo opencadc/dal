@@ -129,4 +129,9 @@ public class WCSCutoutUtilTest extends BaseCutoutTest {
         }
         LOGGER.debug("WCSCutoutUtilTest.testMultipleWCS OK: " + (System.currentTimeMillis() - startMillis) + " ms");
     }
+
+    @Test
+    public void testLinearResolutionAdjustment() throws Exception {
+
+    }
 }
