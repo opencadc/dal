@@ -75,6 +75,8 @@ import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.header.extra.NOAOExt;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -131,7 +133,29 @@ public class WCSCutoutUtilTest extends BaseCutoutTest {
     }
 
     @Test
-    public void testLinearResolutionAdjustment() throws Exception {
+    public void testWCSAdjustment() throws Exception {
+        final String headerFileName = "test-blast-header-1.txt";
+        final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
+        final int[] corners = new int[]{0, 0};
+        final int[] stridingValues = new int[]{1, 5};
 
+        try (final InputStream inputStream = Files.newInputStream(testFile.toPath());
+             final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {
+            final Header testHeader = new Header();
+            final char[] buff = new char[80];
+            while (bufferedReader.read(buff) >= 0) {
+                testHeader.addLine(HeaderCard.create(new String(buff)));
+            }
+
+            final double originalCD11 = testHeader.getDoubleValue(NOAOExt.CD1_1);
+            final double originalCD21 = testHeader.getDoubleValue(NOAOExt.CD2_1);
+
+            WCSCutoutUtil.adjustHeaders(testHeader, testHeader.getIntValue(Standard.NAXIS), corners, stridingValues);
+
+            Assert.assertEquals("Should remain unchanged as only applies to second axis.", originalCD11, testHeader.getDoubleValue(NOAOExt.CD1_1),
+                                0.0D);
+            Assert.assertEquals("Should be adjusted.", originalCD21 * ((double) stridingValues[1]), testHeader.getDoubleValue(NOAOExt.CD2_1),
+                                0.0D);
+        }
     }
 }
