@@ -150,13 +150,14 @@ public class WCSCutoutUtil {
     static void adjustHeaders(final Header header, final int dimensionLength, final int[] corners, final int[] steps) {
         // CRPIX values are not set automatically.  Adjust them here, if present.
         for (int i = 0; i < dimensionLength; i++) {
-            // Need to run backwards (reverse order) to match the dimensions.
-            final double nextValue = corners[corners.length - i - 1];
-            final int stepValue = steps[corners.length - i - 1];
 
             final HeaderCard crPixCard = header.findCard(Standard.CRPIXn.n(i + 1));
             if (crPixCard != null) {
+                // Need to run backwards (reverse order) to match the dimensions.
+                final double nextValue = corners[corners.length - i - 1];
+                final int stepValue = steps[corners.length - i - 1];
                 final double crPixValue = (Double.parseDouble(crPixCard.getValue()) - nextValue) / stepValue;
+
                 if (stepValue > 1) {
                     final double newValue = crPixValue + (1.0 - (1.0 / stepValue));
                     crPixCard.setValue(newValue);
@@ -174,16 +175,16 @@ public class WCSCutoutUtil {
             // jenkinsd 2024.08.13
             //
             for (int j = 0; j < dimensionLength; j++) {
-                final HeaderCard pcMatrixCard = header.findCard(String.format("PC%d_%d", i, j));
+                final HeaderCard pcMatrixCard = header.findCard(String.format("PC%d_%d", i + 1, j + 1));
                 if (pcMatrixCard != null) {
                     final double pcMatrixValue = Double.parseDouble(pcMatrixCard.getValue());
-                    pcMatrixCard.setValue(pcMatrixValue * (double) stepValue);
+                    pcMatrixCard.setValue(pcMatrixValue * (double) steps[i]);
                 }
 
-                final HeaderCard cdMatrixCard = header.findCard(String.format("CD%d_%d", i, j));
+                final HeaderCard cdMatrixCard = header.findCard(String.format("CD%d_%d", i + 1, j + 1));
                 if (cdMatrixCard != null) {
                     final double cdMatrixValue = Double.parseDouble(cdMatrixCard.getValue());
-                    cdMatrixCard.setValue(cdMatrixValue * (double) stepValue);
+                    cdMatrixCard.setValue(cdMatrixValue * (double) steps[i]);
                 }
             }
         }
