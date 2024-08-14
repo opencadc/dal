@@ -136,8 +136,11 @@ public class WCSCutoutUtilTest extends BaseCutoutTest {
     public void testWCSAdjustment() throws Exception {
         final String headerFileName = "test-blast-header-1.txt";
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
+
+        // Corners and striding values MUST be in reverse order as per what nom-tam-fits provides.  This accurately
+        // represents the use case.
         final int[] corners = new int[]{0, 0};
-        final int[] stridingValues = new int[]{1, 5};
+        final int[] stridingValues = new int[]{5, 1};
 
         try (final InputStream inputStream = Files.newInputStream(testFile.toPath());
              final BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream))) {

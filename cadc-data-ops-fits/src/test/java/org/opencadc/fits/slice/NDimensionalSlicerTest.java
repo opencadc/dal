@@ -103,11 +103,11 @@ public class NDimensionalSlicerTest {
     }
 
     @Test
-    @Ignore("Requires larger ALMA file.  Useful for running locally.")
+    @Ignore("Requires a larger file to cut from.  Here to illustrate test input.")
     public void testIncorrectWCS() throws Exception {
         ExtensionSliceFormat fmt = new ExtensionSliceFormat();
         List<ExtensionSlice> slices = new ArrayList<>();
-        slices.add(fmt.parse("[*:4,*:5,*:4]"));
+        slices.add(fmt.parse("[*:4,*:6,*:6]"));
         final Cutout cutout = new Cutout();
         cutout.pixelCutouts = slices;
 

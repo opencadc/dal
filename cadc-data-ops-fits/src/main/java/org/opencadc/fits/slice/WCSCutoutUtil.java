@@ -151,10 +151,10 @@ public class WCSCutoutUtil {
         // CRPIX values are not set automatically.  Adjust them here, if present.
         for (int i = 0; i < dimensionLength; i++) {
             final HeaderCard crPixCard = header.findCard(Standard.CRPIXn.n(i + 1));
+            final int stepValue = steps[steps.length - i - 1];
             if (crPixCard != null) {
                 // Need to run backwards (reverse order) to match the dimensions.
                 final double nextValue = corners[corners.length - i - 1];
-                final int stepValue = steps[steps.length - i - 1];
                 final double crPixValue = Double.parseDouble(crPixCard.getValue()) - nextValue;
 
                 if (stepValue > 1) {
@@ -175,7 +175,6 @@ public class WCSCutoutUtil {
             final HeaderCard cDeltCard = header.findCard(Standard.CDELTn.n(i + 1));
             if (cDeltCard != null) {
                 final double cDeltValue = Double.parseDouble(cDeltCard.getValue());
-                final int stepValue = steps[steps.length - i - 1];
                 cDeltCard.setValue(cDeltValue * (double) stepValue);
             }
 
@@ -184,7 +183,7 @@ public class WCSCutoutUtil {
                 final HeaderCard cdMatrixCard = header.findCard(String.format("CD%d_%d", i + 1, j + 1));
                 if (cdMatrixCard != null) {
                     final double cdMatrixValue = Double.parseDouble(cdMatrixCard.getValue());
-                    cdMatrixCard.setValue(cdMatrixValue * (double) steps[i]);
+                    cdMatrixCard.setValue(cdMatrixValue * (double) stepValue);
                 }
             }
         }

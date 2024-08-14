@@ -92,7 +92,7 @@ public class FitsTest {
 
     private static final IFitsHeader[] HEADER_CARD_KEYS_TO_CHECK = new IFitsHeader[]{
             Standard.BITPIX, Standard.NAXIS, Standard.EXTNAME, Standard.XTENSION, Standard.SIMPLE, Standard.EXTVER,
-            Standard.BSCALE, Standard.BUNIT, NOAOExt.CD1_1, Standard.CDELTn.n(1), Standard.CRPIXn.n(1)
+            Standard.BSCALE, Standard.BUNIT, NOAOExt.CD1_1, NOAOExt.CD1_2, Standard.CDELTn.n(1), Standard.CRPIXn.n(1)
     };
 
     public static void assertFitsEqual(final Fits expected, final Fits result) {
@@ -132,6 +132,12 @@ public class FitsTest {
                     Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
                                         Double.parseDouble(expectedCard.getValue()),
                                         Double.parseDouble(resultCard.getValue()), 1.0e-5D);
+                } else if (valueType == Integer.class) {
+                    // Expected type has been declared as Integer, but result may have been converted to Float (i.e. 0 == 0e0), so
+                    // allow some robustness here.
+                    Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
+                                        Integer.parseInt(expectedCard.getValue()),
+                                        Math.round(Float.parseFloat(resultCard.getValue())));
                 } else {
                     Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
                                         expectedCard.getValue(), resultCard.getValue());
