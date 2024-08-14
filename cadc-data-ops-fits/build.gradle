@@ -12,7 +12,7 @@ repositories {
 
 sourceCompatibility = 11
 group = 'org.opencadc'
-version = '0.4.0'
+version = '0.4.1'
 
 description = 'OpenCADC FITS cutout library'
 def git_url = 'https://github.com/opencadc/dal'
