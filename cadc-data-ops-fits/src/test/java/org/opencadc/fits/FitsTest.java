@@ -77,7 +77,6 @@ import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
-import nom.tam.fits.header.WCS;
 import nom.tam.fits.header.extra.NOAOExt;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -93,10 +92,10 @@ public class FitsTest {
 
     private static final IFitsHeader[] HEADER_CARD_KEYS_TO_CHECK = new IFitsHeader[]{
             Standard.BITPIX, Standard.NAXIS, Standard.EXTNAME, Standard.XTENSION, Standard.SIMPLE, Standard.EXTVER,
-            Standard.BSCALE, Standard.BUNIT, NOAOExt.CD1_1
+            Standard.BSCALE, Standard.BUNIT, NOAOExt.CD1_1, Standard.CDELTn.n(1), Standard.CRPIXn.n(1)
     };
 
-    public static void assertFitsEqual(final Fits expected, final Fits result) throws Exception {
+    public static void assertFitsEqual(final Fits expected, final Fits result) {
         final BasicHDU<?>[] expectedHDUList = expected.read();
         final BasicHDU<?>[] resultHDUList = result.read();
 

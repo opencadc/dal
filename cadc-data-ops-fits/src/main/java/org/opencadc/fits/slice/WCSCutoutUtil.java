@@ -150,16 +150,15 @@ public class WCSCutoutUtil {
     static void adjustHeaders(final Header header, final int dimensionLength, final int[] corners, final int[] steps) {
         // CRPIX values are not set automatically.  Adjust them here, if present.
         for (int i = 0; i < dimensionLength; i++) {
-
             final HeaderCard crPixCard = header.findCard(Standard.CRPIXn.n(i + 1));
             if (crPixCard != null) {
                 // Need to run backwards (reverse order) to match the dimensions.
                 final double nextValue = corners[corners.length - i - 1];
-                final int stepValue = steps[corners.length - i - 1];
-                final double crPixValue = (Double.parseDouble(crPixCard.getValue()) - nextValue) / stepValue;
+                final int stepValue = steps[steps.length - i - 1];
+                final double crPixValue = Double.parseDouble(crPixCard.getValue()) - nextValue;
 
                 if (stepValue > 1) {
-                    final double newValue = crPixValue + (1.0 - (1.0 / stepValue));
+                    final double newValue = (crPixValue / stepValue) + (1.0 - (1.0 / stepValue));
                     crPixCard.setValue(newValue);
                     LOGGER.debug("Adjusted " + crPixCard.getKey() + " to " + newValue);
                 } else {
@@ -168,19 +167,20 @@ public class WCSCutoutUtil {
                 }
             }
 
-            // Handle PC values.  These typically override CD values, but as this is operating on Archive data, we'll simply
-            // modify the values as-is, meaning the CD values will be left even if a PC matrix is included.
+            // CDELTn cards are typically present for PC matrices, but due to the nature of Archive data,
+            // they could be present even if a CD matrix is present.  Since PC matrices are the default in
+            // the absence of a CD matrix, it's not unusual for it to be absent.
+            // See https://www.aanda.org/articles/aa/pdf/2002/45/aah3859.pdf
             //
-            // TODO: Does CDELTn need to come into play somewhere?
-            // jenkinsd 2024.08.13
-            //
-            for (int j = 0; j < dimensionLength; j++) {
-                final HeaderCard pcMatrixCard = header.findCard(String.format("PC%d_%d", i + 1, j + 1));
-                if (pcMatrixCard != null) {
-                    final double pcMatrixValue = Double.parseDouble(pcMatrixCard.getValue());
-                    pcMatrixCard.setValue(pcMatrixValue * (double) steps[i]);
-                }
+            final HeaderCard cDeltCard = header.findCard(Standard.CDELTn.n(i + 1));
+            if (cDeltCard != null) {
+                final double cDeltValue = Double.parseDouble(cDeltCard.getValue());
+                final int stepValue = steps[steps.length - i - 1];
+                cDeltCard.setValue(cDeltValue * (double) stepValue);
+            }
 
+            // Handle the entire CD matrix.
+            for (int j = 0; j < dimensionLength; j++) {
                 final HeaderCard cdMatrixCard = header.findCard(String.format("CD%d_%d", i + 1, j + 1));
                 if (cdMatrixCard != null) {
                     final double cdMatrixValue = Double.parseDouble(cdMatrixCard.getValue());
