@@ -70,7 +70,6 @@ package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.util.StringUtil;
 import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -86,7 +85,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
@@ -102,7 +100,6 @@ import nom.tam.fits.header.Standard;
 import nom.tam.image.StreamingTileImageData;
 import nom.tam.image.compression.CompressedImageTiler;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
-import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.FitsOutputStream;
 import nom.tam.util.RandomAccessFileIO;
 import org.apache.log4j.Logger;
@@ -138,13 +135,13 @@ public class NDimensionalSlicer {
      * @param fitsFile     The File to read bytes from.  This method will not close this file.
      * @param cutout       The cutout specification.
      * @param outputStream Where to write bytes to.  This method will not close this stream.
-     * @throws FitsException Any FITS related errors from the NOM TAM Fits library.
-     * @throws IOException   Reading Writing errors.
-     * @throws NoOverlapException   Client error to inform that the supplied cutout is valid but yields no results.
-     * @throws NoSuchKeywordException   Reading the FITS file failed.
+     * @throws FitsException          Any FITS related errors from the NOM TAM Fits library.
+     * @throws IOException            Reading Writing errors.
+     * @throws NoOverlapException     Client error to inform that the supplied cutout is valid but yields no results.
+     * @throws NoSuchKeywordException Reading the FITS file failed.
      */
     public void slice(final File fitsFile, final Cutout cutout, final OutputStream outputStream)
-            throws FitsException, IOException, NoSuchKeywordException, NoOverlapException {
+        throws FitsException, IOException, NoSuchKeywordException, NoOverlapException {
         slice(new RandomAccessStorageObject(fitsFile, "r"), cutout, outputStream);
     }
 
@@ -163,21 +160,20 @@ public class NDimensionalSlicer {
      *                               this file.
      * @param cutout                 The cutout specification.
      * @param outputStream           Where to write bytes to.  This method will not close this stream.
-     * @throws FitsException Any FITS related errors from the NOM TAM Fits library.
-     * @throws IOException   Reading Writing errors.
-     * @throws NoOverlapException   Client error to inform that the supplied cutout is valid but yields no results.
-     * @throws NoSuchKeywordException   Reading the FITS file failed.
+     * @throws FitsException          Any FITS related errors from the NOM TAM Fits library.
+     * @throws IOException            Reading Writing errors.
+     * @throws NoOverlapException     Client error to inform that the supplied cutout is valid but yields no results.
+     * @throws NoSuchKeywordException Reading the FITS file failed.
      */
     public void slice(final RandomAccessFileIO randomAccessDataObject, final Cutout cutout,
                       final OutputStream outputStream)
-            throws FitsException, IOException, NoOverlapException, NoSuchKeywordException {
-        final ArrayDataOutput output = new FitsOutputStream(outputStream);
+        throws FitsException, IOException, NoOverlapException, NoSuchKeywordException {
+        final FitsOutputStream output = new FitsOutputStream(outputStream);
         slice(randomAccessDataObject, cutout, output);
     }
 
-    private void slice(final RandomAccessFileIO randomAccessDataObject, final Cutout cutout,
-                       final ArrayDataOutput output)
-            throws FitsException, IOException, NoOverlapException, NoSuchKeywordException {
+    private void slice(final RandomAccessFileIO randomAccessDataObject, final Cutout cutout, final FitsOutputStream output)
+        throws FitsException, IOException, NoOverlapException, NoSuchKeywordException {
         if (isEmpty(cutout)) {
             throw new IllegalStateException("No cutout specified.");
         }
@@ -211,8 +207,7 @@ public class NDimensionalSlicer {
 
         // MEF output is expected if the number of requested HDUs, or the number of requested values is greater than
         // one.
-        final boolean mefOutput = overlapHDUs.size() > 1
-                                  || overlapHDUs.values().stream().mapToInt(List::size).sum() > 1;
+        final boolean mefOutput = overlapHDUs.size() > 1 || overlapHDUs.values().stream().mapToInt(List::size).sum() > 1;
 
         final boolean mefInput = hduCount > 1;
 
@@ -248,8 +243,7 @@ public class NDimensionalSlicer {
             LOGGER.debug("Next extension slice value at extension " + nextHDUIndex);
             try {
                 final BasicHDU<?> hdu = fitsInput.getHDU(nextHDUIndex);
-                writeSlices(hdu, overlap.getValue(), fitsOutput, mefOutput, firstHDUAlreadyWritten,
-                            overlapHDUs.size() - 1);
+                writeSlices(hdu, overlap.getValue(), fitsOutput, mefOutput, firstHDUAlreadyWritten, overlapHDUs.size() - 1);
 
                 // If it wasn't true before, it is now.
                 firstHDUAlreadyWritten = true;
@@ -288,7 +282,7 @@ public class NDimensionalSlicer {
 
     private void setupImageHeader(final Header header, final boolean mefOutput, final boolean firstHDUAlreadyWritten,
                                   final int nextEndSize, final int[] dimensions)
-            throws FitsException {
+        throws FitsException {
         header.deleteKey(Standard.SIMPLE);
         header.deleteKey(Standard.XTENSION);
         header.deleteKey(Standard.EXTEND);
@@ -313,7 +307,7 @@ public class NDimensionalSlicer {
 
     private void writeSlices(final BasicHDU<?> hdu, List<ExtensionSlice> extensionSliceList, final Fits fitsOutput,
                              final boolean mefOutput, final boolean firstHDUAlreadyWritten, final int nextEndSize)
-            throws FitsException, NoOverlapException {
+        throws FitsException, NoOverlapException {
         final int[] dimensions;
         final Header header;
         if (hdu instanceof CompressedImageHDU) {
@@ -362,29 +356,12 @@ public class NDimensionalSlicer {
                 }
 
                 LOGGER.debug("Tiling out " + Arrays.toString(lengths) + " at corner "
-                             + Arrays.toString(corners) + " from extension "
-                             + hdu.getTrimmedString(Standard.EXTNAME) + ","
-                             + header.getIntValue(Standard.EXTVER, 1));
+                                 + Arrays.toString(corners) + " from extension "
+                                 + hdu.getTrimmedString(Standard.EXTNAME) + ","
+                                 + header.getIntValue(Standard.EXTVER, 1));
 
-                // CRPIX values are not set automatically.  Adjust them here, if present.
-                for (int i = 0; i < dimensionLength; i++) {
-                    final HeaderCard crPixCard = headerCopy.findCard(Standard.CRPIXn.n(i + 1));
-                    if (crPixCard != null) {
-                        // Need to run backwards (reverse order) to match the dimensions.
-                        final double nextValue = corners[corners.length - i - 1];
-                        final int stepValue = steps[corners.length - i - 1];
-                        final double crPixValue = (Double.parseDouble(crPixCard.getValue()) - nextValue) / stepValue;
-
-                        if (stepValue > 1) {
-                            crPixCard.setValue(crPixValue + (1.0 - (1.0 / stepValue)));
-                            LOGGER.debug("Adjusted " + crPixCard.getKey() + " to "
-                                         + (crPixValue + (1.0 - (1.0 / stepValue))));
-                        } else {
-                            crPixCard.setValue(crPixValue);
-                            LOGGER.debug("Set " + crPixCard.getKey() + " to " + crPixValue);
-                        }
-                    }
-                }
+                // Adjust WCS headers as needed.
+                WCSCutoutUtil.adjustHeaders(headerCopy, dimensionLength, corners, steps);
 
                 setupImageHeader(headerCopy, mefOutput, firstHDUAlreadyWritten, nextEndSize, dimensions);
 
@@ -406,8 +383,8 @@ public class NDimensionalSlicer {
 
     private boolean isEmpty(final Cutout cutout) {
         return cutout.pos == null && cutout.band == null && cutout.time == null
-               && (cutout.pol == null || cutout.pol.isEmpty()) && cutout.custom == null
-               && cutout.customAxis == null && (cutout.pixelCutouts == null || cutout.pixelCutouts.isEmpty());
+            && (cutout.pol == null || cutout.pol.isEmpty()) && cutout.custom == null
+            && cutout.customAxis == null && (cutout.pixelCutouts == null || cutout.pixelCutouts.isEmpty());
     }
 
     /**
@@ -424,7 +401,7 @@ public class NDimensionalSlicer {
     private void fillCornersAndLengths(final int[] dimensions, final Header header,
                                        final ExtensionSlice extensionSliceValue, final int[] corners,
                                        final int[] lengths, final int[] steps)
-            throws FitsException {
+        throws FitsException {
 
         LOGGER.debug("Full dimensions are " + Arrays.toString(dimensions));
         final int dimensionLength = dimensions.length;
@@ -482,7 +459,7 @@ public class NDimensionalSlicer {
      * Make a copy of the header.  Adjusting the source one directly with an underlying File will result in the source
      * file being modified.
      *
-     * @param source      The source Header.
+     * @param source The source Header.
      * @return Header object with reproduced cards.  Never null.
      * @throws HeaderCardException Any I/O with Header Cards.
      */
@@ -530,7 +507,7 @@ public class NDimensionalSlicer {
 
     private void addHeaderCard(final Header destination, final IFitsHeader headerCard, final Class<?> valueType,
                                final String value)
-            throws FitsException {
+        throws FitsException {
         final String headerCardKey = headerCard.key();
 
         // Check for blank lines or just plain comments that are not standard FITS comments.
@@ -580,8 +557,8 @@ public class NDimensionalSlicer {
             // requested value.  Boxing extVer into a new Integer() alleviates a NullPointerException from possibly
             // occurring.
             return extName.equalsIgnoreCase(extensionName)
-                   && (((extensionVersion == null) && (extVer == 1))
-                       || (Integer.valueOf(extVer).equals(extensionVersion)));
+                && (((extensionVersion == null) && (extVer == 1))
+                || (Integer.valueOf(extVer).equals(extensionVersion)));
         }
 
         return false;
@@ -589,15 +566,15 @@ public class NDimensionalSlicer {
 
     private void mapOverlap(final Header header, final Cutout cutout, final int hduIndex,
                             final Map<Integer, List<ExtensionSlice>> overlapHDUIndexesSlices)
-            throws HeaderCardException, NoSuchKeywordException {
+        throws HeaderCardException, NoSuchKeywordException {
         final PixelRange[] pixelCutoutBounds = WCSCutoutUtil.getBounds(header, cutout);
         if (pixelCutoutBounds.length > 0) {
             final ExtensionSlice overlapSlice = new ExtensionSlice(hduIndex);
             overlapSlice.getPixelRanges().addAll(Arrays.asList(pixelCutoutBounds));
 
             final List<ExtensionSlice> overlapSlices = overlapHDUIndexesSlices.containsKey(hduIndex)
-                                                       ? overlapHDUIndexesSlices.get(hduIndex)
-                                                       : new ArrayList<>();
+                ? overlapHDUIndexesSlices.get(hduIndex)
+                : new ArrayList<>();
             overlapSlices.add(overlapSlice);
             overlapHDUIndexesSlices.put(hduIndex, overlapSlices);
         }
@@ -611,7 +588,7 @@ public class NDimensionalSlicer {
     // pixelrange(s) are the same or absent
     private int mapOverlap(final BasicHDU<?> hdu, final int hduIndex, final List<ExtensionSlice> extensionSlices,
                            final Map<Integer, List<ExtensionSlice>> overlapHDUIndexesSlices)
-            throws FitsException {
+        throws FitsException {
         final List<ExtensionSlice> overlappingSlices = new ArrayList<>();
 
         if (hdu != null) {
@@ -624,7 +601,7 @@ public class NDimensionalSlicer {
                         overlappingSlices.add(slice);
                     } else if (!(hdu instanceof ImageHDU) && !(hdu instanceof CompressedImageHDU)) {
                         throw new UnsupportedOperationException(
-                                "Unable to slice from HDU of type: " + hdu.getClass().getSimpleName());
+                            "Unable to slice from HDU of type: " + hdu.getClass().getSimpleName());
                     } else {
                         final int[] dims;
                         if (hdu instanceof CompressedImageHDU) {
@@ -635,7 +612,7 @@ public class NDimensionalSlicer {
                         }
                         // We need to reverse this as it comes back from nom-tam-fits
                         final int[] dimensions =
-                                IntStream.range(0, dims.length).map(i -> dims[dims.length - i - 1]).toArray();
+                            IntStream.range(0, dims.length).map(i -> dims[dims.length - i - 1]).toArray();
                         LOGGER.debug("Dimensions are " + Arrays.toString(dimensions));
 
                         final PixelCutout pixelCutout = new PixelCutout(dimensions);
@@ -659,13 +636,13 @@ public class NDimensionalSlicer {
      * Obtain the overlapping indexes of matching HDUs.  This will return a unique list of Integers in file order,
      * rather than the order that they were requested.
      *
-     * @param fits    The Fits object to scan.
-     * @param cutout  The requested cutout.
-     * @return  An Map of overlapping hduIndex->slice[], or empty Map.  Never null.
+     * @param fits   The Fits object to scan.
+     * @param cutout The requested cutout.
+     * @return An Map of overlapping hduIndex->slice[], or empty Map.  Never null.
      * @throws FitsException if the header could not be read
      */
     private Map<Integer, List<ExtensionSlice>> getOverlap(final Fits fits, final Cutout cutout)
-            throws FitsException, NoOverlapException, NoSuchKeywordException {
+        throws FitsException, NoOverlapException, NoSuchKeywordException {
         if ((cutout.pixelCutouts != null) && !cutout.pixelCutouts.isEmpty()) {
             return getOverlap(fits, cutout.pixelCutouts);
         } else {
@@ -675,7 +652,7 @@ public class NDimensionalSlicer {
             // Walk through the cache first.
             int hduIndex = 0;
 
-            for (final HDUIterator hduIterator = new HDUIterator(fits); hduIterator.hasNext();) {
+            for (final HDUIterator hduIterator = new HDUIterator(fits); hduIterator.hasNext(); ) {
                 final BasicHDU<?> hdu = hduIterator.next();
                 final Header header = hdu.getHeader();
                 mapOverlap(header, cutout, hduIndex, overlapHDUIndexesSlices);
@@ -687,14 +664,14 @@ public class NDimensionalSlicer {
     }
 
     private Map<Integer, List<ExtensionSlice>> getOverlap(final Fits fits, final List<ExtensionSlice> extensionSlices)
-            throws FitsException, NoOverlapException {
+        throws FitsException, NoOverlapException {
         // A Set is used to eliminate duplicates from the inner loop below.
         final Map<Integer, List<ExtensionSlice>> overlapHDUIndexesSlices = new LinkedHashMap<>();
 
         int matchCount = 0;
         int hduIndex = 0;
         for (final HDUIterator hduIterator = new HDUIterator(fits);
-             hduIterator.hasNext() && matchCount < extensionSlices.size();) {
+             hduIterator.hasNext() && matchCount < extensionSlices.size(); ) {
             final BasicHDU<?> hdu = hduIterator.next();
             matchCount += mapOverlap(hdu, hduIndex, extensionSlices, overlapHDUIndexesSlices);
             hduIndex++;
@@ -702,22 +679,22 @@ public class NDimensionalSlicer {
 
         // Check for missing matches.
         final List<ExtensionSlice> matchedValues =
-                overlapHDUIndexesSlices.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+            overlapHDUIndexesSlices.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         final List<ExtensionSlice> containsAll =
-                extensionSlices.stream().filter(e -> {
-                    boolean contained = false;
-                    for (final ExtensionSlice extensionSlice : matchedValues) {
-                        final List<PixelRange> matchedPixelRange = extensionSlice.getPixelRanges();
-                        final List<PixelRange> requestedPixelRange = e.getPixelRanges();
-                        LOGGER.debug("\nMatched: " + matchedPixelRange + "\nRequested: " + requestedPixelRange);
-                        if ((matchedPixelRange.isEmpty() && requestedPixelRange.isEmpty())
-                            || new HashSet<>(requestedPixelRange).containsAll(matchedPixelRange)) {
-                            contained = true;
-                            break;
-                        }
+            extensionSlices.stream().filter(e -> {
+                boolean contained = false;
+                for (final ExtensionSlice extensionSlice : matchedValues) {
+                    final List<PixelRange> matchedPixelRange = extensionSlice.getPixelRanges();
+                    final List<PixelRange> requestedPixelRange = e.getPixelRanges();
+                    LOGGER.debug("\nMatched: " + matchedPixelRange + "\nRequested: " + requestedPixelRange);
+                    if ((matchedPixelRange.isEmpty() && requestedPixelRange.isEmpty())
+                        || new HashSet<>(requestedPixelRange).containsAll(matchedPixelRange)) {
+                        contained = true;
+                        break;
                     }
-                    return !contained;
-                }).collect(Collectors.toList());
+                }
+                return !contained;
+            }).collect(Collectors.toList());
 
         if (!containsAll.isEmpty()) {
             throw new NoOverlapException("One or more requested slices could not be found:\n" + containsAll);
@@ -732,9 +709,9 @@ public class NDimensionalSlicer {
             return null;
         } else {
             final ExtensionSlice overlapSlice = extensionSlice.extensionIndex == null
-                                                ? new ExtensionSlice(extensionSlice.extensionName,
-                                                                     extensionSlice.extensionVersion)
-                                                : new ExtensionSlice(extensionSlice.extensionIndex);
+                ? new ExtensionSlice(extensionSlice.extensionName,
+                                     extensionSlice.extensionVersion)
+                : new ExtensionSlice(extensionSlice.extensionIndex);
 
             overlapSlice.getPixelRanges().addAll(Arrays.asList(pixelCutoutBounds));
 
