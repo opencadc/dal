@@ -26,6 +26,7 @@
                 org.opencadc.dap
                 ca.nrc.cadc.dali
                 ca.nrc.cadc.uws
+                ca.nrc.cadc.reg
                 ca.nrc.cadc.rest
                 ca.nrc.cadc.vosi
                 ca.nrc.cadc.auth
@@ -36,12 +37,12 @@
     </servlet>
 
     <servlet>
-        <load-on-startup>3</load-on-startup>
-        <servlet-name>SiaServlet</servlet-name>
+        <load-on-startup>2</load-on-startup>
+        <servlet-name>QueryServlet</servlet-name>
         <servlet-class>ca.nrc.cadc.uws.server.JobServlet</servlet-class>
         <init-param>
             <param-name>init</param-name>
-            <param-value>org.opencadc.sia2.UWSInitAction</param-value>
+            <param-value>org.opencadc.dap.DapInitAction</param-value>
         </init-param>
         <init-param>
             <param-name>get</param-name>
@@ -63,18 +64,6 @@
     
     <servlet>
         <load-on-startup>3</load-on-startup>
-        <servlet-name>AvailabilityServlet</servlet-name>
-        <servlet-class>ca.nrc.cadc.vosi.AvailabilityServlet</servlet-class>
-        <init-param>
-            <description>
-            </description>
-            <param-name>ca.nrc.cadc.vosi.AvailabilityPlugin</param-name>
-            <param-value>org.opencadc.dap.ServiceAvailability</param-value>
-        </init-param>
-    </servlet>
-
-    <servlet>
-        <load-on-startup>2</load-on-startup>
         <servlet-name>CapabilitiesServlet</servlet-name>
         <servlet-class>ca.nrc.cadc.rest.RestServlet</servlet-class>
         <init-param>
@@ -94,9 +83,21 @@
             <param-value>/capabilities.xml</param-value>
         </init-param>
     </servlet>
+    
+    <servlet>
+        <load-on-startup>4</load-on-startup>
+        <servlet-name>AvailabilityServlet</servlet-name>
+        <servlet-class>ca.nrc.cadc.vosi.AvailabilityServlet</servlet-class>
+        <init-param>
+            <description>
+            </description>
+            <param-name>ca.nrc.cadc.vosi.AvailabilityPlugin</param-name>
+            <param-value>org.opencadc.dap.ServiceAvailability</param-value>
+        </init-param>
+    </servlet>
 
     <servlet-mapping>
-        <servlet-name>SiaServlet</servlet-name>
+        <servlet-name>QueryServlet</servlet-name>
         <url-pattern>/query/*</url-pattern>
     </servlet-mapping>
     

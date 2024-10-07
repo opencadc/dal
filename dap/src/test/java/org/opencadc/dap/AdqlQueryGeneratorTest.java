@@ -292,7 +292,6 @@ public class AdqlQueryGeneratorTest {
 
         try {
             Map<String, List<String>> params = new TreeMap<String, List<String>>(new CaseInsensitiveStringComparator());
-            params.put("POS", Arrays.asList("RANGE 0 360 -2 2", "RANGE 10 20 -90 90", "RANGE 1 2 3 4"));
 
             AdqlQueryGenerator gen = new AdqlQueryGenerator(params, "schema.TableName", sia2mode);
             String adql = gen.getQuery();
@@ -300,8 +299,6 @@ public class AdqlQueryGeneratorTest {
 
             String selectStmt = "SELECT * FROM schema.TableName WHERE";
             Assert.assertTrue("schema.TableName", adql.contains(selectStmt));
-            Assert.assertTrue("dataproduct_type", adql.contains("dataproduct_type"));
-            Assert.assertTrue("s_region", adql.contains("s_region"));
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);

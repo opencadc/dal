@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2024.                            (c) 2024.
+*  (c) 2023.                            (c) 2023.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -69,10 +69,57 @@
 
 package org.opencadc.dap;
 
-import ca.nrc.cadc.vosi.AvailabilityTest;
+import ca.nrc.cadc.conformance.uws2.JobResultWrapper;
+import ca.nrc.cadc.conformance.uws2.SyncUWSTest;
+import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
+import ca.nrc.cadc.reg.Standards;
+import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import java.io.File;
+import java.net.URI;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
 
-public class VosiAvailabilityTest extends AvailabilityTest {
-    public VosiAvailabilityTest() {
-        super(Constants.DAP_RESOURCE_ID);
+/**
+ *
+ * @author pdowler
+ */
+public class DapQueryGetTest extends SyncUWSTest {
+
+    private static final Logger log = Logger.getLogger(DapQueryGetTest.class);
+
+    static {
+        Log4jInit.setLevel("org.opencadc.dap", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.conformance.uws2", Level.INFO);
+    }
+
+    public DapQueryGetTest() {
+        super(Constants.DAP_RESOURCE_ID, Standards.DAP_QUERY_21);
+
+        File testFile = FileUtil.getFileFromResource("SyncTest-OK-BAND.properties", DapQueryGetTest.class);
+        if (testFile.exists()) {
+            File testDir = testFile.getParentFile();
+            super.setPropertiesDir(testDir, "SyncTest-OK");
+        }
+    }
+
+    @Override
+    protected void validateResponse(JobResultWrapper result) {
+        Assert.assertEquals(200, result.responseCode);
+        Assert.assertEquals("application/x-votable+xml", result.contentType);
+
+        try {
+            Assert.assertNotNull(result.syncOutput);
+            VOTableDocument vot = VOTableHandler.getVOTable(result.syncOutput);
+            log.info(result.name + ": found valid VOTable");
+
+            String queryStatus = VOTableHandler.getQueryStatus(vot);
+            Assert.assertNotNull("QUERY_STATUS", queryStatus);
+            Assert.assertEquals("OK", queryStatus);
+        } catch (Exception ex) {
+            log.error("unexpected exception", ex);
+            Assert.fail("unexpected exception: " + ex);
+        }
     }
 }

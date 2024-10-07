@@ -93,9 +93,11 @@ public class DapConfig {
 
     private static final String BASE_KEY = "org.opencadc.dap";
     private static final String QUERY_KEY = BASE_KEY + ".queryService";
+    private static final String SIA2_KEY = BASE_KEY + ".sia2mode";
     private static final String TABLE_KEY = BASE_KEY + ".table";
 
     private final URI queryService;
+    private final boolean sia2mode;
     private final String tableName;
 
     public DapConfig() {
@@ -123,6 +125,9 @@ public class DapConfig {
             }
             this.queryService = qsURI;
 
+            String s2m = props.getFirstPropertyValue(SIA2_KEY);
+            this.sia2mode = "true".equals(s2m);
+            
             String tn = props.getFirstPropertyValue(TABLE_KEY);
             if (tn == null) {
                 this.tableName = STD_OBSCORE_TABLE;
@@ -132,6 +137,10 @@ public class DapConfig {
         } catch (InvalidConfigException ex) {
             throw ex;
         }
+    }
+
+    public boolean isSia2mode() {
+        return sia2mode;
     }
 
     public String getTableName() {

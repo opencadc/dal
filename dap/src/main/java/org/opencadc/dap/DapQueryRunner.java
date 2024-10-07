@@ -109,8 +109,6 @@ public class DapQueryRunner implements JobRunner {
     private static final Integer DEF_MAXREC = 1000;
     private static final Integer MAX_MAXREC = null;
 
-    private final boolean sia2mode = true;
-    
     private Job job;
     private JobUpdater jobUpdater;
     private SyncOutput syncOutput;
@@ -167,7 +165,7 @@ public class DapQueryRunner implements JobRunner {
             Map<String, List<String>> queryParams = pe.getParameters(job.getParameterList());
 
             // Get the ADQL request parameters.
-            AdqlQueryGenerator queryGenerator = new AdqlQueryGenerator(queryParams, conf.getTableName(), sia2mode);
+            AdqlQueryGenerator queryGenerator = new AdqlQueryGenerator(queryParams, conf.getTableName(), conf.isSia2mode());
             Map<String, Object> parameters = queryGenerator.getParameterMap();
             parameters.put("RESPONSEFORMAT", VOTableWriter.CONTENT_TYPE);
             if (maxrec != null) {

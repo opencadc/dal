@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2024.                            (c) 2024.
+*  (c) 2022.                            (c) 2022.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,17 +62,53 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
 package org.opencadc.dap;
 
-import ca.nrc.cadc.vosi.AvailabilityTest;
+import ca.nrc.cadc.db.DBUtil;
+import ca.nrc.cadc.rest.InitAction;
+import ca.nrc.cadc.uws.server.impl.InitDatabaseUWS;
+import java.net.URI;
+import javax.sql.DataSource;
+import org.apache.log4j.Logger;
 
-public class VosiAvailabilityTest extends AvailabilityTest {
-    public VosiAvailabilityTest() {
-        super(Constants.DAP_RESOURCE_ID);
+/**
+ *
+ * @author pdowler
+ */
+public class DapInitAction extends InitAction {
+    private static final Logger log = Logger.getLogger(DapInitAction.class);
+
+    private static final URI STD_DAP = URI.create("ivo://ivoa.net/std/DAP#query-2.1");
+    private static final URI STD_SIA = URI.create("ivo://ivoa.net/std/SIA#query-2.0");
+    private static final String CAP_PROPERTY = "org.opencadc.dap.standardID";
+    
+    public DapInitAction() { 
     }
+
+    @Override
+    public void doInit() {
+        // fix standardID in capabilities before CapInitAction loads
+        DapConfig dc = new DapConfig();
+        if (dc.isSia2mode()) {
+            System.setProperty(CAP_PROPERTY, STD_SIA.toASCIIString());
+        } else {
+            System.setProperty(CAP_PROPERTY, STD_DAP.toASCIIString());
+        }
+        log.info("standardID: " + System.getProperty(CAP_PROPERTY));
+        
+        try {
+            log.info("InitDatabaseUWS");
+            DataSource uws = DBUtil.findJNDIDataSource("jdbc/uws");
+            InitDatabaseUWS uwsi = new InitDatabaseUWS(uws, null, "uws");
+            uwsi.doInit();
+            log.info("InitDatabaseUWS: OK");
+        } catch (Exception ex) {
+            throw new RuntimeException("INIT FAIL", ex);
+        }
+    }
+    
+    
 }

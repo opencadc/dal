@@ -62,17 +62,24 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
 package org.opencadc.dap;
 
-import ca.nrc.cadc.vosi.AvailabilityTest;
+import java.net.URI;
+import org.apache.log4j.Logger;
 
-public class VosiAvailabilityTest extends AvailabilityTest {
-    public VosiAvailabilityTest() {
-        super(Constants.DAP_RESOURCE_ID);
+/**
+ *
+ * @author pdowler
+ */
+public class Constants {
+    private static final Logger log = Logger.getLogger(Constants.class);
+
+    public static URI DAP_RESOURCE_ID = URI.create("ivo://opencadc.org/dap");
+    public static URI SIA_RESOURCE_ID = URI.create("ivo://opencadc.org/sia");
+    
+    private Constants() { 
     }
 }

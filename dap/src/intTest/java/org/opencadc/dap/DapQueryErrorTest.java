@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2022.                            (c) 2022.
+*  (c) 2023.                            (c) 2023.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,38 +62,66 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
+*  $Revision: 5 $
+*
 ************************************************************************
-*/
+ */
 
 package org.opencadc.dap;
 
-import ca.nrc.cadc.db.DBUtil;
-import ca.nrc.cadc.rest.InitAction;
-import ca.nrc.cadc.uws.server.impl.InitDatabaseUWS;
-import javax.sql.DataSource;
+import ca.nrc.cadc.conformance.uws2.JobResultWrapper;
+import ca.nrc.cadc.conformance.uws2.SyncUWSTest;
+import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
+import ca.nrc.cadc.reg.Standards;
+import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.util.Log4jInit;
+import java.io.File;
+import java.net.URI;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 
 /**
  *
  * @author pdowler
  */
-public class UWSInitAction extends InitAction {
-    private static final Logger log = Logger.getLogger(UWSInitAction.class);
+public class DapQueryErrorTest extends SyncUWSTest {
 
-    public UWSInitAction() { 
+    private static final Logger log = Logger.getLogger(DapQueryErrorTest.class);
+
+    static {
+        Log4jInit.setLevel("org.opencadc.dap", Level.INFO);
+        Log4jInit.setLevel("ca.nrc.cadc.conformance.uws2", Level.INFO);
+    }
+
+    public DapQueryErrorTest() {
+        super(Constants.DAP_RESOURCE_ID, Standards.DAP_QUERY_21);
+
+        File testFile = FileUtil.getFileFromResource("SyncTest-ERROR-BAND.properties", DapQueryErrorTest.class);
+        if (testFile.exists()) {
+            File testDir = testFile.getParentFile();
+            super.setPropertiesDir(testDir, "SyncTest-ERROR");
+        }
     }
 
     @Override
-    public void doInit() {
+    protected void validateResponse(JobResultWrapper result) {
+        Assert.assertEquals(400, result.responseCode);
+        Assert.assertEquals("application/x-votable+xml", result.contentType);
+
         try {
-            DataSource uws = DBUtil.findJNDIDataSource("jdbc/uws");
-            InitDatabaseUWS uwsi = new InitDatabaseUWS(uws, null, "uws");
-            uwsi.doInit();
-            log.info("init uws: OK");
+            Assert.assertNotNull(result.syncOutput);
+            //VOTableDocument vot = VOTableHandler.getVOTable(result.syncOutput);
+            // because cadc-util HttpTransfer reads the error body and stores it in the Exception
+            VOTableDocument vot = VOTableHandler.getVOTable(result.throwable);
+            log.info(result.name + ": found valid VOTable");
+
+            String queryStatus = VOTableHandler.getQueryStatus(vot);
+            Assert.assertNotNull("QUERY_STATUS", queryStatus);
+            Assert.assertEquals("ERROR", queryStatus);
         } catch (Exception ex) {
-            throw new RuntimeException("INIT FAIL", ex);
+            log.error("unexpected exception", ex);
+            Assert.fail("unexpected exception: " + ex);
         }
     }
-    
-    
 }

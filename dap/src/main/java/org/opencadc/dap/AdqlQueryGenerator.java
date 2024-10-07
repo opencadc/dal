@@ -125,16 +125,26 @@ public class AdqlQueryGenerator {
         StringBuilder query = new StringBuilder();
         query.append("SELECT * FROM ");
         query.append(tableName);
-        query.append(" WHERE dataproduct_type IN ( 'image', 'cube' )");
 
-        DapParamValidator sia = new DapParamValidator(sia2mode);
-        List<Shape> pos = sia.validatePOS(queryParams);
+        DapParamValidator dapParamValidator = new DapParamValidator(sia2mode);
+        final List<Shape> pos = dapParamValidator.validatePOS(queryParams);
+        final List<Interval> bands = dapParamValidator.validateBAND(queryParams);
+        final List<Interval> times = dapParamValidator.validateTIME(queryParams);
+        final List<PolarizationState> pols = dapParamValidator.validatePOL(queryParams);
+        
+        if (sia2mode) {
+            query.append(" WHERE dataproduct_type IN ( 'image', 'cube' )");
+        } else {
+            // subsequent append to query is much simpler if there is already a
+            // where clause and everything else is AND ...
+            query.append(" WHERE dataproduct_type IS NOT NULL");
+        }
+        
         if (!pos.isEmpty()) {
             boolean needOr = false;
+            query.append(" AND ");
             if (pos.size() > 1) {
-                query.append(" AND (");
-            } else {
-                query.append(" AND ");
+                query.append("(");
             }
             for (Shape s : pos) {
                 if (needOr) {
@@ -201,13 +211,10 @@ public class AdqlQueryGenerator {
             }
         }
 
-        List<Interval> bands = sia.validateBAND(queryParams);
         addNumericRangeConstraint(query, "em_min", "em_max", bands);
-
-        List<Interval> times = sia.validateTIME(queryParams);
+        
         addNumericRangeConstraint(query, "t_min", "t_max", times);
-
-        List<PolarizationState> pols = sia.validatePOL(queryParams);
+        
         if (!pols.isEmpty()) {
             // for a single pattern-matching LIKE statement, we need to sort the POL values in canoncial order
             // and stick in wildcard % whenever there is a gap
@@ -218,10 +225,9 @@ public class AdqlQueryGenerator {
             //    polStates.add( PolarizationState.valueOf(p));
             //}
 
+            query.append(" AND ");
             if (pols.size() > 1) {
-                query.append(" AND (");
-            } else {
-                query.append(" AND ");
+                query.append(" (");
             }
             boolean needOr = false;
             for (PolarizationState p : pols) {
@@ -238,43 +244,43 @@ public class AdqlQueryGenerator {
             }
         }
 
-        List<Interval> fovs = sia.validateFOV(queryParams);
+        List<Interval> fovs = dapParamValidator.validateFOV(queryParams);
         addNumericRangeConstraint(query, "s_fov", "s_fov", fovs);
 
-        List<Interval> ress = sia.validateSPATRES(queryParams);
+        List<Interval> ress = dapParamValidator.validateSPATRES(queryParams);
         addNumericRangeConstraint(query, "s_resolution", "s_resolution", ress);
 
-        List<Interval> exptimes = sia.validateEXPTIME(queryParams);
+        List<Interval> exptimes = dapParamValidator.validateEXPTIME(queryParams);
         addNumericRangeConstraint(query, "t_exptime", "t_exptime", exptimes);
 
-        List<String> ids = sia.validateID(queryParams);
+        List<String> ids = dapParamValidator.validateID(queryParams);
         addStringListConstraint(query, "obs_publisher_did", ids);
 
-        List<String> collections = sia.validateCOLLECTION(queryParams);
+        List<String> collections = dapParamValidator.validateCOLLECTION(queryParams);
         addStringListConstraint(query, "obs_collection", collections);
 
-        List<String> facilities = sia.validateFACILITY(queryParams);
+        List<String> facilities = dapParamValidator.validateFACILITY(queryParams);
         addStringListConstraint(query, "facility_name", facilities);
 
-        List<String> instruments = sia.validateINSTRUMENT(queryParams);
+        List<String> instruments = dapParamValidator.validateINSTRUMENT(queryParams);
         addStringListConstraint(query, "instrument_name", instruments);
 
-        List<Integer> calibs = sia.validateCALIB(queryParams);
+        List<Integer> calibs = dapParamValidator.validateCALIB(queryParams);
         addIntegerListConstraint(query, "calib_level", calibs);
 
-        List<String> targets = sia.validateTARGET(queryParams);
+        List<String> targets = dapParamValidator.validateTARGET(queryParams);
         addStringListConstraint(query, "target_name", targets);
 
-        List<Interval> timeress = sia.validateTIMERES(queryParams);
+        List<Interval> timeress = dapParamValidator.validateTIMERES(queryParams);
         addNumericRangeConstraint(query, "t_resolution", "t_resolution", timeress);
 
-        List<Interval> specrps = sia.validateSPECRP(queryParams);
+        List<Interval> specrps = dapParamValidator.validateSPECRP(queryParams);
         addNumericRangeConstraint(query, "em_res_power", "em_res_power", specrps);
 
-        List<String> formats = sia.validateFORMAT(queryParams);
+        List<String> formats = dapParamValidator.validateFORMAT(queryParams);
         addStringListConstraint(query, "access_format", formats);
 
-        List<String> dptypes = sia.validateDPTYPE(queryParams);
+        List<String> dptypes = dapParamValidator.validateDPTYPE(queryParams);
         addStringListConstraint(query, "dataproduct_type", dptypes);
 
         return query.toString();

@@ -90,12 +90,12 @@ public class SiaQuery2ErrorTest extends SyncUWSTest {
     private static final Logger log = Logger.getLogger(SiaQuery2ErrorTest.class);
 
     static {
-        Log4jInit.setLevel("ca.nrc.cadc.sia", Level.INFO);
+        Log4jInit.setLevel("org.opencadc.dap", Level.INFO);
         Log4jInit.setLevel("ca.nrc.cadc.conformance.uws2", Level.INFO);
     }
 
     public SiaQuery2ErrorTest() {
-        super(URI.create("ivo://opencadc.org/sia2"), Standards.SIA_QUERY_20);
+        super(Constants.SIA_RESOURCE_ID, Standards.SIA_QUERY_20);
 
         File testFile = FileUtil.getFileFromResource("SyncTest-ERROR-BAND.properties", SiaQuery2ErrorTest.class);
         if (testFile.exists()) {
