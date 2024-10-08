@@ -54,6 +54,9 @@ org.opencadc.dap.queryService = {resourceID or TAP base URL}
 
 # run in backwards compatible SIAv2 mode (optional)
 org.opencadc.dap.sia2mode = true | false
+
+# use a specific ObsCore table in the query service (optional, default: ivoa.ObsCore)
+org.opencadc.dap.table = {table name}
 ```
 The _queryService_ is resolved by a registry lookup and that service is used to query
 for CAOM content. It is assumed that this service is deployed "locally" since there can
@@ -61,9 +64,8 @@ be many calls and low latency is very desireable.
 
 The _sia2mode_ can be set to make the service behave as an SIA-2.0 service: this causes
 the generated query to restrict the ObsCore.dataproduct_type values to `cube` and `image`.
-TODO: the `/capabilities` endpoint is currently hard-coded to advertise the `SIA#query-2.0` 
-standardID so that _sia2mode_ is fully correct; as a result "DAP" mode is not really correct
-right now.
+
+The _table_ to query can be set to something other than the default (`ivoa.ObsCore`).
 
 `dap` will attempt to use the caller's identity to query, but the details of this depend 
 on the configured IdentityManager and local A&A service configuration.
