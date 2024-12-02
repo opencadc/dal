@@ -1,8 +1,11 @@
 package ca.nrc.cadc.dali.tables.parquet;
 
 import org.apache.avro.Schema;
+import org.apache.log4j.Logger;
+
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,23 +13,32 @@ import java.util.List;
 
 public class DynamicSchemaGenerator {
 
-    public static Schema generateSchema(ResultSet rs) throws Exception {
-        ResultSetMetaData metaData = rs.getMetaData();
-        int columnCount = metaData.getColumnCount();
+    private static final Logger log = Logger.getLogger(DynamicSchemaGenerator.class);
 
+    public static Schema generateSchema(ResultSet rs) {
         // List to hold Avro fields
         List<Schema.Field> fields = new ArrayList<>();
 
-        for (int i = 1; i <= columnCount; i++) {
-            String columnName = metaData.getColumnName(i);
-            Schema.Field field = new Schema.Field(columnName, getAvroFieldType(metaData.getColumnType(i)), null, null);
-            fields.add(field);
+        try {
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+            log.debug("Resultset Metadata Column count = " + columnCount);
+            for (int i = 1; i <= columnCount; i++) {
+                String columnName = metaData.getColumnName(i);
+                Schema.Field field = new Schema.Field(columnName, getAvroFieldType(metaData.getColumnType(i)), null, null);
+                fields.add(field);
+            }
+            log.debug("Schema.Field count = " + fields.size());
+        } catch (SQLException e) {
+            log.debug("Failure while retriving metadata from ResultSet", e);
+            throw new RuntimeException("Failure while retriving metadata from ResultSet : " + e.getMessage(), e);
         }
 
         // Define the Avro record schema with the fields
-        Schema schema = Schema.createRecord("DynamicRecord", null, null, false);
+        //TODO: Provide meaningful name, namespace and documentation
+        Schema schema = Schema.createRecord("DynamicRecord", null, null, Boolean.FALSE);
         schema.setFields(fields);
-
+        log.debug("Schema Generated Successfully : " + schema);
         return schema;
     }
 
@@ -55,12 +67,12 @@ public class DynamicSchemaGenerator {
                 break;
             case Types.DATE:
             case Types.TIMESTAMP:
-                fieldType = Schema.create(Schema.Type.STRING); // Or Schema.Type.LONG if you want timestamps in millis
+                fieldType = Schema.create(Schema.Type.STRING); // TODO: Discuss(Double is for Start/EndDate, IntTime in VOTable)
                 break;
             default:
                 fieldType = Schema.create(Schema.Type.STRING); // Default to STRING for unknown types
         }
-        return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), fieldType));
+        return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), fieldType)); // TODO: Discuss
 
     }
 }

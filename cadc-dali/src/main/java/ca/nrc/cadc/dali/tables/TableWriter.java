@@ -119,7 +119,7 @@ public interface TableWriter<T> {
      * @throws IOException
      */
     void write(T tm, OutputStream out)
-            throws Exception;
+            throws IOException;
 
     /**
      * Write a TableModel to the OutputStream.
@@ -129,13 +129,13 @@ public interface TableWriter<T> {
      * @throws IOException
      */
     void write(T tm, OutputStream out, Long maxrec)
-            throws Exception;
+            throws IOException;
 
     void write(T tm, Writer out)
-            throws Exception;
+            throws IOException;
 
     void write(T tm, Writer out, Long maxrec)
-            throws Exception;
+            throws IOException;
 
     /**
      * Write the Throwable to the OutputStream
