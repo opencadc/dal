@@ -81,4 +81,14 @@ public class DoubleInterval extends Interval<Double> {
             throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
         }
     }
+
+    public static DoubleInterval intersection(DoubleInterval i1, DoubleInterval i2) {
+        if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
+            return null; // no overlap
+        }
+
+        double lb = Math.max(i1.getLower(), i2.getLower());
+        double ub = Math.min(i1.getUpper(), i2.getUpper());
+        return new DoubleInterval(lb, ub);
+    }
 }

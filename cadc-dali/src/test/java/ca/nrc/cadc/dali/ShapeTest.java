@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2024.                            (c) 2024.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,100 +63,102 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
- */
+*/
 
-package ca.nrc.cadc.dali.util;
+package ca.nrc.cadc.dali;
 
-import ca.nrc.cadc.dali.Circle;
-import ca.nrc.cadc.dali.Point;
-import ca.nrc.cadc.dali.Polygon;
-import ca.nrc.cadc.dali.Range;
-import ca.nrc.cadc.dali.Shape;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * Formatter to handle shapes in polymorphic serialisation (DALI-1.2).
  *
  * @author pdowler
  */
-public class ShapeFormat implements Format<Shape> {
+public class ShapeTest {
+    private static final Logger log = Logger.getLogger(ShapeTest.class);
 
-    private static final Logger log = Logger.getLogger(ShapeFormat.class);
-
-    private boolean sia2 = false;
-
-    public ShapeFormat() {
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
     }
 
-    public ShapeFormat(boolean supportSIA2) {
-        this.sia2 = supportSIA2;
+    public ShapeTest() { 
     }
 
-    @Override
-    public Shape parse(String s) {
-        if (s == null) {
-            return null;
+    @Test
+    public void testCircle() throws Exception {
+        Circle c = new Circle(new Point(10.0, 20.0), 1.0);
+        Assert.assertEquals(10.0, c.getCenter().getLongitude(), 1.0e-6);
+        Assert.assertEquals(20.0, c.getCenter().getLatitude(), 1.0e-6);
+        Assert.assertEquals(1.0, c.getRadius(), 1.0e-6);
+        
+        Assert.assertEquals(Math.PI, c.getArea(), 1.0e-6);
+        
+        try {
+            Circle rad = new Circle(new Point(10.0, 20.0), -1.0);
+            Assert.fail("expected IllegalArgumentException, got: " + rad);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
         }
-        s = s.trim();
-        if (s.isEmpty()) {
-            return null;
-        }
-        String[] parts = separateKey(s);
-        if (Circle.class.getSimpleName().equalsIgnoreCase(parts[0])) {
-            CircleFormat fmt = new CircleFormat();
-            return fmt.parse(parts[1]);
-        } else if (Range.class.getSimpleName().equalsIgnoreCase(parts[0])) {
-            RangeFormat fmt = new RangeFormat(sia2);
-            return fmt.parse(parts[1]);
-        } else if (Polygon.class.getSimpleName().equalsIgnoreCase(parts[0])) {
-            PolygonFormat fmt = new PolygonFormat();
-            return fmt.parse(parts[1]);
-        }
-
-        throw new IllegalArgumentException("unexpected shape: " + parts[0]);
     }
 
-    @Override
-    public String format(Shape t) {
-        if (t == null) {
-            return "";
+    @Test
+    public void testRange() throws Exception {
+        Range r = new Range(new DoubleInterval(10.0, 11.0), new DoubleInterval(-0.5, 0.5));
+        Assert.assertEquals(10.5, r.getCenter().getLongitude(), 1.0e-6);
+        Assert.assertEquals(0.0, r.getCenter().getLatitude(), 1.0e-6);
+
+        // area at equator
+        Assert.assertEquals(1.0, r.getArea(), 1.0e-2);
+        
+        // area at high lat
+        r = new Range(new DoubleInterval(10.0, 11.0), new DoubleInterval(60.0, 61.0));
+        Assert.assertEquals(0.5, r.getArea(), 1.0e-2);
+        
+        r = new Range(new DoubleInterval(10.0, 11.0), new DoubleInterval(-61.0, -60.0));
+        Assert.assertEquals(0.5, r.getArea(), 1.0e-2);
+        
+        try {
+            Range ir = new Range(new DoubleInterval(-1.0, 1.0), new DoubleInterval(12.0, 13.0));
+            Assert.fail("expected IllegalArgumentException, got: " + ir);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append(t.getClass().getSimpleName().toLowerCase()).append(" ");
-        if (t instanceof Circle) {
-            CircleFormat fmt = new CircleFormat();
-            sb.append(fmt.format((Circle) t));
-        } else if (t instanceof Range) {
-            RangeFormat fmt = new RangeFormat();
-            sb.append(fmt.format((Range) t));
-        } else if (t instanceof Polygon) {
-            PolygonFormat fmt = new PolygonFormat();
-            sb.append(fmt.format((Polygon) t));
-        } else {
-            throw new IllegalArgumentException("unsupported shape: " + t.getClass().getName());
+        
+        try {
+            Range ir = new Range(new DoubleInterval(1.0, 2.0), new DoubleInterval(91.0, 93.0));
+            Assert.fail("expected IllegalArgumentException, got: " + ir);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
         }
-        return sb.toString();
+        
+        try {
+            Range ir = new Range(new DoubleInterval(1.0, 2.0), new DoubleInterval(-91.0, -90.0));
+            Assert.fail("expected IllegalArgumentException, got: " + ir);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
+        }
     }
+    
+    @Test
+    public void testCircleToPolygonApproximatiom() {
+        try {
+            Circle c = new Circle(new Point(12.0, 34.0), 1.0);
+            double ca = c.getArea();
 
-    /**
-     * Separate the key (first word) from the value(remaining words).
-     *
-     * @param s
-     * @return
-     */
-    public static String[] separateKey(String s) {
-        String[] ret = new String[2];
-        int i = s.indexOf(" ");
-        if (i > 0) {
-
-            ret[0] = s.substring(0, i);
-            if (i + 1 < s.length() - 1) {
-                ret[1] = s.substring(i + 1, s.length());
+            for (int i = 4; i < 21; i++) {
+                Polygon poly = Circle.generatePolygonApproximation(c, i);
+                double pa = poly.getArea();
+                double da = pa / ca;
+                log.info("n=" + i + " poly: " + pa + " (" + da + ")");
             }
-            return ret;
-        } else {
-            ret[0] = s; // one word
+            log.info("circle: " + ca);
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
-        return ret;
     }
+    // PolygonTest in separate class
 }

@@ -73,15 +73,19 @@ package ca.nrc.cadc.dali;
  *
  * @author pdowler
  */
-public class Point implements Shape {
+public class Point {
     private final double longitude;
     private final double latitude;
 
     public Point(double longitude, double latitude) {
-        DaliUtil.assertValidRange("longitude", longitude, 0.0, 360.0);
-        DaliUtil.assertValidRange("latitude", latitude, -90.0, 90.0);
         this.longitude = longitude;
         this.latitude = latitude;
+    }
+
+    // TBD: these limits are only relevant for equatorial...
+    public void validate() {
+        DaliUtil.assertValidRange("longitude", longitude, 0.0, 360.0);
+        DaliUtil.assertValidRange("latitude", latitude, -90.0, 90.0);
     }
 
     @Override
