@@ -1,5 +1,6 @@
 package ca.nrc.cadc.dali.tables.parquet;
 
+import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import org.apache.avro.Schema;
 import org.apache.log4j.Logger;
 
@@ -15,21 +16,19 @@ public class DynamicSchemaGenerator {
 
     private static final Logger log = Logger.getLogger(DynamicSchemaGenerator.class);
 
-    public static Schema generateSchema(ResultSet rs) {
+    public static Schema generateSchema(List<VOTableField> voFields) {
         // List to hold Avro fields
         List<Schema.Field> fields = new ArrayList<>();
-
         try {
-            ResultSetMetaData metaData = rs.getMetaData();
-            int columnCount = metaData.getColumnCount();
+            int columnCount = voFields.size();
             log.debug("Resultset Metadata Column count = " + columnCount);
-            for (int i = 1; i <= columnCount; i++) {
-                String columnName = metaData.getColumnName(i);
-                Schema.Field field = new Schema.Field(columnName, getAvroFieldType(metaData.getColumnType(i)), null, null);
+            for (VOTableField voField : voFields) {
+                String columnName = voField.getName();
+                Schema.Field field = new Schema.Field(columnName.replaceAll("\"",""), getAvroFieldType(voField.getDatatype()), null, null);
                 fields.add(field);
             }
             log.debug("Schema.Field count = " + fields.size());
-        } catch (SQLException e) {
+        } catch (Exception e) {
             log.debug("Failure while retriving metadata from ResultSet", e);
             throw new RuntimeException("Failure while retriving metadata from ResultSet : " + e.getMessage(), e);
         }
@@ -42,38 +41,36 @@ public class DynamicSchemaGenerator {
         return schema;
     }
 
-    private static Schema getAvroFieldType(int sqlType) {
+    private static Schema getAvroFieldType(String sqlType) {
         // Map SQL data types to Avro data types
         Schema fieldType;
         switch (sqlType) {
-            case Types.INTEGER:
+            case "int":
                 fieldType = Schema.create(Schema.Type.INT);
                 break;
-            case Types.BIGINT:
+            case "long":
                 fieldType = Schema.create(Schema.Type.LONG);
                 break;
-            case Types.FLOAT:
+            case "float":
                 fieldType = Schema.create(Schema.Type.FLOAT);
                 break;
-            case Types.DOUBLE:
+            case "double":
                 fieldType = Schema.create(Schema.Type.DOUBLE);
                 break;
-            case Types.VARCHAR:
-            case Types.CHAR:
+            case "char":
                 fieldType = Schema.create(Schema.Type.STRING);
                 break;
-            case Types.BOOLEAN:
+            case "boolean":
                 fieldType = Schema.create(Schema.Type.BOOLEAN);
                 break;
-            case Types.DATE:
-            case Types.TIMESTAMP:
-                fieldType = Schema.create(Schema.Type.STRING); // TODO: Discuss(Double is for Start/EndDate, IntTime in VOTable)
+            case "date":
+            case "timestamp":
+                fieldType = Schema.create(Schema.Type.STRING); // TODO: TBD
                 break;
             default:
-                fieldType = Schema.create(Schema.Type.STRING); // Default to STRING for unknown types
+                fieldType = Schema.create(Schema.Type.STRING);
         }
-        return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), fieldType)); // TODO: Discuss
-
+        return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), fieldType)); // TODO: TBD
     }
 }
 

@@ -28,8 +28,8 @@ dependencies {
     implementation 'org.opencadc:cadc-util:[1.6,)'
     implementation 'org.opencadc:cadc-uws:[1.0.4,)'
 
-    implementation 'org.apache.parquet:parquet-avro:1.13.1'
-    implementation 'org.apache.parquet:parquet-hadoop:1.13.1'
+    implementation 'org.apache.parquet:parquet-avro:1.15.0'
+    implementation 'org.apache.parquet:parquet-hadoop:1.15.0'
     implementation 'org.apache.hadoop:hadoop-common:3.3.6'
     implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:3.3.6'
 

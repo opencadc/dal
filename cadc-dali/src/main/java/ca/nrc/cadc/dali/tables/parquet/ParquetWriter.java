@@ -1,6 +1,8 @@
 package ca.nrc.cadc.dali.tables.parquet;
 
 import ca.nrc.cadc.dali.tables.TableWriter;
+import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
+import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -16,9 +18,10 @@ import org.apache.parquet.io.PositionOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.sql.ResultSet;
+import java.util.Iterator;
+import java.util.List;
 
-public class ParquetWriter implements TableWriter<ResultSet> {
+public class ParquetWriter implements TableWriter<VOTableDocument> {
 
     private static final Logger log = Logger.getLogger(ParquetWriter.class);
 
@@ -49,56 +52,60 @@ public class ParquetWriter implements TableWriter<ResultSet> {
     }
 
     @Override
-    public void write(ResultSet tm, OutputStream out) throws IOException {
+    public void write(VOTableDocument tm, OutputStream out) throws IOException {
         write(tm, out, Long.MAX_VALUE);
     }
 
     @Override
-    public void write(ResultSet resultSet, OutputStream out, Long maxRec) throws IOException {
+    public void write(VOTableDocument resultSet, OutputStream out, Long maxRec) throws IOException {
         log.debug("ParquetWriter Write service called. MaxRec = " + maxRec);
+        for (VOTableResource resource : resultSet.getResources()) {
+            Schema schema = DynamicSchemaGenerator.generateSchema(resource.getTable().getFields());
+            OutputFile outputFile = outputFileFromStream(out);
 
-        Schema schema = DynamicSchemaGenerator.generateSchema(resultSet);
+            try (org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(outputFile)
+                    .withSchema(schema)
+                    .withCompressionCodec(CompressionCodecName.SNAPPY)
+                    .withRowGroupSize(Long.valueOf(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE))
+                    .withPageSize(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE)
+                    .withConf(new Configuration())
+                    .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
+                    .withValidation(false)
+                    .withDictionaryEncoding(false)
+                    .build()) {
 
-        OutputFile outputFile = outputFileFromStream(out);
+                Iterator<List<Object>> iterator = resource.getTable().getTableData().iterator();
+                int recordCount = 1;
 
-        try (org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(outputFile)
-                .withSchema(schema)
-                .withCompressionCodec(CompressionCodecName.SNAPPY)
-                .withRowGroupSize(Long.valueOf(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE))
-                .withPageSize(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE)
-                .withConf(new Configuration())
-                .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
-                .withValidation(false)
-                .withDictionaryEncoding(false)
-                .build()) {
+                while (iterator.hasNext() && recordCount <= maxRec) {
+                    GenericRecord record = new GenericData.Record(schema);
+                    List<Object> rowData = iterator.next();
+                    int columnIndex = 0;
 
-            int i = 1;
-            while (resultSet.next() && i <= maxRec) {
-                GenericRecord record = new GenericData.Record(schema);
-                for (Schema.Field field : schema.getFields()) {
+                    for (Schema.Field field : schema.getFields()) {
+                        String columnName = field.name();
+                        record.put(columnName, rowData.get(columnIndex));
+                        columnIndex++;
+                    }
 
-                    String columnName = field.name();
-                    Object value = resultSet.getObject(columnName);
-                    record.put(columnName, value);
+                    writer.write(record);
+                    recordCount++;
+                    log.debug("Total Records generated= " + (recordCount - 1));
                 }
-                writer.write(record);
-                i++;
+            } catch (Exception e) {
+                throw new IOException("error while writing", e);
             }
-
-            log.debug("Total Records generated= " + (i - 1));
-            out.close();
-        } catch (Exception e) {
-            throw new IOException("error while writing", e);
         }
+        out.close();
     }
 
     @Override
-    public void write(ResultSet tm, Writer out) {
+    public void write(VOTableDocument tm, Writer out) {
         throw new UnsupportedOperationException("This method for Parquet Writer is not supported.");
     }
 
     @Override
-    public void write(ResultSet resultSet, Writer out, Long maxRec) {
+    public void write(VOTableDocument resultSet, Writer out, Long maxRec) {
         throw new UnsupportedOperationException("This method for Parquet Writer is not supported.");
     }
 
