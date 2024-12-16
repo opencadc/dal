@@ -4,6 +4,14 @@ import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.util.FormatFactory;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
+
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -14,12 +22,6 @@ import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Writer;
-import java.util.Iterator;
-import java.util.List;
 
 public class ParquetWriter implements TableWriter<VOTableDocument> {
 
@@ -84,7 +86,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
                     for (Schema.Field field : schema.getFields()) {
                         String columnName = field.name();
-                        record.put(columnName, rowData.get(columnIndex));
+                        record.put(columnName, rowData.get(columnIndex)); // TODO: convert non-simple row data to correct format before adding to record
                         columnIndex++;
                     }
 
@@ -111,13 +113,14 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
     @Override
     public void write(Throwable thrown, OutputStream output) throws IOException {
-        //TODO: Implement
+        throw new UnsupportedOperationException("This method for Parquet Writer is not yet supported.");
     }
 
     private static OutputFile outputFileFromStream(OutputStream outputStream) {
         return new OutputFile() {
             @Override
             public PositionOutputStream create(long blockSizeHint) {
+                // TODO: use blockSizeHint argument probably assigning to OutputStream.
                 return new PositionOutputStream() {
                     private long position = 0;
 
@@ -126,6 +129,16 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                         try {
                             outputStream.write(b);
                             position++;
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+
+                    @Override
+                    public void write(byte[] b) {
+                        try {
+                            outputStream.write(b);
+                            position += b.length;
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }

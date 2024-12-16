@@ -1,16 +1,13 @@
 package ca.nrc.cadc.dali.tables.parquet;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import org.apache.avro.Schema;
-import org.apache.log4j.Logger;
 
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.apache.avro.Schema;
+import org.apache.log4j.Logger;
 
 public class DynamicSchemaGenerator {
 
@@ -24,7 +21,7 @@ public class DynamicSchemaGenerator {
             log.debug("Resultset Metadata Column count = " + columnCount);
             for (VOTableField voField : voFields) {
                 String columnName = voField.getName();
-                Schema.Field field = new Schema.Field(columnName.replaceAll("\"",""), getAvroFieldType(voField.getDatatype()), null, null);
+                Schema.Field field = new Schema.Field(columnName.replaceAll("\"", ""), getAvroFieldType(voField.getDatatype()), null, null);
                 fields.add(field);
             }
             log.debug("Schema.Field count = " + fields.size());
