@@ -18,21 +18,20 @@ public class DynamicSchemaGenerator {
         List<Schema.Field> fields = new ArrayList<>();
         try {
             int columnCount = voFields.size();
-            log.debug("Resultset Metadata Column count = " + columnCount);
+            log.debug("VOTable Column count = " + columnCount);
             for (VOTableField voField : voFields) {
                 String columnName = voField.getName();
                 Schema.Field field = new Schema.Field(columnName.replaceAll("\"", ""), getAvroFieldType(voField.getDatatype()), null, null);
                 fields.add(field);
             }
-            log.debug("Schema.Field count = " + fields.size());
+            log.debug("Avro Schema.Field count = " + fields.size());
         } catch (Exception e) {
-            log.debug("Failure while retriving metadata from ResultSet", e);
-            throw new RuntimeException("Failure while retriving metadata from ResultSet : " + e.getMessage(), e);
+            log.debug("Failure while creating Avro Schema from VOTable", e);
+            throw new RuntimeException("Failure while creating Avro Schema from VOTable : " + e.getMessage(), e);
         }
 
         // Define the Avro record schema with the fields
-        //TODO: Provide meaningful name, namespace and documentation
-        Schema schema = Schema.createRecord("DynamicRecord", null, null, Boolean.FALSE);
+        Schema schema = Schema.createRecord("Record", null, null, Boolean.FALSE);
         schema.setFields(fields);
         log.debug("Schema Generated Successfully : " + schema);
         return schema;

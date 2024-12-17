@@ -54,14 +54,14 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
     }
 
     @Override
-    public void write(VOTableDocument tm, OutputStream out) throws IOException {
-        write(tm, out, Long.MAX_VALUE);
+    public void write(VOTableDocument voTableDocument, OutputStream out) throws IOException {
+        write(voTableDocument, out, Long.MAX_VALUE);
     }
 
     @Override
-    public void write(VOTableDocument resultSet, OutputStream out, Long maxRec) throws IOException {
+    public void write(VOTableDocument voTableDocument, OutputStream out, Long maxRec) throws IOException {
         log.debug("ParquetWriter Write service called. MaxRec = " + maxRec);
-        for (VOTableResource resource : resultSet.getResources()) {
+        for (VOTableResource resource : voTableDocument.getResources()) {
             Schema schema = DynamicSchemaGenerator.generateSchema(resource.getTable().getFields());
             OutputFile outputFile = outputFileFromStream(out);
 
@@ -102,12 +102,12 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
     }
 
     @Override
-    public void write(VOTableDocument tm, Writer out) {
+    public void write(VOTableDocument voTableDocument, Writer out) {
         throw new UnsupportedOperationException("This method for Parquet Writer is not supported.");
     }
 
     @Override
-    public void write(VOTableDocument resultSet, Writer out, Long maxRec) {
+    public void write(VOTableDocument voTableDocument, Writer out, Long maxRec) {
         throw new UnsupportedOperationException("This method for Parquet Writer is not supported.");
     }
 
