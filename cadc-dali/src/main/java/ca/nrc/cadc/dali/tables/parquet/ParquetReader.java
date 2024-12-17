@@ -37,6 +37,9 @@ public class ParquetReader {
         MessageType schema = metadata.getFileMetaData().getSchema();
         columnCount = schema.getFieldCount();
 
+        String votable = metadata.getFileMetaData().getKeyValueMetaData().get("votable");
+        log.debug("VOTable: " + votable);
+
         try (org.apache.parquet.hadoop.ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(inputFile).build()) {
             GenericRecord record;
 

@@ -1,16 +1,21 @@
 package ca.nrc.cadc.dali.tables.parquet;
 
+import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
+import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 import ca.nrc.cadc.dali.util.FormatFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.io.Writer;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -65,6 +70,16 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             Schema schema = DynamicSchemaGenerator.generateSchema(resource.getTable().getFields());
             OutputFile outputFile = outputFileFromStream(out);
 
+            TableData tableData = resource.getTable().getTableData();
+            resource.getTable().setTableData(null);
+
+            StringWriter stringWriter = new StringWriter();
+            VOTableWriter votableWriter = new VOTableWriter();
+            votableWriter.write(voTableDocument, stringWriter, maxRec);
+
+            Map<String, String> customMetaData = new HashMap<>();
+            customMetaData.put("votable", stringWriter.toString());
+
             try (org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(outputFile)
                     .withSchema(schema)
                     .withCompressionCodec(CompressionCodecName.SNAPPY)
@@ -74,9 +89,10 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                     .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
                     .withValidation(false)
                     .withDictionaryEncoding(false)
+                    .withExtraMetaData(customMetaData)
                     .build()) {
 
-                Iterator<List<Object>> iterator = resource.getTable().getTableData().iterator();
+                Iterator<List<Object>> iterator = tableData.iterator();
                 int recordCount = 1;
 
                 while (iterator.hasNext() && recordCount <= maxRec) {
