@@ -78,7 +78,8 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             votableWriter.write(voTableDocument, stringWriter, maxRec);
 
             Map<String, String> customMetaData = new HashMap<>();
-            customMetaData.put("votable", stringWriter.toString());
+            customMetaData.put("IVOA.VOTable-Parquet.version", "1.0");
+            customMetaData.put("IVOA.VOTable-Parquet.content", stringWriter.toString());
 
             try (org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(outputFile)
                     .withSchema(schema)
@@ -115,16 +116,6 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             }
         }
         out.close();
-    }
-
-    @Override
-    public void write(VOTableDocument voTableDocument, Writer out) {
-        throw new UnsupportedOperationException("This method for Parquet Writer is not supported.");
-    }
-
-    @Override
-    public void write(VOTableDocument voTableDocument, Writer out, Long maxRec) {
-        throw new UnsupportedOperationException("This method for Parquet Writer is not supported.");
     }
 
     @Override

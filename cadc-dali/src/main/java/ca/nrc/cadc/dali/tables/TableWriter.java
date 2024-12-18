@@ -131,12 +131,6 @@ public interface TableWriter<T> {
     void write(T tm, OutputStream out, Long maxrec)
             throws IOException;
 
-    void write(T tm, Writer out)
-            throws IOException;
-
-    void write(T tm, Writer out, Long maxrec)
-            throws IOException;
-
     /**
      * Write the Throwable to the OutputStream
      *

@@ -211,7 +211,6 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
      * @param writer Writer to write to.
      * @throws IOException if problem writing to the writer.
      */
-    @Override
     public void write(VOTableDocument votable, Writer writer)
             throws IOException {
         write(votable, writer, Long.MAX_VALUE);
@@ -227,7 +226,6 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
      * @param maxrec maximum number of rows to write.
      * @throws IOException if problem writing to the writer.
      */
-    @Override
     public void write(VOTableDocument votable, Writer writer, Long maxrec)
             throws IOException {
         if (formatFactory == null) {

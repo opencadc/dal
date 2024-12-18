@@ -194,13 +194,11 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument> {
         write(vot, writer, maxrec);
     }
 
-    @Override
     public void write(VOTableDocument vot, Writer out)
             throws IOException {
         write(vot, out, null);
     }
 
-    @Override
     public void write(VOTableDocument votable, Writer writer, Long maxrec)
             throws IOException {
         if (formatFactory == null) {
