@@ -10,8 +10,11 @@ import ca.nrc.cadc.dali.util.FormatFactory;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -120,7 +123,8 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
     @Override
     public void write(Throwable thrown, OutputStream output) throws IOException {
-        throw new UnsupportedOperationException("This method for Parquet Writer is not yet supported.");
+        Writer writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
+        writer.write(thrown.getMessage());
     }
 
     private static OutputFile outputFileFromStream(OutputStream outputStream) {
