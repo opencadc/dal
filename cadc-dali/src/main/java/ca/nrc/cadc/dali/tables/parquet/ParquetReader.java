@@ -9,6 +9,8 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
+import ca.nrc.cadc.dali.tables.votable.VOTableReader;
 import org.apache.avro.generic.GenericRecord;
 
 import org.apache.log4j.Logger;
@@ -37,8 +39,11 @@ public class ParquetReader {
         MessageType schema = metadata.getFileMetaData().getSchema();
         columnCount = schema.getFieldCount();
 
-        String votable = metadata.getFileMetaData().getKeyValueMetaData().get("votable");
+        String votable = metadata.getFileMetaData().getKeyValueMetaData().get("IVOA.VOTable-Parquet.content");
         log.debug("VOTable: " + votable);
+
+        VOTableReader voTableReader = new VOTableReader();
+        VOTableDocument voTableDocument = voTableReader.read(votable);
 
         try (org.apache.parquet.hadoop.ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(inputFile).build()) {
             GenericRecord record;
@@ -63,7 +68,7 @@ public class ParquetReader {
         if (recordCount == 0) {
             throw new RuntimeException("NO Records Read");
         }
-        return new TableShape(recordCount, columnCount);
+        return new TableShape(recordCount, columnCount, voTableDocument);
     }
 
     private static InputFile getInputFile(InputStream inputStream) throws IOException {
@@ -172,10 +177,12 @@ public class ParquetReader {
     public static class TableShape {
         int recordCount;
         int columnCount;
+        VOTableDocument voTableDocument;
 
-        public TableShape(int recordCount, int columnCount) {
+        public TableShape(int recordCount, int columnCount, VOTableDocument voTableDocument) {
             this.recordCount = recordCount;
             this.columnCount = columnCount;
+            this.voTableDocument = voTableDocument;
         }
 
         public int getRecordCount() {
@@ -184,6 +191,10 @@ public class ParquetReader {
 
         public int getColumnCount() {
             return columnCount;
+        }
+
+        public VOTableDocument getVoTableDocument() {
+            return voTableDocument;
         }
     }
 
