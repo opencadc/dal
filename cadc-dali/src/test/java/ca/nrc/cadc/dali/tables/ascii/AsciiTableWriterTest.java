@@ -131,7 +131,7 @@ public class AsciiTableWriterTest
 
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
-            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos());
+            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos("a"));
             vot.getParams().addAll(VOTableReaderWriterTest.getTestParams());
             vot.getFields().addAll(VOTableReaderWriterTest.getTestFields());
             vot.setTableData(new VOTableReaderWriterTest.TestTableData());
@@ -219,7 +219,7 @@ public class AsciiTableWriterTest
 
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
-            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos());
+            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos("a"));
             vot.getParams().addAll(VOTableReaderWriterTest.getTestParams());
             vot.getFields().addAll(VOTableReaderWriterTest.getTestFields());
             vot.setTableData(new VOTableReaderWriterTest.TestTableData());
@@ -264,7 +264,7 @@ public class AsciiTableWriterTest
 
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
-            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos());
+            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos("a"));
             vot.getParams().addAll(VOTableReaderWriterTest.getTestParams());
             vot.getFields().addAll(VOTableReaderWriterTest.getTestFields());
             vot.setTableData(new VOTableReaderWriterTest.TestTableData(maxrec + 1));
