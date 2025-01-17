@@ -77,6 +77,7 @@ public class VOTableInfo {
 
     private String name;
     private String value;
+    public String id;
     public String content;
 
     public VOTableInfo(String name, String value) {
@@ -111,6 +112,10 @@ public class VOTableInfo {
         sb.append(name);
         sb.append(",");
         sb.append(value);
+        if (id != null) {
+            sb.append(",");
+            sb.append(id);
+        }
         sb.append("]");
         return sb.toString();
     }
