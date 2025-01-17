@@ -127,24 +127,31 @@ public class VOTableReaderWriterTest {
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
 
+            // Add INFO's to the VOTableDocument.
+            expected.getInfos().addAll(getTestInfos("a"));
+
             VOTableResource vr = new VOTableResource("meta");
             vr.description = "what is a meta?";
             expected.getResources().add(vr);
+
             vr.getParams().addAll(getMetaParams());
             vr.getGroups().add(getMetaGroup());
 
+            // Add INFO's to meta VOTableResource.
+            vr.getInfos().addAll(getTestInfos("b"));
+
             vr = new VOTableResource("results");
-            VOTableInfo vi = new VOTableInfo("FOO", "bar");
-            vi.content = "useful message";
-            vr.getInfos().add(vi);
             expected.getResources().add(vr);
             vr.setName(resourceName);
+
+            // Add INFO's to results VOTableResource.
+            vr.getInfos().addAll(getTestInfos("c"));
 
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
 
-            // Add INFO's.
-            vot.getInfos().addAll(getTestInfos());
+            // Add INFO's to VOTableTable.
+            vot.getInfos().addAll(getTestInfos("d"));
 
             // Add VOTableFields.
             vot.getParams().addAll(getTestParams());
@@ -186,16 +193,23 @@ public class VOTableReaderWriterTest {
 
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
+
+            // Add INFO's to document.
+            expected.getInfos().addAll(getTestInfos("a"));
+
             VOTableResource vr = new VOTableResource("results");
             vr.getInfos().add(new VOTableInfo("QUERY_STATUS", "OK"));
             expected.getResources().add(vr);
             vr.setName(resourceName);
 
+            // Add INFO's to resource.
+            vr.getInfos().addAll(getTestInfos("b"));
+
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
 
-            // Add INFO's.
-            vot.getInfos().addAll(getTestInfos());
+            // Add INFO's to table.
+            vot.getInfos().addAll(getTestInfos("c"));
 
             // Add VOTableFields.
             vot.getParams().addAll(getTestParams());
@@ -234,16 +248,23 @@ public class VOTableReaderWriterTest {
 
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
+
+            // Add INFO's to document.
+            expected.getInfos().addAll(getTestInfos("a"));
+
             VOTableResource vr = new VOTableResource("results");
             vr.getInfos().add(new VOTableInfo("QUERY_STATUS", "OK"));
             expected.getResources().add(vr);
             vr.setName(resourceName);
 
+            // Add INFO's to resource.
+            vr.getInfos().addAll(getTestInfos("b"));
+
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
 
-            // Add INFO's.
-            vot.getInfos().addAll(getTestInfos());
+            // Add INFO's to table.
+            vot.getInfos().addAll(getTestInfos("c"));
 
             // Add VOTableFields.
             vot.getParams().addAll(getTestParams());
@@ -298,6 +319,9 @@ public class VOTableReaderWriterTest {
 
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
+
+            // Add INFO's to document.
+            expected.getInfos().addAll(getTestInfos("a"));
 
             VOTableResource vr = new VOTableResource("meta");
             expected.getResources().add(vr);
@@ -760,6 +784,7 @@ public class VOTableReaderWriterTest {
             Assert.assertNotNull(actualInfo);
             Assert.assertEquals(expectedInfo.getName(), actualInfo.getName());
             Assert.assertEquals(expectedInfo.getValue(), actualInfo.getValue());
+            Assert.assertEquals(expectedInfo.id, actualInfo.id);
             Assert.assertEquals(expectedInfo.content, actualInfo.content);
         }
     }
@@ -830,10 +855,17 @@ public class VOTableReaderWriterTest {
         }
     }
 
-    public static List<VOTableInfo> getTestInfos() {
+    public static List<VOTableInfo> getTestInfos(String idPrefix) {
         List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
 
-        infos.add(new VOTableInfo("QUERY", "select * from ivoa.ObsCore"));
+        VOTableInfo info1 = new VOTableInfo("QUERY1", "select foo from ivoa.ObsCore");
+        info1.id = idPrefix + "-id1";
+        info1.content = "content 1";
+        infos.add(info1);
+
+        VOTableInfo info2 = new VOTableInfo("QUERY2", "select bar from ivoa.ObsCore");
+        info2.content = "content 2";
+        infos.add(info2);
 
         return infos;
     }
