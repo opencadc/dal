@@ -105,4 +105,8 @@ public class Point implements Shape {
     public double getLatitude() {
         return latitude;
     }
+
+    public double[] toArray() {
+        return new double[] {longitude, latitude};
+    }
 }

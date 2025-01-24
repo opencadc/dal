@@ -78,7 +78,7 @@ public class Interval<T extends Number> {
     private T upper;
 
     public Interval(T lower, T upper) {
-        DaliUtil.assertNotNull("lower", upper);
+        DaliUtil.assertNotNull("lower", lower);
         DaliUtil.assertNotNull("upper", upper);
         this.lower = lower;
         this.upper = upper;
@@ -100,5 +100,14 @@ public class Interval<T extends Number> {
 
         Interval rhs = (Interval) obj;
         return lower.equals(rhs.lower) && upper.equals(rhs.upper);
+    }
+
+    public Object[] toArray() {
+        if (lower instanceof Double && upper instanceof Double) {
+            return new Double[]{(Double) lower, (Double) upper};
+        } else if (lower instanceof Long && upper instanceof Long) {
+            return new Long[]{(Long) lower, (Long) upper};
+        }
+        throw new UnsupportedOperationException("unsupported interval type: " + lower.getClass().getName());
     }
 }

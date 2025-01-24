@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
 import org.apache.log4j.Logger;
 
@@ -21,7 +22,7 @@ public class DynamicSchemaGenerator {
             log.debug("VOTable Column count = " + columnCount);
             for (VOTableField voField : voFields) {
                 String columnName = voField.getName();
-                Schema.Field field = new Schema.Field(columnName.replaceAll("\"", ""), getAvroFieldType(voField.getDatatype()), null, null);
+                Schema.Field field = new Schema.Field(columnName.replaceAll("\"", "_"), getAvroFieldType(voField), null, null);
                 fields.add(field);
             }
             log.debug("Avro Schema.Field count = " + fields.size());
@@ -37,36 +38,58 @@ public class DynamicSchemaGenerator {
         return schema;
     }
 
-    private static Schema getAvroFieldType(String sqlType) {
-        // Map SQL data types to Avro data types
+    private static Schema getAvroFieldType(VOTableField voTableField) {
+        String datatype = voTableField.getDatatype();
+        String arraysize = voTableField.getArraysize();
+        String xtype = voTableField.xtype;
+
         Schema fieldType;
-        switch (sqlType) {
+        switch (datatype) {
+            case "short":
             case "int":
-                fieldType = Schema.create(Schema.Type.INT);
+                fieldType = createSchema(Schema.Type.INT, arraysize);
                 break;
             case "long":
-                fieldType = Schema.create(Schema.Type.LONG);
+                fieldType = createSchema(Schema.Type.LONG, arraysize);
                 break;
             case "float":
-                fieldType = Schema.create(Schema.Type.FLOAT);
+                fieldType = createSchema(Schema.Type.FLOAT, arraysize);
                 break;
             case "double":
-                fieldType = Schema.create(Schema.Type.DOUBLE);
+                fieldType = createSchemaWithXType(Schema.Type.DOUBLE, arraysize, xtype);
                 break;
             case "char":
-                fieldType = Schema.create(Schema.Type.STRING);
+                fieldType = "timestamp".equals(xtype)
+                        ? LogicalTypes.timestampMillis().addToSchema(Schema.create(Schema.Type.LONG)) :
+                        Schema.create(Schema.Type.STRING);
                 break;
             case "boolean":
                 fieldType = Schema.create(Schema.Type.BOOLEAN);
                 break;
             case "date":
             case "timestamp":
-                fieldType = Schema.create(Schema.Type.STRING); // TODO: TBD
+                fieldType = LogicalTypes.timestampMillis().addToSchema(Schema.create(Schema.Type.LONG));
+                break;
+            case "byte":
+                fieldType = createSchema(Schema.Type.BYTES, arraysize);
                 break;
             default:
                 fieldType = Schema.create(Schema.Type.STRING);
         }
-        return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), fieldType)); // TODO: TBD
+
+        return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), fieldType));
+    }
+
+    private static Schema createSchema(Schema.Type type, String arraysize) {
+        return arraysize == null ? Schema.create(type) : Schema.createArray(Schema.create(type));
+    }
+
+    private static Schema createSchemaWithXType(Schema.Type type, String arraysize, String xtype) {
+        Schema schema = createSchema(type, arraysize);
+        if (xtype != null) {
+            schema.addProp("xtype", xtype);
+        }
+        return schema;
     }
 }
 

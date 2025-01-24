@@ -1,8 +1,14 @@
 package ca.nrc.cadc.dali.tables.parquet;
 
+import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.LongInterval;
+import ca.nrc.cadc.dali.Point;
+import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
+import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 import ca.nrc.cadc.dali.util.FormatFactory;
@@ -15,6 +21,9 @@ import java.io.StringWriter;
 import java.io.Writer;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -35,6 +44,11 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
     private static final Logger log = Logger.getLogger(ParquetWriter.class);
 
+    public static final String IVOA_VOTABLE_PARQUET_VERSION_KEY = "IVOA.VOTable-Parquet.version";
+    public static final String IVOA_VOTABLE_PARQUET_CONTENT_KEY = "IVOA.VOTable-Parquet.content";
+    public static final String IVOA_VOTABLE_PARQUET_VERSION_VALUE = "1.0";
+    public static final String PARQUET_CONTENT_TYPE = "application/vnd.apache.parquet";
+
     private FormatFactory formatFactory;
 
     public ParquetWriter() {
@@ -48,7 +62,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
     @Override
     public String getContentType() {
-        return "application/vnd.apache.parquet";
+        return PARQUET_CONTENT_TYPE;
     }
 
     @Override
@@ -68,55 +82,33 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
     @Override
     public void write(VOTableDocument voTableDocument, OutputStream out, Long maxRec) throws IOException {
-        log.debug("ParquetWriter Write service called. MaxRec = " + maxRec);
-        for (VOTableResource resource : voTableDocument.getResources()) {
-            Schema schema = DynamicSchemaGenerator.generateSchema(resource.getTable().getFields());
-            OutputFile outputFile = outputFileFromStream(out);
+        OutputFile outputFile = outputFileFromStream(out);
 
-            TableData tableData = resource.getTable().getTableData();
-            resource.getTable().setTableData(null);
+        VOTableResource voTableResource = voTableDocument.getResources().stream().filter(obj -> "results".equals(obj.getType())).reduce((a, b) -> {
+            throw new RuntimeException("Multiple objects with type = results");
+        }).orElseThrow(() -> new RuntimeException("No object found with type = results"));
 
-            StringWriter stringWriter = new StringWriter();
-            VOTableWriter votableWriter = new VOTableWriter();
-            votableWriter.write(voTableDocument, stringWriter, maxRec);
+        Schema schema = DynamicSchemaGenerator.generateSchema(voTableResource.getTable().getFields());
+        TableData tableData = voTableResource.getTable().getTableData();
 
-            Map<String, String> customMetaData = new HashMap<>();
-            customMetaData.put("IVOA.VOTable-Parquet.version", "1.0");
-            customMetaData.put("IVOA.VOTable-Parquet.content", stringWriter.toString());
+        updateVOTable(voTableResource);
 
-            try (org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(outputFile)
-                    .withSchema(schema)
-                    .withCompressionCodec(CompressionCodecName.SNAPPY)
-                    .withRowGroupSize(Long.valueOf(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE))
-                    .withPageSize(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE)
-                    .withConf(new Configuration())
-                    .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
-                    .withValidation(false)
-                    .withDictionaryEncoding(false)
-                    .withExtraMetaData(customMetaData)
-                    .build()) {
+        try (org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(outputFile)
+                .withSchema(schema)
+                .withCompressionCodec(CompressionCodecName.SNAPPY)
+                .withRowGroupSize(Long.valueOf(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE))
+                .withPageSize(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE)
+                .withConf(new Configuration())
+                .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
+                .withValidation(false)
+                .withDictionaryEncoding(false)
+                .withExtraMetaData(prepareCustomMetaData(voTableDocument, maxRec))
+                .build()) {
 
-                Iterator<List<Object>> iterator = tableData.iterator();
-                int recordCount = 1;
-
-                while (iterator.hasNext() && recordCount <= maxRec) {
-                    GenericRecord record = new GenericData.Record(schema);
-                    List<Object> rowData = iterator.next();
-                    int columnIndex = 0;
-
-                    for (Schema.Field field : schema.getFields()) {
-                        String columnName = field.name();
-                        record.put(columnName, rowData.get(columnIndex)); // TODO: convert non-simple row data to correct format before adding to record
-                        columnIndex++;
-                    }
-
-                    writer.write(record);
-                    recordCount++;
-                    log.debug("Total Records generated= " + (recordCount - 1));
-                }
-            } catch (Exception e) {
-                throw new IOException("error while writing", e);
-            }
+            int recordsCount = saveRecords(maxRec, tableData, schema, writer);
+            log.debug("Total Records generated= " + recordsCount);
+        } catch (Exception e) {
+            throw new IOException("error while writing", e);
         }
         out.close();
     }
@@ -196,5 +188,119 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                 return 0;
             }
         };
+    }
+
+    private static void updateVOTable(VOTableResource voTableResource) {
+        List<VOTableField> fields = voTableResource.getTable().getFields();
+
+        // Convert timestamp fields to long to ensure inconsistencies between avro schema field and votable metadata field
+        for (int i = 0; i < fields.size(); i++) {
+            VOTableField field = fields.get(i);
+
+            if ("timestamp".equals(field.xtype)) {
+                fields.set(i, new VOTableField(field.getName(), "long"));
+            }
+
+            if ("short".equals(field.getDatatype())) {
+                fields.set(i, new VOTableField(field.getName(), "int", field.getArraysize()));
+            }
+        }
+
+        // Clear table data for empty VOTable
+        voTableResource.getTable().setTableData(null);
+    }
+
+    private static Map<String, String> prepareCustomMetaData(VOTableDocument voTableDocument, Long maxRec) throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        VOTableWriter votableWriter = new VOTableWriter();
+        votableWriter.write(voTableDocument, stringWriter, maxRec);
+
+        Map<String, String> customMetaData = new HashMap<>();
+        customMetaData.put(IVOA_VOTABLE_PARQUET_VERSION_KEY, IVOA_VOTABLE_PARQUET_VERSION_VALUE);
+        customMetaData.put(IVOA_VOTABLE_PARQUET_CONTENT_KEY, stringWriter.toString());
+
+        return customMetaData;
+    }
+
+    private static int saveRecords(Long maxRec, TableData tableData, Schema schema, org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer)
+            throws IOException {
+        Iterator<List<Object>> iterator = tableData.iterator();
+        int recordCount = 1;
+
+        while (iterator.hasNext() && recordCount <= maxRec) {
+            GenericRecord record = new GenericData.Record(schema);
+            List<Object> rowData = iterator.next();
+
+            for (Schema.Field field : schema.getFields()) {
+                String columnName = field.name();
+                Schema unionSchema = field.schema().getTypes().get(1);
+                Object data = rowData.get(field.pos());
+
+                if (unionSchema.getType().equals(Schema.Type.ARRAY)) {
+                    String xtype = unionSchema.getProp("xtype");
+                    handleArrays(field, xtype, record, data);
+                } else if (unionSchema.getType().equals(Schema.Type.LONG)
+                        && (unionSchema.getLogicalType() != null
+                        && unionSchema.getLogicalType().getName().equals("timestamp-millis"))) {
+                    handleDateAndTimestamp(field, rowData, record, columnName);
+                } else {
+                    // handle primitives
+                    record.put(columnName, rowData.get(field.pos()));
+                }
+            }
+            writer.write(record);
+            recordCount++;
+        }
+        return recordCount;
+    }
+
+    private static void handleArrays(Schema.Field field, String xtype, GenericRecord record, Object data) {
+        if (xtype == null) {
+            record.put(field.name(), data);
+        } else {
+            handleXTypeArrayData(record, field.name(), xtype, data);
+        }
+    }
+
+    private static void handleXTypeArrayData(GenericRecord record, String columnName, String xtype, Object data) {
+        if (xtype.equals("interval")) {
+            if (data instanceof DoubleInterval) {
+                DoubleInterval di = (DoubleInterval) data;
+                record.put(columnName, di.toArray());
+            } else if (data instanceof LongInterval) {
+                LongInterval li = (LongInterval) data;
+                record.put(columnName, li.toArray());
+            } else {
+                throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
+            }
+        } else if (xtype.equals("point") && data instanceof Point) {
+            Point p = (Point) data;
+            record.put(columnName, p.toArray());
+        } else if (xtype.equals("circle") && data instanceof Circle) {
+            Circle c = (Circle) data;
+            record.put(columnName, c.toArray());
+        } else if (xtype.equals("polygon") && data instanceof Polygon) {
+            Polygon p = (Polygon) data;
+            record.put(columnName, p.toArray());
+        } else {
+            throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
+        }
+    }
+
+    private static void handleDateAndTimestamp(Schema.Field field, List<Object> rowData, GenericRecord record, String columnName) {
+        Object obj = rowData.get(field.pos());
+
+        if (obj instanceof Date) {
+            long timeInMillis = ((Date) obj).getTime();
+            record.put(columnName, timeInMillis);
+            log.debug("Date converted to milliseconds: " + timeInMillis);
+        } else if (obj instanceof java.time.Instant) {
+            long timeInMillis = ((Instant) obj).toEpochMilli();
+            record.put(columnName, timeInMillis);
+            log.debug("Instant converted to milliseconds: " + timeInMillis);
+        } else {
+            log.error("Expected types: Util Date or Instant, but found: " + obj.getClass().getName());
+            throw new IllegalArgumentException("Unsupported object type for timestamp conversion");
+        }
     }
 }
