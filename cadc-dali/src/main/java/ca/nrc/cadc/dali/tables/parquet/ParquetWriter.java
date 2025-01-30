@@ -198,16 +198,35 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             VOTableField field = fields.get(i);
 
             if ("timestamp".equals(field.xtype)) {
-                fields.set(i, new VOTableField(field.getName(), "long"));
+                VOTableField timestampField = new VOTableField(field.getName(), "long");
+                copyFieldValues(timestampField, field);
+
+                fields.set(i, timestampField);
             }
 
             if ("short".equals(field.getDatatype())) {
-                fields.set(i, new VOTableField(field.getName(), "int", field.getArraysize()));
+                VOTableField shortField = new VOTableField(field.getName(), "int", field.getArraysize());
+                copyFieldValues(shortField, field);
+
+                fields.set(i, shortField);
+
             }
         }
 
         // Clear table data for empty VOTable
         voTableResource.getTable().setTableData(null);
+    }
+
+    private static void copyFieldValues(VOTableField targetField, VOTableField sourceField) {
+        targetField.unit = sourceField.unit;
+        targetField.ucd = sourceField.ucd;
+        targetField.utype = sourceField.utype;
+        targetField.description = sourceField.description;
+        targetField.nullValue = sourceField.nullValue;
+
+        if("short".equals(sourceField.getDatatype())){
+            targetField.xtype = sourceField.xtype;
+        }
     }
 
     private static Map<String, String> prepareCustomMetaData(VOTableDocument voTableDocument, Long maxRec) throws IOException {
@@ -224,6 +243,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
     private static int saveRecords(Long maxRec, TableData tableData, Schema schema, org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer)
             throws IOException {
+        List<Schema.Field> fields = schema.getFields();
         Iterator<List<Object>> iterator = tableData.iterator();
         int recordCount = 1;
 
@@ -231,23 +251,26 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             GenericRecord record = new GenericData.Record(schema);
             List<Object> rowData = iterator.next();
 
-            for (Schema.Field field : schema.getFields()) {
+            for (int i = 0; i < rowData.size(); i++) {
+                Schema.Field field = fields.get(i);
                 String columnName = field.name();
                 Schema unionSchema = field.schema().getTypes().get(1);
-                Object data = rowData.get(field.pos());
+                Object data = rowData.get(i);
 
                 if (unionSchema.getType().equals(Schema.Type.ARRAY)) {
                     String xtype = unionSchema.getProp("xtype");
+
                     handleArrays(field, xtype, record, data);
                 } else if (unionSchema.getType().equals(Schema.Type.LONG)
                         && (unionSchema.getLogicalType() != null
                         && unionSchema.getLogicalType().getName().equals("timestamp-millis"))) {
-                    handleDateAndTimestamp(field, rowData, record, columnName);
+                    handleDateAndTimestamp(data, record, columnName);
                 } else {
                     // handle primitives
-                    record.put(columnName, rowData.get(field.pos()));
+                    record.put(columnName, data);
                 }
             }
+
             writer.write(record);
             recordCount++;
         }
@@ -287,19 +310,20 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         }
     }
 
-    private static void handleDateAndTimestamp(Schema.Field field, List<Object> rowData, GenericRecord record, String columnName) {
-        Object obj = rowData.get(field.pos());
+    private static void handleDateAndTimestamp(Object data, GenericRecord record, String columnName) {
+        if (data instanceof Date) {
+            long timeInMillis = ((Date) data).getTime();
+            record.put(columnName, timeInMillis);
 
-        if (obj instanceof Date) {
-            long timeInMillis = ((Date) obj).getTime();
-            record.put(columnName, timeInMillis);
             log.debug("Date converted to milliseconds: " + timeInMillis);
-        } else if (obj instanceof java.time.Instant) {
-            long timeInMillis = ((Instant) obj).toEpochMilli();
+        } else if (data instanceof java.time.Instant) {
+            long timeInMillis = ((Instant) data).toEpochMilli();
             record.put(columnName, timeInMillis);
+
             log.debug("Instant converted to milliseconds: " + timeInMillis);
         } else {
-            log.error("Expected types: Util Date or Instant, but found: " + obj.getClass().getName());
+            log.error("Expected types: Util Date or Instant, but found: " + data.getClass().getName());
+
             throw new IllegalArgumentException("Unsupported object type for timestamp conversion");
         }
     }
