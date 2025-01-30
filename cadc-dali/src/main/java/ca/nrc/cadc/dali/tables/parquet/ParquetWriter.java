@@ -224,7 +224,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         targetField.description = sourceField.description;
         targetField.nullValue = sourceField.nullValue;
 
-        if("short".equals(sourceField.getDatatype())){
+        if ("short".equals(sourceField.getDatatype())) {
             targetField.xtype = sourceField.xtype;
         }
     }
