@@ -1,6 +1,5 @@
 plugins {
-    id 'java'
-    id 'maven'
+    id 'java-library'
     id 'maven-publish'
     id 'checkstyle'
 }
@@ -10,11 +9,13 @@ repositories {
     mavenLocal()
 }
 
-sourceCompatibility = 1.8
+apply from: '../opencadc.gradle'
+
+sourceCompatibility = 11
 
 group = 'org.opencadc'
 
-version = '1.2.19'
+version = '1.2.20'
 
 description = 'OpenCADC DALI library'
 def git_url = 'https://github.com/opencadc/dal'
@@ -31,8 +32,6 @@ dependencies {
     testImplementation 'junit:junit:[4.0,5.0)'
     testImplementation 'xerces:xercesImpl:[2.0,3.0)'
 }
-
-apply from: '../opencadc.gradle'
 
 // Exclude unmanaged sources from checkstyle and javadoc.
 checkstyleMain
