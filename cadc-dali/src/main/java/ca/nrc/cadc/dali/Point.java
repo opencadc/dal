@@ -74,23 +74,23 @@ package ca.nrc.cadc.dali;
  * @author pdowler
  */
 public class Point {
-    private final double longitude;
-    private final double latitude;
+    private final double cval1;
+    private final double cval2;
 
     public Point(double longitude, double latitude) {
-        this.longitude = longitude;
-        this.latitude = latitude;
+        this.cval1 = longitude;
+        this.cval2 = latitude;
     }
 
     // TBD: these limits are only relevant for equatorial...
     public void validate() {
-        DaliUtil.assertValidRange("longitude", longitude, 0.0, 360.0);
-        DaliUtil.assertValidRange("latitude", latitude, -90.0, 90.0);
+        DaliUtil.assertValidRange("longitude", cval1, 0.0, 360.0);
+        DaliUtil.assertValidRange("latitude", cval2, -90.0, 90.0);
     }
 
     @Override
     public String toString() {
-        return "Point[" + longitude + "," + latitude + "]";
+        return "Point[" + cval1 + "," + cval2 + "]";
     }
 
     @Override
@@ -99,14 +99,14 @@ public class Point {
             return false;
         }
         Point rhs = (Point) obj;
-        return this.longitude == rhs.longitude && this.latitude == rhs.latitude;
+        return this.cval1 == rhs.cval1 && this.cval2 == rhs.cval2;
     }
 
     public double getLongitude() {
-        return longitude;
+        return cval1;
     }
 
     public double getLatitude() {
-        return latitude;
+        return cval2;
     }
 }
