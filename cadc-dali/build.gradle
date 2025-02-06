@@ -14,7 +14,7 @@ sourceCompatibility = 1.8
 
 group = 'org.opencadc'
 
-version = '1.2.18'
+version = '1.2.19'
 
 description = 'OpenCADC DALI library'
 def git_url = 'https://github.com/opencadc/dal'
@@ -27,6 +27,11 @@ dependencies {
 
     implementation 'org.opencadc:cadc-util:[1.6,)'
     implementation 'org.opencadc:cadc-uws:[1.0.4,)'
+
+    implementation 'org.apache.parquet:parquet-avro:[1.15.0,)'
+    implementation 'org.apache.parquet:parquet-hadoop:[1.15.0,)'
+    implementation 'org.apache.hadoop:hadoop-common:[3.3.6,)'
+    implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:[3.3.6,)'
 
     testImplementation 'junit:junit:[4.0,5.0)'
     testImplementation 'xerces:xercesImpl:[2.0,3.0)'

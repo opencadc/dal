@@ -155,7 +155,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new VOTableWriter();
+            VOTableWriter writer = new VOTableWriter();
             writer.write(expected, sw);
             String xml = sw.toString();
             log.debug("XML: \n\n" + xml);
@@ -206,7 +206,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new VOTableWriter();
+            VOTableWriter writer = new VOTableWriter();
             writer.write(expected, sw, maxrec);
             String xml = sw.toString();
             log.info("XML: \n\n" + xml);
@@ -254,7 +254,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new VOTableWriter();
+            VOTableWriter writer = new VOTableWriter();
             writer.setFormatFactory(new BrokenFormatFactory());
             writer.write(expected, sw);
             String xml = sw.toString();
@@ -375,7 +375,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new VOTableWriter();
+            VOTableWriter writer = new VOTableWriter();
             writer.write(expected, sw);
             String xml = sw.toString();
             log.debug("XML: \n\n" + xml);

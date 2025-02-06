@@ -117,4 +117,13 @@ public class Polygon implements Shape {
         return true;
     }
 
+    public double[] toArray() {
+        double[] arr = new double[vertices.size() * 2];
+        for (int i = 0; i < vertices.size(); i++) {
+            Point p = vertices.get(i);
+            arr[i * 2] = p.getLongitude();
+            arr[i * 2 + 1] = p.getLatitude();
+        }
+        return arr;
+    }
 }

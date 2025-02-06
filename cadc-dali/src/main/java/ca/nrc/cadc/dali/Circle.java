@@ -105,4 +105,8 @@ public class Circle implements Shape {
     public double getRadius() {
         return radius;
     }
+
+    public double[] toArray() {
+        return new double[]{center.getLongitude(), center.getLatitude(), radius};
+    }
 }

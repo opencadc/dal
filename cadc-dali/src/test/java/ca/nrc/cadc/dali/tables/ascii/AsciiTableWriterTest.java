@@ -137,7 +137,7 @@ public class AsciiTableWriterTest
             vot.setTableData(new VOTableReaderWriterTest.TestTableData());
 
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
+            AsciiTableWriter writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
 
             Assert.assertEquals("Should be csv extension.", "csv",
                                 writer.getExtension());
@@ -181,7 +181,7 @@ public class AsciiTableWriterTest
             vot.setTableData(new VOTableReaderWriterTest.TestTableData());
 
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
+            AsciiTableWriter writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
 
             Assert.assertEquals("Should be csv extension.", "csv",
                                 writer.getExtension());
@@ -225,7 +225,7 @@ public class AsciiTableWriterTest
             vot.setTableData(new VOTableReaderWriterTest.TestTableData());
 
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.TSV);
+            AsciiTableWriter writer = new AsciiTableWriter(AsciiTableWriter.ContentType.TSV);
 
             Assert.assertEquals("Should be tsv extension.", "tsv",
                                 writer.getExtension());
@@ -270,7 +270,7 @@ public class AsciiTableWriterTest
             vot.setTableData(new VOTableReaderWriterTest.TestTableData(maxrec + 1));
 
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
+            AsciiTableWriter writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
 
             Assert.assertEquals("Should be csv extension.", "csv",
                                 writer.getExtension());
