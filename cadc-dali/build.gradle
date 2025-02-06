@@ -29,7 +29,6 @@ dependencies {
     implementation 'org.opencadc:cadc-uws:[1.0.4,)'
 
     implementation 'org.apache.parquet:parquet-avro:[1.15.0,)'
-    implementation 'org.apache.parquet:parquet-hadoop:[1.15.0,)'
     implementation 'org.apache.hadoop:hadoop-common:[3.3.6,)'
     implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:[3.3.6,)'
 
@@ -39,7 +38,26 @@ dependencies {
 
 apply from: '../opencadc.gradle'
 
-// Exclude unmanaged sources from checkstyle and javadoc.
+// end applications could also add the following exclude
+// as all these libs are not needed
+configurations {
+  // pull by parquet-avro dependencies but not needed
+  runtime.exclude group: 'com.sun.jersey'
+  runtime.exclude group: 'com.sun.jersey.contribs'
+  runtime.exclude group: 'com.google.inject'
+  runtime.exclude group: 'com.google.inject.extensions'
+  runtime.exclude group: 'com.github.pjfanning'
+  runtime.exclude group: 'javax.servlet'
+  runtime.exclude group: 'javax.servlet.jsp'
+  runtime.exclude group: 'org.apache.httpcomponents'
+  runtime.exclude group: 'org.apache.kerby'
+  runtime.exclude group: 'org.eclipse.jetty'
+  runtime.exclude group: 'org.eclipse.jetty'
+  runtime.exclude group: 'io.netty'
+
+}
+
+// exclude unmanaged sources from checkstyle and javadoc
 checkstyleMain
         .exclude('uk/ac/starlink/table/*.java')
         .exclude('uk/ac/starlink/util/*.java')
