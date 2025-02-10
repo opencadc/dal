@@ -3,6 +3,7 @@ package ca.nrc.cadc.dali.tables.parquet;
 import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.LongInterval;
+import ca.nrc.cadc.dali.MultiPolygon;
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.Shape;
@@ -14,6 +15,7 @@ import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 import ca.nrc.cadc.dali.util.FormatFactory;
 
+import ca.nrc.cadc.dali.util.MultiPolygonFormat;
 import ca.nrc.cadc.dali.util.ShapeFormat;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -323,6 +325,9 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         } else if (xtype.equals("polygon") && data instanceof Polygon) {
             Polygon p = (Polygon) data;
             record.put(columnName, p.toArray());
+        } else if (xtype.equals("multipolygon") && data instanceof MultiPolygon) {
+            MultiPolygon p = (MultiPolygon) data;
+            record.put(columnName, MultiPolygonFormat.toArray(p));
         } else {
             throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
         }
