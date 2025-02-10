@@ -81,4 +81,13 @@ public class LongInterval extends Interval<Long> {
             throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
         }
     }
+    
+    public static long[] toArray(LongInterval[] arr) {
+        long[] ret = new long[2 * arr.length];
+        for (int i = 0; i < arr.length; i += 2) {
+            ret[i] = arr[i].getLower();
+            ret[i + 1] = arr[i].getUpper();
+        }
+        return ret;
+    }
 }

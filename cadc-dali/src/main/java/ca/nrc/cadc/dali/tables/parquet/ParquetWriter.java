@@ -259,6 +259,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                 String columnName = field.name();
                 Schema unionSchema = field.schema().getTypes().get(1);
                 Object data = rowData.get(i);
+                
                 String xtype = unionSchema.getProp("xtype");
                 
                 if (unionSchema.getType().equals(Schema.Type.ARRAY)) {
@@ -293,6 +294,10 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
     }
 
     private void handleXTypeArrayData(GenericRecord record, String columnName, String xtype, Object data) {
+        if (data == null) {
+            record.put(columnName, null);
+            return;
+        }
         if (xtype.equals("interval")) {
             if (data instanceof DoubleInterval) {
                 DoubleInterval di = (DoubleInterval) data;
@@ -300,6 +305,12 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             } else if (data instanceof LongInterval) {
                 LongInterval li = (LongInterval) data;
                 record.put(columnName, li.toArray());
+            } else if (data instanceof DoubleInterval[]) {
+                DoubleInterval[] da = (DoubleInterval[]) data;
+                record.put(columnName, DoubleInterval.toArray(da));
+            } else if (data instanceof LongInterval[]) {
+                LongInterval[] da = (LongInterval[]) data;
+                record.put(columnName, LongInterval.toArray(da));
             } else {
                 throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
             }
