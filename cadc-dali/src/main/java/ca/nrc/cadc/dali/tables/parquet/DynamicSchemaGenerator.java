@@ -61,7 +61,7 @@ public class DynamicSchemaGenerator {
             case "char":
                 fieldType = "timestamp".equals(xtype)
                         ? LogicalTypes.timestampMillis().addToSchema(Schema.create(Schema.Type.LONG)) :
-                        Schema.create(Schema.Type.STRING);
+                        createSchemaWithXType(Schema.Type.STRING, null, xtype);
                 break;
             case "boolean":
                 fieldType = Schema.create(Schema.Type.BOOLEAN);
