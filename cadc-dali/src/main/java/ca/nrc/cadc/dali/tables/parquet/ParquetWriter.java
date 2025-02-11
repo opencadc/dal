@@ -273,7 +273,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                 } else {
                     // handle primitives
                     // xtype and !array: object to string
-                    if (xtype.equals("shape")) {
+                    if ("shape".equals(xtype)) {
                         Shape s = (Shape) data;
                         data = sfmt.format(s);
                     }
