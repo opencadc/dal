@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2025.                            (c) 2025.
+*  (c) 2024.                            (c) 2024.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,42 +62,37 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
 package ca.nrc.cadc.dali;
+
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class DoubleInterval extends Interval<Double> {
+public class MultiShape {
+    private static final Logger log = Logger.getLogger(MultiShape.class);
 
-    public DoubleInterval(double lower, double upper) {
-        super(lower, upper);
-        if (upper < lower) {
-            throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-        }
-    }
+    private final List<Shape> shapes = new ArrayList<>();
     
-    public static double[] toArray(DoubleInterval[] arr) {
-        double[] ret = new double[2 * arr.length];
-        for (int i = 0; i < arr.length; i += 2) {
-            ret[i] = arr[i].getLower();
-            ret[i + 1] = arr[i].getUpper();
-        }
-        return ret;
+    public MultiShape() {
     }
 
-    public static DoubleInterval intersection(DoubleInterval i1, DoubleInterval i2) {
-        if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
-            return null; // no overlap
-        }
+    public List<Shape> getShapes() {
+        return shapes;
+    }
 
-        double lb = Math.max(i1.getLower(), i2.getLower());
-        double ub = Math.min(i1.getUpper(), i2.getUpper());
-        return new DoubleInterval(lb, ub);
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(MultiShape.class.getSimpleName()).append("[");
+        sb.append(shapes.size());
+        sb.append("]");
+        return sb.toString();
     }
 }

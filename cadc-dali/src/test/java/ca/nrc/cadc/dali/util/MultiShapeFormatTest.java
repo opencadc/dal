@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2025.                            (c) 2025.
+*  (c) 2024.                            (c) 2024.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,42 +62,80 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
-package ca.nrc.cadc.dali;
+package ca.nrc.cadc.dali.util;
+
+import ca.nrc.cadc.dali.MultiShape;
+import ca.nrc.cadc.dali.Shape;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class DoubleInterval extends Interval<Double> {
+public class MultiShapeFormatTest {
+    private static final Logger log = Logger.getLogger(MultiShapeFormatTest.class);
 
-    public DoubleInterval(double lower, double upper) {
-        super(lower, upper);
-        if (upper < lower) {
-            throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-        }
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
+    }
+
+    public MultiShapeFormatTest() { 
     }
     
-    public static double[] toArray(DoubleInterval[] arr) {
-        double[] ret = new double[2 * arr.length];
-        for (int i = 0; i < arr.length; i += 2) {
-            ret[i] = arr[i].getLower();
-            ret[i + 1] = arr[i].getUpper();
-        }
-        return ret;
+    @Test
+    public void testNull() {
+        MultiShapeFormat fmt = new MultiShapeFormat();
+        String zeroLength = fmt.format(null);
+        Assert.assertTrue(zeroLength.isEmpty());
     }
-
-    public static DoubleInterval intersection(DoubleInterval i1, DoubleInterval i2) {
-        if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
-            return null; // no overlap
+    
+    @Test
+    public void testSimpleCircle() {
+        String orig = "circle 1.0 2.0 0.5";
+        MultiShapeFormat fmt = new MultiShapeFormat();
+        MultiShape ms = fmt.parse(orig);
+        log.info("found: " + ms);
+        
+        String actual = fmt.format(ms);
+        log.info("  orig: " + orig);
+        log.info("actual: " + actual);
+        Assert.assertEquals(orig, actual);
+    }
+    
+    @Test
+    public void testSimplePolygon() {
+        String orig = "polygon 1.0 2.0 3.0 4.0 5.0 6.0";
+        MultiShapeFormat fmt = new MultiShapeFormat();
+        MultiShape ms = fmt.parse(orig);
+        log.info("found: " + ms);
+        
+        String actual = fmt.format(ms);
+        log.info("  orig: " + orig);
+        log.info("actual: " + actual);
+        Assert.assertEquals(orig, actual);
+    }
+    
+    @Test
+    public void testUnion() {
+        final String orig = "polygon 1.0 2.0 3.0 4.0 5.0 6.0 circle 1.0 2.0 0.5 polygon 1.0 2.0 3.0 4.0 5.0 6.0";
+        
+        MultiShapeFormat fmt = new MultiShapeFormat();
+        MultiShape ms = fmt.parse(orig);
+        log.info("found: " + ms);
+        for (Shape s : ms.getShapes()) {
+            log.info("  found: " + s);
         }
-
-        double lb = Math.max(i1.getLower(), i2.getLower());
-        double ub = Math.min(i1.getUpper(), i2.getUpper());
-        return new DoubleInterval(lb, ub);
+        
+        String actual = fmt.format(ms);
+        log.info("  orig: " + orig);
+        log.info("actual: " + actual);
+        Assert.assertEquals(orig, actual);
     }
 }

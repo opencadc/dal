@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2025.                            (c) 2025.
+*  (c) 2024.                            (c) 2024.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,42 +62,103 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
 package ca.nrc.cadc.dali;
+
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
  */
-public class DoubleInterval extends Interval<Double> {
+public class ShapeTest {
+    private static final Logger log = Logger.getLogger(ShapeTest.class);
 
-    public DoubleInterval(double lower, double upper) {
-        super(lower, upper);
-        if (upper < lower) {
-            throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
+    }
+
+    public ShapeTest() { 
+    }
+
+    @Test
+    public void testCircle() throws Exception {
+        Circle c = new Circle(new Point(10.0, 20.0), 1.0);
+        Assert.assertEquals(10.0, c.getCenter().getLongitude(), 1.0e-6);
+        Assert.assertEquals(20.0, c.getCenter().getLatitude(), 1.0e-6);
+        Assert.assertEquals(1.0, c.getRadius(), 1.0e-6);
+        
+        Assert.assertEquals(Math.PI, c.getArea(), 1.0e-6);
+        
+        try {
+            Circle rad = new Circle(new Point(10.0, 20.0), -1.0);
+            Assert.fail("expected IllegalArgumentException, got: " + rad);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
+        }
+    }
+
+    @Test
+    public void testRange() throws Exception {
+        Range r = new Range(new DoubleInterval(10.0, 11.0), new DoubleInterval(-0.5, 0.5));
+        Assert.assertEquals(10.5, r.getCenter().getLongitude(), 1.0e-6);
+        Assert.assertEquals(0.0, r.getCenter().getLatitude(), 1.0e-6);
+
+        // area at equator
+        Assert.assertEquals(1.0, r.getArea(), 1.0e-2);
+        
+        // area at high lat
+        r = new Range(new DoubleInterval(10.0, 11.0), new DoubleInterval(60.0, 61.0));
+        Assert.assertEquals(0.5, r.getArea(), 1.0e-2);
+        
+        r = new Range(new DoubleInterval(10.0, 11.0), new DoubleInterval(-61.0, -60.0));
+        Assert.assertEquals(0.5, r.getArea(), 1.0e-2);
+        
+        try {
+            Range ir = new Range(new DoubleInterval(-1.0, 1.0), new DoubleInterval(12.0, 13.0));
+            Assert.fail("expected IllegalArgumentException, got: " + ir);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
+        }
+        
+        try {
+            Range ir = new Range(new DoubleInterval(1.0, 2.0), new DoubleInterval(91.0, 93.0));
+            Assert.fail("expected IllegalArgumentException, got: " + ir);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
+        }
+        
+        try {
+            Range ir = new Range(new DoubleInterval(1.0, 2.0), new DoubleInterval(-91.0, -90.0));
+            Assert.fail("expected IllegalArgumentException, got: " + ir);
+        } catch (IllegalArgumentException expected) {
+            log.info("caught expected: " + expected);
         }
     }
     
-    public static double[] toArray(DoubleInterval[] arr) {
-        double[] ret = new double[2 * arr.length];
-        for (int i = 0; i < arr.length; i += 2) {
-            ret[i] = arr[i].getLower();
-            ret[i + 1] = arr[i].getUpper();
-        }
-        return ret;
-    }
+    @Test
+    public void testCircleToPolygonApproximatiom() {
+        try {
+            Circle c = new Circle(new Point(12.0, 34.0), 1.0);
+            double ca = c.getArea();
 
-    public static DoubleInterval intersection(DoubleInterval i1, DoubleInterval i2) {
-        if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
-            return null; // no overlap
+            for (int i = 4; i < 21; i++) {
+                Polygon poly = Circle.generatePolygonApproximation(c, i);
+                double pa = poly.getArea();
+                double da = pa / ca;
+                log.info("n=" + i + " poly: " + pa + " (" + da + ")");
+            }
+            log.info("circle: " + ca);
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
         }
-
-        double lb = Math.max(i1.getLower(), i2.getLower());
-        double ub = Math.min(i1.getUpper(), i2.getUpper());
-        return new DoubleInterval(lb, ub);
     }
+    // PolygonTest in separate class
 }

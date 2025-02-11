@@ -62,42 +62,81 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
-package ca.nrc.cadc.dali;
+package ca.nrc.cadc.dali.util;
+
+import ca.nrc.cadc.dali.MultiShape;
+import ca.nrc.cadc.dali.Shape;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.regex.Pattern;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
  */
-public class DoubleInterval extends Interval<Double> {
+public class MultiShapeFormat implements Format<MultiShape> {
+    private static final Logger log = Logger.getLogger(MultiShapeFormat.class);
 
-    public DoubleInterval(double lower, double upper) {
-        super(lower, upper);
-        if (upper < lower) {
-            throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-        }
-    }
+    private final ShapeFormat fmt = new ShapeFormat();
     
-    public static double[] toArray(DoubleInterval[] arr) {
-        double[] ret = new double[2 * arr.length];
-        for (int i = 0; i < arr.length; i += 2) {
-            ret[i] = arr[i].getLower();
-            ret[i + 1] = arr[i].getUpper();
+    public MultiShapeFormat() { 
+    }
+
+    @Override
+    public MultiShape parse(String s) {
+        if (s == null) {
+            return null;
+        }
+        
+        List<String> sep = separate(s);
+        MultiShape ret = new MultiShape();
+        for (String str : sep) {
+            Shape shape = fmt.parse(str);
+            ret.getShapes().add(shape);
         }
         return ret;
     }
 
-    public static DoubleInterval intersection(DoubleInterval i1, DoubleInterval i2) {
-        if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
-            return null; // no overlap
+    @Override
+    public String format(MultiShape t) {
+        if (t == null) {
+            return "";
         }
-
-        double lb = Math.max(i1.getLower(), i2.getLower());
-        double ub = Math.min(i1.getUpper(), i2.getUpper());
-        return new DoubleInterval(lb, ub);
+        
+        StringBuilder sb = new StringBuilder();
+        Iterator<Shape> i = t.getShapes().iterator();
+        while (i.hasNext()) {
+            Shape s = i.next();
+            sb.append(fmt.format(s));
+            if (i.hasNext()) {
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
+    }
+    
+    // this relies on the characteristics of the current shape, keywords 
+    List<String> separate(String s) {
+        List<String> ret = new ArrayList<>();
+        Pattern pattern = Pattern.compile("(^c)|( c)|(^p)|( p)");
+        String[] tokens = pattern.split(s);
+        for (String t : tokens) {
+            t = t.trim();
+            if (t.startsWith("ircle")) {
+                t = "c" + t;
+            } else if (t.startsWith("olygon")) {
+                t = "p" + t;
+            }
+            if (!t.isEmpty()) {
+                ret.add(t);
+            }
+        }
+        return ret;
     }
 }
