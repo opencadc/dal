@@ -81,4 +81,13 @@ public class DoubleInterval extends Interval<Double> {
             throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
         }
     }
+    
+    public static double[] toArray(DoubleInterval[] arr) {
+        double[] ret = new double[2 * arr.length];
+        for (int i = 0; i < arr.length; i += 2) {
+            ret[i] = arr[i].getLower();
+            ret[i + 1] = arr[i].getUpper();
+        }
+        return ret;
+    }
 }

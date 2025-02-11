@@ -82,6 +82,8 @@ public class CircleFormat implements Format<Circle> {
 
     private static final Logger log = Logger.getLogger(CircleFormat.class);
 
+    private DoubleArrayFormat fmt = new DoubleArrayFormat();
+
     public CircleFormat() {
     }
 
@@ -90,8 +92,7 @@ public class CircleFormat implements Format<Circle> {
             return null;
         }
 
-        DoubleArrayFormat daf = new DoubleArrayFormat();
-        double[] dd = daf.parse(s);
+        double[] dd = fmt.parse(s);
         if (dd.length != 3) {
             throw new IllegalArgumentException();
         }

@@ -3,8 +3,10 @@ package ca.nrc.cadc.dali.tables.parquet;
 import ca.nrc.cadc.dali.Circle;
 import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.LongInterval;
+import ca.nrc.cadc.dali.MultiPolygon;
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
+import ca.nrc.cadc.dali.Shape;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
@@ -13,6 +15,8 @@ import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 import ca.nrc.cadc.dali.util.FormatFactory;
 
+import ca.nrc.cadc.dali.util.MultiPolygonFormat;
+import ca.nrc.cadc.dali.util.ShapeFormat;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -50,6 +54,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
     public static final String PARQUET_CONTENT_TYPE = "application/vnd.apache.parquet";
 
     private FormatFactory formatFactory;
+    private final ShapeFormat sfmt = new ShapeFormat();
 
     public ParquetWriter() {
 
@@ -241,7 +246,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         return customMetaData;
     }
 
-    private static int saveRecords(Long maxRec, TableData tableData, Schema schema, org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer)
+    private int saveRecords(Long maxRec, TableData tableData, Schema schema, org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer)
             throws IOException {
         List<Schema.Field> fields = schema.getFields();
         Iterator<List<Object>> iterator = tableData.iterator();
@@ -256,10 +261,10 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                 String columnName = field.name();
                 Schema unionSchema = field.schema().getTypes().get(1);
                 Object data = rowData.get(i);
-
+                
+                String xtype = unionSchema.getProp("xtype");
+                
                 if (unionSchema.getType().equals(Schema.Type.ARRAY)) {
-                    String xtype = unionSchema.getProp("xtype");
-
                     handleArrays(field, xtype, record, data);
                 } else if (unionSchema.getType().equals(Schema.Type.LONG)
                         && (unionSchema.getLogicalType() != null
@@ -267,6 +272,11 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                     handleDateAndTimestamp(data, record, columnName);
                 } else {
                     // handle primitives
+                    // xtype and !array: object to string
+                    if ("shape".equals(xtype)) {
+                        Shape s = (Shape) data;
+                        data = sfmt.format(s);
+                    }
                     record.put(columnName, data);
                 }
             }
@@ -277,7 +287,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         return recordCount;
     }
 
-    private static void handleArrays(Schema.Field field, String xtype, GenericRecord record, Object data) {
+    private void handleArrays(Schema.Field field, String xtype, GenericRecord record, Object data) {
         if (xtype == null) {
             record.put(field.name(), data);
         } else {
@@ -285,7 +295,11 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         }
     }
 
-    private static void handleXTypeArrayData(GenericRecord record, String columnName, String xtype, Object data) {
+    private void handleXTypeArrayData(GenericRecord record, String columnName, String xtype, Object data) {
+        if (data == null) {
+            record.put(columnName, null);
+            return;
+        }
         if (xtype.equals("interval")) {
             if (data instanceof DoubleInterval) {
                 DoubleInterval di = (DoubleInterval) data;
@@ -293,6 +307,12 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             } else if (data instanceof LongInterval) {
                 LongInterval li = (LongInterval) data;
                 record.put(columnName, li.toArray());
+            } else if (data instanceof DoubleInterval[]) {
+                DoubleInterval[] da = (DoubleInterval[]) data;
+                record.put(columnName, DoubleInterval.toArray(da));
+            } else if (data instanceof LongInterval[]) {
+                LongInterval[] da = (LongInterval[]) data;
+                record.put(columnName, LongInterval.toArray(da));
             } else {
                 throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
             }
@@ -305,6 +325,9 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         } else if (xtype.equals("polygon") && data instanceof Polygon) {
             Polygon p = (Polygon) data;
             record.put(columnName, p.toArray());
+        } else if (xtype.equals("multipolygon") && data instanceof MultiPolygon) {
+            MultiPolygon p = (MultiPolygon) data;
+            record.put(columnName, MultiPolygonFormat.toArray(p));
         } else {
             throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
         }

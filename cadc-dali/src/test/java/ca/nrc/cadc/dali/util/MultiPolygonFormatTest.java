@@ -142,6 +142,12 @@ public class MultiPolygonFormatTest {
 
             Assert.assertEquals("p1", expected.getPolygons().get(0), actual.getPolygons().get(0));
             Assert.assertEquals("p2", expected.getPolygons().get(1), actual.getPolygons().get(1));
+            
+            double[] arr = MultiPolygonFormat.toArray(expected);
+            MultiPolygon aa = format.build(arr);
+            Assert.assertEquals("p1", expected.getPolygons().get(0), aa.getPolygons().get(0));
+            Assert.assertEquals("p2", expected.getPolygons().get(1), aa.getPolygons().get(1));
+            
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
