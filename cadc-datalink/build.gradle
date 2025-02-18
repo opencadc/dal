@@ -21,7 +21,7 @@ def git_url = 'https://github.com/opencadc/dal'
 
 dependencies {
     compile 'org.opencadc:cadc-util:[1.6,)'
-    compile('org.opencadc:cadc-dali:[1.2.19,)')
+    compile('org.opencadc:cadc-dali:[1.2.21,)')
 
     testCompile 'junit:junit:[4.0,5.0)'
 }
