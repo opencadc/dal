@@ -84,7 +84,7 @@ public class VOTableDocument {
     }
 
     public List<VOTableResource> getResources() {
-        return this.resources;
+        return resources;
     }
 
     public VOTableResource getResourceByType(String type) {
@@ -106,7 +106,7 @@ public class VOTableDocument {
     }
 
     public List<VOTableInfo> getInfos() {
-        return this.infos;
+        return infos;
     }
 
     public VOTableGroup getGroupByID(String id) {

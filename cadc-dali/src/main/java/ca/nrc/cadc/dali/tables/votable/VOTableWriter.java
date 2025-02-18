@@ -287,6 +287,12 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                 Element table = new Element("TABLE", namespace);
                 resource.addContent(table);
 
+                // Add INFO elements to the TABLE element.
+                for (VOTableInfo tableInfo : vot.getInfos()) {
+                    table.addContent(createInfo(tableInfo, namespace));
+                }
+                log.debug("wrote resource.table.info: " + vot.getInfos().size());
+
                 // Add the metadata elements.
                 for (VOTableParam param : vot.getParams()) {
                     table.addContent(new ParamElement(param, namespace));
@@ -318,12 +324,6 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
                     data.addContent(tabledata);
                 }
-
-                // Add INFO elements to the TABLE element.
-                for (VOTableInfo tableInfo : vot.getInfos()) {
-                    table.addContent(createInfo(tableInfo, namespace));
-                }
-                log.debug("wrote resource.table.info: " + vot.getInfos().size());
             }
         }
 
