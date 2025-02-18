@@ -165,12 +165,12 @@ public class ServiceDescriptorTemplate {
 
         // List of ID's from the INFO elements
         List<String> infoIDs = votable.getInfos().stream()
-                .filter(info -> StringUtil.hasText(info.ID))
-                .map(info -> info.ID)
+                .filter(info -> StringUtil.hasText(info.id))
+                .map(info -> info.id)
                 .collect(Collectors.toList());
         if (infoIDs.isEmpty()) {
-            throw new IllegalArgumentException("template must contain one or more info elements " +
-                    "with an ID attribute in the votable root.");
+            throw new IllegalArgumentException("template must contain one or more info elements "
+                    + "with an ID attribute in the votable root.");
         }
 
         List<VOTableResource> resources = votable.getResources();
