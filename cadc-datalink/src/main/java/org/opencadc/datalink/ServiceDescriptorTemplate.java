@@ -74,7 +74,6 @@ import ca.nrc.cadc.dali.tables.votable.VOTableReader;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.util.StringUtil;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.log4j.Logger;
@@ -163,15 +162,6 @@ public class ServiceDescriptorTemplate {
             throw new IllegalArgumentException("Error reading VOTable template: " + e.getMessage());
         }
 
-        // List of ID's from the INFO elements
-        List<String> infoIDs = votable.getInfos().stream()
-                .filter(info -> StringUtil.hasText(info.id))
-                .map(info -> info.id)
-                .collect(Collectors.toList());
-        if (infoIDs.isEmpty()) {
-            throw new IllegalArgumentException("invalid template: expected one or more INFO elements with ID attribute in VOTABLE root");
-        }
-
         List<VOTableResource> resources = votable.getResources();
         if (resources.size() != 1) {
             throw new IllegalArgumentException("invalid template: expected a single RESOURCE element");
@@ -181,22 +171,11 @@ public class ServiceDescriptorTemplate {
             throw new IllegalArgumentException("invalid template: expected RESOURCE element with attribute type = 'meta'");
         }
 
-        // List of ref's from the inputParams group
-        List<String> refs = resource.getGroups().stream()
-                .filter(group -> "inputParams".equals(group.getName()))
-                .flatMap(group -> group.getParams().stream())
-                .filter(param -> StringUtil.hasText(param.ref))
-                .map(param -> param.ref)
+        // List of ID's from the INFO elements
+        List<String> infoIDs = votable.getInfos().stream()
+                .filter(info -> StringUtil.hasText(info.id))
+                .map(info -> info.id)
                 .collect(Collectors.toList());
-        if (refs.isEmpty()) {
-            throw new IllegalArgumentException("invalid template: expected inputParams GROUP with one or more PARAM elements with a ref attribute");
-        }
-
-        // Validate that all ID's have a corresponding ref
-        if (!new HashSet<>(refs).containsAll(infoIDs)) {
-            throw new IllegalArgumentException("invalid template: expected matching GROUP PARAM ref attribute for each INFO ID attribute");
-        }
-
         return infoIDs;
     }
 

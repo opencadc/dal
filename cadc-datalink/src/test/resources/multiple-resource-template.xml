@@ -8,4 +8,11 @@
         <GROUP name="inputParams">
         </GROUP>
     </RESOURCE>
+    <RESOURCE type="meta" utype="adhoc:service">
+        <PARAM name="resourceIdentifier" datatype="char" arraysize="*" value="ivo://cadc.nrc.ca/caom2ops" />
+        <PARAM name="standardID" datatype="char" arraysize="*" value="ivo://ivoa.net/std/DataLink#links-1.1" />
+        <PARAM name="accessURL" datatype="char" arraysize="61" value="https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/caom2ops/datalink" />
+        <GROUP name="inputParams">
+        </GROUP>
+    </RESOURCE>
 </VOTABLE>

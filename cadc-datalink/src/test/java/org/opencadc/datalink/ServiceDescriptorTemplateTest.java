@@ -139,19 +139,6 @@ public class ServiceDescriptorTemplateTest {
     }
 
     @Test
-    public void testValidTemplate() throws Exception {
-
-        File testFile = FileUtil.getFileFromResource("valid-template.xml", ServiceDescriptorTemplateTest.class);
-        String template = Files.readString(testFile.toPath());
-
-        try {
-            new ServiceDescriptorTemplate("test", template);
-        } catch (IllegalArgumentException e) {
-            Assert.fail("Expected no exception for valid template");
-        }
-    }
-
-    @Test
     public void testInvalidIdRefTemplate() throws Exception {
 
         File testFile = FileUtil.getFileFromResource("mismatched-id-ref-template.xml", ServiceDescriptorTemplateTest.class);
@@ -166,41 +153,26 @@ public class ServiceDescriptorTemplateTest {
     }
 
     @Test
-    public void testInvalidParamsTemplate() throws Exception {
-
-        File testFile = FileUtil.getFileFromResource("missing-params-template.xml", ServiceDescriptorTemplateTest.class);
-        String template = Files.readString(testFile.toPath());
-
-        try {
-            new ServiceDescriptorTemplate("test", template);
-            Assert.fail("Expected IllegalArgumentException for template an inputParams GROUP missing a PARAM element");
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("inputParams GROUP"));
-        }
-
-        testFile = FileUtil.getFileFromResource("missing-param-ref-template.xml", ServiceDescriptorTemplateTest.class);
-        template = Files.readString(testFile.toPath());
-
-        try {
-            new ServiceDescriptorTemplate("test", template);
-            Assert.fail("Expected IllegalArgumentException for template an inputParams GROUP missing a PARAM element with ref attribute");
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("PARAM elements with a ref"));
-        }
-    }
-
-
-    @Test
-    public void testMissingMetaResourceTemplate() throws Exception {
+    public void testInvalidTemplate() throws Exception {
 
         File testFile = FileUtil.getFileFromResource("missing-meta-resource-template.xml", ServiceDescriptorTemplateTest.class);
         String template = Files.readString(testFile.toPath());
 
         try {
             new ServiceDescriptorTemplate("test", template);
-            Assert.fail("Expected IllegalArgumentException for template missing a meta resource");
+            Assert.fail("Expected IllegalArgumentException for template with a RESOURCE missing type='meta'");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("attribute type = 'meta'"));
+        }
+
+        testFile = FileUtil.getFileFromResource("multiple-resource-template.xml", ServiceDescriptorTemplateTest.class);
+        template = Files.readString(testFile.toPath());
+
+        try {
+            new ServiceDescriptorTemplate("test", template);
+            Assert.fail("Expected IllegalArgumentException for template with multiple RESOURCE elements");
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("expected a single RESOURCE element"));
         }
     }
 
