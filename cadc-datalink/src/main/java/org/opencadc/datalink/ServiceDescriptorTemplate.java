@@ -96,10 +96,10 @@ public class ServiceDescriptorTemplate {
 
     public ServiceDescriptorTemplate(final String name, final String template) {
         if (!StringUtil.hasLength(name)) {
-            throw new IllegalArgumentException("name cannot be null or empty.");
+            throw new IllegalArgumentException("name cannot be null or empty");
         }
         if (!StringUtil.hasLength(template)) {
-            throw new IllegalArgumentException("template cannot be null or empty.");
+            throw new IllegalArgumentException("template cannot be null or empty");
         }
         if (!isValidString(name)) {
             throw new IllegalArgumentException("Invalid descriptor name: " + name);
@@ -169,17 +169,16 @@ public class ServiceDescriptorTemplate {
                 .map(info -> info.id)
                 .collect(Collectors.toList());
         if (infoIDs.isEmpty()) {
-            throw new IllegalArgumentException("template must contain one or more info elements "
-                    + "with an ID attribute in the votable root.");
+            throw new IllegalArgumentException("invalid template: expected one or more INFO elements with ID attribute in VOTABLE root");
         }
 
         List<VOTableResource> resources = votable.getResources();
-        if (resources.isEmpty()) {
-            throw new IllegalArgumentException("template must contain at least one resource element.");
+        if (resources.size() != 1) {
+            throw new IllegalArgumentException("invalid template: expected a single RESOURCE element");
         }
         VOTableResource resource = resources.get(0);
         if (!"meta".equals(resource.getType())) {
-            throw new IllegalArgumentException("a template resource element must have attribute type = 'meta'.");
+            throw new IllegalArgumentException("invalid template: expected RESOURCE element with attribute type = 'meta'");
         }
 
         // List of ref's from the inputParams group
@@ -190,12 +189,12 @@ public class ServiceDescriptorTemplate {
                 .map(param -> param.ref)
                 .collect(Collectors.toList());
         if (refs.isEmpty()) {
-            throw new IllegalArgumentException("group inputParams must contain one or more param elements with a ref attribute.");
+            throw new IllegalArgumentException("invalid template: expected inputParams GROUP with one or more PARAM elements with a ref attribute");
         }
 
         // Validate that all ID's have a corresponding ref
         if (!new HashSet<>(refs).containsAll(infoIDs)) {
-            throw new IllegalArgumentException("template must contain a ref for each ID.");
+            throw new IllegalArgumentException("invalid template: expected matching GROUP PARAM ref attribute for each INFO ID attribute");
         }
 
         return infoIDs;

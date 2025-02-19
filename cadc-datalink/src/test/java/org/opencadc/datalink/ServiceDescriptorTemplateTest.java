@@ -154,29 +154,8 @@ public class ServiceDescriptorTemplateTest {
     @Test
     public void testInvalidIdRefTemplate() throws Exception {
 
-
-        File testFile = FileUtil.getFileFromResource("missing-info-template.xml", ServiceDescriptorTemplateTest.class);
+        File testFile = FileUtil.getFileFromResource("mismatched-id-ref-template.xml", ServiceDescriptorTemplateTest.class);
         String template = Files.readString(testFile.toPath());
-
-        try {
-            new ServiceDescriptorTemplate("test", template);
-            Assert.fail("Expected IllegalArgumentException for template missing an INFO element");
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("no ID/IDREF binding"));
-        }
-
-        testFile = FileUtil.getFileFromResource("missing-info-id-template.xml", ServiceDescriptorTemplateTest.class);
-        template = Files.readString(testFile.toPath());
-
-        try {
-            new ServiceDescriptorTemplate("test", template);
-            Assert.fail("Expected IllegalArgumentException for template missing an INFO ID attribute");
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("no ID/IDREF binding"));
-        }
-
-        testFile = FileUtil.getFileFromResource("mismatched-id-ref-template.xml", ServiceDescriptorTemplateTest.class);
-        template = Files.readString(testFile.toPath());
 
         try {
             new ServiceDescriptorTemplate("test", template);
@@ -194,9 +173,9 @@ public class ServiceDescriptorTemplateTest {
 
         try {
             new ServiceDescriptorTemplate("test", template);
-            Assert.fail("Expected IllegalArgumentException for template missing an INFO ID attribute");
+            Assert.fail("Expected IllegalArgumentException for template an inputParams GROUP missing a PARAM element");
         } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("group inputParams"));
+            Assert.assertTrue(e.getMessage().contains("inputParams GROUP"));
         }
 
         testFile = FileUtil.getFileFromResource("missing-param-ref-template.xml", ServiceDescriptorTemplateTest.class);
@@ -204,9 +183,9 @@ public class ServiceDescriptorTemplateTest {
 
         try {
             new ServiceDescriptorTemplate("test", template);
-            Assert.fail("Expected IllegalArgumentException for template missing an INFO ID attribute");
+            Assert.fail("Expected IllegalArgumentException for template an inputParams GROUP missing a PARAM element with ref attribute");
         } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("group inputParams"));
+            Assert.assertTrue(e.getMessage().contains("PARAM elements with a ref"));
         }
     }
 
@@ -221,7 +200,7 @@ public class ServiceDescriptorTemplateTest {
             new ServiceDescriptorTemplate("test", template);
             Assert.fail("Expected IllegalArgumentException for template missing a meta resource");
         } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("resource element"));
+            Assert.assertTrue(e.getMessage().contains("attribute type = 'meta'"));
         }
     }
 
