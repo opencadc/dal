@@ -133,9 +133,9 @@ public class Polygon implements Shape {
     }
 
     public double[] toArray() {
-        double[] arr = new double[vertices.size() * 2];
-        for (int i = 0; i < vertices.size(); i++) {
-            Point p = vertices.get(i);
+        double[] arr = new double[points.size() * 2];
+        for (int i = 0; i < points.size(); i++) {
+            Point p = points.get(i);
             arr[i * 2] = p.getLongitude();
             arr[i * 2 + 1] = p.getLatitude();
         }
