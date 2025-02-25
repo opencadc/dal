@@ -243,6 +243,10 @@ public class VOTableReader {
         Namespace namespace = root.getNamespace();
         log.debug("Namespace: " + namespace);
 
+        // document INFO elements
+        List<Element> documentInfos = root.getChildren("INFO", namespace);
+        votable.getInfos().addAll(getInfos(documentInfos, namespace));
+
         // RESOURCE elements
         List<Element> resources = root.getChildren("RESOURCE", namespace);
         for (Element resource : resources) {
@@ -274,10 +278,10 @@ public class VOTableReader {
                 votResource.description = description.getText();
             }
 
-            // INFO elements
-            List<Element> infos = resource.getChildren("INFO", namespace);
-            log.debug("found resource.info: " + infos.size());
-            votResource.getInfos().addAll(getInfos(infos, namespace));
+            // resource INFO elements
+            List<Element> resourceInfos = resource.getChildren("INFO", namespace);
+            log.debug("found resource.info: " + resourceInfos.size());
+            votResource.getInfos().addAll(getInfos(resourceInfos, namespace));
 
             // PARAM elements
             List<Element> params = resource.getChildren("PARAM", namespace);
@@ -295,9 +299,10 @@ public class VOTableReader {
                 VOTableTable vot = new VOTableTable();
                 votResource.setTable(vot);
 
-                List<Element> tinfos = table.getChildren("INFO", namespace);
-                log.debug("found resource.table.info: " + tinfos.size());
-                vot.getInfos().addAll(getInfos(tinfos, namespace));
+                // table INFO elements
+                List<Element> tableInfos = table.getChildren("INFO", namespace);
+                log.debug("found resource.table.info: " + tableInfos.size());
+                vot.getInfos().addAll(getInfos(tableInfos, namespace));
 
                 // PARAM elements
                 List<Element> tparams = table.getChildren("PARAM", namespace);
@@ -343,6 +348,7 @@ public class VOTableReader {
                 }
             }
         }
+
         return votable;
     }
 
@@ -375,13 +381,16 @@ public class VOTableReader {
         for (Element element : elements) {
             String name = element.getAttributeValue("name");
             String value = element.getAttributeValue("value");
-            if (name != null && !name.trim().isEmpty()
-                    && value != null && !value.trim().isEmpty()) {
+            if (StringUtil.hasText(name) && StringUtil.hasText(value)) {
                 VOTableInfo i = new VOTableInfo(name, value);
                 String s = element.getText();
                 log.debug("INFO content: " + s);
                 if (StringUtil.hasText(s)) {
                     i.content = s;
+                }
+                String id = element.getAttributeValue("ID");
+                if (StringUtil.hasText(id)) {
+                    i.id = id;
                 }
                 infos.add(i);
             }

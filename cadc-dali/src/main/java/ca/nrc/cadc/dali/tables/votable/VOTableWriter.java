@@ -287,16 +287,9 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                 Element table = new Element("TABLE", namespace);
                 resource.addContent(table);
 
-                // Create the INFO element and add to the RESOURCE element.
-                for (VOTableInfo in : vot.getInfos()) {
-                    Element info = new Element("INFO", namespace);
-                    info.setAttribute("name", in.getName());
-                    info.setAttribute("value", in.getValue());
-                    log.debug("INFO content: " + in.content);
-                    if (in.content != null) {
-                        info.setText(in.content);
-                    }
-                    table.addContent(info);
+                // Add INFO elements to the TABLE element.
+                for (VOTableInfo tableInfo : vot.getInfos()) {
+                    table.addContent(createInfo(tableInfo, namespace));
                 }
                 log.debug("wrote resource.table.info: " + vot.getInfos().size());
 
@@ -330,15 +323,26 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                             = new IterableContent<Element, List<Object>>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
 
                     data.addContent(tabledata);
-                    
                 }
             }
         }
 
+        // Add INFO elements to the VOTABLE element.
+        for (VOTableInfo votableInfo : votable.getInfos()) {
+            root.addContent(createInfo(votableInfo, namespace));
+        }
+
         // Write out the VOTABLE.
-        XMLOutputter outputter = new XMLOutputter();
-        outputter.setFormat(org.jdom2.output.Format.getPrettyFormat());
-        outputter.output(document, writer);
+        try {
+            XMLOutputter outputter = new XMLOutputter();
+            outputter.setFormat(org.jdom2.output.Format.getPrettyFormat());
+            outputter.output(document, writer);
+        } catch (RuntimeException ex) {
+            // IterableContent setup should catch and handle all exceptions, but if they don't
+            // might as well be useful here
+            log.error("OUTPUT FAIL", ex);
+            throw ex;
+        }
     }
 
     private Element createResource(VOTableResource votResource, Namespace namespace) {
@@ -367,15 +371,9 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
             resource.addContent(description);
         }
 
-        // Create the INFO element and add to the RESOURCE element.
+        // Add INFO elements to the RESOURCE element.
         for (VOTableInfo in : votResource.getInfos()) {
-            Element info = new Element("INFO", namespace);
-            info.setAttribute("name", in.getName());
-            info.setAttribute("value", in.getValue());
-            if (in.content != null) {
-                info.setText(in.content);
-            }
-            resource.addContent(info);
+            resource.addContent(createInfo(in, namespace));
         }
         log.debug("wrote resource.info: " + votResource.getInfos().size());
 
@@ -409,6 +407,19 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         document.addContent(votable);
 
         return document;
+    }
+
+    private Element createInfo(VOTableInfo voTableInfo, Namespace namespace) {
+        Element info = new Element("INFO", namespace);
+        info.setAttribute("name", voTableInfo.getName());
+        info.setAttribute("value", voTableInfo.getValue());
+        if (voTableInfo.id != null) {
+            info.setAttribute("ID", voTableInfo.id);
+        }
+        if (voTableInfo.content != null) {
+            info.setText(voTableInfo.content);
+        }
+        return info;
     }
 
     // Build a String containing the nested Exception messages.
@@ -468,6 +479,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         private final Namespace namespace;
         private final List<Format<Object>> formats;
         private final Element trailer;
+        private boolean exceptionHandled = false;
 
         TabledataContentConverter(List<VOTableField> fields, Namespace namespace, Element trailer) {
             this.fields = fields;
@@ -507,11 +519,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                     td.setText(fmt.format(o));
                     tr.addContent(td);
                 } catch (Exception ex) {
-                    log.debug("failure while iterating", ex);
-                    // DALI error
-                    trailer.setAttribute("name", "QUERY_STATUS");
-                    trailer.setAttribute("value", "ERROR");
-                    trailer.setText(ex.toString());
+                    handleException(ex);
                     throw ex;
                 }
             }
@@ -520,6 +528,17 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
         }
 
+        @Override
+        public void handleException(Exception ex) {
+            if (!exceptionHandled) {
+                log.debug("failure while iterating", ex);
+                // DALI error
+                trailer.setAttribute("name", "QUERY_STATUS");
+                trailer.setAttribute("value", "ERROR");
+                trailer.setText(ex.toString());
+            }
+            exceptionHandled = true;
+        }
     }
 
 }

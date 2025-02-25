@@ -77,7 +77,8 @@ import java.util.List;
  */
 public class VOTableDocument {
 
-    private List<VOTableResource> resources = new ArrayList<VOTableResource>();
+    private List<VOTableResource> resources = new ArrayList<>();
+    private List<VOTableInfo> infos = new ArrayList<>();
 
     public VOTableDocument() {
     }
@@ -102,6 +103,10 @@ public class VOTableDocument {
             }
         }
         return null;
+    }
+
+    public List<VOTableInfo> getInfos() {
+        return infos;
     }
 
     public VOTableGroup getGroupByID(String id) {
