@@ -333,9 +333,16 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         }
 
         // Write out the VOTABLE.
-        XMLOutputter outputter = new XMLOutputter();
-        outputter.setFormat(org.jdom2.output.Format.getPrettyFormat());
-        outputter.output(document, writer);
+        try {
+            XMLOutputter outputter = new XMLOutputter();
+            outputter.setFormat(org.jdom2.output.Format.getPrettyFormat());
+            outputter.output(document, writer);
+        } catch (RuntimeException ex) {
+            // IterableContent setup should catch and handle all exceptions, but if they don't
+            // might as well be useful here
+            log.error("OUTPUT FAIL", ex);
+            throw ex;
+        }
     }
 
     private Element createResource(VOTableResource votResource, Namespace namespace) {
@@ -472,6 +479,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         private final Namespace namespace;
         private final List<Format<Object>> formats;
         private final Element trailer;
+        private boolean exceptionHandled = false;
 
         TabledataContentConverter(List<VOTableField> fields, Namespace namespace, Element trailer) {
             this.fields = fields;
@@ -511,11 +519,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                     td.setText(fmt.format(o));
                     tr.addContent(td);
                 } catch (Exception ex) {
-                    log.debug("failure while iterating", ex);
-                    // DALI error
-                    trailer.setAttribute("name", "QUERY_STATUS");
-                    trailer.setAttribute("value", "ERROR");
-                    trailer.setText(ex.toString());
+                    handleException(ex);
                     throw ex;
                 }
             }
@@ -524,6 +528,17 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
         }
 
+        @Override
+        public void handleException(Exception ex) {
+            if (!exceptionHandled) {
+                log.debug("failure while iterating", ex);
+                // DALI error
+                trailer.setAttribute("name", "QUERY_STATUS");
+                trailer.setAttribute("value", "ERROR");
+                trailer.setText(ex.toString());
+            }
+            exceptionHandled = true;
+        }
     }
 
 }
