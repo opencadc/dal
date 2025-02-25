@@ -1,4 +1,4 @@
-pplugins {
+plugins {
     id 'java-library'
     id 'maven-publish'
     id 'checkstyle'
@@ -26,6 +26,7 @@ dependencies {
     implementation 'org.opencadc:cadc-util:[1.6,2.0)'
     implementation 'org.opencadc:cadc-log:[1.0,)'
     implementation 'org.opencadc:cadc-registry:[1.0,)'
+    implementation 'org.opencadc:cadc-rest:[1.4.2,)'
     implementation 'org.opencadc:cadc-uws-server:[1.2.20,2.0)'
 
     testImplementation 'junit:junit:[4.0,5.0)'
