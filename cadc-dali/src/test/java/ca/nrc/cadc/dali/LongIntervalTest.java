@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,77 +63,39 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
- */
+*/
 
 package ca.nrc.cadc.dali;
+
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
- * @param <T>
  */
-public class Interval<T extends Number> {
+public class LongIntervalTest {
+    private static final Logger log = Logger.getLogger(LongIntervalTest.class);
 
-    private T lower;
-    private T upper;
-
-    public Interval(T lower, T upper) {
-        DaliUtil.assertNotNull("lower", lower);
-        DaliUtil.assertNotNull("upper", upper);
-        validateBounds(lower, upper);
-        this.lower = lower;
-        this.upper = upper;
+    public LongIntervalTest() { 
     }
 
-    private void validateBounds(T lower, T upper) {
-        if (lower instanceof Double) {
-            if (upper.doubleValue() < lower.doubleValue()) {
-                throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-            }
-        } else if (lower instanceof Long) {
-            if (upper.longValue() < lower.longValue()) {
-                throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-            }
-        } else {
-            throw new UnsupportedOperationException("validateBounds numeric type not implemented: "
-                    + lower.getClass().getName());
+    @Test
+    public void testToArray() {
+        LongInterval[] orig = new  LongInterval[3];
+        for (int i = 0; i < orig.length; i++) {
+            orig[i] = new LongInterval(i * 2L, i * 3L);
         }
-    }
-
-    public T getLower() {
-        return lower;
-    }
-
-    public T getUpper() {
-        return upper;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
+        
+        long[] arr =  LongInterval.toArray(orig);
+        Assert.assertEquals(6, arr.length);
+        
+        int j = 0;
+        for (int i = 0; i < orig.length; i++) {
+            Assert.assertEquals(orig[i].getLower().longValue(), arr[j]);
+            Assert.assertEquals(orig[i].getUpper().longValue(), arr[j + 1]);
+            j += 2;
         }
-
-        Interval rhs = (Interval) obj;
-        return lower.equals(rhs.lower) && upper.equals(rhs.upper);
-    }
-
-    public Object[] toArray() {
-        if (lower instanceof Double && upper instanceof Double) {
-            return new Double[]{(Double) lower, (Double) upper};
-        } else if (lower instanceof Long && upper instanceof Long) {
-            return new Long[]{(Long) lower, (Long) upper};
-        }
-        throw new UnsupportedOperationException("unsupported interval type: " + lower.getClass().getName());
-    }
-    
-    public static Interval<Double> intersection(Interval<Double> i1, Interval<Double> i2) {
-        if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
-            return null; // no overlap
-        }
-
-        double lb = Math.max(i1.getLower(), i2.getLower());
-        double ub = Math.min(i1.getUpper(), i2.getUpper());
-        return new Interval<>(lb, ub);
     }
 }
