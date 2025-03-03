@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,77 +63,36 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
- */
+*/
 
 package ca.nrc.cadc.dali;
+
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
- * @param <T>
  */
-public class Interval<T extends Number> {
+public class MultiShape {
+    private static final Logger log = Logger.getLogger(MultiShape.class);
 
-    private T lower;
-    private T upper;
-
-    public Interval(T lower, T upper) {
-        DaliUtil.assertNotNull("lower", lower);
-        DaliUtil.assertNotNull("upper", upper);
-        validateBounds(lower, upper);
-        this.lower = lower;
-        this.upper = upper;
+    private final List<Shape> shapes = new ArrayList<>();
+    
+    public MultiShape() {
     }
 
-    private void validateBounds(T lower, T upper) {
-        if (lower instanceof Double) {
-            if (upper.doubleValue() < lower.doubleValue()) {
-                throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-            }
-        } else if (lower instanceof Long) {
-            if (upper.longValue() < lower.longValue()) {
-                throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-            }
-        } else {
-            throw new UnsupportedOperationException("validateBounds numeric type not implemented: "
-                    + lower.getClass().getName());
-        }
-    }
-
-    public T getLower() {
-        return lower;
-    }
-
-    public T getUpper() {
-        return upper;
+    public List<Shape> getShapes() {
+        return shapes;
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-
-        Interval rhs = (Interval) obj;
-        return lower.equals(rhs.lower) && upper.equals(rhs.upper);
-    }
-
-    public Object[] toArray() {
-        if (lower instanceof Double && upper instanceof Double) {
-            return new Double[]{(Double) lower, (Double) upper};
-        } else if (lower instanceof Long && upper instanceof Long) {
-            return new Long[]{(Long) lower, (Long) upper};
-        }
-        throw new UnsupportedOperationException("unsupported interval type: " + lower.getClass().getName());
-    }
-    
-    public static Interval<Double> intersection(Interval<Double> i1, Interval<Double> i2) {
-        if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
-            return null; // no overlap
-        }
-
-        double lb = Math.max(i1.getLower(), i2.getLower());
-        double ub = Math.min(i1.getUpper(), i2.getUpper());
-        return new Interval<>(lb, ub);
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(MultiShape.class.getSimpleName()).append("[");
+        sb.append(shapes.size());
+        sb.append("]");
+        return sb.toString();
     }
 }
