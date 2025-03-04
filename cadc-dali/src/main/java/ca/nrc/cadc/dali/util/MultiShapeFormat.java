@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,77 +63,80 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
- */
+*/
 
-package ca.nrc.cadc.dali;
+package ca.nrc.cadc.dali.util;
+
+import ca.nrc.cadc.dali.MultiShape;
+import ca.nrc.cadc.dali.Shape;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.StringTokenizer;
+import java.util.regex.Pattern;
+import org.apache.log4j.Logger;
 
 /**
  *
  * @author pdowler
- * @param <T>
  */
-public class Interval<T extends Number> {
+public class MultiShapeFormat implements Format<MultiShape> {
+    private static final Logger log = Logger.getLogger(MultiShapeFormat.class);
 
-    private T lower;
-    private T upper;
-
-    public Interval(T lower, T upper) {
-        DaliUtil.assertNotNull("lower", lower);
-        DaliUtil.assertNotNull("upper", upper);
-        validateBounds(lower, upper);
-        this.lower = lower;
-        this.upper = upper;
-    }
-
-    private void validateBounds(T lower, T upper) {
-        if (lower instanceof Double) {
-            if (upper.doubleValue() < lower.doubleValue()) {
-                throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-            }
-        } else if (lower instanceof Long) {
-            if (upper.longValue() < lower.longValue()) {
-                throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-            }
-        } else {
-            throw new UnsupportedOperationException("validateBounds numeric type not implemented: "
-                    + lower.getClass().getName());
-        }
-    }
-
-    public T getLower() {
-        return lower;
-    }
-
-    public T getUpper() {
-        return upper;
+    private final ShapeFormat fmt = new ShapeFormat();
+    
+    public MultiShapeFormat() { 
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
+    public MultiShape parse(String s) {
+        if (s == null) {
+            return null;
         }
-
-        Interval rhs = (Interval) obj;
-        return lower.equals(rhs.lower) && upper.equals(rhs.upper);
+        
+        List<String> sep = separate(s);
+        MultiShape ret = new MultiShape();
+        for (String str : sep) {
+            Shape shape = fmt.parse(str);
+            ret.getShapes().add(shape);
+        }
+        return ret;
     }
 
-    public Object[] toArray() {
-        if (lower instanceof Double && upper instanceof Double) {
-            return new Double[]{(Double) lower, (Double) upper};
-        } else if (lower instanceof Long && upper instanceof Long) {
-            return new Long[]{(Long) lower, (Long) upper};
+    @Override
+    public String format(MultiShape t) {
+        if (t == null) {
+            return "";
         }
-        throw new UnsupportedOperationException("unsupported interval type: " + lower.getClass().getName());
+        
+        StringBuilder sb = new StringBuilder();
+        Iterator<Shape> i = t.getShapes().iterator();
+        while (i.hasNext()) {
+            Shape s = i.next();
+            sb.append(fmt.format(s));
+            if (i.hasNext()) {
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
     }
     
-    public static Interval<Double> intersection(Interval<Double> i1, Interval<Double> i2) {
-        if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
-            return null; // no overlap
+    // this relies on the characteristics of the current shape, keywords 
+    List<String> separate(String s) {
+        List<String> ret = new ArrayList<>();
+        Pattern pattern = Pattern.compile("(^c)|( c)|(^p)|( p)");
+        String[] tokens = pattern.split(s);
+        for (String t : tokens) {
+            t = t.trim();
+            if (t.startsWith("ircle")) {
+                t = "c" + t;
+            } else if (t.startsWith("olygon")) {
+                t = "p" + t;
+            }
+            if (!t.isEmpty()) {
+                ret.add(t);
+            }
         }
-
-        double lb = Math.max(i1.getLower(), i2.getLower());
-        double ub = Math.min(i1.getUpper(), i2.getUpper());
-        return new Interval<>(lb, ub);
+        return ret;
     }
 }

@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -106,9 +106,7 @@ public class ShapeFormat implements Format<Shape> {
             return null;
         }
         String[] parts = separateKey(s);
-        if (Point.class.getSimpleName().equalsIgnoreCase(parts[0])) {
-            return pointF.parse(parts[1]);
-        } else if (Circle.class.getSimpleName().equalsIgnoreCase(parts[0])) {
+        if (Circle.class.getSimpleName().equalsIgnoreCase(parts[0])) {
             return circleF.parse(parts[1]);
         } else if (Range.class.getSimpleName().equalsIgnoreCase(parts[0])) {
             return rangeF.parse(parts[1]);
@@ -126,9 +124,7 @@ public class ShapeFormat implements Format<Shape> {
         }
         StringBuilder sb = new StringBuilder();
         sb.append(t.getClass().getSimpleName().toLowerCase()).append(" ");
-        if (t instanceof Point) {
-            sb.append(pointF.format((Point) t));
-        } else if (t instanceof Circle) {
+        if (t instanceof Circle) {
             sb.append(circleF.format((Circle) t));
         } else if (t instanceof Range) {
             sb.append(rangeF.format((Range) t));

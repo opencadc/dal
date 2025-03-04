@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -77,16 +77,15 @@ public class DoubleInterval extends Interval<Double> {
 
     public DoubleInterval(double lower, double upper) {
         super(lower, upper);
-        if (upper < lower) {
-            throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-        }
     }
     
     public static double[] toArray(DoubleInterval[] arr) {
         double[] ret = new double[2 * arr.length];
-        for (int i = 0; i < arr.length; i += 2) {
-            ret[i] = arr[i].getLower();
-            ret[i + 1] = arr[i].getUpper();
+        int j = 0;
+        for (int i = 0; i < arr.length; i++) {
+            ret[j] = arr[i].getLower();
+            ret[j + 1] = arr[i].getUpper();
+            j += 2;
         }
         return ret;
     }

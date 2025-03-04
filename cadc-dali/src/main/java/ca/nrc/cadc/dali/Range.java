@@ -96,6 +96,21 @@ public class Range implements Shape {
     }
 
     @Override
+    public double getArea() {
+        // trapezoid: h * (a+b)/2
+        double a = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getUpper()));
+        double b = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getLower()));
+        double h = latitude.getUpper() - latitude.getLower();
+        return h * (a + b) / 2.0;
+    }
+
+    @Override
+    public Point getCenter() {
+        return new Point(0.5 * (longitude.getUpper() + longitude.getLower()), 
+                0.5 * (latitude.getUpper() + latitude.getLower()));
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == null) {
             return false;

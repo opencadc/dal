@@ -1,6 +1,5 @@
 plugins {
-    id 'java'
-    id 'maven'
+    id 'java-library'
     id 'maven-publish'
     id 'checkstyle'
 }
@@ -10,7 +9,10 @@ repositories {
     mavenLocal()
 }
 
+apply from: '../opencadc.gradle'
+
 sourceCompatibility = 11
+
 group = 'org.opencadc'
 version = '0.4.1'
 
@@ -28,5 +30,3 @@ dependencies {
     // Use JUnit test framework
     testImplementation 'junit:junit:[4.13,5.0)'
 }
-
-apply from: '../opencadc.gradle'

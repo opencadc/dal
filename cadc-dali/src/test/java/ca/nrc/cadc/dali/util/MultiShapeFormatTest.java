@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -63,77 +63,79 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
- */
+*/
 
-package ca.nrc.cadc.dali;
+package ca.nrc.cadc.dali.util;
+
+import ca.nrc.cadc.dali.MultiShape;
+import ca.nrc.cadc.dali.Shape;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  *
  * @author pdowler
- * @param <T>
  */
-public class Interval<T extends Number> {
+public class MultiShapeFormatTest {
+    private static final Logger log = Logger.getLogger(MultiShapeFormatTest.class);
 
-    private T lower;
-    private T upper;
-
-    public Interval(T lower, T upper) {
-        DaliUtil.assertNotNull("lower", lower);
-        DaliUtil.assertNotNull("upper", upper);
-        validateBounds(lower, upper);
-        this.lower = lower;
-        this.upper = upper;
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
     }
 
-    private void validateBounds(T lower, T upper) {
-        if (lower instanceof Double) {
-            if (upper.doubleValue() < lower.doubleValue()) {
-                throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-            }
-        } else if (lower instanceof Long) {
-            if (upper.longValue() < lower.longValue()) {
-                throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-            }
-        } else {
-            throw new UnsupportedOperationException("validateBounds numeric type not implemented: "
-                    + lower.getClass().getName());
-        }
-    }
-
-    public T getLower() {
-        return lower;
-    }
-
-    public T getUpper() {
-        return upper;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-
-        Interval rhs = (Interval) obj;
-        return lower.equals(rhs.lower) && upper.equals(rhs.upper);
-    }
-
-    public Object[] toArray() {
-        if (lower instanceof Double && upper instanceof Double) {
-            return new Double[]{(Double) lower, (Double) upper};
-        } else if (lower instanceof Long && upper instanceof Long) {
-            return new Long[]{(Long) lower, (Long) upper};
-        }
-        throw new UnsupportedOperationException("unsupported interval type: " + lower.getClass().getName());
+    public MultiShapeFormatTest() { 
     }
     
-    public static Interval<Double> intersection(Interval<Double> i1, Interval<Double> i2) {
-        if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
-            return null; // no overlap
+    @Test
+    public void testNull() {
+        MultiShapeFormat fmt = new MultiShapeFormat();
+        String zeroLength = fmt.format(null);
+        Assert.assertTrue(zeroLength.isEmpty());
+    }
+    
+    @Test
+    public void testSimpleCircle() {
+        String orig = "circle 1.0 2.0 0.5";
+        MultiShapeFormat fmt = new MultiShapeFormat();
+        MultiShape ms = fmt.parse(orig);
+        log.info("found: " + ms);
+        
+        String actual = fmt.format(ms);
+        log.info("  orig: " + orig);
+        log.info("actual: " + actual);
+        Assert.assertEquals(orig, actual);
+    }
+    
+    @Test
+    public void testSimplePolygon() {
+        String orig = "polygon 1.0 2.0 3.0 4.0 5.0 6.0";
+        MultiShapeFormat fmt = new MultiShapeFormat();
+        MultiShape ms = fmt.parse(orig);
+        log.info("found: " + ms);
+        
+        String actual = fmt.format(ms);
+        log.info("  orig: " + orig);
+        log.info("actual: " + actual);
+        Assert.assertEquals(orig, actual);
+    }
+    
+    @Test
+    public void testUnion() {
+        final String orig = "polygon 1.0 2.0 3.0 4.0 5.0 6.0 circle 1.0 2.0 0.5 polygon 1.0 2.0 3.0 4.0 5.0 6.0";
+        
+        MultiShapeFormat fmt = new MultiShapeFormat();
+        MultiShape ms = fmt.parse(orig);
+        log.info("found: " + ms);
+        for (Shape s : ms.getShapes()) {
+            log.info("  found: " + s);
         }
-
-        double lb = Math.max(i1.getLower(), i2.getLower());
-        double ub = Math.min(i1.getUpper(), i2.getUpper());
-        return new Interval<>(lb, ub);
+        
+        String actual = fmt.format(ms);
+        log.info("  orig: " + orig);
+        log.info("actual: " + actual);
+        Assert.assertEquals(orig, actual);
     }
 }

@@ -95,27 +95,6 @@ public class ShapeFormatTest {
     }
 
     @Test
-    public void testPoint() {
-        log.debug("testPoint");
-        try {
-            ShapeFormat format = new ShapeFormat();
-            Point expected = new Point(12.0, 34.0);
-
-            String result = format.format(expected);
-            log.info("testPoint: " + result);
-            String t = result.trim();
-            Assert.assertEquals("no extra whitespace", t, result);
-            Shape actual = format.parse(result);
-
-            Point ap = (Point) actual;
-            Assert.assertEquals(expected, ap);
-        } catch (Exception unexpected) {
-            log.error("unexpected exception", unexpected);
-            Assert.fail("unexpected exception: " + unexpected);
-        }
-    }
-    
-    @Test
     public void testCircle() {
         log.debug("testCircle");
         try {
