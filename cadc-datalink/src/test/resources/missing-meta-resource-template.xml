@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VOTABLE xmlns="http://www.ivoa.net/xml/VOTable/v1.3" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.4">
+    <INFO name="name" value="placeholder: will be removed" ID="caomPublisherID"/>
+    <RESOURCE type="results" utype="adhoc:service">
+    </RESOURCE>
+</VOTABLE>
