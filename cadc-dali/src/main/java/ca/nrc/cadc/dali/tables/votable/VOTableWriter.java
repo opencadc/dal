@@ -323,6 +323,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                             = new IterableContent<Element, List<Object>>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
 
                     data.addContent(tabledata);
+                } else {
+                    table.addContent(new org.jdom2.Comment("data goes here"));
                 }
             }
         }
