@@ -84,6 +84,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.log4j.Logger;
+import org.jdom2.Comment;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
@@ -320,11 +321,11 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                     TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer);
 
                     IterableContent<Element, List<Object>> tabledata
-                            = new IterableContent<Element, List<Object>>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
+                            = new IterableContent<>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
 
                     data.addContent(tabledata);
                 } else {
-                    table.addContent(new org.jdom2.Comment("data goes here"));
+                    table.addContent(new Comment("data goes here"));
                 }
             }
         }
