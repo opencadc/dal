@@ -105,6 +105,14 @@ public class Range implements Shape {
     }
 
     @Override
+    public double getSize() {
+        // TODO: should be arc length, but approx sqrt(a^2 + b^2)
+        double a = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getUpper()));
+        double b = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getLower()));
+        return Math.sqrt(a * a + b * b);
+    }
+
+    @Override
     public Point getCenter() {
         return new Point(0.5 * (longitude.getUpper() + longitude.getLower()), 
                 0.5 * (latitude.getUpper() + latitude.getLower()));
