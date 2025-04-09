@@ -249,8 +249,9 @@ public class Polygon implements Shape {
         // the transform needed for computing things in long/lat using cartesian
         // approximation
         CartesianTransform trans = CartesianTransform.getTransform(this);
+        //log.warn("trans: " + trans);
         Polygon tpoly = trans.transform(this);
-        log.debug("tpoly: " + tpoly);
+        //log.warn("tpoly: " + tpoly);
         
         // algorithm from
         // http://astronomy.swin.edu.au/~pbourke/geometry/polyarea/
@@ -279,11 +280,10 @@ public class Polygon implements Shape {
             }
         }
 
-        //log.warn("raw props: " + cx + "," + cy + " a=" + a);
         a *= 0.5;
         cx = cx / (6.0 * a);
         cy = cy / (6.0 * a);
-        log.debug("props: " + cx + "," + cy + " a=" + a);
+        //log.warn("raw props: " + cx + "," + cy + " a=" + a);
 
         // quick and dirty size computation
         double d = 0.0;
@@ -300,16 +300,16 @@ public class Polygon implements Shape {
 
         PolygonProperties ret = new PolygonProperties();
         ret.windCounterClockwise = (a < 0.0); // RA-DEC increases left-up
-        log.debug("a: " + a + " ccw: " + ret.windCounterClockwise);
+        //log.warn("a: " + a + " ccw: " + ret.windCounterClockwise);
         if (a < 0.0) {
             a *= -1.0;
         }
         ret.area = a;
 
         CartesianTransform inv = trans.getInverseTransform();
-        //log.debug("transform: " + cx + "," + cy + " with " + inv);
+        //log.warn("transform: " + cx + "," + cy + " with " + inv);
         ret.center = inv.transform(new Point(cx, cy));
-
+        //log.warn("center: " + ret.center);
         ret.span = d;
 
         return ret;

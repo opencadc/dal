@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,12 +67,16 @@
 
 package ca.nrc.cadc.dali;
 
+import org.apache.log4j.Logger;
+
 /**
  * Range (DALI-1.2).
  * 
  * @author pdowler
  */
 public class Range implements Shape {
+    private static final Logger log = Logger.getLogger(Range.class);
+    
     private final DoubleInterval longitude;
     private final DoubleInterval latitude;
     
@@ -101,15 +105,20 @@ public class Range implements Shape {
         double a = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getUpper()));
         double b = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getLower()));
         double h = latitude.getUpper() - latitude.getLower();
+        //log.warn("getArea: a=" + a + " b=" + b + " h=" + h);
         return h * (a + b) / 2.0;
     }
 
     @Override
     public double getSize() {
-        // TODO: should be arc length, but approx sqrt(a^2 + b^2)
+        // TODO: should be arc length, but approx sqrt(w^2 + h^2)
         double a = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getUpper()));
         double b = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getLower()));
-        return Math.sqrt(a * a + b * b);
+        //log.warn("getSize: a=" + a + " b=" + b);
+        double w = Math.max(a, b);
+        double h = latitude.getUpper() - latitude.getLower();
+        //log.warn("getSize: w=" + w + " h=" + h);
+        return Math.sqrt(w * w + h * h);
     }
 
     @Override

@@ -95,6 +95,7 @@ public class ShapeTest {
         Assert.assertEquals(1.0, c.getRadius(), 1.0e-6);
         
         Assert.assertEquals(Math.PI, c.getArea(), 1.0e-6);
+        Assert.assertEquals(2.0, c.getSize(), 1.0e-6);
         
         try {
             Circle rad = new Circle(new Point(10.0, 20.0), -1.0);
@@ -111,14 +112,27 @@ public class ShapeTest {
         Assert.assertEquals(0.0, r.getCenter().getLatitude(), 1.0e-6);
 
         // area at equator
-        Assert.assertEquals(1.0, r.getArea(), 1.0e-2);
+        Assert.assertEquals(1.0, r.getArea(), 1.0e-4);
+        Assert.assertEquals(Math.sqrt(2.0), r.getSize(), 1.0e-4);
         
         // area at high lat
         r = new Range(new DoubleInterval(10.0, 11.0), new DoubleInterval(60.0, 61.0));
         Assert.assertEquals(0.5, r.getArea(), 1.0e-2);
+        Assert.assertTrue(1.0 < r.getSize() && r.getSize() < Math.sqrt(2.0));
         
         r = new Range(new DoubleInterval(10.0, 11.0), new DoubleInterval(-61.0, -60.0));
         Assert.assertEquals(0.5, r.getArea(), 1.0e-2);
+        Assert.assertTrue(1.0 < r.getSize() && r.getSize() < Math.sqrt(2.0));
+        
+        // north pole
+        r = new Range(new DoubleInterval(10.0, 11.0), new DoubleInterval(89.0, 90.0));
+        Assert.assertEquals(0.009, r.getArea(), 1.0e-3);
+        Assert.assertEquals(1.0, r.getSize(), 1.0e-2); // triangle
+        
+        // south pole
+        r = new Range(new DoubleInterval(10.0, 11.0), new DoubleInterval(-90.0, -89.0));
+        Assert.assertEquals(0.009, r.getArea(), 1.0e-3);
+        Assert.assertEquals(1.0, r.getSize(), 1.0e-2); // triangle
         
         try {
             Range ir = new Range(new DoubleInterval(-1.0, 1.0), new DoubleInterval(12.0, 13.0));
@@ -140,6 +154,20 @@ public class ShapeTest {
         } catch (IllegalArgumentException expected) {
             log.info("caught expected: " + expected);
         }
+    }
+    
+    @Test
+    public void testPolygon() throws Exception {
+        Polygon p = new Polygon();
+        p.getVertices().add(new Point(10.0, -0.5));
+        p.getVertices().add(new Point(10.0, 0.5));
+        p.getVertices().add(new Point(11.0, 0.5));
+        p.getVertices().add(new Point(11.0, -0.5));
+        
+        Assert.assertEquals(10.5, p.getCenter().getLongitude(), 1.0e-6);
+        Assert.assertEquals(0.0, p.getCenter().getLatitude(), 1.0e-6);
+        Assert.assertEquals(1.0, p.getArea(), 1.0e-4);
+        Assert.assertEquals(Math.sqrt(2.0), p.getSize(), 1.0e-4);
     }
     
     @Test
