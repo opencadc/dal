@@ -77,10 +77,10 @@ import org.apache.log4j.Logger;
 public class Range implements Shape {
     private static final Logger log = Logger.getLogger(Range.class);
     
-    private final DoubleInterval longitude;
-    private final DoubleInterval latitude;
+    private final Interval<Double> longitude;
+    private final Interval<Double> latitude;
     
-    public Range(DoubleInterval longitude, DoubleInterval latitude) {
+    public Range(Interval<Double> longitude, Interval<Double> latitude) {
         DaliUtil.assertNotNull("longitude", longitude);
         DaliUtil.assertNotNull("latitude", latitude);
         DaliUtil.assertValidRange("longitude", longitude.getLower(), 0.0, 360.0);
@@ -91,11 +91,11 @@ public class Range implements Shape {
         this.latitude = latitude;
     }
 
-    public DoubleInterval getLongitude() {
+    public Interval<Double> getLongitude() {
         return longitude;
     }
 
-    public DoubleInterval getLatitude() {
+    public Interval<Double> getLatitude() {
         return latitude;
     }
 

@@ -71,6 +71,7 @@ package ca.nrc.cadc.dali.util;
 
 
 import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Interval;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -92,11 +93,11 @@ public class DoubleIntervalFormatTest
         try
         {
             DoubleIntervalFormat format = new DoubleIntervalFormat();
-            DoubleInterval expected = new DoubleInterval(1.0, 2.0);
+            Interval<Double> expected = new Interval<Double>(1.0, 2.0);
             
             String result = format.format(expected);
             Assert.assertEquals("no extra whitespace", result.trim(), result);
-            DoubleInterval actual = format.parse(result);
+            Interval<Double> actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);
         }
@@ -114,11 +115,11 @@ public class DoubleIntervalFormatTest
         try
         {
             DoubleIntervalFormat format = new DoubleIntervalFormat();
-            DoubleInterval expected = new DoubleInterval(2.0, 2.0);
+            Interval<Double> expected = new Interval<Double>(2.0, 2.0);
             
             String result = format.format(expected);
             Assert.assertEquals("no extra whitespace", result.trim(), result);
-            DoubleInterval actual = format.parse(result);
+            Interval<Double> actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);
         }
@@ -136,17 +137,17 @@ public class DoubleIntervalFormatTest
         try
         {
             DoubleIntervalFormat format = new DoubleIntervalFormat();
-            DoubleInterval expected = new DoubleInterval(0.0, Double.POSITIVE_INFINITY);
+            Interval<Double> expected = new Interval<Double>(0.0, Double.POSITIVE_INFINITY);
             
             String result = format.format(expected);
             Assert.assertEquals("no extra whitespace", result.trim(), result);
             Assert.assertTrue(result.toLowerCase().contains("+inf"));
             Assert.assertFalse(result.toLowerCase().contains("infinity"));
-            DoubleInterval actual = format.parse(result);
+            Interval<Double> actual = format.parse(result);
 
             Assert.assertEquals(expected, actual);
             
-            expected = new DoubleInterval(Double.NEGATIVE_INFINITY, 0.0);
+            expected = new Interval<Double>(Double.NEGATIVE_INFINITY, 0.0);
             
             result = format.format(expected);
             Assert.assertEquals("no extra whitespace", result.trim(), result);
@@ -190,7 +191,7 @@ public class DoubleIntervalFormatTest
         String s = format.format(null);
         Assert.assertEquals("", s);
 
-        DoubleInterval object = format.parse(null);
+        Interval<Double> object = format.parse(null);
         Assert.assertNull(object);
     }
 }
