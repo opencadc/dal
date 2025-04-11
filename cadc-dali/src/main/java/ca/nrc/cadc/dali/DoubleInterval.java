@@ -79,7 +79,7 @@ public class DoubleInterval extends Interval<Double> {
         super(lower, upper);
     }
     
-    public static double[] toArray(DoubleInterval[] arr) {
+    public static double[] toArray(Interval<Double>[] arr) {
         double[] ret = new double[2 * arr.length];
         int j = 0;
         for (int i = 0; i < arr.length; i++) {

@@ -79,7 +79,7 @@ public class LongInterval extends Interval<Long> {
         super(lower, upper);
     }
     
-    public static long[] toArray(LongInterval[] arr) {
+    public static long[] toArray(Interval<Long>[] arr) {
         long[] ret = new long[2 * arr.length];
         int j = 0;
         for (int i = 0; i < arr.length; i++) {
