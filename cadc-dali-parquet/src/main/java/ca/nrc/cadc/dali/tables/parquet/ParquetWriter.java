@@ -372,13 +372,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                 record.put(columnName, di.toArray());
             } else if (data instanceof Interval[]) {
                 Interval[] da = (Interval[]) data;
-                if (da[0].getLower() instanceof Double) {
-                    record.put(columnName, DoubleInterval.toArray(da));
-                } else if (da[0].getLower() instanceof Long) {
-                    record.put(columnName, LongInterval.toArray(da));
-                } else {
-                    throw new UnsupportedOperationException("unexpected value type: " + da[0].getClass().getName() + " with xtype: " + xtype);
-                }
+                record.put(columnName, Interval.toArray(da));
             } else {
                 throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
             }

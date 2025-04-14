@@ -72,21 +72,12 @@ package ca.nrc.cadc.dali;
 /**
  *
  * @author pdowler
+ * @deprecated use Interval directly
  */
+@Deprecated
 public class LongInterval extends Interval<Long> {
 
     public LongInterval(long lower, long upper) {
         super(lower, upper);
-    }
-    
-    public static long[] toArray(Interval<Long>[] arr) {
-        long[] ret = new long[2 * arr.length];
-        int j = 0;
-        for (int i = 0; i < arr.length; i++) {
-            ret[j] = arr[i].getLower();
-            ret[j + 1] = arr[i].getUpper();
-            j += 2;
-        }
-        return ret;
     }
 }
