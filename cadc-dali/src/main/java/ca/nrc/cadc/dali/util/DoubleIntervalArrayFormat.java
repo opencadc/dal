@@ -68,6 +68,7 @@
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Interval;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import org.apache.log4j.Logger;
@@ -76,7 +77,7 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class DoubleIntervalArrayFormat implements Format<DoubleInterval[]> {
+public class DoubleIntervalArrayFormat implements Format<Interval<Double>[]> {
 
     private static final Logger log = Logger.getLogger(DoubleIntervalArrayFormat.class);
 
@@ -86,7 +87,7 @@ public class DoubleIntervalArrayFormat implements Format<DoubleInterval[]> {
     }
 
     @Override
-    public DoubleInterval[] parse(String s) {
+    public Interval<Double>[] parse(String s) {
         if (s == null) {
             return null;
         }
@@ -106,7 +107,7 @@ public class DoubleIntervalArrayFormat implements Format<DoubleInterval[]> {
     }
 
     @Override
-    public String format(final DoubleInterval[] t) {
+    public String format(final Interval<Double>[] t) {
         if (t == null) {
             return "";
         }
@@ -125,7 +126,7 @@ public class DoubleIntervalArrayFormat implements Format<DoubleInterval[]> {
                     throw new NoSuchElementException();
                 }
 
-                DoubleInterval di = t[numDI];
+                Interval<Double> di = t[numDI];
 
                 if (num == 0) {
                     num++;

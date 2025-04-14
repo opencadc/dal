@@ -103,6 +103,11 @@ public class Circle implements Shape {
         return Math.PI * radius * radius;
     }
 
+    @Override
+    public double getSize() {
+        return 2.0 * radius;
+    }
+
     
     @Override
     public Point getCenter() {

@@ -27,11 +27,13 @@ war {
 dependencies {
     //providedCompile 'javax.servlet:javax.servlet-api:[3.1.0,)'
 
-    compile 'org.opencadc:cadc-util:[1.6.1,)'
-    compile 'org.opencadc:cadc-cdp:[1.2.3,)'
-    compile 'org.opencadc:cadc-uws-server:[1.2.4,)'
-    compile 'org.opencadc:cadc-tap:[1.0,2.0)'
-    compile 'org.opencadc:cadc-vosi:[1.4.3,2.0)'
+    implementation 'org.opencadc:cadc-util:[1.6.1,)'
+    implementation 'org.opencadc:cadc-cdp:[1.2.3,)'
+    implementation 'org.opencadc:cadc-uws:[1.0.5,)'
+    implementation 'org.opencadc:cadc-uws-server:[1.2.4,)'
+    implementation 'org.opencadc:cadc-dali:[1.2.25,)'
+    implementation 'org.opencadc:cadc-tap:[1.0,2.0)'
+    implementation 'org.opencadc:cadc-vosi:[1.4.3,2.0)'
 
     runtimeOnly 'org.opencadc:cadc-registry:[1.7.7,)'
     runtimeOnly 'org.opencadc:cadc-log:[1.0,)'

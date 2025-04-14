@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,16 +67,20 @@
 
 package ca.nrc.cadc.dali;
 
+import org.apache.log4j.Logger;
+
 /**
  * Range (DALI-1.2).
  * 
  * @author pdowler
  */
 public class Range implements Shape {
-    private final DoubleInterval longitude;
-    private final DoubleInterval latitude;
+    private static final Logger log = Logger.getLogger(Range.class);
     
-    public Range(DoubleInterval longitude, DoubleInterval latitude) {
+    private final Interval<Double> longitude;
+    private final Interval<Double> latitude;
+    
+    public Range(Interval<Double> longitude, Interval<Double> latitude) {
         DaliUtil.assertNotNull("longitude", longitude);
         DaliUtil.assertNotNull("latitude", latitude);
         DaliUtil.assertValidRange("longitude", longitude.getLower(), 0.0, 360.0);
@@ -87,11 +91,11 @@ public class Range implements Shape {
         this.latitude = latitude;
     }
 
-    public DoubleInterval getLongitude() {
+    public Interval<Double> getLongitude() {
         return longitude;
     }
 
-    public DoubleInterval getLatitude() {
+    public Interval<Double> getLatitude() {
         return latitude;
     }
 
@@ -101,7 +105,20 @@ public class Range implements Shape {
         double a = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getUpper()));
         double b = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getLower()));
         double h = latitude.getUpper() - latitude.getLower();
+        //log.warn("getArea: a=" + a + " b=" + b + " h=" + h);
         return h * (a + b) / 2.0;
+    }
+
+    @Override
+    public double getSize() {
+        // TODO: should be arc length, but approx sqrt(w^2 + h^2)
+        double a = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getUpper()));
+        double b = (longitude.getUpper() - longitude.getLower()) * Math.cos(Math.toRadians(latitude.getLower()));
+        //log.warn("getSize: a=" + a + " b=" + b);
+        double w = Math.max(a, b);
+        double h = latitude.getUpper() - latitude.getLower();
+        //log.warn("getSize: w=" + w + " h=" + h);
+        return Math.sqrt(w * w + h * h);
     }
 
     @Override

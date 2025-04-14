@@ -72,21 +72,12 @@ package ca.nrc.cadc.dali;
 /**
  *
  * @author pdowler
+ * @deprecated use Interval directly
  */
+@Deprecated
 public class DoubleInterval extends Interval<Double> {
 
     public DoubleInterval(double lower, double upper) {
         super(lower, upper);
-    }
-    
-    public static double[] toArray(DoubleInterval[] arr) {
-        double[] ret = new double[2 * arr.length];
-        int j = 0;
-        for (int i = 0; i < arr.length; i++) {
-            ret[j] = arr[i].getLower();
-            ret[j + 1] = arr[i].getUpper();
-            j += 2;
-        }
-        return ret;
     }
 }
