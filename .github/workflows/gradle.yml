@@ -51,3 +51,7 @@ jobs:
 
     - name: build and test cadc-data-ops-fits
       run: cd cadc-data-ops-fits && ../gradlew --info clean build javadoc checkstyleMain install
+
+    - name: build and test dap
+      run: cd dap && ./gradlew --info clean build checkstyleMain
+
