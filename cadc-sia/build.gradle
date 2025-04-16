@@ -15,7 +15,7 @@ sourceCompatibility = 11
 
 group = 'org.opencadc'
 
-version = '1.1.13'
+version = '1.1.14'
 
 description = 'OpenCADC SIA server library'
 def git_url = 'https://github.com/opencadc/dal'
@@ -23,7 +23,7 @@ def git_url = 'https://github.com/opencadc/dal'
 dependencies {
     implementation 'org.jdom:jdom2:[2.0,)'
 
-    implementation 'org.opencadc:cadc-dali:[1.2.4,)'
+    api 'org.opencadc:cadc-dali:[1.2.4,)'
     implementation 'org.opencadc:cadc-registry:[1.5.0,)'
     implementation 'org.opencadc:cadc-util:[1.6,)'
     implementation 'org.opencadc:cadc-uws:[1.0,)'
