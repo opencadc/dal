@@ -76,4 +76,6 @@ public interface Shape {
     Point getCenter();
     
     double getArea();
+    
+    double getSize();
 }

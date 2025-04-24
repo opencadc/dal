@@ -70,6 +70,7 @@
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Interval;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import org.apache.log4j.Logger;
@@ -79,7 +80,7 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class DoubleIntervalFormat implements Format<DoubleInterval> {
+public class DoubleIntervalFormat implements Format<Interval<Double>> {
 
     private static final Logger log = Logger.getLogger(DoubleIntervalFormat.class);
 
@@ -102,7 +103,7 @@ public class DoubleIntervalFormat implements Format<DoubleInterval> {
         return new DoubleInterval(vv[0], vv[1]);
     }
 
-    public String format(final DoubleInterval t) {
+    public String format(final Interval<Double> t) {
         if (t == null) {
             return "";
         }

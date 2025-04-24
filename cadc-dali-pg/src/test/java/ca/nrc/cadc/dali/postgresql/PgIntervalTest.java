@@ -63,12 +63,10 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.postgresql;
 
-
-import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.util.Log4jInit;
 import org.apache.log4j.Level;
@@ -81,111 +79,97 @@ import org.postgresql.geometric.PGpolygon;
  *
  * @author pdowler
  */
-public class PgIntervalTest 
-{
+public class PgIntervalTest {
+
     private static final Logger log = Logger.getLogger(PgIntervalTest.class);
 
-    static
-    {
+    static {
         Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
     }
-    
-    public PgIntervalTest() { }
-    
+
+    public PgIntervalTest() {
+    }
+
     PgInterval gen = new PgInterval();
-    
+
     @Test
-    public void testNull()
-    {
-        try
-        {
+    public void testNull() {
+        try {
             Interval iexp = null;
-            DoubleInterval[] expected = null;
-            
+            Interval<Double>[] expected = null;
+
             PGpolygon ip;
-            
+
             ip = gen.generatePolygon2D(iexp);
             Assert.assertNull(ip);
-            
+
             Interval iact = gen.getInterval(null);
             Assert.assertNull(iact);
-            
+
             ip = gen.generatePolygon2D(expected);
             Assert.assertNull(ip);
-            
-            DoubleInterval[] actual = gen.getIntervalArray(null);
+
+            Interval<Double>[] actual = gen.getIntervalArray(null);
             Assert.assertNull(actual);
-            
-            expected = new DoubleInterval[0];
+
+            expected = new Interval[0];
             ip = gen.generatePolygon2D(expected);
             Assert.assertNull("empty", ip);
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
+
     @Test
-    public void testGetPolygonFromInterval()
-    {
-        try
-        {
+    public void testGetPolygonFromInterval() {
+        try {
             Interval expected = new Interval(1.0, 3.0);
 
             PGpolygon ip = gen.generatePolygon2D(expected);
             Assert.assertNotNull(ip);
             Assert.assertEquals(4, ip.points.length);
-            
+
             String sval = ip.getValue(); // equiv to db round-trip
             log.info("testGetPolygonFromInterval: " + sval);
-            
+
             Interval actual = gen.getInterval(sval);
             Assert.assertNotNull(actual);
             log.info("actual: " + actual.getLower() + "," + actual.getUpper());
             Assert.assertEquals(expected.getLower(), actual.getLower());
             Assert.assertEquals(expected.getUpper(), actual.getUpper());
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
+
     @Test
-    public void testGetPolygonFromIntervalArray()
-    {
-        try
-        {
-            DoubleInterval[] expected = new DoubleInterval[]
-            {
-                new DoubleInterval(1.0, 1.2),
-                new DoubleInterval(2.8, 3.0)
+    public void testGetPolygonFromIntervalArray() {
+        try {
+            Interval<Double>[] expected = new Interval[]{
+                new Interval<>(1.0, 1.2),
+                new Interval<>(2.8, 3.0)
             };
-            
+
             PGpolygon ip = gen.generatePolygon2D(expected);
             Assert.assertNotNull(ip);
             Assert.assertEquals(8, ip.points.length);
-            
+
             String sval = ip.getValue(); // equiv to db round-trip
             log.info("testGetPolygonFromIntervalArray: " + sval);
-            
-            DoubleInterval[] actual = gen.getIntervalArray(sval);
+
+            Interval<Double>[] actual = gen.getIntervalArray(sval);
             Assert.assertNotNull(actual);
             Assert.assertEquals(expected.length, actual.length);
-            for (int i=0; i<expected.length; i++)
-            {
-                DoubleInterval ie = expected[i];
-                DoubleInterval ia = actual[i];
+            for (int i = 0; i < expected.length; i++) {
+                Interval<Double> ie = expected[i];
+                Interval<Double> ia = actual[i];
                 log.info(i + " actual: " + ia.getLower() + "," + ia.getUpper());
                 Assert.assertEquals(i + " lower: ", ie.getLower(), ia.getLower());
                 Assert.assertEquals(i + " upper: ", ie.getUpper(), ia.getUpper());
             }
-        }
-        catch(Exception unexpected)
-        {
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }

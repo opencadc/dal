@@ -127,6 +127,24 @@ public class Interval<T extends Number> {
         throw new UnsupportedOperationException("unsupported interval type: " + lower.getClass().getName());
     }
     
+    public static Object[] toArray(Interval[] arr) {
+        Object[] ret;
+        if (arr[0].getLower() instanceof Double) {
+            ret = new Double[2 * arr.length];
+        } else if (arr[0].getLower() instanceof Long) {
+            ret = new Long[2 * arr.length];
+        } else {
+            throw new UnsupportedOperationException("unsupported interval array type: " + arr[0].getLower().getClass().getName());
+        }
+        int j = 0;
+        for (int i = 0; i < arr.length; i++) {
+            ret[j] = arr[i].getLower();
+            ret[j + 1] = arr[i].getUpper();
+            j += 2;
+        }
+        return ret;
+    }
+    
     public static Interval<Double> intersection(Interval<Double> i1, Interval<Double> i2) {
         if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
             return null; // no overlap
