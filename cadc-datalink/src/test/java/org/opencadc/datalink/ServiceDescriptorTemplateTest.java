@@ -84,21 +84,21 @@ public class ServiceDescriptorTemplateTest {
         String template = Files.readString(testFile.toPath());
 
         try {
-            new ServiceDescriptorTemplate(null, template);
+            new ServiceDescriptorTemplate(null, "owner", template);
              Assert.fail("Expected IllegalArgumentException for null name");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("name cannot be null"));
         }
 
         try {
-            new ServiceDescriptorTemplate("", template);
+            new ServiceDescriptorTemplate("", "owner", template);
             Assert.fail("Expected IllegalArgumentException for empty name");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("name cannot be null"));
         }
 
         try {
-            new ServiceDescriptorTemplate("a-1?", template);
+            new ServiceDescriptorTemplate("a-1?", "owner", template);
             Assert.fail("Expected IllegalArgumentException for name with invalid character");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid descriptor name"));
@@ -106,31 +106,59 @@ public class ServiceDescriptorTemplateTest {
     }
 
     @Test
+    public void testInvalidOwnerArgument() throws Exception {
+
+        File testFile = FileUtil.getFileFromResource("valid-template.xml", ServiceDescriptorTemplateTest.class);
+        String template = Files.readString(testFile.toPath());
+
+        try {
+            new ServiceDescriptorTemplate("name", null, template);
+            Assert.fail("Expected IllegalArgumentException for null owner");
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("owner cannot be null"));
+        }
+
+        try {
+            new ServiceDescriptorTemplate("name", "", template);
+            Assert.fail("Expected IllegalArgumentException for empty owner");
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("owner cannot be null"));
+        }
+
+        try {
+            new ServiceDescriptorTemplate("name", "a-1?", template);
+            Assert.fail("Expected IllegalArgumentException for owner with invalid character");
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid descriptor owner"));
+        }
+    }
+
+    @Test
     public void testInvalidTemplateArgument() {
 
         try {
-            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("test", null);
+            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("name", "owner", null);
             Assert.fail("Expected IllegalArgumentException for null template");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("template cannot be null"));
         }
 
         try {
-            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("test", "");
+            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("name", "owner", "");
             Assert.fail("Expected IllegalArgumentException for empty template");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("template cannot be null"));
         }
 
         try {
-            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("test", "template");
+            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("name", "owner", "template");
             Assert.fail("Expected IllegalArgumentException for template not a votable");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Error reading VOTable"));
         }
 
         try {
-            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("test", "<foo></foo>");
+            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("name", "owner", "<foo></foo>");
             Assert.fail("Expected IllegalArgumentException for template an empty votable");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Error reading VOTable"));
@@ -145,7 +173,7 @@ public class ServiceDescriptorTemplateTest {
         String template = Files.readString(testFile.toPath());
 
         try {
-            new ServiceDescriptorTemplate("test", template);
+            new ServiceDescriptorTemplate("name", "owner", template);
             Assert.fail("Expected IllegalArgumentException for template with mismatched ID and ref attributes");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("no ID/IDREF binding"));
@@ -159,7 +187,7 @@ public class ServiceDescriptorTemplateTest {
         String template = Files.readString(testFile.toPath());
 
         try {
-            new ServiceDescriptorTemplate("test", template);
+            new ServiceDescriptorTemplate("name", "owner", template);
             Assert.fail("Expected IllegalArgumentException for template with a RESOURCE missing type='meta'");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("attribute type = 'meta'"));
@@ -169,7 +197,7 @@ public class ServiceDescriptorTemplateTest {
         template = Files.readString(testFile.toPath());
 
         try {
-            new ServiceDescriptorTemplate("test", template);
+            new ServiceDescriptorTemplate("name", "owner", template);
             Assert.fail("Expected IllegalArgumentException for template with multiple RESOURCE elements");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("expected a single RESOURCE element"));

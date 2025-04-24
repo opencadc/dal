@@ -70,10 +70,13 @@
 package org.opencadc.datalink;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
+import ca.nrc.cadc.dali.tables.votable.VOTableGroup;
+import ca.nrc.cadc.dali.tables.votable.VOTableParam;
 import ca.nrc.cadc.dali.tables.votable.VOTableReader;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.util.StringUtil;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.log4j.Logger;
@@ -87,24 +90,34 @@ public class ServiceDescriptorTemplate {
     // The descriptor name, must contain only letters, numbers, or a dash.
     private final String name;
 
+    // The username of the user who created the descriptor.
+    private final String owner;
+
     // VOTable describing the descriptor.
     private final String template;
 
     // List of ID attributes from the VOTABLE INFO elements in the template.
     private final List<String> identifiers;
 
-    public ServiceDescriptorTemplate(final String name, final String template) {
+    public ServiceDescriptorTemplate(final String name, final String owner, final String template) {
         if (!StringUtil.hasLength(name)) {
             throw new IllegalArgumentException("name cannot be null or empty");
-        }
-        if (!StringUtil.hasLength(template)) {
-            throw new IllegalArgumentException("template cannot be null or empty");
         }
         if (!isValidString(name)) {
             throw new IllegalArgumentException("Invalid descriptor name: " + name);
         }
+        if (!StringUtil.hasLength(owner)) {
+            throw new IllegalArgumentException("owner cannot be null or empty");
+        }
+        if (!isValidString(owner)) {
+            throw new IllegalArgumentException("Invalid descriptor owner: " + owner);
+        }
+        if (!StringUtil.hasLength(template)) {
+            throw new IllegalArgumentException("template cannot be null or empty");
+        }
 
         this.name = name;
+        this.owner = owner;
         this.template = template;
         this.identifiers = parseIdentifiers(template);
     }
@@ -115,6 +128,14 @@ public class ServiceDescriptorTemplate {
      */
     public String getName() {
         return this.name;
+    }
+
+    /**
+     * Get the descriptor owner.
+     * @return the descriptor owner.
+     */
+    public String getOwner() {
+        return this.owner;
     }
 
     /**
@@ -133,6 +154,43 @@ public class ServiceDescriptorTemplate {
      */
     public List<String> getIdentifiers() {
         return this.identifiers;
+    }
+
+    /**
+     * Get the key that uniquely describes this service descriptor.
+     * The key is defined as the descriptor name, a colon, the descriptor owner.
+     * <name>:<owner>
+     *
+     * @return the descriptor key.
+     */
+    public String getKey() {
+        return this.name + ":" + this.owner;
+    }
+
+    /**
+     * Generate the key that uniquely describes a service descriptor
+     * for the given name and owner.
+     *
+     * @param name the descriptor name.
+     * @param owner the descriptor owner.
+     * @return the generated key.
+     */
+    public static String generateKey(String name, String owner) {
+        return name + ":" + owner;
+    }
+
+    /**
+     * Parse the key into the descriptor name and owner.
+     *
+     * @param key the descriptor key.
+     * @return an array containing the descriptor name and owner.
+     */
+    public static Key parseKey(String key) {
+        String[] parts = key.split(":");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Invalid descriptor key: " + key);
+        }
+        return new Key(parts[0], parts[1]);
     }
 
     /**
@@ -171,12 +229,40 @@ public class ServiceDescriptorTemplate {
             throw new IllegalArgumentException("invalid template: expected RESOURCE element with attribute type = 'meta'");
         }
 
+//        resource.getGroups().stream().filter(group -> group.getName().equals("inputParams"))
+//                .filter(param -> param.getName().equals("ID"))
+//                .map(param -> param.ref)
+
+        List<String> identifiers = new ArrayList<>();
+        for (VOTableGroup group : resource.getGroups()) {
+            if (group.getName().equals("inputParams")) {
+                for (VOTableParam param : group.getParams()) {
+                    if (param.getName().equals("ID")) {
+                        if (StringUtil.hasText(param.ref)) {
+                            identifiers.add(param.ref);
+                        }
+                    }
+                }
+            }
+        }
+        return identifiers;
+
         // List of ID's from the INFO elements
-        List<String> infoIDs = votable.getInfos().stream()
-                .filter(info -> StringUtil.hasText(info.id))
-                .map(info -> info.id)
-                .collect(Collectors.toList());
-        return infoIDs;
+//        return votable.getInfos().stream()
+//                .filter(info -> StringUtil.hasText(info.id))
+//                .map(info -> info.id)
+//                .collect(Collectors.toList());
+    }
+
+    public static class Key {
+        final public String name;
+        final public String owner;
+
+        public Key(final String name, final String owner) {
+            this.name = name;
+            this.owner = owner;
+        }
+
     }
 
 }
