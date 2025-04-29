@@ -466,7 +466,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
         @Override
         public void maxIterationsReached(boolean moreAvailable) {
-            log.warn("TabledataMaxIterations.maxIterationsReached: " + maxRec + ", more=" + moreAvailable);
+            log.debug("TabledataMaxIterations.maxIterationsReached: " + maxRec + ", more=" + moreAvailable);
             if (moreAvailable) {
                 // DALI overflow
                 info.setAttribute("name", "QUERY_STATUS");
