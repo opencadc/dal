@@ -15,7 +15,7 @@ sourceCompatibility = 11
 
 group = 'org.opencadc'
 
-version = '1.1.4'
+version = '1.1.5'
 
 description = 'OpenCADC DataLink server library'
 def git_url = 'https://github.com/opencadc/dal'
@@ -23,10 +23,10 @@ def git_url = 'https://github.com/opencadc/dal'
 dependencies {
     implementation 'org.opencadc:cadc-util:[1.6,)'
     implementation 'org.opencadc:cadc-registry:[1.6.2,2.0)'
-    implementation 'org.opencadc:cadc-dali:[1.2.17,)'
-    implementation 'org.opencadc:cadc-datalink:[1.1.1,1.2)'
-    implementation 'org.opencadc:cadc-rest:[1.4.2,)'
-    implementation 'org.opencadc:cadc-uws-server:[1.2,1.3)'
+    api 'org.opencadc:cadc-dali:[1.2.17,)'
+    api'org.opencadc:cadc-datalink:[1.1.1,1.2)'
+    api 'org.opencadc:cadc-rest:[1.4.2,)'
+    api 'org.opencadc:cadc-uws-server:[1.2,1.3)'
 
     testCompile 'junit:junit:[4.0,5.0)'
 }
