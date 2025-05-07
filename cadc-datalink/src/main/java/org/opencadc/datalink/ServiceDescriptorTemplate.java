@@ -70,28 +70,21 @@
 package org.opencadc.datalink;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
-import ca.nrc.cadc.dali.tables.votable.VOTableGroup;
-import ca.nrc.cadc.dali.tables.votable.VOTableParam;
 import ca.nrc.cadc.dali.tables.votable.VOTableReader;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.util.StringUtil;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.log4j.Logger;
+import javax.security.auth.Subject;
 
 /**
  * Datalink Service Descriptor Template
  */
 public class ServiceDescriptorTemplate {
-    private static final Logger log = Logger.getLogger(ServiceDescriptorTemplate.class);
 
     // The descriptor name, must contain only letters, numbers, or a dash.
     private final String name;
-
-    // The username of the user who created the descriptor.
-    private final String owner;
 
     // VOTable describing the descriptor.
     private final String template;
@@ -99,27 +92,30 @@ public class ServiceDescriptorTemplate {
     // List of ID attributes from the VOTABLE INFO elements in the template.
     private final List<String> identifiers;
 
-    public ServiceDescriptorTemplate(final String name, final String owner, final String template) {
+    // The Subject for the user who created the descriptor.
+    public transient Subject owner;
+
+    // The ID of the owner, which is a String representation of the Subject.
+    public Object ownerID;
+
+    public ServiceDescriptorTemplate(final String name, final String template, final List<String> identifiers) {
         if (!StringUtil.hasLength(name)) {
             throw new IllegalArgumentException("name cannot be null or empty");
         }
         if (!isValidString(name)) {
             throw new IllegalArgumentException("Invalid descriptor name: " + name);
         }
-        if (!StringUtil.hasLength(owner)) {
-            throw new IllegalArgumentException("owner cannot be null or empty");
-        }
-        if (!isValidString(owner)) {
-            throw new IllegalArgumentException("Invalid descriptor owner: " + owner);
-        }
         if (!StringUtil.hasLength(template)) {
             throw new IllegalArgumentException("template cannot be null or empty");
         }
+        if (identifiers == null || identifiers.isEmpty()) {
+            throw new IllegalArgumentException("identifiers cannot be null or empty");
+        }
+        getVOTableDocument(template);
 
         this.name = name;
-        this.owner = owner;
         this.template = template;
-        this.identifiers = parseIdentifiers(template);
+        this.identifiers = identifiers;
     }
 
     /**
@@ -128,14 +124,6 @@ public class ServiceDescriptorTemplate {
      */
     public String getName() {
         return this.name;
-    }
-
-    /**
-     * Get the descriptor owner.
-     * @return the descriptor owner.
-     */
-    public String getOwner() {
-        return this.owner;
     }
 
     /**
@@ -157,69 +145,13 @@ public class ServiceDescriptorTemplate {
     }
 
     /**
-     * Get the key that uniquely describes this service descriptor.
-     * The key is defined as the descriptor name, a colon, the descriptor owner.
-     * <name>:<owner>
-     *
-     * @return the descriptor key.
+     * Parse the template and extract the identifiers from the REF attribute. A template
+     * must have at least one INFO element in the document root with an ID attribute.
+     * The template must also have a GROUP element named 'inputParams' containing
+     * a PARAM element with a REF attribute that matches the ID attribute of the INFO element.
      */
-    public String getKey() {
-        return this.name + ":" + this.owner;
-    }
-
-    /**
-     * Generate the key that uniquely describes a service descriptor
-     * for the given name and owner.
-     *
-     * @param name the descriptor name.
-     * @param owner the descriptor owner.
-     * @return the generated key.
-     */
-    public static String generateKey(String name, String owner) {
-        return name + ":" + owner;
-    }
-
-    /**
-     * Parse the key into the descriptor name and owner.
-     *
-     * @param key the descriptor key.
-     * @return an array containing the descriptor name and owner.
-     */
-    public static Key parseKey(String key) {
-        String[] parts = key.split(":");
-        if (parts.length != 2) {
-            throw new IllegalArgumentException("Invalid descriptor key: " + key);
-        }
-        return new Key(parts[0], parts[1]);
-    }
-
-    /**
-     * Validate that a string is not be null or empty, and contains only letters, numbers, or a dash.
-     *
-     * @param input the string to validate.
-     */
-    private boolean isValidString(String input) {
-        if (!StringUtil.hasLength(input)) {
-            return false;
-        }
-        return input.matches("[a-zA-Z0-9-]+");
-    }
-
-    /**
-     * Parse the template and extract the identifiers. A template must have at least one
-     * INFO element with an ID attribute in the document root. The template must also have
-     * a group element named 'inputParams' containing a PARAM element with a ref attribute
-     * that matches the ID attribute of the INFO element.
-     */
-    private List<String> parseIdentifiers(String template) {
-        VOTableReader reader = new VOTableReader();
-        VOTableDocument votable;
-        try {
-            votable = reader.read(template);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Error reading VOTable template: " + e.getMessage());
-        }
-
+    public static List<String> parseIdentifiers(String template) {
+        VOTableDocument votable = getVOTableDocument(template);
         List<VOTableResource> resources = votable.getResources();
         if (resources.size() != 1) {
             throw new IllegalArgumentException("invalid template: expected a single RESOURCE element");
@@ -229,40 +161,39 @@ public class ServiceDescriptorTemplate {
             throw new IllegalArgumentException("invalid template: expected RESOURCE element with attribute type = 'meta'");
         }
 
-//        resource.getGroups().stream().filter(group -> group.getName().equals("inputParams"))
-//                .filter(param -> param.getName().equals("ID"))
-//                .map(param -> param.ref)
-
-        List<String> identifiers = new ArrayList<>();
-        for (VOTableGroup group : resource.getGroups()) {
-            if (group.getName().equals("inputParams")) {
-                for (VOTableParam param : group.getParams()) {
-                    if (param.getName().equals("ID")) {
-                        if (StringUtil.hasText(param.ref)) {
-                            identifiers.add(param.ref);
-                        }
-                    }
-                }
-            }
-        }
-        return identifiers;
-
-        // List of ID's from the INFO elements
-//        return votable.getInfos().stream()
-//                .filter(info -> StringUtil.hasText(info.id))
-//                .map(info -> info.id)
-//                .collect(Collectors.toList());
+        return resource.getGroups().stream()
+                .filter(group -> "inputParams".equals(group.getName()))
+                .flatMap(group -> group.getParams().stream())
+                .filter(param -> "ID".equals(param.getName()) && StringUtil.hasText(param.ref))
+                .map(param -> param.ref)
+                .collect(Collectors.toList());
     }
 
-    public static class Key {
-        final public String name;
-        final public String owner;
-
-        public Key(final String name, final String owner) {
-            this.name = name;
-            this.owner = owner;
+    /**
+     * Validate that a string is not be null or empty, and contains only letters, numbers, or a dash.
+     *
+     * @param input the string to validate.
+     */
+    protected boolean isValidString(String input) {
+        if (!StringUtil.hasLength(input)) {
+            return false;
         }
+        return input.matches("[a-zA-Z0-9-]+");
+    }
 
+    /**
+     * Get the VOTableDocument from the template.
+     *
+     * @param template the VOTable template.
+     * @return the VOTableDocument.
+     */
+    protected static VOTableDocument getVOTableDocument(String template) {
+        VOTableReader reader = new VOTableReader();
+        try {
+            return reader.read(template);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Error reading VOTable template: " + e.getMessage());
+        }
     }
 
 }
