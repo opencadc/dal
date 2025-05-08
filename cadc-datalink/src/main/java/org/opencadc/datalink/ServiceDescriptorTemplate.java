@@ -128,7 +128,7 @@ public class ServiceDescriptorTemplate {
      * @return the descriptor name.
      */
     public String getName() {
-        return this.name;
+        return name;
     }
 
     /**
@@ -136,7 +136,7 @@ public class ServiceDescriptorTemplate {
      * @return the descriptor template.
      */
     public String getTemplate() {
-        return this.template;
+        return template;
     }
 
     /**
@@ -145,7 +145,7 @@ public class ServiceDescriptorTemplate {
      * @return the list of identifiers.
      */
     public List<String> getIdentifiers() {
-        return this.identifiers;
+        return identifiers;
     }
 
     /**
@@ -154,7 +154,7 @@ public class ServiceDescriptorTemplate {
      * @return a VOTableResource..
      */
     public VOTableResource getResource() {
-        return this.resource;
+        return resource;
     }
 
     /**
@@ -194,7 +194,7 @@ public class ServiceDescriptorTemplate {
         if (!"meta".equals(resources.get(0).getType())) {
             throw new IllegalArgumentException("invalid template: expected RESOURCE element with attribute type = 'meta'");
         }
-        resource = resources.get(0);
+        this.resource = resources.get(0);
 
         getIdentifiers().addAll(resource.getGroups().stream()
                 .filter(group -> "inputParams".equals(group.getName()))
