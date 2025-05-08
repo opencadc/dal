@@ -72,7 +72,6 @@ package org.opencadc.datalink;
 import ca.nrc.cadc.util.FileUtil;
 import java.io.File;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
@@ -84,24 +83,23 @@ public class ServiceDescriptorTemplateTest {
 
         File testFile = FileUtil.getFileFromResource("valid-template.xml", ServiceDescriptorTemplateTest.class);
         String template = Files.readString(testFile.toPath());
-        List<String> identifiers = List.of("ID");
 
         try {
-            new ServiceDescriptorTemplate(null, template, identifiers);
+            new ServiceDescriptorTemplate(null, template);
              Assert.fail("Expected IllegalArgumentException for null name");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("name cannot be null"));
         }
 
         try {
-            new ServiceDescriptorTemplate("", template, identifiers);
+            new ServiceDescriptorTemplate("", template);
             Assert.fail("Expected IllegalArgumentException for empty name");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("name cannot be null"));
         }
 
         try {
-            new ServiceDescriptorTemplate("a-1?", template, identifiers);
+            new ServiceDescriptorTemplate("a-1?", template);
             Assert.fail("Expected IllegalArgumentException for name with invalid character");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Invalid descriptor name"));
@@ -111,57 +109,34 @@ public class ServiceDescriptorTemplateTest {
     @Test
     public void testInvalidTemplateArgument() {
 
-        List<String> identifiers = List.of("ID");
-
         try {
-            new ServiceDescriptorTemplate("name", null, identifiers);
+            new ServiceDescriptorTemplate("name", null);
             Assert.fail("Expected IllegalArgumentException for null template");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("template cannot be null"));
         }
 
         try {
-            new ServiceDescriptorTemplate("name", "", identifiers);
+            new ServiceDescriptorTemplate("name", "");
             Assert.fail("Expected IllegalArgumentException for empty template");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("template cannot be null"));
         }
 
         try {
-            new ServiceDescriptorTemplate("name", "template", identifiers);
+            new ServiceDescriptorTemplate("name", "template");
             Assert.fail("Expected IllegalArgumentException for template not a votable");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Error reading VOTable"));
         }
 
         try {
-            new ServiceDescriptorTemplate("name", "<foo></foo>", identifiers);
+            new ServiceDescriptorTemplate("name", "<foo></foo>");
             Assert.fail("Expected IllegalArgumentException for template an empty votable");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Error reading VOTable"));
         }
 
-    }
-
-    @Test
-    public void testInvalidIdentifiers() throws Exception {
-
-        File testFile = FileUtil.getFileFromResource("valid-template.xml", ServiceDescriptorTemplateTest.class);
-        String template = Files.readString(testFile.toPath());
-
-        try {
-            new ServiceDescriptorTemplate("name", template, null);
-            Assert.fail("Expected IllegalArgumentException for null identifiers");
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("identifiers cannot be null"));
-        }
-
-        try {
-            new ServiceDescriptorTemplate("name", template, new ArrayList<>());
-            Assert.fail("Expected IllegalArgumentException for empty identifiers");
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("identifiers cannot be null"));
-        }
     }
 
     @Test
@@ -172,7 +147,7 @@ public class ServiceDescriptorTemplateTest {
         List<String> identifiers = List.of("ID");
 
         try {
-            new ServiceDescriptorTemplate("name", template, identifiers);
+            new ServiceDescriptorTemplate("name", template);
             Assert.fail("Expected IllegalArgumentException for template with mismatched ID and ref attributes");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("no ID/IDREF binding"));
@@ -186,7 +161,7 @@ public class ServiceDescriptorTemplateTest {
         String template = Files.readString(testFile.toPath());
 
         try {
-            ServiceDescriptorTemplate.parseIdentifiers(template);
+            new ServiceDescriptorTemplate("name", template);
             Assert.fail("Expected IllegalArgumentException for template with a RESOURCE missing type='meta'");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("attribute type = 'meta'"));
@@ -196,7 +171,7 @@ public class ServiceDescriptorTemplateTest {
         template = Files.readString(testFile.toPath());
 
         try {
-            ServiceDescriptorTemplate.parseIdentifiers(template);
+            new ServiceDescriptorTemplate("name", template);
             Assert.fail("Expected IllegalArgumentException for template with multiple RESOURCE elements");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("expected a single RESOURCE element"));

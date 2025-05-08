@@ -74,6 +74,7 @@ import ca.nrc.cadc.dali.tables.votable.VOTableReader;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.util.StringUtil;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.security.auth.Subject;
@@ -83,22 +84,30 @@ import javax.security.auth.Subject;
  */
 public class ServiceDescriptorTemplate {
 
-    // The descriptor name, must contain only letters, numbers, or a dash.
     private final String name;
-
-    // VOTable describing the descriptor.
     private final String template;
 
-    // List of ID attributes from the VOTABLE INFO elements in the template.
-    private final List<String> identifiers;
+    // The VOTableResource from the template.
+    private transient VOTableResource resource;
 
-    // The Subject for the user who created the descriptor.
+    // The list of REF attributes in the template.
+    private final List<String> identifiers = new ArrayList<>();
+
+    /**
+     * Server-side support for tracking the owner of a descriptor. This reference is
+     * included to support server-side permission checking and is generally
+     * reconstructed from the persisted ownerID.
+     */
     public transient Subject owner;
-
-    // The ID of the owner, which is a String representation of the Subject.
     public Object ownerID;
 
-    public ServiceDescriptorTemplate(final String name, final String template, final List<String> identifiers) {
+    /**
+     * Constructor for ServiceDescriptorTemplate.
+     *
+     * @param name The descriptor name, must contain only letters, numbers, or a dash.
+     * @param template The VOTable describing the descriptor.
+     */
+    public ServiceDescriptorTemplate(final String name, final String template) {
         if (!StringUtil.hasLength(name)) {
             throw new IllegalArgumentException("name cannot be null or empty");
         }
@@ -108,14 +117,10 @@ public class ServiceDescriptorTemplate {
         if (!StringUtil.hasLength(template)) {
             throw new IllegalArgumentException("template cannot be null or empty");
         }
-        if (identifiers == null || identifiers.isEmpty()) {
-            throw new IllegalArgumentException("identifiers cannot be null or empty");
-        }
-        getVOTableDocument(template);
 
         this.name = name;
         this.template = template;
-        this.identifiers = identifiers;
+        parseTemplate();
     }
 
     /**
@@ -135,8 +140,7 @@ public class ServiceDescriptorTemplate {
     }
 
     /**
-     * Get the list of identifiers from the template.
-     * The identifiers are the ID attributes from the VOTABLE INFO elements.
+     * Get the list of REF attributes from the template.
      *
      * @return the list of identifiers.
      */
@@ -145,28 +149,12 @@ public class ServiceDescriptorTemplate {
     }
 
     /**
-     * Parse the template and extract the identifiers from the REF attribute. A template
-     * must have at least one INFO element in the document root with an ID attribute.
-     * The template must also have a GROUP element named 'inputParams' containing
-     * a PARAM element with a REF attribute that matches the ID attribute of the INFO element.
+     * Get the VOTableResource from the template.
+     *
+     * @return a VOTableResource..
      */
-    public static List<String> parseIdentifiers(String template) {
-        VOTableDocument votable = getVOTableDocument(template);
-        List<VOTableResource> resources = votable.getResources();
-        if (resources.size() != 1) {
-            throw new IllegalArgumentException("invalid template: expected a single RESOURCE element");
-        }
-        VOTableResource resource = resources.get(0);
-        if (!"meta".equals(resource.getType())) {
-            throw new IllegalArgumentException("invalid template: expected RESOURCE element with attribute type = 'meta'");
-        }
-
-        return resource.getGroups().stream()
-                .filter(group -> "inputParams".equals(group.getName()))
-                .flatMap(group -> group.getParams().stream())
-                .filter(param -> "ID".equals(param.getName()) && StringUtil.hasText(param.ref))
-                .map(param -> param.ref)
-                .collect(Collectors.toList());
+    public VOTableResource getResource() {
+        return this.resource;
     }
 
     /**
@@ -182,18 +170,38 @@ public class ServiceDescriptorTemplate {
     }
 
     /**
-     * Get the VOTableDocument from the template.
-     *
-     * @param template the VOTable template.
-     * @return the VOTableDocument.
+     * Parses the template and extract VOTableResource and the identifiers
+     * from the REF attribute. A template must have a single RESOURCE element
+     * with type = 'meta'. The meta resource must have a GROUP element 'inputParams'
+     * that has a PARAM elements with a REF attributes. The template must have
+     * one or more INFO elements in the document root with an ID attribute.
+     * The REF attributes must match the ID attributes.
      */
-    protected static VOTableDocument getVOTableDocument(String template) {
+    private void parseTemplate() {
+        VOTableDocument votable;
         VOTableReader reader = new VOTableReader();
         try {
-            return reader.read(template);
+            votable = reader.read(template);
         } catch (IOException e) {
             throw new IllegalArgumentException("Error reading VOTable template: " + e.getMessage());
         }
+
+        List<VOTableResource> resources = votable.getResources();
+        if (resources.size() != 1) {
+            throw new IllegalArgumentException("invalid template: expected a single RESOURCE element");
+        }
+
+        if (!"meta".equals(resources.get(0).getType())) {
+            throw new IllegalArgumentException("invalid template: expected RESOURCE element with attribute type = 'meta'");
+        }
+        resource = resources.get(0);
+
+        getIdentifiers().addAll(resource.getGroups().stream()
+                .filter(group -> "inputParams".equals(group.getName()))
+                .flatMap(group -> group.getParams().stream())
+                .filter(param -> "ID".equals(param.getName()) && StringUtil.hasText(param.ref))
+                .map(param -> param.ref)
+                .collect(Collectors.toList()));
     }
 
 }
