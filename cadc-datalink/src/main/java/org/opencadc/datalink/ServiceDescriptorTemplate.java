@@ -74,39 +74,53 @@ import ca.nrc.cadc.dali.tables.votable.VOTableReader;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.util.StringUtil;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.log4j.Logger;
+import javax.security.auth.Subject;
 
 /**
  * Datalink Service Descriptor Template
  */
 public class ServiceDescriptorTemplate {
-    private static final Logger log = Logger.getLogger(ServiceDescriptorTemplate.class);
 
-    // The descriptor name, must contain only letters, numbers, or a dash.
     private final String name;
-
-    // VOTable describing the descriptor.
     private final String template;
 
-    // List of ID attributes from the VOTABLE INFO elements in the template.
-    private final List<String> identifiers;
+    // The VOTableResource from the template.
+    private transient VOTableResource resource;
 
+    // The list of REF attributes in the template.
+    private final List<String> identifiers = new ArrayList<>();
+
+    /**
+     * Server-side support for tracking the owner of a descriptor. This reference is
+     * included to support server-side permission checking and is generally
+     * reconstructed from the persisted ownerID.
+     */
+    public transient Subject owner;
+    public Object ownerID;
+
+    /**
+     * Constructor for ServiceDescriptorTemplate.
+     *
+     * @param name The descriptor name, must contain only letters, numbers, or a dash.
+     * @param template The VOTable describing the descriptor.
+     */
     public ServiceDescriptorTemplate(final String name, final String template) {
         if (!StringUtil.hasLength(name)) {
             throw new IllegalArgumentException("name cannot be null or empty");
         }
-        if (!StringUtil.hasLength(template)) {
-            throw new IllegalArgumentException("template cannot be null or empty");
-        }
         if (!isValidString(name)) {
             throw new IllegalArgumentException("Invalid descriptor name: " + name);
+        }
+        if (!StringUtil.hasLength(template)) {
+            throw new IllegalArgumentException("template cannot be null or empty");
         }
 
         this.name = name;
         this.template = template;
-        this.identifiers = parseIdentifiers(template);
+        parseTemplate();
     }
 
     /**
@@ -114,7 +128,7 @@ public class ServiceDescriptorTemplate {
      * @return the descriptor name.
      */
     public String getName() {
-        return this.name;
+        return name;
     }
 
     /**
@@ -122,17 +136,25 @@ public class ServiceDescriptorTemplate {
      * @return the descriptor template.
      */
     public String getTemplate() {
-        return this.template;
+        return template;
     }
 
     /**
-     * Get the list of identifiers from the template.
-     * The identifiers are the ID attributes from the VOTABLE INFO elements.
+     * Get the list of REF attributes from the template.
      *
      * @return the list of identifiers.
      */
     public List<String> getIdentifiers() {
-        return this.identifiers;
+        return identifiers;
+    }
+
+    /**
+     * Get the VOTableResource from the template.
+     *
+     * @return a VOTableResource..
+     */
+    public VOTableResource getResource() {
+        return resource;
     }
 
     /**
@@ -140,7 +162,7 @@ public class ServiceDescriptorTemplate {
      *
      * @param input the string to validate.
      */
-    private boolean isValidString(String input) {
+    protected boolean isValidString(String input) {
         if (!StringUtil.hasLength(input)) {
             return false;
         }
@@ -148,14 +170,16 @@ public class ServiceDescriptorTemplate {
     }
 
     /**
-     * Parse the template and extract the identifiers. A template must have at least one
-     * INFO element with an ID attribute in the document root. The template must also have
-     * a group element named 'inputParams' containing a PARAM element with a ref attribute
-     * that matches the ID attribute of the INFO element.
+     * Parses the template and extract VOTableResource and the identifiers
+     * from the REF attribute. A template must have a single RESOURCE element
+     * with type = 'meta'. The meta resource must have a GROUP element 'inputParams'
+     * that has a PARAM elements with a REF attributes. The template must have
+     * one or more INFO elements in the document root with an ID attribute.
+     * The REF attributes must match the ID attributes.
      */
-    private List<String> parseIdentifiers(String template) {
-        VOTableReader reader = new VOTableReader();
+    private void parseTemplate() {
         VOTableDocument votable;
+        VOTableReader reader = new VOTableReader();
         try {
             votable = reader.read(template);
         } catch (IOException e) {
@@ -166,17 +190,18 @@ public class ServiceDescriptorTemplate {
         if (resources.size() != 1) {
             throw new IllegalArgumentException("invalid template: expected a single RESOURCE element");
         }
-        VOTableResource resource = resources.get(0);
-        if (!"meta".equals(resource.getType())) {
+
+        if (!"meta".equals(resources.get(0).getType())) {
             throw new IllegalArgumentException("invalid template: expected RESOURCE element with attribute type = 'meta'");
         }
+        this.resource = resources.get(0);
 
-        // List of ID's from the INFO elements
-        List<String> infoIDs = votable.getInfos().stream()
-                .filter(info -> StringUtil.hasText(info.id))
-                .map(info -> info.id)
-                .collect(Collectors.toList());
-        return infoIDs;
+        getIdentifiers().addAll(resource.getGroups().stream()
+                .filter(group -> "inputParams".equals(group.getName()))
+                .flatMap(group -> group.getParams().stream())
+                .filter(param -> "ID".equals(param.getName()) && StringUtil.hasText(param.ref))
+                .map(param -> param.ref)
+                .collect(Collectors.toList()));
     }
 
 }
