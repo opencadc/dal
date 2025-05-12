@@ -72,6 +72,7 @@ package org.opencadc.datalink;
 import ca.nrc.cadc.util.FileUtil;
 import java.io.File;
 import java.nio.file.Files;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -109,28 +110,28 @@ public class ServiceDescriptorTemplateTest {
     public void testInvalidTemplateArgument() {
 
         try {
-            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("test", null);
+            new ServiceDescriptorTemplate("name", null);
             Assert.fail("Expected IllegalArgumentException for null template");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("template cannot be null"));
         }
 
         try {
-            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("test", "");
+            new ServiceDescriptorTemplate("name", "");
             Assert.fail("Expected IllegalArgumentException for empty template");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("template cannot be null"));
         }
 
         try {
-            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("test", "template");
+            new ServiceDescriptorTemplate("name", "template");
             Assert.fail("Expected IllegalArgumentException for template not a votable");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Error reading VOTable"));
         }
 
         try {
-            ServiceDescriptorTemplate template = new ServiceDescriptorTemplate("test", "<foo></foo>");
+            new ServiceDescriptorTemplate("name", "<foo></foo>");
             Assert.fail("Expected IllegalArgumentException for template an empty votable");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("Error reading VOTable"));
@@ -143,9 +144,10 @@ public class ServiceDescriptorTemplateTest {
 
         File testFile = FileUtil.getFileFromResource("mismatched-id-ref-template.xml", ServiceDescriptorTemplateTest.class);
         String template = Files.readString(testFile.toPath());
+        List<String> identifiers = List.of("ID");
 
         try {
-            new ServiceDescriptorTemplate("test", template);
+            new ServiceDescriptorTemplate("name", template);
             Assert.fail("Expected IllegalArgumentException for template with mismatched ID and ref attributes");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("no ID/IDREF binding"));
@@ -159,7 +161,7 @@ public class ServiceDescriptorTemplateTest {
         String template = Files.readString(testFile.toPath());
 
         try {
-            new ServiceDescriptorTemplate("test", template);
+            new ServiceDescriptorTemplate("name", template);
             Assert.fail("Expected IllegalArgumentException for template with a RESOURCE missing type='meta'");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("attribute type = 'meta'"));
@@ -169,7 +171,7 @@ public class ServiceDescriptorTemplateTest {
         template = Files.readString(testFile.toPath());
 
         try {
-            new ServiceDescriptorTemplate("test", template);
+            new ServiceDescriptorTemplate("name", template);
             Assert.fail("Expected IllegalArgumentException for template with multiple RESOURCE elements");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("expected a single RESOURCE element"));
