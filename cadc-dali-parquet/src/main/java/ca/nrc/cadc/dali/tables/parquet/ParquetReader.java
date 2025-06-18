@@ -69,16 +69,21 @@
 
 package ca.nrc.cadc.dali.tables.parquet;
 
+import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
+import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableReader;
+import ca.nrc.cadc.dali.tables.votable.VOTableResource;
+import ca.nrc.cadc.dali.util.FormatFactory;
+
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.avro.generic.GenericRecord;
 import org.apache.log4j.Logger;
 import org.apache.parquet.avro.AvroParquetReader;
@@ -86,68 +91,65 @@ import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.SeekableInputStream;
-import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.Type;
 
-
-//TODO: Temporary implementation
 public class ParquetReader {
 
     private static final Logger log = Logger.getLogger(ParquetReader.class);
 
-    public TableShape read(InputStream inputStream) throws IOException {
+    public VOTableDocument read(InputStream inputStream) throws IOException {
 
         InputFile inputFile = getInputFile(inputStream);
-        int recordCount = 0;
-        int columnCount = 0;
 
         ParquetMetadata metadata = ParquetFileReader.open(inputFile).getFooter();
-        MessageType schema = metadata.getFileMetaData().getSchema();
-        columnCount = schema.getFieldCount();
 
         String votable = metadata.getFileMetaData().getKeyValueMetaData().get("IVOA.VOTable-Parquet.content");
         log.debug("VOTable: " + votable);
 
         VOTableReader voTableReader = new VOTableReader();
         VOTableDocument voTableDocument = voTableReader.read(votable);
+        VOTableResource voTableResource = voTableDocument.getResourceByType("results");
+        List<VOTableField> fields = voTableResource.getTable().getFields();
+
+        ListTableData tableData = new ListTableData();
+        voTableResource.getTable().setTableData(tableData);
+
+        FormatFactory formatFactory = new FormatFactory();
 
         try (org.apache.parquet.hadoop.ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(inputFile).build()) {
             GenericRecord record;
 
             while ((record = reader.read()) != null) {
                 log.debug("Reading Record: " + record);
-                recordCount++;
 
-                // TODO: This is a temporary implementation to read the data
-                Map<String, Object> rowData = new HashMap<>();
-                for (Type field : schema.getFields()) {
+                List<Object> row = new ArrayList<>();
+                for (VOTableField field : fields) {
                     String fieldName = field.getName();
-                    rowData.put(fieldName, record.get(fieldName));
+                    Object value = record.get(fieldName);
+                    if (value != null) {
+                        try {
+                            if (field.xtype != null || field.getArraysize() != null) {
+                                value = formatFactory.getFormat(field).parse(value.toString().replaceAll("[\\[\\],]".trim(), ""));
+                            } else {
+                                value = formatFactory.getFormat(field).parse(value.toString());
+                            }
+                        } catch (Exception e) {
+                            throw new RuntimeException("Failed to format value for field: " + field.getName(), e);
+                        }
+                    }
+                    row.add(value);
                 }
-                log.debug("Retrieved Row Data: " + rowData);
+                tableData.getArrayList().add(row);
             }
-            log.debug("Record Count = " + recordCount);
-
         } catch (Exception e) {
             throw new IOException("failed to read parquet data", e);
         }
-        if (recordCount == 0) {
-            throw new RuntimeException("NO Records Read");
-        }
-        return new TableShape(recordCount, columnCount, voTableDocument);
+        return voTableDocument;
     }
 
     private static InputFile getInputFile(InputStream inputStream) throws IOException {
 
-        // Read the entire InputStream into a byte array
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        byte[] temp = new byte[1024];
-        int bytesRead;
-        while ((bytesRead = inputStream.read(temp)) != -1) {
-            buffer.write(temp, 0, bytesRead);
-        }
-
-        byte[] inputData = buffer.toByteArray();
+        ByteArrayInputStream bais = (ByteArrayInputStream) inputStream;
+        byte[] inputData = bais.readAllBytes();
 
         return new InputFile() {
             @Override
@@ -238,30 +240,6 @@ public class ParquetReader {
                 };
             }
         };
-    }
-
-    public static class TableShape {
-        int recordCount;
-        int columnCount;
-        VOTableDocument voTableDocument;
-
-        public TableShape(int recordCount, int columnCount, VOTableDocument voTableDocument) {
-            this.recordCount = recordCount;
-            this.columnCount = columnCount;
-            this.voTableDocument = voTableDocument;
-        }
-
-        public int getRecordCount() {
-            return recordCount;
-        }
-
-        public int getColumnCount() {
-            return columnCount;
-        }
-
-        public VOTableDocument getVoTableDocument() {
-            return voTableDocument;
-        }
     }
 
 }
