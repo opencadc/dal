@@ -1,4 +1,4 @@
-package ca.nrc.cadc.dali.tables.parquet.readerHelper;
+package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.PrimitiveConverter;

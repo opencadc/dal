@@ -77,8 +77,8 @@ import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.Shape;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.TableWriter;
-import ca.nrc.cadc.dali.tables.parquet.writerHelper.DynamicParquetWriterBuilder;
-import ca.nrc.cadc.dali.tables.parquet.writerHelper.DynamicSchemaGenerator;
+import ca.nrc.cadc.dali.tables.parquet.writerhelper.DynamicParquetWriterBuilder;
+import ca.nrc.cadc.dali.tables.parquet.writerhelper.DynamicSchemaGenerator;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
@@ -168,7 +168,8 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
         MessageType schema = DynamicSchemaGenerator.generateSchema(voTableResource.getTable().getFields());
 
-        try (org.apache.parquet.hadoop.ParquetWriter<List<Object>> writer = new DynamicParquetWriterBuilder(outputFile, schema, voTableResource.getTable().getFields(),prepareCustomMetaData(voTableDocument, maxRec))
+        try (org.apache.parquet.hadoop.ParquetWriter<List<Object>> writer =
+                     new DynamicParquetWriterBuilder(outputFile, schema, voTableResource.getTable().getFields(), prepareCustomMetaData(voTableDocument, maxRec))
                 .withCompressionCodec(CompressionCodecName.SNAPPY)
                 .withRowGroupSize(Long.valueOf(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE))
                 .withPageSize(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE)
@@ -178,9 +179,9 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                 .withDictionaryEncoding(false)
                 .build()) {
 
-            int recordsCount = saveRecords(maxRec, tableData, writer);
+            int recordsCount = writeRecords(maxRec, tableData, writer);
             writer.close();
-            log.debug("Total Records generated= " + recordsCount);
+            log.debug("Total Records written= " + recordsCount);
         } catch (Exception e) {
             throw new IOException("error while writing", e);
         }
@@ -315,7 +316,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         return customMetaData;
     }
 
-    private int saveRecords(Long maxRec, TableData tableData, org.apache.parquet.hadoop.ParquetWriter<List<Object>> writer)
+    private int writeRecords(Long maxRec, TableData tableData, org.apache.parquet.hadoop.ParquetWriter<List<Object>> writer)
             throws IOException {
         Iterator<List<Object>> iterator = tableData.iterator();
         int recordCount = 1;
@@ -347,9 +348,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                 }
             }
 
-            System.out.println("Writing record " + formattedRowData);
             writer.write(formattedRowData);
-            System.out.println("Done writing record ");
             recordCount++;
         }
         return recordCount;

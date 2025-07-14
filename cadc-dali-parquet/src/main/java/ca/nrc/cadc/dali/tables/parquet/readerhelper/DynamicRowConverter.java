@@ -1,4 +1,4 @@
-package ca.nrc.cadc.dali.tables.parquet.readerHelper;
+package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;
@@ -21,7 +21,8 @@ public class DynamicRowConverter extends GroupConverter {
 
             if (field.isPrimitive()) {
                 converters[i] = new DynamicPrimitiveConverter(currentRow, name, field.asPrimitiveType().getPrimitiveTypeName());
-            } else if (field.getLogicalTypeAnnotation() != null && field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
+            } else if (field.getLogicalTypeAnnotation() != null
+                    && field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
                 converters[i] = new DynamicListConverter(currentRow, name, field.asGroupType());
             } else {
                 throw new UnsupportedOperationException("Unsupported type: " + field);

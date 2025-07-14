@@ -1,4 +1,7 @@
-package ca.nrc.cadc.dali.tables.parquet.readerHelper;
+package ca.nrc.cadc.dali.tables.parquet.readerhelper;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.Converter;
@@ -7,9 +10,6 @@ import org.apache.parquet.io.api.PrimitiveConverter;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class DynamicListConverter extends GroupConverter {
     private final List<Object> list = new ArrayList<>();

@@ -1,4 +1,9 @@
-package ca.nrc.cadc.dali.tables.parquet.writerHelper;
+package ca.nrc.cadc.dali.tables.parquet.writerhelper;
+
+import ca.nrc.cadc.dali.tables.votable.VOTableField;
+
+import java.util.List;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
@@ -7,21 +12,16 @@ import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.RecordConsumer;
 import org.apache.parquet.schema.MessageType;
 
-import java.util.List;
-import java.util.Map;
+public class CustomWriteSupport extends WriteSupport<List<Object>> {
 
-import ca.nrc.cadc.dali.tables.votable.VOTableField;
-
-public class WriteSupportImpl extends WriteSupport<List<Object>> {
-
-    private static final Logger log = Logger.getLogger(WriteSupportImpl.class);
+    private static final Logger log = Logger.getLogger(CustomWriteSupport.class);
 
     private final List<VOTableField> voTableFields;
     private RecordConsumer recordConsumer;
     private final MessageType schema;
     private final Map<String, String> extraMetaData;
 
-    WriteSupportImpl(MessageType schema, List<VOTableField> voTableFields, Map<String, String> extraMetaData) {
+    CustomWriteSupport(MessageType schema, List<VOTableField> voTableFields, Map<String, String> extraMetaData) {
         super();
         this.voTableFields = voTableFields;
         this.schema = schema;

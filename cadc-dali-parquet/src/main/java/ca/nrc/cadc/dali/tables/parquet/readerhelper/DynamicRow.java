@@ -1,4 +1,4 @@
-package ca.nrc.cadc.dali.tables.parquet.readerHelper;
+package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

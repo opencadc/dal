@@ -1,7 +1,4 @@
-package ca.nrc.cadc.dali.tables.parquet.readerHelper;
-
-import org.apache.parquet.io.InputFile;
-import org.apache.parquet.io.SeekableInputStream;
+package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
@@ -9,6 +6,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
+
+import org.apache.parquet.io.InputFile;
+import org.apache.parquet.io.SeekableInputStream;
 
 public class ParquetInputFile implements InputFile {
 

@@ -67,18 +67,18 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables.parquet.writerHelper;
+package ca.nrc.cadc.dali.tables.parquet.writerhelper;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
-import org.apache.parquet.schema.Types;
 import org.apache.parquet.schema.Type;
-import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.Types;
 
 public class DynamicSchemaGenerator {
 
@@ -152,14 +152,20 @@ public class DynamicSchemaGenerator {
         return createSchema(voTableField.getName().replaceAll("\"", "_"), typeName, logicalTypeAnnotation, arraysize);
     }
 
-    private static Type createSchema(String fieldName, PrimitiveType.PrimitiveTypeName typeName, LogicalTypeAnnotation logicalTypeAnnotation, String arraysize) {
-        if (arraysize == null || typeName.equals(PrimitiveType.PrimitiveTypeName.BINARY) || typeName.equals(PrimitiveType.PrimitiveTypeName.BOOLEAN)) {
+    private static Type createSchema(String fieldName, PrimitiveType.PrimitiveTypeName typeName,
+                                     LogicalTypeAnnotation logicalTypeAnnotation, String arraysize) {
+        if (arraysize == null
+                || typeName.equals(PrimitiveType.PrimitiveTypeName.BINARY) // String = (datatype = char) + (arraysize = *)
+                || logicalTypeAnnotation instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) { // timestamp = (datatype = char) + (arraysize = *)
+
+            // primitives
             Types.PrimitiveBuilder<PrimitiveType> prim = Types.primitive(typeName, Type.Repetition.OPTIONAL);
             if (logicalTypeAnnotation != null) {
                 prim = prim.as(logicalTypeAnnotation);
             }
             return prim.named(fieldName);
         } else {
+            // list
             return Types.optionalGroup()
                     .as(LogicalTypeAnnotation.listType())
                     .repeated(typeName)

@@ -69,54 +69,46 @@
 
 package ca.nrc.cadc.dali.tables.parquet;
 
-import ca.nrc.cadc.dali.tables.ListTableData;
-import ca.nrc.cadc.dali.tables.parquet.readerHelper.DynamicRow;
-import ca.nrc.cadc.dali.tables.parquet.readerHelper.DynamicRowMaterializer;
-import ca.nrc.cadc.dali.tables.parquet.readerHelper.ParquetInputFile;
+import static ca.nrc.cadc.dali.tables.parquet.ParquetWriter.IVOA_VOTABLE_PARQUET_CONTENT_KEY;
+
+import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetInputFile;
+import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetTableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableReader;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableTable;
 
-import ca.nrc.cadc.dali.util.DoubleFormat;
 import ca.nrc.cadc.dali.util.DoubleArrayFormat;
-import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.util.DoubleFormat;
+
 import ca.nrc.cadc.dali.util.FloatArrayFormat;
-import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.dali.util.FloatFormat;
+import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.dali.util.IntArrayFormat;
 import ca.nrc.cadc.dali.util.IntegerFormat;
 import ca.nrc.cadc.dali.util.LongArrayFormat;
 import ca.nrc.cadc.dali.util.LongFormat;
 import ca.nrc.cadc.dali.util.StringFormat;
+import ca.nrc.cadc.dali.util.UTCTimestampFormat;
 import ca.nrc.cadc.dali.util.UUIDFormat;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-import ca.nrc.cadc.dali.util.UTCTimestampFormat;
 import org.apache.log4j.Logger;
-import org.apache.parquet.column.page.PageReadStore;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.io.InputFile;
-import org.apache.parquet.io.MessageColumnIO;
-import org.apache.parquet.io.RecordReader;
-import org.apache.parquet.io.ColumnIOFactory;
+import org.apache.parquet.schema.GroupType;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
-import org.apache.parquet.schema.GroupType;
-import org.apache.parquet.schema.LogicalTypeAnnotation;
-
-import static ca.nrc.cadc.dali.tables.parquet.ParquetWriter.IVOA_VOTABLE_PARQUET_CONTENT_KEY;
 
 public class ParquetReader {
 
@@ -135,60 +127,21 @@ public class ParquetReader {
             MessageType parquetSchema = metadata.getFileMetaData().getSchema();
 
             String votable = metadata.getFileMetaData().getKeyValueMetaData().get(IVOA_VOTABLE_PARQUET_CONTENT_KEY);
-            log.debug("VOTable: " + votable);
 
             voTableDocument = getVOTableDocument(votable, parquetSchema);
             List<VOTableField> votableFields = voTableDocument.getResourceByType("results").getTable().getFields();
 
-            ListTableData tableData = new ListTableData();
+            ParquetTableData tableData = new ParquetTableData(reader, parquetSchema, votableFields);
             voTableDocument.getResourceByType("results").getTable().setTableData(tableData);
-
-            PageReadStore rowGroup;
-
-            log.debug("Reading Parquet file with schema: " + parquetSchema);
-            while ((rowGroup = reader.readNextRowGroup()) != null) {
-                readRowGroup(parquetSchema, rowGroup, votableFields, tableData);
-            }
-            log.debug("Finished reading Parquet file");
         } catch (Exception e) {
             throw new RuntimeException("Error reading Parquet file", e);
         }
         return voTableDocument;
     }
 
-    private static void readRowGroup(MessageType parquetSchema, PageReadStore rowGroup, List<VOTableField> votableFields, ListTableData tableData) {
-        DynamicRow dynamicRow;
-        MessageColumnIO columnIO = new ColumnIOFactory().getColumnIO(parquetSchema);
-        DynamicRowMaterializer materializer = new DynamicRowMaterializer(parquetSchema);
-        RecordReader<DynamicRow> recordReader = columnIO.getRecordReader(rowGroup, materializer);
-
-        for (int i = 0; i < rowGroup.getRowCount(); i++) {
-            dynamicRow = recordReader.read();
-            List<Object> row = new ArrayList<>();
-
-            String value;
-            for (VOTableField field : votableFields) {
-                String fieldName = field.getName();
-                int fieldIndex = parquetSchema.getFieldIndex(fieldName);
-                Type parquetField = parquetSchema.getType(fieldIndex);
-
-                if (dynamicRow.get(fieldName) == null) {
-                    value = null;
-                } else if (parquetField.isPrimitive() && parquetField.asPrimitiveType().getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
-                            .withZone(ZoneId.of("UTC"));
-                    value = formatter.format(Instant.ofEpochMilli((long) dynamicRow.get(fieldName)));
-                } else {
-                    value = dynamicRow.get(fieldName).toString().replaceAll("[\\[\\],]", "");
-                }
-                row.add(field.getFormat().parse(value));
-            }
-            tableData.getArrayList().add(row);
-        }
-    }
-
     private VOTableDocument getVOTableDocument(String votable, MessageType parquetSchema) throws IOException {
         if (votable == null || votable.isBlank()) {
+            log.debug("Creating VOTable from scratch as no VOTable content found in Parquet metadata.");
             List<VOTableField> fields = new ArrayList<>();
             VOTableDocument voTableDocument = new VOTableDocument();
 
@@ -244,6 +197,7 @@ public class ParquetReader {
             voTableResource.getTable().getFields().addAll(fields);
             return voTableDocument;
         } else {
+            log.debug("Reading VOTable content from Parquet metadata.");
             VOTableReader voTableReader = new VOTableReader();
             VOTableDocument voTableDocument = voTableReader.read(votable);
 
