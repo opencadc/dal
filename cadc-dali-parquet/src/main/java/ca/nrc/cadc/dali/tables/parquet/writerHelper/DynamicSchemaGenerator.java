@@ -67,96 +67,105 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables.parquet;
+package ca.nrc.cadc.dali.tables.parquet.writerHelper;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import java.util.ArrayList;
-import java.util.Arrays;
+
 import java.util.List;
-import org.apache.avro.LogicalTypes;
-import org.apache.avro.Schema;
+
 import org.apache.log4j.Logger;
+import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Types;
+import org.apache.parquet.schema.Type;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 
 public class DynamicSchemaGenerator {
 
     private static final Logger log = Logger.getLogger(DynamicSchemaGenerator.class);
 
-    public static Schema generateSchema(List<VOTableField> voFields) {
-        // List to hold Avro fields
-        List<Schema.Field> fields = new ArrayList<>();
+    public static MessageType generateSchema(List<VOTableField> voFields) {
+        Types.MessageTypeBuilder builder = Types.buildMessage();
         try {
             int columnCount = voFields.size();
             log.debug("VOTable Column count = " + columnCount);
             for (VOTableField voField : voFields) {
-                String columnName = voField.getName();
-                Schema.Field field = new Schema.Field(columnName.replaceAll("\"", "_"), getAvroFieldType(voField), null, null);
-                fields.add(field);
+                Type fieldType = getAvroFieldType(voField);
+                builder.addField(fieldType);
             }
-            log.debug("Avro Schema.Field count = " + fields.size());
         } catch (Exception e) {
-            log.debug("Failure while creating Avro Schema from VOTable", e);
-            throw new RuntimeException("Failure while creating Avro Schema from VOTable : " + e.getMessage(), e);
+            log.debug("Failure while creating Parquet Schema from VOTable", e);
+            throw new RuntimeException("Failure while creating Parquet Schema from VOTable : " + e.getMessage(), e);
         }
 
-        // Define the Avro record schema with the fields
-        Schema schema = Schema.createRecord("Record", null, null, Boolean.FALSE);
-        schema.setFields(fields);
+        MessageType schema = builder.named("schema");
         log.debug("Schema Generated Successfully : " + schema);
         return schema;
     }
 
-    private static Schema getAvroFieldType(VOTableField voTableField) {
+    private static Type getAvroFieldType(VOTableField voTableField) {
         String datatype = voTableField.getDatatype();
         String arraysize = voTableField.getArraysize();
         String xtype = voTableField.xtype;
 
-        Schema fieldType;
+        PrimitiveType.PrimitiveTypeName typeName;
+        LogicalTypeAnnotation logicalTypeAnnotation = null;
+
         switch (datatype) {
             case "short":
             case "int":
-                fieldType = createSchema(Schema.Type.INT, arraysize);
+                typeName = PrimitiveType.PrimitiveTypeName.INT32;
                 break;
             case "long":
-                fieldType = createSchema(Schema.Type.LONG, arraysize);
+                typeName = PrimitiveType.PrimitiveTypeName.INT64;
                 break;
             case "float":
-                fieldType = createSchema(Schema.Type.FLOAT, arraysize);
+                typeName = PrimitiveType.PrimitiveTypeName.FLOAT;
                 break;
             case "double":
-                fieldType = createSchemaWithXType(Schema.Type.DOUBLE, arraysize, xtype);
+                typeName = PrimitiveType.PrimitiveTypeName.DOUBLE;
                 break;
             case "char":
-                fieldType = "timestamp".equals(xtype)
-                        ? LogicalTypes.timestampMillis().addToSchema(Schema.create(Schema.Type.LONG)) :
-                        createSchemaWithXType(Schema.Type.STRING, null, xtype);
+                if ("timestamp".equalsIgnoreCase(xtype)) {
+                    logicalTypeAnnotation = LogicalTypeAnnotation.timestampType(true, LogicalTypeAnnotation.TimeUnit.MILLIS);
+                    typeName = PrimitiveType.PrimitiveTypeName.INT64;
+                } else if ("uuid".equalsIgnoreCase(xtype)) {
+                    logicalTypeAnnotation = LogicalTypeAnnotation.uuidType();
+                    typeName = PrimitiveType.PrimitiveTypeName.BINARY;
+                } else {
+                    typeName = PrimitiveType.PrimitiveTypeName.BINARY;
+                }
                 break;
             case "boolean":
-                fieldType = Schema.create(Schema.Type.BOOLEAN);
+                typeName = PrimitiveType.PrimitiveTypeName.BOOLEAN;
                 break;
             case "date":
             case "timestamp":
-                fieldType = LogicalTypes.timestampMillis().addToSchema(Schema.create(Schema.Type.LONG));
+                typeName = PrimitiveType.PrimitiveTypeName.INT64;
+                logicalTypeAnnotation = LogicalTypeAnnotation.timestampType(true, LogicalTypeAnnotation.TimeUnit.MILLIS);
                 break;
             case "byte":
-                fieldType = createSchema(Schema.Type.BYTES, arraysize);
-                break;
             default:
-                fieldType = Schema.create(Schema.Type.STRING);
+                typeName = PrimitiveType.PrimitiveTypeName.BINARY;
         }
 
-        return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), fieldType));
+        return createSchema(voTableField.getName().replaceAll("\"", "_"), typeName, logicalTypeAnnotation, arraysize);
     }
 
-    private static Schema createSchema(Schema.Type type, String arraysize) {
-        return arraysize == null ? Schema.create(type) : Schema.createArray(Schema.create(type));
-    }
-
-    private static Schema createSchemaWithXType(Schema.Type type, String arraysize, String xtype) {
-        Schema schema = createSchema(type, arraysize);
-        if (xtype != null) {
-            schema.addProp("xtype", xtype);
+    private static Type createSchema(String fieldName, PrimitiveType.PrimitiveTypeName typeName, LogicalTypeAnnotation logicalTypeAnnotation, String arraysize) {
+        if (arraysize == null || typeName.equals(PrimitiveType.PrimitiveTypeName.BINARY) || typeName.equals(PrimitiveType.PrimitiveTypeName.BOOLEAN)) {
+            Types.PrimitiveBuilder<PrimitiveType> prim = Types.primitive(typeName, Type.Repetition.OPTIONAL);
+            if (logicalTypeAnnotation != null) {
+                prim = prim.as(logicalTypeAnnotation);
+            }
+            return prim.named(fieldName);
+        } else {
+            return Types.optionalGroup()
+                    .as(LogicalTypeAnnotation.listType())
+                    .repeated(typeName)
+                    .named("element")
+                    .named(fieldName);
         }
-        return schema;
     }
 }
 

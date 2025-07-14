@@ -70,15 +70,15 @@
 package ca.nrc.cadc.dali.tables.parquet;
 
 import ca.nrc.cadc.dali.Circle;
-import ca.nrc.cadc.dali.DoubleInterval;
 import ca.nrc.cadc.dali.Interval;
-import ca.nrc.cadc.dali.LongInterval;
 import ca.nrc.cadc.dali.MultiPolygon;
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.Shape;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.TableWriter;
+import ca.nrc.cadc.dali.tables.parquet.writerHelper.DynamicParquetWriterBuilder;
+import ca.nrc.cadc.dali.tables.parquet.writerHelper.DynamicSchemaGenerator;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
@@ -94,21 +94,20 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericRecord;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
-import org.apache.parquet.avro.AvroParquetWriter;
 import org.apache.parquet.hadoop.ParquetFileWriter;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
+import org.apache.parquet.schema.MessageType;
 
 public class ParquetWriter implements TableWriter<VOTableDocument> {
 
@@ -121,6 +120,8 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
     private FormatFactory formatFactory;
     private final ShapeFormat sfmt = new ShapeFormat();
+
+    private List<VOTableField> voTableFields = new ArrayList<>();
 
     public ParquetWriter() {
 
@@ -159,13 +160,15 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             throw new RuntimeException("Multiple objects with type = results");
         }).orElseThrow(() -> new RuntimeException("No object found with type = results"));
 
-        Schema schema = DynamicSchemaGenerator.generateSchema(voTableResource.getTable().getFields());
+        voTableFields.addAll(voTableResource.getTable().getFields());
+
         TableData tableData = voTableResource.getTable().getTableData();
 
         updateVOTable(voTableResource);
 
-        try (org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer = AvroParquetWriter.<GenericRecord>builder(outputFile)
-                .withSchema(schema)
+        MessageType schema = DynamicSchemaGenerator.generateSchema(voTableResource.getTable().getFields());
+
+        try (org.apache.parquet.hadoop.ParquetWriter<List<Object>> writer = new DynamicParquetWriterBuilder(outputFile, schema, voTableResource.getTable().getFields(),prepareCustomMetaData(voTableDocument, maxRec))
                 .withCompressionCodec(CompressionCodecName.SNAPPY)
                 .withRowGroupSize(Long.valueOf(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE))
                 .withPageSize(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE)
@@ -173,10 +176,10 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                 .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
                 .withValidation(false)
                 .withDictionaryEncoding(false)
-                .withExtraMetaData(prepareCustomMetaData(voTableDocument, maxRec))
                 .build()) {
 
-            int recordsCount = saveRecords(maxRec, tableData, schema, writer);
+            int recordsCount = saveRecords(maxRec, tableData, writer);
+            writer.close();
             log.debug("Total Records generated= " + recordsCount);
         } catch (Exception e) {
             throw new IOException("error while writing", e);
@@ -312,102 +315,92 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         return customMetaData;
     }
 
-    private int saveRecords(Long maxRec, TableData tableData, Schema schema, org.apache.parquet.hadoop.ParquetWriter<GenericRecord> writer)
+    private int saveRecords(Long maxRec, TableData tableData, org.apache.parquet.hadoop.ParquetWriter<List<Object>> writer)
             throws IOException {
-        List<Schema.Field> fields = schema.getFields();
         Iterator<List<Object>> iterator = tableData.iterator();
         int recordCount = 1;
 
         while (iterator.hasNext() && recordCount <= maxRec) {
-            GenericRecord record = new GenericData.Record(schema);
             List<Object> rowData = iterator.next();
+            List<Object> formattedRowData = new ArrayList<>();
 
             for (int i = 0; i < rowData.size(); i++) {
-                Schema.Field field = fields.get(i);
-                String columnName = field.name();
-                Schema unionSchema = field.schema().getTypes().get(1);
+                VOTableField voTableField = voTableFields.get(i);
                 Object data = rowData.get(i);
-                
-                String xtype = unionSchema.getProp("xtype");
-                
-                if (unionSchema.getType().equals(Schema.Type.ARRAY)) {
-                    handleArrays(field, xtype, record, data);
-                } else if (unionSchema.getType().equals(Schema.Type.LONG)
-                        && (unionSchema.getLogicalType() != null
-                        && unionSchema.getLogicalType().getName().equals("timestamp-millis"))) {
-                    handleDateAndTimestamp(data, record, columnName);
-                } else {
-                    // handle primitives
-                    // xtype and !array: object to string
-                    if ("shape".equals(xtype)) {
-                        Shape s = (Shape) data;
-                        data = sfmt.format(s);
+
+                String xtype = voTableField.xtype;
+
+                if (data == null) {
+                    formattedRowData.add(null);
+                    continue;
+                }
+
+                if (xtype != null) {
+                    if (xtype.equals("timestamp")) {
+                        formattedRowData.add(handleDateAndTimestamp(data));
+                    } else {
+                        formattedRowData.add(handleXTypeArrayData(xtype, data));
                     }
-                    record.put(columnName, data);
+                } else {
+                    // handle primitives and primitive arrays
+                    formattedRowData.add(data);
                 }
             }
 
-            writer.write(record);
+            System.out.println("Writing record " + formattedRowData);
+            writer.write(formattedRowData);
+            System.out.println("Done writing record ");
             recordCount++;
         }
         return recordCount;
     }
 
-    private void handleArrays(Schema.Field field, String xtype, GenericRecord record, Object data) {
-        if (xtype == null) {
-            record.put(field.name(), data);
-        } else {
-            handleXTypeArrayData(record, field.name(), xtype, data);
-        }
-    }
-
-    private void handleXTypeArrayData(GenericRecord record, String columnName, String xtype, Object data) {
-        if (data == null) {
-            record.put(columnName, null);
-            return;
-        }
+    private Object handleXTypeArrayData(String xtype, Object data) {
+        Object dataToStore;
         if (xtype.equals("interval")) {
             if (data instanceof Interval) {
                 Interval di = (Interval) data;
-                record.put(columnName, di.toArray());
+                dataToStore = di.toArray();
             } else if (data instanceof Interval[]) {
                 Interval[] da = (Interval[]) data;
-                record.put(columnName, Interval.toArray(da));
+                dataToStore = Interval.toArray(da);
             } else {
                 throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
             }
         } else if (xtype.equals("point") && data instanceof Point) {
             Point p = (Point) data;
-            record.put(columnName, p.toArray());
+            dataToStore = p.toArray();
         } else if (xtype.equals("circle") && data instanceof Circle) {
             Circle c = (Circle) data;
-            record.put(columnName, c.toArray());
+            dataToStore = c.toArray();
         } else if (xtype.equals("polygon") && data instanceof Polygon) {
             Polygon p = (Polygon) data;
-            record.put(columnName, p.toArray());
+            dataToStore = p.toArray();
         } else if (xtype.equals("multipolygon") && data instanceof MultiPolygon) {
             MultiPolygon p = (MultiPolygon) data;
-            record.put(columnName, MultiPolygonFormat.toArray(p));
+            dataToStore = MultiPolygonFormat.toArray(p);
+        } else if (xtype.equals("shape") && data instanceof Shape) {
+            Shape s = (Shape) data;
+            dataToStore = sfmt.format(s);
         } else {
             throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
         }
+        return dataToStore;
     }
 
-    private static void handleDateAndTimestamp(Object data, GenericRecord record, String columnName) {
+    private static Object handleDateAndTimestamp(Object data) {
+        Object timeInMillis;
         if (data instanceof Date) {
-            long timeInMillis = ((Date) data).getTime();
-            record.put(columnName, timeInMillis);
-
+            timeInMillis = ((Date) data).getTime();
             log.debug("Date converted to milliseconds: " + timeInMillis);
-        } else if (data instanceof java.time.Instant) {
-            long timeInMillis = ((Instant) data).toEpochMilli();
-            record.put(columnName, timeInMillis);
-
+        } else if (data instanceof Instant) {
+            timeInMillis = ((Instant) data).toEpochMilli();
             log.debug("Instant converted to milliseconds: " + timeInMillis);
         } else {
             log.error("Expected types: Util Date or Instant, but found: " + data.getClass().getName());
 
             throw new IllegalArgumentException("Unsupported object type for timestamp conversion");
         }
+        return timeInMillis;
     }
 }
