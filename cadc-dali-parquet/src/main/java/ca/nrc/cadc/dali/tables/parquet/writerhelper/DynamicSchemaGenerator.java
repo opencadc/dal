@@ -90,8 +90,8 @@ public class DynamicSchemaGenerator {
             int columnCount = voFields.size();
             log.debug("VOTable Column count = " + columnCount);
             for (VOTableField voField : voFields) {
-                Type fieldType = getAvroFieldType(voField);
-                builder.addField(fieldType);
+                Type parquetField = getParquetField(voField);
+                builder.addField(parquetField);
             }
         } catch (Exception e) {
             log.debug("Failure while creating Parquet Schema from VOTable", e);
@@ -103,7 +103,7 @@ public class DynamicSchemaGenerator {
         return schema;
     }
 
-    private static Type getAvroFieldType(VOTableField voTableField) {
+    private static Type getParquetField(VOTableField voTableField) {
         String datatype = voTableField.getDatatype();
         String arraysize = voTableField.getArraysize();
         String xtype = voTableField.xtype;
