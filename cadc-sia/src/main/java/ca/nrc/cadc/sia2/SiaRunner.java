@@ -128,7 +128,7 @@ public class SiaRunner implements JobRunner {
     }
 
     public void run() {
-        log.debug("RUN SiaRunner: " + job.ownerSubject);
+        log.debug("RUN SiaRunner: " + job.owner);
 
         logInfo = new JobLogInfo(job);
 
