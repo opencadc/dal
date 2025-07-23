@@ -46,15 +46,15 @@ public class CustomWriteSupport extends WriteSupport<List<Object>> {
         for (int i = 0; i < dataList.size(); i++) {
             voTableField = voTableFields.get(i);
             Object data = dataList.get(i);
-            recordConsumer.startField(voTableField.getName(), i);
             if (data != null) {
+                recordConsumer.startField(voTableField.getName(), i);
                 if (data.getClass().isArray()) {
                     fillUpArrayData(recordConsumer, data);
                 } else {
                     fillUpPrimitiveData(recordConsumer, data);
                 }
+                recordConsumer.endField(voTableField.getName(), i);
             }
-            recordConsumer.endField(voTableField.getName(), i);
         }
         recordConsumer.endMessage();
     }
