@@ -89,9 +89,14 @@ public class ParquetRowIterator implements Iterator<List<Object>> {
                 value = null;
             } else if (parquetField.isPrimitive()
                     && parquetField.asPrimitiveType().getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) {
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
-                        .withZone(ZoneId.of("UTC"));
-                value = formatter.format(Instant.ofEpochMilli((long) valueObj));
+                if (valueObj instanceof Long) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
+                            .withZone(ZoneId.of("UTC"));
+                    value = formatter.format(Instant.ofEpochMilli((long) valueObj));
+                } else {
+                    value = valueObj.toString();
+                }
+
             } else {
                 value = valueObj.toString().replaceAll("[\\[\\],]", "");
             }

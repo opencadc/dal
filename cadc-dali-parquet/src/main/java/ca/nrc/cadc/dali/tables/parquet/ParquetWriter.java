@@ -122,9 +122,14 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
     private final ShapeFormat sfmt = new ShapeFormat();
 
     private List<VOTableField> voTableFields = new ArrayList<>();
+    private final boolean addMetadata;
 
     public ParquetWriter() {
+        this(true);
+    }
 
+    public ParquetWriter(boolean addMetadata) {
+        this.addMetadata = addMetadata;
     }
 
     @Override
@@ -164,9 +169,9 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
         TableData tableData = voTableResource.getTable().getTableData();
 
-        updateVOTable(voTableResource);
-
         MessageType schema = DynamicSchemaGenerator.generateSchema(voTableResource.getTable().getFields());
+
+        updateVOTable(voTableResource);
 
         try (org.apache.parquet.hadoop.ParquetWriter<List<Object>> writer =
                      new DynamicParquetWriterBuilder(outputFile, schema, voTableResource.getTable().getFields(), prepareCustomMetaData(voTableDocument, maxRec))
@@ -304,7 +309,11 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         }
     }
 
-    private static Map<String, String> prepareCustomMetaData(VOTableDocument voTableDocument, Long maxRec) throws IOException {
+    private Map<String, String> prepareCustomMetaData(VOTableDocument voTableDocument, Long maxRec) throws IOException {
+        if (!addMetadata){
+            return new HashMap<>();
+        }
+
         StringWriter stringWriter = new StringWriter();
         VOTableWriter votableWriter = new VOTableWriter();
         votableWriter.write(voTableDocument, stringWriter, maxRec);

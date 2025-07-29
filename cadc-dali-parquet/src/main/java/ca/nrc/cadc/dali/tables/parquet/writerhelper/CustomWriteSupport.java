@@ -64,6 +64,8 @@ public class CustomWriteSupport extends WriteSupport<List<Object>> {
             recordConsumer.addBinary(Binary.fromString((String) data));
         } else if (data instanceof Integer) {
             recordConsumer.addInteger((Integer) data);
+        } else if (data instanceof Short) {
+            recordConsumer.addInteger((int)(Short) data);
         } else if (data instanceof Long) {
             recordConsumer.addLong((Long) data);
         } else if (data instanceof Double) {

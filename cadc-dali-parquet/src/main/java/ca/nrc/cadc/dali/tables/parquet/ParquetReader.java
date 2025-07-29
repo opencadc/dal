@@ -201,9 +201,35 @@ public class ParquetReader {
             VOTableReader voTableReader = new VOTableReader();
             VOTableDocument voTableDocument = voTableReader.read(votable);
 
-            voTableDocument.getResourceByType("results").getTable().getFields().forEach(field -> field.setFormat(formatFactory.getFormat(field)));
+            List<VOTableField> fields = voTableDocument.getResourceByType("results").getTable().getFields();
+            for (int i = 0; i < fields.size(); i++) {
+                VOTableField field = fields.get(i);
+                Type parquetField = parquetSchema.getType(field.getName());
+                if (parquetField != null && parquetField.isPrimitive()) {
+                    PrimitiveType.PrimitiveTypeName physicalType = parquetField.asPrimitiveType().getPrimitiveTypeName();
+                    if (physicalType == PrimitiveType.PrimitiveTypeName.INT64
+                            && parquetField.asPrimitiveType().getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) {
+
+                        VOTableField timestampField = new VOTableField(field.getName(), "char", "*");
+                        copyFieldValues(timestampField, field);
+                        timestampField.xtype = "timestamp";
+                        field = timestampField; // Update timestamp field
+                    }
+                }
+                field.setFormat(formatFactory.getFormat(field));
+                fields.set(i, field); // Update the field in the list
+            }
+
             return voTableDocument;
         }
+    }
+
+    private static void copyFieldValues(VOTableField targetField, VOTableField sourceField) {
+        targetField.unit = sourceField.unit;
+        targetField.ucd = sourceField.ucd;
+        targetField.utype = sourceField.utype;
+        targetField.description = sourceField.description;
+        targetField.nullValue = sourceField.nullValue;
     }
 
     public static Type extractActualElementType(Type field) {
