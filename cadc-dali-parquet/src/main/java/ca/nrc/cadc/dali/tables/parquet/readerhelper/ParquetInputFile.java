@@ -1,10 +1,8 @@
 package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
-import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
-import java.lang.reflect.Field;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
 import org.apache.parquet.io.InputFile;
@@ -12,22 +10,12 @@ import org.apache.parquet.io.SeekableInputStream;
 
 public class ParquetInputFile implements InputFile {
 
-    byte[] buf;
-    int length;
+    private final int length;
+    private final RandomAccessFile randomAccessFile;
 
-    public ParquetInputFile(ByteArrayInputStream byteArrayInputStream) throws IOException {
-        try {
-            Field bufField = ByteArrayInputStream.class.getDeclaredField("buf");
-            Field countField = ByteArrayInputStream.class.getDeclaredField("count");
-            bufField.setAccessible(true);
-            countField.setAccessible(true);
-
-            buf = (byte[]) bufField.get(byteArrayInputStream);
-            length = countField.getInt(byteArrayInputStream);
-        } catch (Exception e) {
-            throw new IOException("Failed to get ByteArrayInputStream buffer length", e);
-        }
-
+    public ParquetInputFile(RandomAccessFile randomAccessFile) throws IOException {
+        this.randomAccessFile = randomAccessFile;
+        this.length = (int) randomAccessFile.length();
     }
 
     @Override
@@ -38,8 +26,6 @@ public class ParquetInputFile implements InputFile {
     @Override
     public SeekableInputStream newStream() {
         return new SeekableInputStream() {
-            // Required as footer gets read first and then the data.
-            private final InputStream delegate = new ByteArrayInputStream(buf, 0, length);
             private long pos = 0;
 
             @Override
@@ -47,8 +33,7 @@ public class ParquetInputFile implements InputFile {
                 if (newPos < 0) {
                     throw new IllegalArgumentException("Negative positions are not supported");
                 }
-                delegate.reset();
-                delegate.skip(newPos);
+                randomAccessFile.seek(newPos);
                 pos = newPos;
             }
 
@@ -56,7 +41,7 @@ public class ParquetInputFile implements InputFile {
             public void readFully(byte[] bytes, int off, int len) throws IOException {
                 int bytesRead = 0;
                 while (bytesRead < len) {
-                    int result = read(bytes, off + bytesRead, len - bytesRead);
+                    int result = randomAccessFile.read(bytes, off + bytesRead, len - bytesRead);
                     if (result == -1) {
                         throw new EOFException("Unexpected end of stream");
                     }
@@ -66,32 +51,20 @@ public class ParquetInputFile implements InputFile {
 
             @Override
             public void readFully(byte[] bytes) throws IOException {
-                int bytesRead = 0;
-                while (bytesRead < bytes.length) {
-                    int result = read(bytes, bytesRead, bytes.length - bytesRead);
-                    if (result == -1) {
-                        throw new EOFException("Unexpected end of stream");
-                    }
-                    bytesRead += result;
-                }
+                readFully(bytes, 0, bytes.length);
             }
 
             @Override
             public void readFully(ByteBuffer byteBuffer) throws IOException {
-                int bytesRead = 0;
-                while (byteBuffer.hasRemaining()) {
-                    int result = read(byteBuffer);
-                    if (result == -1) {
-                        throw new EOFException("Unexpected end of stream");
-                    }
-                    bytesRead += result;
-                }
+                byte[] temp = new byte[byteBuffer.remaining()];
+                readFully(temp);
+                byteBuffer.put(temp);
             }
 
             @Override
             public int read(ByteBuffer byteBuffer) throws IOException {
                 byte[] temp = new byte[byteBuffer.remaining()];
-                int bytesRead = read(temp);
+                int bytesRead = randomAccessFile.read(temp);
                 if (bytesRead > 0) {
                     byteBuffer.put(temp, 0, bytesRead);
                 }
@@ -100,7 +73,7 @@ public class ParquetInputFile implements InputFile {
 
             @Override
             public int read() throws IOException {
-                int result = delegate.read();
+                int result = randomAccessFile.read();
                 if (result != -1) {
                     pos++;
                 }
@@ -114,7 +87,7 @@ public class ParquetInputFile implements InputFile {
 
             @Override
             public void close() throws IOException {
-                delegate.close();
+                // Note: Do not close RandomAccessFile here, as it gets reused until whole stream is read.
             }
         };
     }

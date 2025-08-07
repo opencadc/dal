@@ -71,6 +71,8 @@ package ca.nrc.cadc.dali.tables.parquet;
 
 import static ca.nrc.cadc.dali.tables.parquet.ParquetWriter.IVOA_VOTABLE_PARQUET_CONTENT_KEY;
 
+import ca.nrc.cadc.dali.tables.parquet.io.RandomAccessSeekableInputStream;
+import ca.nrc.cadc.dali.tables.parquet.io.RandomAccessSource;
 import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetInputFile;
 import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetTableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
@@ -81,7 +83,6 @@ import ca.nrc.cadc.dali.tables.votable.VOTableTable;
 
 import ca.nrc.cadc.dali.util.DoubleArrayFormat;
 import ca.nrc.cadc.dali.util.DoubleFormat;
-
 import ca.nrc.cadc.dali.util.FloatArrayFormat;
 import ca.nrc.cadc.dali.util.FloatFormat;
 import ca.nrc.cadc.dali.util.Format;
@@ -93,12 +94,18 @@ import ca.nrc.cadc.dali.util.LongFormat;
 import ca.nrc.cadc.dali.util.StringFormat;
 import ca.nrc.cadc.dali.util.UTCTimestampFormat;
 import ca.nrc.cadc.dali.util.UUIDFormat;
+import ca.nrc.cadc.io.ByteCountInputStream;
 
-import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.parquet.hadoop.ParquetFileReader;
@@ -114,12 +121,62 @@ public class ParquetReader {
 
     private static final Logger log = Logger.getLogger(ParquetReader.class);
 
+    private static final long BYTE_LIMIT = 1024 * 1024L; // 1 MiB
+
     private static final FormatFactory formatFactory = new FormatFactory();
+
+    public VOTableDocument read(RandomAccessFile file) throws IOException {
+        ParquetInputFile parquetInputFile = new ParquetInputFile(file);
+        return read(parquetInputFile);
+    }
+
+    public VOTableDocument read(RandomAccessSource randomAccessSource) throws IOException {
+        RandomAccessSeekableInputStream parquetInputFile = new RandomAccessSeekableInputStream(randomAccessSource);
+        return read(parquetInputFile);
+    }
 
     public VOTableDocument read(InputStream inputStream) throws IOException {
 
-        InputFile inputFile = new ParquetInputFile((ByteArrayInputStream) inputStream);
+        File tempFile = null;
 
+        try {
+            String fileName = "parquet-" + UUID.randomUUID();
+            tempFile = File.createTempFile(fileName, ".parquet");
+
+            try (InputStream byteCountInputStream = new ByteCountInputStream(inputStream, BYTE_LIMIT);
+                OutputStream out = new FileOutputStream(tempFile)) {
+                byte[] buffer = new byte[8192]; // TODO: Verify if it is appropriate?
+                int bytesRead;
+                while ((bytesRead = byteCountInputStream.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+            } catch (Exception e) {
+                log.error("Error reading from InputStream", e);
+                throw new RuntimeException(e);
+            }
+
+            RandomAccessFile raf = new RandomAccessFile(tempFile, "r");
+            ParquetInputFile parquetInputFile = new ParquetInputFile(raf);
+            return read(parquetInputFile);
+        } catch (IOException e) {
+            log.error("Failed to read Parquet from InputStream", e);
+            throw new RuntimeException("Error reading Parquet file", e);
+        } finally {
+            try {
+                if (tempFile != null && tempFile.exists()) {
+                    if (!tempFile.delete()) {
+                        log.error("Failed to delete temp file: " + tempFile.getAbsolutePath());
+                        throw new IOException("Failed to delete temp file: " + tempFile.getAbsolutePath());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Exception while deleting temp file: " + tempFile.getAbsolutePath(), e);
+                throw new IOException("Exception while deleting temp file: " + tempFile.getAbsolutePath(), e);
+            }
+        }
+    }
+
+    private VOTableDocument read(InputFile inputFile) {
         VOTableDocument voTableDocument;
 
         try (ParquetFileReader reader = ParquetFileReader.open(inputFile)) {

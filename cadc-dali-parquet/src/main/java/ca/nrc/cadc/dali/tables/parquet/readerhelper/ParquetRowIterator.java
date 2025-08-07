@@ -49,7 +49,7 @@ public class ParquetRowIterator implements Iterator<List<Object>> {
             if (currentRowGroup != null) {
                 rowsInGroup = currentRowGroup.getRowCount();
                 rowIndex = 0;
-                recordReader = createRecordReader(currentRowGroup, schema, fields);
+                recordReader = createRecordReader(currentRowGroup, schema);
             } else {
                 rowsInGroup = 0;
                 recordReader = null;
@@ -106,9 +106,9 @@ public class ParquetRowIterator implements Iterator<List<Object>> {
         return row;
     }
 
-    private RecordReader<DynamicRow> createRecordReader(PageReadStore rowGroup, MessageType schema, List<VOTableField> fields) {
+    private RecordReader<DynamicRow> createRecordReader(PageReadStore rowGroup, MessageType schema) {
         MessageColumnIO columnIO = new ColumnIOFactory().getColumnIO(schema);
-        RecordMaterializer<DynamicRow> materializer = new DynamicRowMaterializer(schema, fields);
+        RecordMaterializer<DynamicRow> materializer = new DynamicRowMaterializer(schema);
         return columnIO.getRecordReader(rowGroup, materializer);
     }
 }

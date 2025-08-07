@@ -310,7 +310,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
     }
 
     private Map<String, String> prepareCustomMetaData(VOTableDocument voTableDocument, Long maxRec) throws IOException {
-        if (!addMetadata){
+        if (!addMetadata) {
             return new HashMap<>();
         }
 
