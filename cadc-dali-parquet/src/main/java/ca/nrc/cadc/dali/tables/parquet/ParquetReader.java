@@ -261,13 +261,13 @@ public class ParquetReader {
             List<VOTableField> fields = voTableDocument.getResourceByType("results").getTable().getFields();
             for (int i = 0; i < fields.size(); i++) {
                 VOTableField field = fields.get(i);
-                Type parquetField = parquetSchema.getType(field.getName());
+                Type parquetField = parquetSchema.getType(field.getName().replaceAll("\"", "_"));
                 if (parquetField != null && parquetField.isPrimitive()) {
                     PrimitiveType.PrimitiveTypeName physicalType = parquetField.asPrimitiveType().getPrimitiveTypeName();
                     if (physicalType == PrimitiveType.PrimitiveTypeName.INT64
                             && parquetField.asPrimitiveType().getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) {
 
-                        VOTableField timestampField = new VOTableField(field.getName(), "char", "*");
+                        VOTableField timestampField = new VOTableField(field.getName().replaceAll("\"", "_"), "char", "*");
                         copyFieldValues(timestampField, field);
                         timestampField.xtype = "timestamp";
                         field = timestampField; // Update timestamp field
