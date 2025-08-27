@@ -69,12 +69,19 @@
 
 package ca.nrc.cadc.dali.tables.parquet.io;
 
+import ca.nrc.cadc.net.HttpGet;
+import ca.nrc.cadc.net.ResourceAlreadyExistsException;
+import ca.nrc.cadc.net.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class HttpRandomAccessSource implements RandomAccessSource {
+    private static final Logger log = LoggerFactory.getLogger(HttpRandomAccessSource.class);
     private final URL url;
     private long position = 0;
     private final long contentLength;
@@ -86,7 +93,7 @@ public class HttpRandomAccessSource implements RandomAccessSource {
 
     @Override
     public void seek(long position) throws IOException {
-        if (position < 0 || position >= contentLength) {
+        if (position < 0 || position > contentLength) {
             throw new IOException("Seek position out of bounds");
         }
         this.position = position;
@@ -94,21 +101,28 @@ public class HttpRandomAccessSource implements RandomAccessSource {
 
     @Override
     public int read(byte[] buffer, int offset, int length) throws IOException {
-        long end = position + length - 1;
-
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestProperty("Range", "bytes=" + position + "-" + end);
-        conn.connect();
-
-        try (InputStream in = conn.getInputStream()) {
-            int bytesRead = in.read(buffer, offset, length);
-            if (bytesRead > 0) {
-                position += bytesRead;
-            }
-            return bytesRead;
-        } finally {
-            conn.disconnect();
+        if (position >= contentLength) {
+            return -1;
         }
+
+        int bytesToRead = (int) Math.min(length, contentLength - position);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        HttpGet get = new HttpGet(url, bos);
+        String range = "bytes=" + position + "-" + (position + bytesToRead - 1);
+        get.setRequestProperty("Range", range);
+        try {
+            get.prepare();
+        } catch (ResourceAlreadyExistsException | ResourceNotFoundException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        InputStream in = get.getInputStream();
+
+        int bytesRead = in.read(buffer, offset, bytesToRead);
+        if (bytesRead > 0) {
+            position += bytesRead;
+        }
+        return bytesRead;
     }
 
     @Override
@@ -122,15 +136,19 @@ public class HttpRandomAccessSource implements RandomAccessSource {
     }
 
     private long fetchContentLength(URL url) throws IOException {
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("HEAD");
-        conn.connect();
-        int responseCode = conn.getResponseCode();
-        if (responseCode != 200) {
-            throw new IOException("Failed to fetch content length: HTTP " + responseCode);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        HttpGet get = new HttpGet(url, bos);
+        get.setHeadOnly(true);
+
+        try {
+            get.prepare();
+        } catch (ResourceAlreadyExistsException | ResourceNotFoundException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
-        long len = conn.getContentLengthLong();
-        conn.disconnect();
-        return len;
+
+        if (get.getResponseCode() != 200) {
+            throw new IOException("HEAD request to get content length failed with response code: " + get.getResponseCode());
+        }
+        return get.getContentLength();
     }
 }

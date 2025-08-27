@@ -86,12 +86,15 @@ import ca.nrc.cadc.dali.tables.votable.VOTableWriter;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.dali.util.MultiPolygonFormat;
 import ca.nrc.cadc.dali.util.ShapeFormat;
+import ca.nrc.cadc.dali.util.URIFormat;
+import ca.nrc.cadc.dali.util.UUIDFormat;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -100,6 +103,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
@@ -119,8 +123,6 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
     public static final String PARQUET_CONTENT_TYPE = "application/vnd.apache.parquet";
 
     private FormatFactory formatFactory;
-    private final ShapeFormat sfmt = new ShapeFormat();
-
     private List<VOTableField> voTableFields = new ArrayList<>();
     private final boolean addMetadata;
 
@@ -159,6 +161,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
 
     @Override
     public void write(VOTableDocument voTableDocument, OutputStream out, Long maxRec) throws IOException {
+        log.debug("Writing VOTable to Parquet.");
         OutputFile outputFile = outputFileFromStream(out);
 
         VOTableResource voTableResource = voTableDocument.getResources().stream().filter(obj -> "results".equals(obj.getType())).reduce((a, b) -> {
@@ -170,25 +173,27 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         TableData tableData = voTableResource.getTable().getTableData();
 
         MessageType schema = DynamicSchemaGenerator.generateSchema(voTableResource.getTable().getFields());
+        log.debug("Parquet Schema prepared successfully");
 
         updateVOTable(voTableResource);
 
         try (org.apache.parquet.hadoop.ParquetWriter<List<Object>> writer =
                      new DynamicParquetWriterBuilder(outputFile, schema, voTableResource.getTable().getFields(), prepareCustomMetaData(voTableDocument, maxRec))
-                .withCompressionCodec(CompressionCodecName.SNAPPY)
-                .withRowGroupSize(Long.valueOf(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE))
-                .withPageSize(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE)
-                .withConf(new Configuration())
-                .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
-                .withValidation(false)
-                .withDictionaryEncoding(false)
-                .build()) {
+                             .withCompressionCodec(CompressionCodecName.SNAPPY)
+                             .withRowGroupSize(Long.valueOf(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE))
+                             .withPageSize(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE)
+                             .withConf(new Configuration())
+                             .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
+                             .withValidation(false)
+                             .withDictionaryEncoding(false)
+                             .build()) {
 
             int recordsCount = writeRecords(maxRec, tableData, writer);
             writer.close();
             log.debug("Total Records written= " + recordsCount);
         } catch (Exception e) {
-            throw new IOException("error while writing", e);
+            log.debug("error while writing: " + e.getMessage());
+            throw new IOException("error while writing : " + e.getMessage(), e);
         }
         out.close();
     }
@@ -337,23 +342,20 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             for (int i = 0; i < rowData.size(); i++) {
                 VOTableField voTableField = voTableFields.get(i);
                 Object data = rowData.get(i);
-
                 String xtype = voTableField.xtype;
 
-                if (data == null) {
-                    formattedRowData.add(null);
-                    continue;
-                }
-
-                if (xtype != null) {
-                    if (xtype.equals("timestamp")) {
-                        formattedRowData.add(handleDateAndTimestamp(data));
+                try {
+                    if (data == null) {
+                        formattedRowData.add(null);
+                    } else if (xtype != null) {
+                        // handle complex types
+                        formattedRowData.add(handleXtypeConversion(xtype, data));
                     } else {
-                        formattedRowData.add(handleXTypeArrayData(xtype, data));
+                        // handle primitives and primitive arrays
+                        formattedRowData.add(data);
                     }
-                } else {
-                    // handle primitives and primitive arrays
-                    formattedRowData.add(data);
+                } catch (Exception e) {
+                    throw new RuntimeException("Failure while preparing data for field : " + voTableField, e);
                 }
             }
 
@@ -363,7 +365,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         return recordCount;
     }
 
-    private Object handleXTypeArrayData(String xtype, Object data) {
+    private Object handleXtypeConversion(String xtype, Object data) {
         Object dataToStore;
         if (xtype.equals("interval")) {
             if (data instanceof Interval) {
@@ -373,7 +375,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
                 Interval[] da = (Interval[]) data;
                 dataToStore = Interval.toArray(da);
             } else {
-                throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
+                throw new UnsupportedOperationException("unexpected Interval type: " + data.getClass().getName());
             }
         } else if (xtype.equals("point") && data instanceof Point) {
             Point p = (Point) data;
@@ -389,26 +391,22 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             dataToStore = MultiPolygonFormat.toArray(p);
         } else if (xtype.equals("shape") && data instanceof Shape) {
             Shape s = (Shape) data;
-            dataToStore = sfmt.format(s);
+            ShapeFormat shapeFormat = new ShapeFormat();
+            dataToStore = shapeFormat.format(s);
+        } else if (data instanceof Date) {
+            dataToStore = ((Date) data).getTime();
+        } else if (data instanceof Instant) {
+            dataToStore = ((Instant) data).toEpochMilli();
+        } else if (xtype.equals("uuid")) {
+            UUIDFormat uuidFormat = new UUIDFormat();
+            dataToStore = uuidFormat.uuidToBytes((UUID) data);
+        } else if (xtype.equals("uri")) {
+            URIFormat uriFormat = new URIFormat();
+            dataToStore = uriFormat.format((URI) data);
         } else {
             throw new UnsupportedOperationException("unexpected value type: " + data.getClass().getName() + " with xtype: " + xtype);
         }
         return dataToStore;
     }
 
-    private static Object handleDateAndTimestamp(Object data) {
-        Object timeInMillis;
-        if (data instanceof Date) {
-            timeInMillis = ((Date) data).getTime();
-            log.debug("Date converted to milliseconds: " + timeInMillis);
-        } else if (data instanceof Instant) {
-            timeInMillis = ((Instant) data).toEpochMilli();
-            log.debug("Instant converted to milliseconds: " + timeInMillis);
-        } else {
-            log.error("Expected types: Util Date or Instant, but found: " + data.getClass().getName());
-
-            throw new IllegalArgumentException("Unsupported object type for timestamp conversion");
-        }
-        return timeInMillis;
-    }
 }

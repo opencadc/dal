@@ -117,10 +117,14 @@ public class CustomWriteSupport extends WriteSupport<List<Object>> {
             Object data = dataList.get(i);
             if (data != null) {
                 recordConsumer.startField(voTableField.getName(), i);
-                if (data.getClass().isArray()) {
-                    fillUpArrayData(recordConsumer, data);
-                } else {
-                    fillUpPrimitiveData(recordConsumer, data);
+                try {
+                    if (data.getClass().isArray()) {
+                        fillUpArrayData(recordConsumer, data);
+                    } else {
+                        fillUpPrimitiveData(recordConsumer, data);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException("Error writing field '" + voTableField.getName() + "' (index " + i + ")", e);
                 }
                 recordConsumer.endField(voTableField.getName(), i);
             }
@@ -150,6 +154,11 @@ public class CustomWriteSupport extends WriteSupport<List<Object>> {
     }
 
     private void fillUpArrayData(RecordConsumer recordConsumer, Object data) {
+        if (data instanceof byte[]) {
+            recordConsumer.addBinary(Binary.fromConstantByteArray((byte[]) data));
+            return;
+        }
+
         recordConsumer.startGroup();
         recordConsumer.startField("element", 0);
         if (data instanceof int[]) {

@@ -131,7 +131,7 @@ public class DynamicSchemaGenerator {
                     typeName = PrimitiveType.PrimitiveTypeName.INT64;
                 } else if ("uuid".equalsIgnoreCase(xtype)) {
                     logicalTypeAnnotation = LogicalTypeAnnotation.uuidType();
-                    typeName = PrimitiveType.PrimitiveTypeName.BINARY;
+                    typeName = PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
                 } else {
                     typeName = PrimitiveType.PrimitiveTypeName.BINARY;
                 }
@@ -156,13 +156,18 @@ public class DynamicSchemaGenerator {
                                      LogicalTypeAnnotation logicalTypeAnnotation, String arraysize) {
         if (arraysize == null
                 || typeName.equals(PrimitiveType.PrimitiveTypeName.BINARY) // String = (datatype = char) + (arraysize = *)
+                || logicalTypeAnnotation instanceof LogicalTypeAnnotation.UUIDLogicalTypeAnnotation // uuid = (datatype = char) + (arraysize = *)
                 || logicalTypeAnnotation instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) { // timestamp = (datatype = char) + (arraysize = *)
 
             // primitives
             Types.PrimitiveBuilder<PrimitiveType> prim = Types.primitive(typeName, Type.Repetition.OPTIONAL);
             if (logicalTypeAnnotation != null) {
                 prim = prim.as(logicalTypeAnnotation);
+                if (logicalTypeAnnotation.equals(LogicalTypeAnnotation.uuidType())) {
+                    prim = prim.length(16);
+                }
             }
+
             return prim.named(fieldName);
         } else {
             // list

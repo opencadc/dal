@@ -89,7 +89,7 @@ public class DynamicRowConverter extends GroupConverter {
             String name = field.getName();
 
             if (field.isPrimitive()) {
-                converters[i] = new DynamicPrimitiveConverter(currentRow, name, field.asPrimitiveType().getPrimitiveTypeName());
+                converters[i] = new DynamicPrimitiveConverter(currentRow, name, field.asPrimitiveType());
             } else if (field.getLogicalTypeAnnotation() != null
                     && field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
                 converters[i] = new DynamicListConverter(currentRow, name, field.asGroupType());

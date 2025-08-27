@@ -90,8 +90,6 @@ import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.Type;
 
-
-
 public class ParquetRowIterator implements Iterator<List<Object>> {
     private final ParquetFileReader reader;
     private final MessageType schema;

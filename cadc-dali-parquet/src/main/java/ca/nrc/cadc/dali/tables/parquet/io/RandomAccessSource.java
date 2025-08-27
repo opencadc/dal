@@ -71,6 +71,11 @@ package ca.nrc.cadc.dali.tables.parquet.io;
 
 import java.io.IOException;
 
+/**
+ * An abstraction for a random-access data source that allows seeking,
+ * reading, querying length, and closing the resource.
+ * Implementations may wrap files, memory buffers, or other data sources.
+ */
 public interface RandomAccessSource {
     void seek(long position) throws IOException;
 

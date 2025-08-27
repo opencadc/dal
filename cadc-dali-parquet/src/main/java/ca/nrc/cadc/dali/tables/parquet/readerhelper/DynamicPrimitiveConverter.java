@@ -69,17 +69,21 @@
 
 package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
+import ca.nrc.cadc.dali.util.UUIDFormat;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.PrimitiveConverter;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.PrimitiveType;
 
 public class DynamicPrimitiveConverter extends PrimitiveConverter {
     private final DynamicRow row;
     private final String field;
+    private final PrimitiveType type;
 
-    public DynamicPrimitiveConverter(DynamicRow row, String field, PrimitiveType.PrimitiveTypeName type) {
+    public DynamicPrimitiveConverter(DynamicRow row, String field, PrimitiveType type) {
         this.row = row;
         this.field = field;
+        this.type = type;
     }
 
     @Override
@@ -104,6 +108,17 @@ public class DynamicPrimitiveConverter extends PrimitiveConverter {
 
     @Override
     public void addBinary(Binary v) {
-        row.put(field, v.toStringUsingUTF8());
+        try {
+            if (type.getLogicalTypeAnnotation() != null && type.getLogicalTypeAnnotation().equals(LogicalTypeAnnotation.uuidType())
+                    && type.getPrimitiveTypeName().equals(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)) {
+                UUIDFormat uuidFormat = new UUIDFormat();
+                row.put(field, uuidFormat.BytesToUUID(v.getBytes()).toString());
+            } else {
+                row.put(field, v.toStringUsingUTF8());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to read binary.", e);
+        }
     }
+
 }
