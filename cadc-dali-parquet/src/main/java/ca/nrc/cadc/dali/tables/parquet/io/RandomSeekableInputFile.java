@@ -67,97 +67,38 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables.parquet.readerhelper;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
+package ca.nrc.cadc.dali.tables.parquet.io;
 
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.SeekableInputStream;
 
-public class ParquetInputFile implements InputFile {
+import java.io.IOException;
 
-    private final int length;
-    private final RandomAccessFile randomAccessFile;
+/**
+ * An implementation of the Parquet {@link InputFile} interface that provides
+ * random access to a data source via a {@link RandomAccessSource}.
+ * <p>
+ * This class allows Parquet readers to read from sources that support random access,
+ * such as files or in-memory buffers.
+ * </p>
+ */
+public class RandomSeekableInputFile implements InputFile {
 
-    public ParquetInputFile(RandomAccessFile randomAccessFile) throws IOException {
-        this.randomAccessFile = randomAccessFile;
-        this.length = (int) randomAccessFile.length();
+    private final long length;
+    private final RandomAccessSource randomAccessSource;
+
+    public RandomSeekableInputFile(RandomAccessSource randomAccessSource) throws IOException {
+        this.randomAccessSource = randomAccessSource;
+        this.length = randomAccessSource.length();
     }
 
     @Override
-    public long getLength() {
+    public long getLength() throws IOException {
         return length;
     }
 
     @Override
-    public SeekableInputStream newStream() {
-        return new SeekableInputStream() {
-            private long pos = 0;
-
-            @Override
-            public void seek(long newPos) throws IOException {
-                if (newPos < 0) {
-                    throw new IllegalArgumentException("Negative positions are not supported");
-                }
-                randomAccessFile.seek(newPos);
-                pos = newPos;
-            }
-
-            @Override
-            public void readFully(byte[] bytes, int off, int len) throws IOException {
-                int bytesRead = 0;
-                while (bytesRead < len) {
-                    int result = randomAccessFile.read(bytes, off + bytesRead, len - bytesRead);
-                    if (result == -1) {
-                        throw new EOFException("Unexpected end of stream");
-                    }
-                    bytesRead += result;
-                }
-            }
-
-            @Override
-            public void readFully(byte[] bytes) throws IOException {
-                readFully(bytes, 0, bytes.length);
-            }
-
-            @Override
-            public void readFully(ByteBuffer byteBuffer) throws IOException {
-                byte[] temp = new byte[byteBuffer.remaining()];
-                readFully(temp);
-                byteBuffer.put(temp);
-            }
-
-            @Override
-            public int read(ByteBuffer byteBuffer) throws IOException {
-                byte[] temp = new byte[byteBuffer.remaining()];
-                int bytesRead = randomAccessFile.read(temp);
-                if (bytesRead > 0) {
-                    byteBuffer.put(temp, 0, bytesRead);
-                }
-                return bytesRead;
-            }
-
-            @Override
-            public int read() throws IOException {
-                int result = randomAccessFile.read();
-                if (result != -1) {
-                    pos++;
-                }
-                return result;
-            }
-
-            @Override
-            public long getPos() {
-                return pos;
-            }
-
-            @Override
-            public void close() throws IOException {
-                // Note: Do not close RandomAccessFile here, as it gets reused until whole stream is read.
-            }
-        };
+    public SeekableInputStream newStream() throws IOException {
+        return new RandomAccessSeekableInputStream(randomAccessSource);
     }
 }

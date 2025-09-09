@@ -71,9 +71,9 @@ package ca.nrc.cadc.dali.tables.parquet;
 
 import static ca.nrc.cadc.dali.tables.parquet.ParquetWriter.IVOA_VOTABLE_PARQUET_CONTENT_KEY;
 
-import ca.nrc.cadc.dali.tables.parquet.io.RandomAccessSeekableInputStream;
 import ca.nrc.cadc.dali.tables.parquet.io.RandomAccessSource;
-import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetInputFile;
+import ca.nrc.cadc.dali.tables.parquet.io.ParquetInputFile;
+import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetTableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
@@ -94,7 +94,6 @@ import ca.nrc.cadc.dali.util.LongFormat;
 import ca.nrc.cadc.dali.util.StringFormat;
 import ca.nrc.cadc.dali.util.UTCTimestampFormat;
 import ca.nrc.cadc.dali.util.UUIDFormat;
-import ca.nrc.cadc.io.ByteCountInputStream;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -134,7 +133,6 @@ public class ParquetReader {
      * @return VOTableDocument built from the Parquet input;
      * @throws IOException if reading, seeking, or parsing the Parquet content fails.
      */
-
     public VOTableDocument read(RandomAccessFile file) throws IOException {
         log.debug("Reading RandomAccessFile");
         ParquetInputFile parquetInputFile = new ParquetInputFile(file);
@@ -148,11 +146,9 @@ public class ParquetReader {
      * @return VOTableDocument representation of the Parquet content;
      * @throws IOException if byte access or Parquet parsing fails.
      */
-
     public VOTableDocument read(RandomAccessSource randomAccessSource) throws IOException {
         log.debug("Reading RandomAccessSource");
-        RandomAccessSeekableInputStream randomAccessStream = new RandomAccessSeekableInputStream(randomAccessSource);
-        return read(randomAccessStream);
+        return read(new RandomSeekableInputFile(randomAccessSource));
     }
 
     /**

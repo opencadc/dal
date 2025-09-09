@@ -113,6 +113,9 @@ import org.apache.parquet.io.OutputFile;
 import org.apache.parquet.io.PositionOutputStream;
 import org.apache.parquet.schema.MessageType;
 
+/**
+ * Parquet Writer - Writes out votable in parquet format.
+ * */
 public class ParquetWriter implements TableWriter<VOTableDocument> {
 
     private static final Logger log = Logger.getLogger(ParquetWriter.class);
@@ -154,11 +157,27 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         this.formatFactory = ff;
     }
 
+    /**
+     * Write the VOTable in Parquet format to the specified OutputStream.
+     *
+     * @param voTableDocument VOTable object to write.
+     * @param out OutputStream to write to.
+     * @throws IOException if problem writing to OutputStream.
+     */
     @Override
     public void write(VOTableDocument voTableDocument, OutputStream out) throws IOException {
         write(voTableDocument, out, Long.MAX_VALUE);
     }
 
+    /**
+     * Write the VOTable in Parquet format to the specified OutputStream
+     * It ignores the records after maxrec rows.
+     *
+     * @param voTableDocument VOTable object to write.
+     * @param out OutputStream to write to.
+     * @param maxRec maximum number of rows to write.
+     * @throws IOException if problem writing to OutputStream.
+     */
     @Override
     public void write(VOTableDocument voTableDocument, OutputStream out, Long maxRec) throws IOException {
         log.debug("Writing VOTable to Parquet.");
@@ -198,12 +217,26 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         out.close();
     }
 
+    /**
+     * Write the Throwable to the specified OutputStream.
+     *
+     * @param thrown Throwable to write.
+     * @param output OutputStream to write to.
+     * @throws IOException if problem writing to the stream.
+     */
     @Override
     public void write(Throwable thrown, OutputStream output) throws IOException {
         Writer writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
         writer.write(thrown.getMessage());
     }
 
+    /**
+     * Creates an {@link OutputFile} implementation that writes to the provided {@link OutputStream}.
+     * This allows Parquet to write data directly to an {@code OutputStream}.
+     *
+     * @param outputStream the {@code OutputStream} to write Parquet data to
+     * @return an {@code OutputFile} that writes to the given {@code OutputStream}
+     */
     private static OutputFile outputFileFromStream(OutputStream outputStream) {
         return new OutputFile() {
             @Override

@@ -67,120 +67,101 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables.parquet.readerhelper;
+package ca.nrc.cadc.dali.tables.parquet.io;
 
-import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-
-import org.apache.parquet.column.page.PageReadStore;
-import org.apache.parquet.hadoop.ParquetFileReader;
-import org.apache.parquet.io.ColumnIOFactory;
-import org.apache.parquet.io.MessageColumnIO;
-import org.apache.parquet.io.RecordReader;
-import org.apache.parquet.io.api.RecordMaterializer;
-
-import org.apache.parquet.schema.LogicalTypeAnnotation;
-import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.Type;
+import org.apache.parquet.io.InputFile;
+import org.apache.parquet.io.SeekableInputStream;
 
 /**
- * Iterator for reading rows from a Parquet file as lists of objects,
- * mapping Parquet columns to VOTable fields.
+ * An implementation of Parquet's InputFile interface that wraps a RandomAccessFile.
+ * This allows Parquet to read from any file that supports random access.
  */
-public class ParquetRowIterator implements Iterator<List<Object>> {
-    private final ParquetFileReader reader;
-    private final MessageType schema;
-    private final List<VOTableField> fields;
-    private PageReadStore currentRowGroup;
-    private RecordReader<DynamicRow> recordReader;
-    private long rowsInGroup;
-    private long rowIndex;
+public class ParquetInputFile implements InputFile {
 
-    public ParquetRowIterator(ParquetFileReader reader, MessageType schema, List<VOTableField> fields) {
-        this.reader = reader;
-        this.schema = schema;
-        this.fields = fields;
-        this.currentRowGroup = null;
-        this.recordReader = null;
-        this.rowsInGroup = 0;
-        this.rowIndex = 0;
-        advanceRowGroup();
-    }
+    private final int length;
+    private final RandomAccessFile randomAccessFile;
 
-    private void advanceRowGroup() {
-        try {
-            currentRowGroup = reader.readNextRowGroup();
-            if (currentRowGroup != null) {
-                rowsInGroup = currentRowGroup.getRowCount();
-                rowIndex = 0;
-                recordReader = createRecordReader(currentRowGroup, schema);
-            } else {
-                rowsInGroup = 0;
-                recordReader = null;
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to read next row group", e);
-        }
+    public ParquetInputFile(RandomAccessFile randomAccessFile) throws IOException {
+        this.randomAccessFile = randomAccessFile;
+        this.length = (int) randomAccessFile.length();
     }
 
     @Override
-    public boolean hasNext() {
-        if (recordReader == null) {
-            return false;
-        }
-        if (rowIndex < rowsInGroup) {
-            return true;
-        }
-        advanceRowGroup();
-        return recordReader != null && rowIndex < rowsInGroup;
+    public long getLength() {
+        return length;
     }
 
     @Override
-    public List<Object> next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
-        }
-        rowIndex++;
+    public SeekableInputStream newStream() {
+        return new SeekableInputStream() {
+            private long pos = 0;
 
-        DynamicRow dynamicRow = recordReader.read();
-        List<Object> row = new ArrayList<>();
-
-        for (VOTableField field : fields) {
-            String fieldName = field.getName();
-            Type parquetField = schema.getType(fieldName);
-            Object valueObj = dynamicRow.get(fieldName);
-            String value;
-
-            if (valueObj == null) {
-                value = null;
-            } else if (parquetField.isPrimitive()
-                    && parquetField.asPrimitiveType().getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) {
-                if (valueObj instanceof Long) {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS")
-                            .withZone(ZoneId.of("UTC"));
-                    value = formatter.format(Instant.ofEpochMilli((long) valueObj));
-                } else {
-                    value = valueObj.toString();
+            @Override
+            public void seek(long newPos) throws IOException {
+                if (newPos < 0) {
+                    throw new IllegalArgumentException("Negative positions are not supported");
                 }
-            } else {
-                value = valueObj.toString().replaceAll("[\\[\\],]", "");
+                randomAccessFile.seek(newPos);
+                pos = newPos;
             }
 
-            row.add(field.getFormat().parse(value));
-        }
-        return row;
-    }
+            @Override
+            public void readFully(byte[] bytes, int off, int len) throws IOException {
+                int bytesRead = 0;
+                while (bytesRead < len) {
+                    int result = randomAccessFile.read(bytes, off + bytesRead, len - bytesRead);
+                    if (result == -1) {
+                        throw new EOFException("Unexpected end of stream");
+                    }
+                    bytesRead += result;
+                }
+            }
 
-    private RecordReader<DynamicRow> createRecordReader(PageReadStore rowGroup, MessageType schema) {
-        MessageColumnIO columnIO = new ColumnIOFactory().getColumnIO(schema);
-        RecordMaterializer<DynamicRow> materializer = new DynamicRowMaterializer(schema);
-        return columnIO.getRecordReader(rowGroup, materializer);
+            @Override
+            public void readFully(byte[] bytes) throws IOException {
+                readFully(bytes, 0, bytes.length);
+            }
+
+            @Override
+            public void readFully(ByteBuffer byteBuffer) throws IOException {
+                byte[] temp = new byte[byteBuffer.remaining()];
+                readFully(temp);
+                byteBuffer.put(temp);
+            }
+
+            @Override
+            public int read(ByteBuffer byteBuffer) throws IOException {
+                byte[] temp = new byte[byteBuffer.remaining()];
+                int bytesRead = randomAccessFile.read(temp);
+                if (bytesRead > 0) {
+                    byteBuffer.put(temp, 0, bytesRead);
+                }
+                return bytesRead;
+            }
+
+            @Override
+            public int read() throws IOException {
+                int result = randomAccessFile.read();
+                if (result != -1) {
+                    pos++;
+                }
+                return result;
+            }
+
+            @Override
+            public long getPos() {
+                return pos;
+            }
+
+            @Override
+            public void close() throws IOException {
+                // Note: Do not close RandomAccessFile here, as it gets reused until the whole stream is read.
+            }
+        };
     }
 }

@@ -74,6 +74,14 @@ import java.nio.ByteBuffer;
 
 import org.apache.parquet.io.SeekableInputStream;
 
+/**
+ * A {@link SeekableInputStream} implementation that wraps a {@link RandomAccessSource}
+ * to provide random access read operations for Parquet files.
+ * <p>
+ * This stream maintains its own position and delegates seek and read operations
+ * to the underlying {@code RandomAccessSource}.
+ * </p>
+ */
 public class RandomAccessSeekableInputStream extends SeekableInputStream {
 
     private final RandomAccessSource source;
@@ -149,7 +157,7 @@ public class RandomAccessSeekableInputStream extends SeekableInputStream {
 
     @Override
     public void close() throws IOException {
-        source.close();
+        // Note: Do not close the stream here, as it gets reused until the whole stream is read.
     }
 
     @Override
