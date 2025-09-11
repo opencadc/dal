@@ -119,7 +119,12 @@ public class VOTableReaderWriterTest {
     }
 
     @Test
-    public void testReadWriteVOTable() throws Exception {
+    public void testReadWriteVOTable() {
+        testReadWriteVOTable(true);
+        testReadWriteVOTable(false);
+    }
+
+    public void testReadWriteVOTable(boolean binarySerialization) {
         log.debug("testReadWriteVOTable");
         try {
             String resourceName = "VOTable resource name";
@@ -162,7 +167,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            VOTableWriter writer = new VOTableWriter();
+            VOTableWriter writer = binarySerialization ? new VOTableWriter(VOTableWriter.SerializationType.BINARY2, null) : new VOTableWriter();
             writer.write(expected, sw);
             String xml = sw.toString();
             log.debug("XML: \n\n" + xml);
@@ -705,6 +710,7 @@ public class VOTableReaderWriterTest {
         Assert.assertNotNull(expectedIter);
         Assert.assertNotNull(actualIter);
         int iteratorCount = 0;
+        // TODO:  Should be expectedIter.hasNext() for strict check?
         while (actualIter.hasNext()) // this one is the smaller list
         {
             iteratorCount++;

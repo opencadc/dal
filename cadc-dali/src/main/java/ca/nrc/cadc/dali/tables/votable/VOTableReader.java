@@ -69,9 +69,9 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
-import ca.nrc.cadc.dali.tables.BinaryTableData;
 import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
+import ca.nrc.cadc.dali.tables.votable.binary.Binary2TableData;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.util.StringUtil;
@@ -333,15 +333,10 @@ public class VOTableReader {
                             } else {
                                 // Default to base64 encoding
                                 // TODO: check for href in which case encoding may be irrelevant?
-                                final String encoding =
-                                        streamData.getAttributeValue("encoding",
-                                                                     VOTableReader.DEFAULT_STREAM_ENCODING);
-                                vot.setTableData(new BinaryTableData(vot.getFields(),
-                                                                     new ByteArrayInputStream(
-                                                                             streamData.getText().getBytes(
-                                                                                     StandardCharsets.UTF_8)),
-                                                                     encoding,
-                                                                     binaryData.getName().equals("BINARY2")));
+                                final String encoding = streamData.getAttributeValue("encoding", VOTableReader.DEFAULT_STREAM_ENCODING);
+                                vot.setTableData(new Binary2TableData(
+                                        new ByteArrayInputStream(streamData.getText().getBytes(StandardCharsets.UTF_8)),
+                                        vot.getFields(), encoding));
                             }
                         }
                     }
