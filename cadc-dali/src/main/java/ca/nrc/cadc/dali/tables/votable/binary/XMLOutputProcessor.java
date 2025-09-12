@@ -70,10 +70,6 @@
 package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import org.jdom2.Element;
-import org.jdom2.output.support.AbstractXMLOutputProcessor;
-import org.jdom2.output.support.FormatStack;
-import org.jdom2.util.NamespaceStack;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -82,6 +78,11 @@ import java.io.Writer;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
+
+import org.jdom2.Element;
+import org.jdom2.output.support.AbstractXMLOutputProcessor;
+import org.jdom2.output.support.FormatStack;
+import org.jdom2.util.NamespaceStack;
 
 /**
  * XMLOutputProcessor is responsible for serializing VOTable data in BINARY2 format,

@@ -91,16 +91,16 @@ public class BinaryRowReader {
     }
 
     public List<Object> readRow(DataInputStream in) throws IOException {
-        int nFields = fields.size();
-        int nMaskBytes = (nFields + 7) / 8;
-        byte[] nullMask = new byte[nMaskBytes];
+        int numFields = fields.size();
+        int numMaskBytes = (numFields + 7) / 8;
+        byte[] nullMask = new byte[numMaskBytes];
         int read = in.read(nullMask);
-        if (read < nMaskBytes) {
+        if (read < numMaskBytes) {
             return null; // End of stream
         }
 
-        List<Object> row = new ArrayList<>(nFields);
-        for (int i = 0; i < nFields; i++) {
+        List<Object> row = new ArrayList<>(numFields);
+        for (int i = 0; i < numFields; i++) {
             boolean isNull = (((nullMask[i / 8] & 0xFF) >> (7 - (i % 8))) & 0x01) != 0;
             if (isNull) {
                 row.add(null);

@@ -70,8 +70,6 @@
 package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import org.apache.commons.codec.binary.Base64InputStream;
-import org.apache.log4j.Logger;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -80,6 +78,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.zip.GZIPInputStream;
+
+import org.apache.commons.codec.binary.Base64InputStream;
+import org.apache.log4j.Logger;
 
 /**
  * Iterator for reading rows from a VOTable BINARY2 encoded stream.

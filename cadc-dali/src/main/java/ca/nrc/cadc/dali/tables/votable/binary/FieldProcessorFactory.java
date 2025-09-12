@@ -178,7 +178,9 @@ public class FieldProcessorFactory {
 
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < length; i++) {
-                if (i > 0) sb.append(' ');
+                if (i > 0) {
+                    sb.append(' ');
+                }
                 sb.append(in.readShort());
             }
 
@@ -393,7 +395,9 @@ public class FieldProcessorFactory {
 
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < bytes.length; i++) {
-                if (i > 0) sb.append(" ");
+                if (i > 0) {
+                    sb.append(" ");
+                }
                 sb.append(Byte.toUnsignedInt(bytes[i]));
             }
 
