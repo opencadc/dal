@@ -132,6 +132,11 @@ public class FieldProcessorFactory {
             out.writeInt(bytes.length);  // variable-length prefix
             out.write(bytes);
         }
+
+        @Override
+        public String getStringFormat(int len, Object data) {
+            return data.toString();
+        }
     }
 
     public static class IntFieldProcessor implements FieldProcessor {
@@ -145,9 +150,7 @@ public class FieldProcessorFactory {
                 arr[i] = in.readInt();
             }
 
-            return Arrays.stream(arr)
-                    .mapToObj(Integer::toString)
-                    .collect(Collectors.joining(" "));
+            return arr;
         }
 
         @Override
@@ -167,6 +170,16 @@ public class FieldProcessorFactory {
                 out.writeInt(data);
             }
         }
+
+        @Override
+        public String getStringFormat(int len, Object data) {
+            if (len == 1) {
+                return data.toString();
+            } else {
+                int[] arr = (int[]) data;
+                return Arrays.stream(arr).mapToObj(Integer::toString).collect(Collectors.joining(" "));
+            }
+        }
     }
 
     public static class ShortFieldProcessor implements FieldProcessor {
@@ -176,15 +189,12 @@ public class FieldProcessorFactory {
                 return in.readShort();
             }
 
-            StringBuilder sb = new StringBuilder();
+            short[] arr = new short[length];
             for (int i = 0; i < length; i++) {
-                if (i > 0) {
-                    sb.append(' ');
-                }
-                sb.append(in.readShort());
+                arr[i] = in.readShort();
             }
 
-            return sb.toString().trim();
+            return arr;
         }
 
         @Override
@@ -204,6 +214,22 @@ public class FieldProcessorFactory {
                 out.writeShort(data);
             }
         }
+
+        @Override
+        public String getStringFormat(int len, Object data) {
+            if (len == 1) {
+                return data.toString();
+            }
+            short[] arr = (short[]) data;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < len; i++) {
+                if (i > 0) {
+                    sb.append(' ');
+                }
+                sb.append(arr[i]);
+            }
+            return sb.toString().trim();
+        }
     }
 
     public static class FloatFieldProcessor implements FieldProcessor {
@@ -213,15 +239,12 @@ public class FieldProcessorFactory {
                 return in.readFloat();
             }
 
-            StringBuilder sb = new StringBuilder();
+            float[] arr = new float[length];
             for (int i = 0; i < length; i++) {
-                if (i > 0) {
-                    sb.append(' ');
-                }
-                sb.append(in.readFloat());
+                arr[i] = in.readFloat();
             }
 
-            return sb.toString();
+            return arr;
         }
 
         @Override
@@ -241,6 +264,22 @@ public class FieldProcessorFactory {
                 out.writeFloat(data);
             }
         }
+
+        @Override
+        public String getStringFormat(int len, Object data) {
+            if (len == 1) {
+                return data.toString();
+            }
+            float[] arr = (float[]) data;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < len; i++) {
+                if (i > 0) {
+                    sb.append(' ');
+                }
+                sb.append(arr[i]);
+            }
+            return sb.toString().trim();
+        }
     }
 
     public static class DoubleFieldProcessor implements FieldProcessor {
@@ -255,9 +294,7 @@ public class FieldProcessorFactory {
                 arr[i] = in.readDouble();
             }
 
-            return Arrays.stream(arr)
-                    .mapToObj(Double::toString)
-                    .collect(Collectors.joining(" "));
+            return arr;
         }
 
         @Override
@@ -306,6 +343,16 @@ public class FieldProcessorFactory {
                 out.writeDouble(data);
             }
         }
+
+        @Override
+        public String getStringFormat(int len, Object data) {
+            if (len == 1) {
+                return data.toString();
+            } else {
+                double[] arr = (double[]) data;
+                return Arrays.stream(arr).mapToObj(Double::toString).collect(Collectors.joining(" "));
+            }
+        }
     }
 
     public static class LongFieldProcessor implements FieldProcessor {
@@ -320,9 +367,7 @@ public class FieldProcessorFactory {
                 arr[i] = in.readLong();
             }
 
-            return Arrays.stream(arr)
-                    .mapToObj(Long::toString)
-                    .collect(Collectors.joining(" "));
+            return arr;
         }
 
         @Override
@@ -362,6 +407,15 @@ public class FieldProcessorFactory {
                 out.writeLong(data);
             }
         }
+
+        @Override
+        public String getStringFormat(int len, Object data) {
+            if (len == 1) {
+                return data.toString();
+            }
+            long[] arr = (long[]) data;
+            return Arrays.stream(arr).mapToObj(Long::toString).collect(Collectors.joining(" "));
+        }
     }
 
     public static class BooleanFieldProcessor implements FieldProcessor {
@@ -381,6 +435,11 @@ public class FieldProcessorFactory {
             }
             throw new UnsupportedOperationException("Boolean Arrays are not supported");
         }
+
+        @Override
+        public String getStringFormat(int len, Object data) {
+            return data.toString();
+        }
     }
 
     public static class ByteFieldProcessor implements FieldProcessor {
@@ -393,15 +452,7 @@ public class FieldProcessorFactory {
             byte[] bytes = new byte[length];
             in.readFully(bytes);
 
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < bytes.length; i++) {
-                if (i > 0) {
-                    sb.append(" ");
-                }
-                sb.append(Byte.toUnsignedInt(bytes[i]));
-            }
-
-            return sb.toString();
+            return bytes;
         }
 
         @Override
@@ -420,6 +471,23 @@ public class FieldProcessorFactory {
             for (byte data : array) {
                 out.writeByte(data);
             }
+        }
+
+        @Override
+        public String getStringFormat(int len, Object data) {
+            if (len == 1) {
+                return data.toString();
+            }
+            byte[] arr = (byte[]) data;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < arr.length; i++) {
+                if (i > 0) {
+                    sb.append(" ");
+                }
+                sb.append(Byte.toUnsignedInt(arr[i]));
+            }
+
+            return sb.toString().trim();
         }
     }
 

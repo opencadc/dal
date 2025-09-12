@@ -77,9 +77,12 @@ import java.io.IOException;
 
 public interface FieldProcessor {
 
-    // Read the field data from the input stream. The arrays are converted to String for further parsing.
+    // Read the field data from the input stream.
     Object deSerialize(DataInputStream in, VOTableField field, int length) throws IOException;
 
     // Write out the field data to the output stream along with the data byte length if variable length.
     void serialize(DataOutputStream out, VOTableField field, Object data) throws IOException;
+
+    // Return the string format of data. The primitive array elements are space separated.
+    String getStringFormat(int len, Object data);
 }

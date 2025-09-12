@@ -115,8 +115,10 @@ public class BinaryRowReader {
                     length = 1;
                 }
 
-                Object decode = decoderFactory.getFieldProcessor(field.getDatatype().toLowerCase()).deSerialize(in, field, length);
-                row.add(formatFactory.getFormat(field).parse(decode.toString()));
+                FieldProcessor fieldProcessor = decoderFactory.getFieldProcessor(field.getDatatype().toLowerCase());
+                Object data = fieldProcessor.deSerialize(in, field, length);
+                String stringFormat = fieldProcessor.getStringFormat(length, data);
+                row.add(formatFactory.getFormat(field).parse(stringFormat));
             }
         }
         return row;

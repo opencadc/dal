@@ -122,8 +122,21 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
     private String mimeType;
     private SerializationType serialization;
 
-    // create enum for serialization types
-    public enum SerializationType { TABLEDATA, BINARY, BINARY2 }
+    // enum for serialization types
+    public enum SerializationType {
+
+        TABLEDATA, BINARY, BINARY2;
+
+        public static boolean contains(final String value) {
+            SerializationType[] values = SerializationType.values();
+            for (SerializationType serializationType : values) {
+                if (serializationType.name().equalsIgnoreCase(value)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
 
     /**
      * Default constructor.
