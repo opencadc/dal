@@ -123,7 +123,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
     private SerializationType serialization;
 
     // create enum for serialization types
-    public enum SerializationType {BINARY2, TABLEDATA}
+    public enum SerializationType {TABLEDATA, BINARY, BINARY2}
 
     /**
      * Default constructor.
