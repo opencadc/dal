@@ -69,7 +69,6 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
-import ca.nrc.cadc.dali.tables.BinaryTableData;
 import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.votable.binary.Binary2TableData;
@@ -340,16 +339,8 @@ public class VOTableReader {
                                     vot.setTableData(new Binary2TableData(
                                             new ByteArrayInputStream(streamData.getText().getBytes(StandardCharsets.UTF_8)),
                                             vot.getFields(), encoding));
-                                } else if (binaryData.getName().equals(VOTableWriter.SerializationType.BINARY.name())) {
-                                    vot.setTableData(new BinaryTableData(vot.getFields(),
-                                            new ByteArrayInputStream(
-                                                    streamData.getText().getBytes(
-                                                            StandardCharsets.UTF_8)),
-                                            encoding,
-                                            false));
-
                                 } else {
-                                    throw new UnsupportedOperationException("Unknown BINARY type: " + binaryData.getName());
+                                    throw new UnsupportedOperationException("Unsupported type: " + binaryData.getName());
                                 }
                             }
                         }

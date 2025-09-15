@@ -588,7 +588,8 @@ public class VOTableReaderWriterTest {
      *
      * @throws Exception For any issues to report.
      */
-    @Test
+    //@Test // Binary serialization is not supported as of now.
+    // TODO : Remove this test when starlink module's Binary serialization impl is permanently removed.
     public void testReadVOTableBinaryData() throws Exception {
         final File tempFile = FileUtil.getFileFromResource(getClass().getSimpleName()
                                                            + "_testReadVOTableBinaryData.xml", getClass());
