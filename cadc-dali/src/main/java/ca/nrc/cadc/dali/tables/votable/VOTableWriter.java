@@ -136,6 +136,15 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
             }
             return false;
         }
+
+        public static SerializationType toValue(String str) {
+            for (SerializationType serializationType : values()) {
+                if (serializationType.toString().equalsIgnoreCase(str)) {
+                    return serializationType;
+                }
+            }
+            throw new IllegalArgumentException("No Serialization Type found for : " + str);
+        }
     }
 
     /**
