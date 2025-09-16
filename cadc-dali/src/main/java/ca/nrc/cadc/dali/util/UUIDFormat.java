@@ -107,15 +107,24 @@ public class UUIDFormat implements Format<UUID> {
         byte[] bytes = new byte[16];
         long hi = uuid.getMostSignificantBits();
         long lo = uuid.getLeastSignificantBits();
-        for (int i = 0; i < 8; i++) bytes[i] = (byte)(hi >>> (8 * (7 - i)));
-        for (int i = 8; i < 16; i++) bytes[i] = (byte)(lo >>> (8 * (15 - i)));
+        for (int i = 0; i < 8; i++) {
+            bytes[i] = (byte) (hi >>> (8 * (7 - i)));
+        }
+        for (int i = 8; i < 16; i++) {
+            bytes[i] = (byte) (lo >>> (8 * (15 - i)));
+        }
         return bytes;
     }
 
-    public UUID BytesToUUID(byte[] bytes) {
-        long hi = 0, lo = 0;
-        for (int i = 0; i < 8; i++) hi = (hi << 8) | (bytes[i] & 0xFF);
-        for (int i = 8; i < 16; i++) lo = (lo << 8) | (bytes[i] & 0xFF);
+    public UUID bytesToUUID(byte[] bytes) {
+        long hi = 0;
+        long lo = 0;
+        for (int i = 0; i < 8; i++) {
+            hi = (hi << 8) | (bytes[i] & 0xFF);
+        }
+        for (int i = 8; i < 16; i++) {
+            lo = (lo << 8) | (bytes[i] & 0xFF);
+        }
         return new UUID(hi, lo);
     }
 }

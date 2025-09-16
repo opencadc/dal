@@ -112,7 +112,7 @@ public class DynamicPrimitiveConverter extends PrimitiveConverter {
             if (type.getLogicalTypeAnnotation() != null && type.getLogicalTypeAnnotation().equals(LogicalTypeAnnotation.uuidType())
                     && type.getPrimitiveTypeName().equals(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)) {
                 UUIDFormat uuidFormat = new UUIDFormat();
-                row.put(field, uuidFormat.BytesToUUID(v.getBytes()).toString());
+                row.put(field, uuidFormat.bytesToUUID(v.getBytes()).toString());
             } else {
                 row.put(field, v.toStringUsingUTF8());
             }
