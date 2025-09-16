@@ -178,6 +178,10 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         return getContentType();
     }
 
+    public void setSerialization(SerializationType serialization) {
+        this.serialization = serialization;
+    }
+
     /**
      * Get the extension for the VOTable.
      *
