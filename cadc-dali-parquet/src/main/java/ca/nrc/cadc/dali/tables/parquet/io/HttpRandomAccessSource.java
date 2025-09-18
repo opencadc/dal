@@ -86,7 +86,7 @@ public class HttpRandomAccessSource implements RandomAccessSource {
     private long position = 0;
     private final long contentLength;
 
-    public HttpRandomAccessSource(URL url) throws IOException {
+    public HttpRandomAccessSource(URL url) throws IOException, ResourceNotFoundException {
         this.url = url;
         this.contentLength = fetchContentLength(url);
     }
@@ -111,6 +111,7 @@ public class HttpRandomAccessSource implements RandomAccessSource {
         HttpGet get = new HttpGet(url, bos);
         String range = "bytes=" + position + "-" + (position + bytesToRead - 1);
         get.setRequestProperty("Range", range);
+        get.setFollowRedirects(true);
         try {
             get.prepare();
         } catch (ResourceAlreadyExistsException | ResourceNotFoundException | InterruptedException e) {
@@ -135,20 +136,38 @@ public class HttpRandomAccessSource implements RandomAccessSource {
         // No persistent connection to close
     }
 
-    private long fetchContentLength(URL url) throws IOException {
+    private long fetchContentLength(URL url) throws IOException, ResourceNotFoundException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         HttpGet get = new HttpGet(url, bos);
         get.setHeadOnly(true);
+        get.setFollowRedirects(true);
 
+        long contentLength;
         try {
             get.prepare();
-        } catch (ResourceAlreadyExistsException | ResourceNotFoundException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+            contentLength = get.getContentLength();
 
-        if (get.getResponseCode() != 200) {
-            throw new IOException("HEAD request to get content length failed with response code: " + get.getResponseCode());
+            String acceptRanges = get.getResponseHeader("Accept-Ranges");
+            if (acceptRanges == null) {
+                verifyRangeRequestSupport(url, bos);
+            }
+
+            return contentLength;
+        } catch (ResourceAlreadyExistsException | InterruptedException e) {
+            throw new RuntimeException("BUG: unexpected fail : ", e);
         }
-        return get.getContentLength();
+    }
+
+    private static void verifyRangeRequestSupport(URL url, ByteArrayOutputStream bos) throws ResourceAlreadyExistsException, ResourceNotFoundException, IOException, InterruptedException {
+        HttpGet get = new HttpGet(url, bos);
+        get.setFollowRedirects(true);
+        get.setRequestProperty("Range", "bytes=0-3");
+        get.prepare();
+        InputStream in = get.getInputStream();
+
+        int bytesRead = in.readAllBytes().length;
+        if (bytesRead != 4) {
+            throw new ResourceNotFoundException("Resource does not support range requests");
+        }
     }
 }

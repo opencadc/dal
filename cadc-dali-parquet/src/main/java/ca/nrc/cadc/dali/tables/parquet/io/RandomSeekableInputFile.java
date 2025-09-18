@@ -101,4 +101,8 @@ public class RandomSeekableInputFile implements InputFile {
     public SeekableInputStream newStream() throws IOException {
         return new RandomAccessSeekableInputStream(randomAccessSource);
     }
+
+    public void close() throws IOException {
+        randomAccessSource.close();
+    }
 }

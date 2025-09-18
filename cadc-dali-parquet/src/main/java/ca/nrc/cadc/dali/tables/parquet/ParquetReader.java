@@ -71,8 +71,8 @@ package ca.nrc.cadc.dali.tables.parquet;
 
 import static ca.nrc.cadc.dali.tables.parquet.ParquetWriter.IVOA_VOTABLE_PARQUET_CONTENT_KEY;
 
+import ca.nrc.cadc.dali.tables.parquet.io.FileRandomAccessSource;
 import ca.nrc.cadc.dali.tables.parquet.io.RandomAccessSource;
-import ca.nrc.cadc.dali.tables.parquet.io.ParquetInputFile;
 import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetTableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
@@ -95,6 +95,7 @@ import ca.nrc.cadc.dali.util.StringFormat;
 import ca.nrc.cadc.dali.util.UTCTimestampFormat;
 import ca.nrc.cadc.dali.util.UUIDFormat;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -120,11 +121,13 @@ import org.apache.parquet.schema.Type;
 /**
  * Parquet Reader - Reads parquet content and produces a VOTableDocument representation.
  * */
-public class ParquetReader {
+public class ParquetReader implements Closeable {
 
     private static final Logger log = Logger.getLogger(ParquetReader.class);
 
     private static final FormatFactory formatFactory = new FormatFactory();
+
+    RandomSeekableInputFile randomSeekableInputFile = null;
 
     /**
      * Read a Parquet data source using a RandomAccessFile and produce a VOTableDocument representation.
@@ -135,20 +138,7 @@ public class ParquetReader {
      */
     public VOTableDocument read(RandomAccessFile file) throws IOException {
         log.debug("Reading RandomAccessFile");
-        ParquetInputFile parquetInputFile = new ParquetInputFile(file);
-        return read(parquetInputFile);
-    }
-
-    /**
-     * Read a Parquet data source via a RandomAccessSource abstraction and produce a VOTableDocument.
-     *
-     * @param randomAccessSource Random-access capable source of Parquet bytes; expected to support seek and bounded reads.
-     * @return VOTableDocument representation of the Parquet content;
-     * @throws IOException if byte access or Parquet parsing fails.
-     */
-    public VOTableDocument read(RandomAccessSource randomAccessSource) throws IOException {
-        log.debug("Reading RandomAccessSource");
-        return read(new RandomSeekableInputFile(randomAccessSource));
+        return read(new FileRandomAccessSource(file));
     }
 
     /**
@@ -161,30 +151,24 @@ public class ParquetReader {
      */
     public VOTableDocument read(InputStream inputStream) throws IOException {
         log.debug("Reading InputStream");
+        String fileName = "parquet-" + UUID.randomUUID();
         File tempFile = null;
 
         try {
-            String fileName = "parquet-" + UUID.randomUUID();
             tempFile = File.createTempFile(fileName, ".parquet");
             log.debug("File " + fileName + " created successfully");
 
             try (OutputStream out = new FileOutputStream(tempFile)) {
                 MultiBufferIO copier = new MultiBufferIO();
                 copier.copy(inputStream, out);
-            } catch (Exception e) {
-                log.error("Error reading from InputStream", e);
-                throw new RuntimeException(e);
+                log.debug("File" + fileName + " prepared successfully for reading");
+            } catch (InterruptedException e) {
+                throw new RuntimeException("BUG: unexpected fail : ", e);
             }
 
-            log.debug("File" + fileName + " prepared successfully for reading");
-
-            RandomAccessFile raf = new RandomAccessFile(tempFile, "r");
-            ParquetInputFile parquetInputFile = new ParquetInputFile(raf);
-            return read(parquetInputFile);
-        } catch (IOException e) {
-            log.error("Failed to read Parquet from InputStream", e);
-            throw new RuntimeException("Error reading Parquet file", e);
+            return read(new FileRandomAccessSource(tempFile));
         } finally {
+            inputStream.close();
             try {
                 if (tempFile != null && tempFile.exists()) {
                     if (!tempFile.delete()) {
@@ -194,13 +178,27 @@ public class ParquetReader {
                 }
                 log.debug("File " + tempFile + " deleted successfully");
             } catch (Exception e) {
-                log.error("Exception while deleting temp file: " + tempFile.getAbsolutePath(), e);
-                throw new IOException("Exception while deleting temp file: " + tempFile.getAbsolutePath(), e);
+                log.error("Exception while deleting temp file: " + fileName +".parquet", e);
+                throw new IOException("Exception while deleting temp file: " + fileName +".parquet", e);
             }
+            log.debug("File" + fileName + " deleted successfully");
         }
     }
 
-    private VOTableDocument read(InputFile inputFile) {
+    /**
+     * Read a Parquet data source via a RandomAccessSource abstraction and produce a VOTableDocument.
+     *
+     * @param randomAccessSource Random-access capable source of Parquet bytes; expected to support seek and bounded reads.
+     * @return VOTableDocument representation of the Parquet content;
+     * @throws IOException if byte access or Parquet parsing fails.
+     */
+    public VOTableDocument read(RandomAccessSource randomAccessSource) throws IOException {
+        log.debug("Reading RandomAccessSource");
+        randomSeekableInputFile = new RandomSeekableInputFile(randomAccessSource);
+        return read(randomSeekableInputFile);
+    }
+
+    private VOTableDocument read(InputFile inputFile) throws IOException {
         log.debug("Reading parquet Input File.");
         VOTableDocument voTableDocument;
 
@@ -215,8 +213,6 @@ public class ParquetReader {
 
             ParquetTableData tableData = new ParquetTableData(reader, parquetSchema, votableFields);
             voTableDocument.getResourceByType("results").getTable().setTableData(tableData);
-        } catch (Exception e) {
-            throw new RuntimeException("Error reading Parquet file : " + e.getMessage(), e);
         }
         return voTableDocument;
     }
@@ -337,4 +333,10 @@ public class ParquetReader {
         throw new IllegalArgumentException("Unsupported nested structure: " + field);
     }
 
+    @Override
+    public void close() throws IOException {
+        if (randomSeekableInputFile != null) {
+            randomSeekableInputFile.close();
+        }
+    }
 }

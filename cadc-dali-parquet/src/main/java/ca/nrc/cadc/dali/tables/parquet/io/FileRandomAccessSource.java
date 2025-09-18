@@ -81,6 +81,10 @@ public class FileRandomAccessSource implements RandomAccessSource {
         this.raf = new RandomAccessFile(file, "r");
     }
 
+    public FileRandomAccessSource(RandomAccessFile raf) {
+        this.raf = raf;
+    }
+
     @Override
     public void seek(long position) throws IOException {
         raf.seek(position);

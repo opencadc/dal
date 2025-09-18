@@ -103,8 +103,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
+import ca.nrc.cadc.util.HexUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.parquet.hadoop.ParquetFileWriter;
@@ -432,7 +432,8 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             dataToStore = ((Instant) data).toEpochMilli();
         } else if (xtype.equals("uuid")) {
             UUIDFormat uuidFormat = new UUIDFormat();
-            dataToStore = uuidFormat.uuidToBytes((UUID) data);
+            String uuidHex = data.toString().replace("-", "");
+            dataToStore = HexUtil.toBytes(uuidHex);
         } else if (xtype.equals("uri")) {
             URIFormat uriFormat = new URIFormat();
             dataToStore = uriFormat.format((URI) data);
