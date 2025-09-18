@@ -128,7 +128,7 @@ public class ParquetReader implements Closeable {
 
     private static final FormatFactory formatFactory = new FormatFactory();
 
-    RandomSeekableInputFile randomSeekableInputFile = null;
+    private RandomSeekableInputFile randomSeekableInputFile = null;
 
     /**
      * Read a Parquet data source using a RandomAccessFile and produce a VOTableDocument representation.
