@@ -94,6 +94,7 @@ import ca.nrc.cadc.dali.util.LongFormat;
 import ca.nrc.cadc.dali.util.StringFormat;
 import ca.nrc.cadc.dali.util.UTCTimestampFormat;
 import ca.nrc.cadc.dali.util.UUIDFormat;
+import ca.nrc.cadc.io.MultiBufferIO;
 
 import java.io.Closeable;
 import java.io.File;
@@ -107,7 +108,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import ca.nrc.cadc.io.MultiBufferIO;
 import org.apache.log4j.Logger;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
@@ -120,7 +120,8 @@ import org.apache.parquet.schema.Type;
 
 /**
  * Parquet Reader - Reads parquet content and produces a VOTableDocument representation.
- * */
+ *
+ */
 public class ParquetReader implements Closeable {
 
     private static final Logger log = Logger.getLogger(ParquetReader.class);
@@ -178,8 +179,8 @@ public class ParquetReader implements Closeable {
                 }
                 log.debug("File " + tempFile + " deleted successfully");
             } catch (Exception e) {
-                log.error("Exception while deleting temp file: " + fileName +".parquet", e);
-                throw new IOException("Exception while deleting temp file: " + fileName +".parquet", e);
+                log.error("Exception while deleting temp file: " + fileName + ".parquet", e);
+                throw new IOException("Exception while deleting temp file: " + fileName + ".parquet", e);
             }
             log.debug("File" + fileName + " deleted successfully");
         }

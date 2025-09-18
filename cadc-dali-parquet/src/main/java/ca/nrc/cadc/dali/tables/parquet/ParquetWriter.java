@@ -88,6 +88,8 @@ import ca.nrc.cadc.dali.util.MultiPolygonFormat;
 import ca.nrc.cadc.dali.util.ShapeFormat;
 import ca.nrc.cadc.dali.util.URIFormat;
 import ca.nrc.cadc.dali.util.UUIDFormat;
+import ca.nrc.cadc.util.HexUtil;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -104,7 +106,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import ca.nrc.cadc.util.HexUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.parquet.hadoop.ParquetFileWriter;

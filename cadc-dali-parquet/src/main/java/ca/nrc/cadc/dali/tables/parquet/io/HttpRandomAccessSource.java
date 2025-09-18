@@ -72,13 +72,14 @@ package ca.nrc.cadc.dali.tables.parquet.io;
 import ca.nrc.cadc.net.HttpGet;
 import ca.nrc.cadc.net.ResourceAlreadyExistsException;
 import ca.nrc.cadc.net.ResourceNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HttpRandomAccessSource implements RandomAccessSource {
     private static final Logger log = LoggerFactory.getLogger(HttpRandomAccessSource.class);
@@ -158,7 +159,8 @@ public class HttpRandomAccessSource implements RandomAccessSource {
         }
     }
 
-    private static void verifyRangeRequestSupport(URL url, ByteArrayOutputStream bos) throws ResourceAlreadyExistsException, ResourceNotFoundException, IOException, InterruptedException {
+    private static void verifyRangeRequestSupport(URL url, ByteArrayOutputStream bos)
+            throws ResourceAlreadyExistsException, ResourceNotFoundException, IOException, InterruptedException {
         HttpGet get = new HttpGet(url, bos);
         get.setFollowRedirects(true);
         get.setRequestProperty("Range", "bytes=0-3");

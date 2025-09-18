@@ -69,10 +69,10 @@
 
 package ca.nrc.cadc.dali.tables.parquet.io;
 
+import java.io.IOException;
+
 import org.apache.parquet.io.InputFile;
 import org.apache.parquet.io.SeekableInputStream;
-
-import java.io.IOException;
 
 /**
  * An implementation of the Parquet {@link InputFile} interface that provides
