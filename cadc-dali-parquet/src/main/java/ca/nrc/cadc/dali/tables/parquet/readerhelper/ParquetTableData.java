@@ -70,12 +70,15 @@
 package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import ca.nrc.cadc.dali.tables.TableData;
+import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.parquet.hadoop.ParquetFileReader;
+import org.apache.parquet.io.InputFile;
 import org.apache.parquet.schema.MessageType;
 
 public class ParquetTableData implements TableData {
@@ -83,15 +86,24 @@ public class ParquetTableData implements TableData {
     private final ParquetFileReader reader;
     private final MessageType schema;
     private final List<VOTableField> fields;
+    private final RandomSeekableInputFile inputFile;
 
-    public ParquetTableData(ParquetFileReader reader, MessageType schema, List<VOTableField> fields) {
+    public ParquetTableData(ParquetFileReader reader, MessageType schema, List<VOTableField> fields, InputFile inputFile) {
         this.reader = reader;
         this.schema = schema;
         this.fields = fields;
+        this.inputFile = (RandomSeekableInputFile) inputFile;
     }
 
     @Override
     public Iterator<List<Object>> iterator() {
         return new ParquetRowIterator(reader, schema, fields);
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (inputFile != null) {
+            inputFile.close();
+        }
     }
 }

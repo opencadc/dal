@@ -96,7 +96,6 @@ import ca.nrc.cadc.dali.util.UTCTimestampFormat;
 import ca.nrc.cadc.dali.util.UUIDFormat;
 import ca.nrc.cadc.io.MultiBufferIO;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -122,7 +121,7 @@ import org.apache.parquet.schema.Type;
  * Parquet Reader - Reads parquet content and produces a VOTableDocument representation.
  *
  */
-public class ParquetReader implements Closeable {
+public class ParquetReader {
 
     private static final Logger log = Logger.getLogger(ParquetReader.class);
 
@@ -212,7 +211,7 @@ public class ParquetReader implements Closeable {
             voTableDocument = getVOTableDocument(votable, parquetSchema);
             List<VOTableField> votableFields = voTableDocument.getResourceByType("results").getTable().getFields();
 
-            ParquetTableData tableData = new ParquetTableData(reader, parquetSchema, votableFields);
+            ParquetTableData tableData = new ParquetTableData(reader, parquetSchema, votableFields, inputFile);
             voTableDocument.getResourceByType("results").getTable().setTableData(tableData);
         }
         return voTableDocument;
@@ -334,10 +333,4 @@ public class ParquetReader implements Closeable {
         throw new IllegalArgumentException("Unsupported nested structure: " + field);
     }
 
-    @Override
-    public void close() throws IOException {
-        if (randomSeekableInputFile != null) {
-            randomSeekableInputFile.close();
-        }
-    }
 }

@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.dali.tables;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -95,4 +96,8 @@ public interface TableData {
      * @return iterator over the table rows
      */
     public Iterator<List<Object>> iterator();
+
+    default void close() throws IOException {
+        // Nothing to close by default. Implementations can override if any resources need to be closed.
+    }
 }
