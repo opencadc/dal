@@ -69,6 +69,10 @@
 
 package ca.nrc.cadc.dali.tables;
 
+import ca.nrc.cadc.io.ResourceIterator;
+
+import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -82,11 +86,17 @@ import java.util.List;
 public class ListTableData implements TableData {
 
     protected List<List<Object>> list = new ArrayList<List<Object>>();
+    // TODO : Possible to have the end resource here and let the iterator open, read and close it?
+    private Reader reader; // Can be either StringReader or BufferedReader
 
     /**
      * Default constructor.
      */
     public ListTableData() {
+    }
+
+    public ListTableData(Reader reader) {
+        this.reader = reader;
     }
 
     /**
@@ -103,8 +113,32 @@ public class ListTableData implements TableData {
      *
      * @return iterator to the ArrayList.
      */
-    public Iterator<List<Object>> iterator() {
-        return list.iterator();
+    public ResourceIterator<List<Object>> iterator() {
+        return new ResourceIterator<>() {
+            private final Iterator<List<Object>> it = list.iterator();
+
+            public boolean hasNext() {
+                return it.hasNext();
+            }
+
+            public List<Object> next() {
+                return it.next();
+            }
+
+            public void remove() {
+                it.remove();
+            }
+
+            public void close() throws IOException {
+                if (reader != null) {
+                    reader.close();
+                }
+            }
+        };
     }
 
+    @Override
+    public void close() throws IOException {
+        // Nothing to close.
+    }
 }

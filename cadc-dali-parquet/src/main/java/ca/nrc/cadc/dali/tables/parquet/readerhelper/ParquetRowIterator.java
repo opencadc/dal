@@ -69,13 +69,16 @@
 
 package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
+import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.io.ResourceIterator;
+import ca.nrc.cadc.io.RandomAccessSource;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -94,8 +97,9 @@ import org.apache.parquet.schema.Type;
  * Iterator for reading rows from a Parquet file as lists of objects,
  * mapping Parquet columns to VOTable fields.
  */
-public class ParquetRowIterator implements Iterator<List<Object>> {
+public class ParquetRowIterator implements ResourceIterator<List<Object>> {
     private final ParquetFileReader reader;
+    private final RandomAccessSource inputSource;
     private final MessageType schema;
     private final List<VOTableField> fields;
     private PageReadStore currentRowGroup;
@@ -103,8 +107,9 @@ public class ParquetRowIterator implements Iterator<List<Object>> {
     private long rowsInGroup;
     private long rowIndex;
 
-    public ParquetRowIterator(ParquetFileReader reader, MessageType schema, List<VOTableField> fields) {
-        this.reader = reader;
+    public ParquetRowIterator(MessageType schema, List<VOTableField> fields, RandomAccessSource inputSource) throws IOException {
+        this.inputSource = inputSource;
+        this.reader = ParquetFileReader.open(new RandomSeekableInputFile(inputSource));
         this.schema = schema;
         this.fields = fields;
         this.currentRowGroup = null;
@@ -182,5 +187,11 @@ public class ParquetRowIterator implements Iterator<List<Object>> {
         MessageColumnIO columnIO = new ColumnIOFactory().getColumnIO(schema);
         RecordMaterializer<DynamicRow> materializer = new DynamicRowMaterializer(schema);
         return columnIO.getRecordReader(rowGroup, materializer);
+    }
+
+    @Override
+    public void close() throws IOException {
+        reader.close();
+        inputSource.close();
     }
 }

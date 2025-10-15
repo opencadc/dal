@@ -74,17 +74,18 @@ import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
-import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.dali.util.PointFormat;
 import ca.nrc.cadc.dali.util.ShortFormat;
 import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.io.ResourceIterator;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.text.DateFormat;
@@ -658,7 +659,7 @@ public class VOTableReaderWriterTest {
      * Test might be a bit dodgy since it's assuming the VOTable
      * elements will be written and read in the same order.
      */
-    public void compareVOTable(VOTableDocument expected, VOTableDocument actual, Long actualMax) {
+    public void compareVOTable(VOTableDocument expected, VOTableDocument actual, Long actualMax) throws IOException {
         Assert.assertNotNull(expected);
         Assert.assertNotNull(actual);
 
@@ -669,7 +670,7 @@ public class VOTableReaderWriterTest {
         }
     }
 
-    public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax) {
+    public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax) throws IOException {
         Assert.assertEquals(expected.getName(), actual.getName());
         
         Assert.assertEquals(expected.description, actual.description);
@@ -683,7 +684,7 @@ public class VOTableReaderWriterTest {
         compareTables(expected.getTable(), actual.getTable(), actualMax);
     }
 
-    public void compareTables(VOTableTable expected, VOTableTable actual, Long actualMax) {
+    public void compareTables(VOTableTable expected, VOTableTable actual, Long actualMax) throws IOException {
         if (expected != null) {
             Assert.assertNotNull(actual);
         } else {
@@ -1160,10 +1161,32 @@ public class VOTableReaderWriterTest {
             log.info("TestData: " + rowData.size());
         }
 
-        public Iterator<List<Object>> iterator() {
-            return rowData.iterator();
+        public ResourceIterator<List<Object>> iterator() {
+            return new ResourceIterator<>() {
+                private final Iterator<List<Object>> it = rowData.iterator();
+
+                public boolean hasNext() {
+                    return it.hasNext();
+                }
+
+                public List<Object> next() {
+                    return it.next();
+                }
+
+                public void remove() {
+                    it.remove();
+                }
+
+                public void close() throws IOException {
+                // Nothing to close.
+                }
+            };
         }
 
+        @Override
+        public void close() throws IOException {
+            // nothing to close
+        }
     }
 
 }

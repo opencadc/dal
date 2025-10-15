@@ -117,14 +117,10 @@ public class CustomWriteSupport extends WriteSupport<List<Object>> {
             Object data = dataList.get(i);
             if (data != null) {
                 recordConsumer.startField(voTableField.getName(), i);
-                try {
-                    if (data.getClass().isArray()) {
-                        fillUpArrayData(recordConsumer, data);
-                    } else {
-                        fillUpPrimitiveData(recordConsumer, data);
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException("Error writing field '" + voTableField.getName() + "' (index " + i + ")", e);
+                if (data.getClass().isArray()) {
+                    fillUpArrayData(recordConsumer, data);
+                } else {
+                    fillUpPrimitiveData(recordConsumer, data);
                 }
                 recordConsumer.endField(voTableField.getName(), i);
             }
@@ -147,6 +143,8 @@ public class CustomWriteSupport extends WriteSupport<List<Object>> {
             recordConsumer.addFloat((Float) data);
         } else if (data instanceof Boolean) {
             recordConsumer.addBoolean((Boolean) data);
+        } else if (data instanceof Byte) {
+            recordConsumer.addBinary(Binary.fromConstantByteArray(new byte[]{(Byte)data}));
         } else {
             log.debug("Unsupported data type: " + data.getClass().getName());
             throw new UnsupportedOperationException("Unsupported data type: " + data.getClass().getName());

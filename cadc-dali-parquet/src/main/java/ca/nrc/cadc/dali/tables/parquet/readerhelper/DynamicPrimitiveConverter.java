@@ -70,6 +70,7 @@
 package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import ca.nrc.cadc.dali.util.UUIDFormat;
+import java.util.Arrays;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.PrimitiveConverter;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
@@ -113,12 +114,23 @@ public class DynamicPrimitiveConverter extends PrimitiveConverter {
                     && type.getPrimitiveTypeName().equals(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)) {
                 UUIDFormat uuidFormat = new UUIDFormat();
                 row.put(field, uuidFormat.bytesToUUID(v.getBytes()).toString());
-            } else {
+            } else if (type.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.StringLogicalTypeAnnotation) {
                 row.put(field, v.toStringUsingUTF8());
+            } else if (type.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY
+                    && type.getTypeLength() == 1) {
+                // single byte
+                row.put(field, v.getBytes()[0]);
+            } else {
+                // byte[]
+                row.put(field, Arrays.toString(v.getBytes()));
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to read binary.", e);
         }
     }
 
+    @Override
+    public void addBoolean(boolean v) {
+        row.put(field, v);
+    }
 }

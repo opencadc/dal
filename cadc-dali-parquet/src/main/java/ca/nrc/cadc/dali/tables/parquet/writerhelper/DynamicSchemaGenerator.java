@@ -134,6 +134,7 @@ public class DynamicSchemaGenerator {
                     typeName = PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
                 } else {
                     typeName = PrimitiveType.PrimitiveTypeName.BINARY;
+                    logicalTypeAnnotation = LogicalTypeAnnotation.stringType(); // UTF-8
                 }
                 break;
             case "boolean":
@@ -145,8 +146,15 @@ public class DynamicSchemaGenerator {
                 logicalTypeAnnotation = LogicalTypeAnnotation.timestampType(true, LogicalTypeAnnotation.TimeUnit.MILLIS);
                 break;
             case "byte":
+            case "unsignedByte":
+                if (arraysize == null) {
+                    typeName = PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY;
+                } else {
+                    typeName = PrimitiveType.PrimitiveTypeName.BINARY; // pure byte[]
+                }
+                break;
             default:
-                typeName = PrimitiveType.PrimitiveTypeName.BINARY;
+                throw new UnsupportedOperationException("Datatype not supported: " + datatype);
         }
 
         return createSchema(voTableField.getName().replaceAll("\"", "_"), typeName, logicalTypeAnnotation, arraysize);
@@ -156,6 +164,7 @@ public class DynamicSchemaGenerator {
                                      LogicalTypeAnnotation logicalTypeAnnotation, String arraysize) {
         if (arraysize == null
                 || typeName.equals(PrimitiveType.PrimitiveTypeName.BINARY) // String = (datatype = char) + (arraysize = *)
+                || typeName.equals(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY) // byte = (datatype = unsignedByte) + (arraysize = fixed num)
                 || logicalTypeAnnotation instanceof LogicalTypeAnnotation.UUIDLogicalTypeAnnotation // uuid = (datatype = char) + (arraysize = *)
                 || logicalTypeAnnotation instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) { // timestamp = (datatype = char) + (arraysize = *)
 
@@ -166,8 +175,9 @@ public class DynamicSchemaGenerator {
                 if (logicalTypeAnnotation.equals(LogicalTypeAnnotation.uuidType())) {
                     prim = prim.length(16);
                 }
+            } else if (typeName.equals(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)) {
+                prim = prim.length(1); // For single byte
             }
-
             return prim.named(fieldName);
         } else {
             // list

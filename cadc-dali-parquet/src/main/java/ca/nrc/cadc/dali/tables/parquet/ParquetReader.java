@@ -71,8 +71,6 @@ package ca.nrc.cadc.dali.tables.parquet;
 
 import static ca.nrc.cadc.dali.tables.parquet.ParquetWriter.IVOA_VOTABLE_PARQUET_CONTENT_KEY;
 
-import ca.nrc.cadc.dali.tables.parquet.io.FileRandomAccessSource;
-import ca.nrc.cadc.dali.tables.parquet.io.RandomAccessSource;
 import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetTableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
@@ -81,6 +79,8 @@ import ca.nrc.cadc.dali.tables.votable.VOTableReader;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableTable;
 
+import ca.nrc.cadc.dali.util.ByteArrayFormat;
+import ca.nrc.cadc.dali.util.ByteFormat;
 import ca.nrc.cadc.dali.util.DoubleArrayFormat;
 import ca.nrc.cadc.dali.util.DoubleFormat;
 import ca.nrc.cadc.dali.util.FloatArrayFormat;
@@ -95,13 +95,14 @@ import ca.nrc.cadc.dali.util.StringFormat;
 import ca.nrc.cadc.dali.util.UTCTimestampFormat;
 import ca.nrc.cadc.dali.util.UUIDFormat;
 import ca.nrc.cadc.io.MultiBufferIO;
+import ca.nrc.cadc.io.RandomAccessFile;
+import ca.nrc.cadc.io.RandomAccessSource;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -110,7 +111,6 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
-import org.apache.parquet.io.InputFile;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
@@ -126,24 +126,12 @@ public class ParquetReader {
     private static final Logger log = Logger.getLogger(ParquetReader.class);
 
     private static final FormatFactory formatFactory = new FormatFactory();
-
-    private RandomSeekableInputFile randomSeekableInputFile = null;
-
-    /**
-     * Read a Parquet data source using a RandomAccessFile and produce a VOTableDocument representation.
-     *
-     * @param file Random-access handle to the Parquet file content.
-     * @return VOTableDocument built from the Parquet input;
-     * @throws IOException if reading, seeking, or parsing the Parquet content fails.
-     */
-    public VOTableDocument read(RandomAccessFile file) throws IOException {
-        log.debug("Reading RandomAccessFile");
-        return read(new FileRandomAccessSource(file));
-    }
+    private MessageType parquetSchema;
+    private List<VOTableField> votableFields;
 
     /**
      * Read a Parquet stream and produce a VOTableDocument.
-     * It reads the stream fully and stores it in a local temporary file before returning.
+     * <p>It reads the stream fully and stores it in a local temporary file before returning.</p>
      *
      * @param inputStream stream of Parquet content.
      * @return VOTableDocument representation of the Parquet content;
@@ -154,7 +142,7 @@ public class ParquetReader {
         String fileName = "parquet-" + UUID.randomUUID();
         File tempFile = null;
 
-        try {
+        try (inputStream) {
             tempFile = File.createTempFile(fileName, ".parquet");
             log.debug("File " + fileName + " created successfully");
 
@@ -166,53 +154,57 @@ public class ParquetReader {
                 throw new RuntimeException("BUG: unexpected fail : ", e);
             }
 
-            return read(new FileRandomAccessSource(tempFile));
-        } finally {
-            inputStream.close();
-            try {
-                if (tempFile != null && tempFile.exists()) {
+            RandomAccessFile randomAccessSource = new RandomAccessFile(tempFile, "r");
+            VOTableDocument voTableDocument = readEmptyVOTable(new RandomSeekableInputFile(randomAccessSource));
+
+            ParquetTableData tableData = new ParquetTableData(parquetSchema, votableFields, randomAccessSource);
+            tableData.registerCacheFile(tempFile);
+            voTableDocument.getResourceByType("results").getTable().setTableData(tableData);
+
+            return voTableDocument;
+        } catch (IOException e) {
+            if (tempFile != null && tempFile.exists()) {
+                try {
                     if (!tempFile.delete()) {
-                        log.error("Failed to delete temp file: " + tempFile.getAbsolutePath());
-                        throw new IOException("Failed to delete temp file: " + tempFile.getAbsolutePath());
+                        e.addSuppressed(new IOException("Failed to delete temp file: " + fileName));
                     }
+                } catch (Exception ex) {
+                    e.addSuppressed(new RuntimeException("Failed to delete temp file: " + fileName, ex));
                 }
-                log.debug("File " + tempFile + " deleted successfully");
-            } catch (Exception e) {
-                log.error("Exception while deleting temp file: " + fileName + ".parquet", e);
-                throw new IOException("Exception while deleting temp file: " + fileName + ".parquet", e);
             }
             log.debug("File" + fileName + " deleted successfully");
+            throw e;
         }
     }
 
     /**
-     * Read a Parquet data source via a RandomAccessSource abstraction and produce a VOTableDocument.
+     * Read a Parquet data source with random access support and produce a VOTableDocument representation.
      *
-     * @param randomAccessSource Random-access capable source of Parquet bytes; expected to support seek and bounded reads.
-     * @return VOTableDocument representation of the Parquet content;
-     * @throws IOException if byte access or Parquet parsing fails.
+     * @param randomAccessSource Random-access handle to the Parquet file content.
+     * @return VOTableDocument built from the Parquet input source;
+     * @throws IOException if reading, seeking, or parsing the Parquet content fails.
      */
     public VOTableDocument read(RandomAccessSource randomAccessSource) throws IOException {
-        log.debug("Reading RandomAccessSource");
-        randomSeekableInputFile = new RandomSeekableInputFile(randomAccessSource);
-        return read(randomSeekableInputFile);
+        log.debug("Reading RandomAccessSource.");
+        VOTableDocument voTableDocument = readEmptyVOTable(new RandomSeekableInputFile(randomAccessSource));
+
+        ParquetTableData tableData = new ParquetTableData(parquetSchema, votableFields, randomAccessSource);
+        voTableDocument.getResourceByType("results").getTable().setTableData(tableData);
+        return voTableDocument;
     }
 
-    private VOTableDocument read(InputFile inputFile) throws IOException {
+    private VOTableDocument readEmptyVOTable(RandomSeekableInputFile inputFile) throws IOException {
         log.debug("Reading parquet Input File.");
         VOTableDocument voTableDocument;
 
         try (ParquetFileReader reader = ParquetFileReader.open(inputFile)) {
             ParquetMetadata metadata = reader.getFooter();
-            MessageType parquetSchema = metadata.getFileMetaData().getSchema();
+            parquetSchema = metadata.getFileMetaData().getSchema();
 
             String votable = metadata.getFileMetaData().getKeyValueMetaData().get(IVOA_VOTABLE_PARQUET_CONTENT_KEY);
 
             voTableDocument = getVOTableDocument(votable, parquetSchema);
-            List<VOTableField> votableFields = voTableDocument.getResourceByType("results").getTable().getFields();
-
-            ParquetTableData tableData = new ParquetTableData(reader, parquetSchema, votableFields, inputFile);
-            voTableDocument.getResourceByType("results").getTable().setTableData(tableData);
+            votableFields = voTableDocument.getResourceByType("results").getTable().getFields();
         }
         return voTableDocument;
     }
@@ -258,10 +250,25 @@ public class ParquetReader {
                         format = actualField.isRepetition(Type.Repetition.REPEATED) ? new DoubleArrayFormat() : new DoubleFormat();
                         break;
                     case FIXED_LEN_BYTE_ARRAY:
+                        if (actualField.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.UUIDLogicalTypeAnnotation) {
+                            type = "char";
+                            format = new UUIDFormat();
+                        } else if (actualField.asPrimitiveType().getTypeLength() == 1) {
+                            type = "unsignedByte";
+                            format = new ByteFormat();
+                        } else {
+                            type = "unsignedByte";
+                            format = new ByteArrayFormat();
+                        }
+                        break;
                     case BINARY:
-                        type = "char";
-                        format = (actualField.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.UUIDLogicalTypeAnnotation)
-                                ? new UUIDFormat() : new StringFormat();
+                        if (actualField.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.StringLogicalTypeAnnotation) {
+                            type = "char";
+                            format = new StringFormat();
+                        } else {
+                            type = "unsignedByte";
+                            format = new ByteArrayFormat();
+                        }
                         break;
                     default:
                         throw new IllegalArgumentException("Unsupported parquet physical type: " + physicalType);
@@ -302,6 +309,7 @@ public class ParquetReader {
     }
 
     private static void copyFieldValues(VOTableField targetField, VOTableField sourceField) {
+        targetField.id = sourceField.id;
         targetField.unit = sourceField.unit;
         targetField.ucd = sourceField.ucd;
         targetField.utype = sourceField.utype;

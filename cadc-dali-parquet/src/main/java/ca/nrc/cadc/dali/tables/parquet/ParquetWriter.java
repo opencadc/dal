@@ -125,6 +125,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
     public static final String IVOA_VOTABLE_PARQUET_CONTENT_KEY = "IVOA.VOTable-Parquet.content";
     public static final String IVOA_VOTABLE_PARQUET_VERSION_VALUE = "1.0";
     public static final String PARQUET_CONTENT_TYPE = "application/vnd.apache.parquet";
+    public static final Long DEFAULT_BLOCK_SIZE = 16L * 1024 * 1024;
 
     private FormatFactory formatFactory;
     private List<VOTableField> voTableFields = new ArrayList<>();
@@ -200,7 +201,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
         try (org.apache.parquet.hadoop.ParquetWriter<List<Object>> writer =
                      new DynamicParquetWriterBuilder(outputFile, schema, voTableResource.getTable().getFields(), prepareCustomMetaData(voTableDocument, maxRec))
                              .withCompressionCodec(CompressionCodecName.SNAPPY)
-                             .withRowGroupSize(Long.valueOf(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_BLOCK_SIZE))
+                             .withRowGroupSize(DEFAULT_BLOCK_SIZE)
                              .withPageSize(org.apache.parquet.hadoop.ParquetWriter.DEFAULT_PAGE_SIZE)
                              .withConf(new Configuration())
                              .withWriteMode(ParquetFileWriter.Mode.OVERWRITE)
@@ -211,9 +212,6 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
             int recordsCount = writeRecords(maxRec, tableData, writer);
             writer.close();
             log.debug("Total Records written= " + recordsCount);
-        } catch (Exception e) {
-            log.debug("error while writing: " + e.getMessage());
-            throw new IOException("error while writing : " + e.getMessage(), e);
         }
         out.close();
     }
@@ -337,6 +335,7 @@ public class ParquetWriter implements TableWriter<VOTableDocument> {
     }
 
     private static void copyFieldValues(VOTableField targetField, VOTableField sourceField) {
+        targetField.id = sourceField.id;
         targetField.unit = sourceField.unit;
         targetField.ucd = sourceField.ucd;
         targetField.utype = sourceField.utype;

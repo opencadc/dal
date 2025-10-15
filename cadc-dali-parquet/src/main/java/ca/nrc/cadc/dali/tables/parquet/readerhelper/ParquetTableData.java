@@ -70,40 +70,49 @@
 package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import ca.nrc.cadc.dali.tables.TableData;
-import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.io.RandomAccessSource;
+import ca.nrc.cadc.io.ResourceIterator;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 
-import org.apache.parquet.hadoop.ParquetFileReader;
-import org.apache.parquet.io.InputFile;
 import org.apache.parquet.schema.MessageType;
 
 public class ParquetTableData implements TableData {
 
-    private final ParquetFileReader reader;
     private final MessageType schema;
     private final List<VOTableField> fields;
-    private final RandomSeekableInputFile inputFile;
+    private final RandomAccessSource inputSource;
+    private File cacheFile;
 
-    public ParquetTableData(ParquetFileReader reader, MessageType schema, List<VOTableField> fields, InputFile inputFile) {
-        this.reader = reader;
+    public ParquetTableData(MessageType schema, List<VOTableField> fields, RandomAccessSource inputSource) {
         this.schema = schema;
         this.fields = fields;
-        this.inputFile = (RandomSeekableInputFile) inputFile;
+        this.inputSource = inputSource;
+    }
+
+    public void registerCacheFile(File cacheFile) {
+        this.cacheFile = cacheFile;
     }
 
     @Override
-    public Iterator<List<Object>> iterator() {
-        return new ParquetRowIterator(reader, schema, fields);
+    public ResourceIterator<List<Object>> iterator() throws IOException {
+        return new ParquetRowIterator(schema, fields, inputSource);
     }
 
     @Override
     public void close() throws IOException {
-        if (inputFile != null) {
-            inputFile.close();
+        if (cacheFile != null && cacheFile.exists()) {
+            String fileName = cacheFile.getName();
+            try {
+                if (!cacheFile.delete()) {
+                    throw new java.io.IOException("Failed to delete file: " + fileName);
+                }
+            } catch (Exception e) {
+                throw new java.io.IOException("Exception while deleting file: " + fileName, e);
+            }
         }
     }
 }

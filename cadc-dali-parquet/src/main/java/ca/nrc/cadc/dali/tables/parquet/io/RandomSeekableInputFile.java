@@ -68,6 +68,7 @@
  */
 
 package ca.nrc.cadc.dali.tables.parquet.io;
+import ca.nrc.cadc.io.RandomAccessSource;
 
 import java.io.IOException;
 
@@ -102,7 +103,4 @@ public class RandomSeekableInputFile implements InputFile {
         return new RandomAccessSeekableInputStream(randomAccessSource);
     }
 
-    public void close() throws IOException {
-        randomAccessSource.close();
-    }
 }

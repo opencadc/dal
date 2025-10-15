@@ -70,6 +70,7 @@ package ca.nrc.cadc.dali.tables;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.util.FormatFactory;
+import ca.nrc.cadc.io.ResourceIterator;
 import ca.nrc.cadc.util.StringUtil;
 
 import java.io.IOException;
@@ -77,7 +78,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -122,11 +122,16 @@ public class BinaryTableData implements TableData {
      * @return iterator over the table rows
      */
     @Override
-    public Iterator<List<Object>> iterator() {
+    public ResourceIterator<List<Object>> iterator() {
         return new BinaryStreamIterator();
     }
 
-    private final class BinaryStreamIterator implements Iterator<List<Object>> {
+    @Override
+    public void close() throws IOException {
+        // Nothing to close.
+    }
+
+    private final class BinaryStreamIterator implements ResourceIterator<List<Object>> {
         private final FormatFactory formatFactory = new FormatFactory();
         private final HasNext hasNext = new HasNext();
         private final BinaryRowSequence rowSequence;
@@ -226,6 +231,12 @@ public class BinaryTableData implements TableData {
 
         private List<Object> getRow() throws IOException {
             return Arrays.asList(rowSequence.getRow());
+        }
+
+        @Override
+        public void close() throws IOException {
+            rowSequence.close();
+            inputStream.close();
         }
 
         /**
