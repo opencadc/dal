@@ -108,10 +108,10 @@ public class ParquetTableData implements TableData {
             String fileName = cacheFile.getName();
             try {
                 if (!cacheFile.delete()) {
-                    throw new java.io.IOException("Failed to delete file: " + fileName);
+                    throw new IOException("Failed to delete file: " + fileName);
                 }
             } catch (Exception e) {
-                throw new java.io.IOException("Exception while deleting file: " + fileName, e);
+                throw new IOException("Exception while deleting file: " + fileName, e);
             }
         }
     }

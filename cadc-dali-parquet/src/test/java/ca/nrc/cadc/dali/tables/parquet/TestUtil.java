@@ -383,7 +383,7 @@ public class TestUtil {
 
             row1.add("foo:bar/baz");
             row1.add(uuid);
-            row1.add(new URI("http://www.example.com/"));
+            row1.add(new URI("https://www.example.com/"));
             rowData.add(row1);
 
             List<Object> row2 = new ArrayList<Object>();
