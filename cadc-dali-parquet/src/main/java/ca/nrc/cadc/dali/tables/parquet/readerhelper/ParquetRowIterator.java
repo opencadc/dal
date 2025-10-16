@@ -71,8 +71,8 @@ package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import ca.nrc.cadc.io.ResourceIterator;
 import ca.nrc.cadc.io.RandomAccessSource;
+import ca.nrc.cadc.io.ResourceIterator;
 
 import java.io.IOException;
 import java.time.Instant;
