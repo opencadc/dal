@@ -75,7 +75,10 @@ import ca.nrc.cadc.dali.tables.votable.VOTableInfo;
 import ca.nrc.cadc.dali.tables.votable.VOTableParam;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableTable;
+import ca.nrc.cadc.io.ResourceIterator;
 import ca.nrc.cadc.reg.Standards;
+
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
@@ -173,7 +176,7 @@ public abstract class DataLinkUtil {
         return vot;
     }
 
-    private static class TableDataWrapper implements TableData, Iterator<List<Object>> {
+    private static class TableDataWrapper implements TableData, ResourceIterator<List<Object>> {
 
         Iterator<DataLink> iter;
 
@@ -182,7 +185,7 @@ public abstract class DataLinkUtil {
         }
 
         @Override
-        public Iterator<List<Object>> iterator() {
+        public ResourceIterator<List<Object>> iterator() {
             return this;
         }
 
@@ -200,6 +203,11 @@ public abstract class DataLinkUtil {
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void close() throws IOException {
+            // Nothing to close
         }
     }
 

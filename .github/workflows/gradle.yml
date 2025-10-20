@@ -19,6 +19,9 @@ jobs:
         
     - name: build and test cadc-dali
       run: cd cadc-dali && ../gradlew --info clean build javadoc checkstyleMain install
+
+    - name: build and test cadc-dali-parquet
+      run: cd cadc-dali-parquet && ../gradlew --info clean build javadoc checkstyleMain install
       
 # cadc-dali-pg is not yet cleanup to pass checkstyleMain
     - name: build and test cadc-dali-pg

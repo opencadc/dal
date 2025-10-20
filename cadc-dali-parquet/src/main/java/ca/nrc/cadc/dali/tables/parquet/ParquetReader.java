@@ -69,199 +69,276 @@
 
 package ca.nrc.cadc.dali.tables.parquet;
 
+import static ca.nrc.cadc.dali.tables.parquet.ParquetWriter.IVOA_VOTABLE_PARQUET_CONTENT_KEY;
+
+import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
+import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetTableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
+import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
+import ca.nrc.cadc.dali.tables.votable.VOTableResource;
+import ca.nrc.cadc.dali.tables.votable.VOTableTable;
+
+import ca.nrc.cadc.dali.util.ByteArrayFormat;
+import ca.nrc.cadc.dali.util.ByteFormat;
+import ca.nrc.cadc.dali.util.DoubleArrayFormat;
+import ca.nrc.cadc.dali.util.DoubleFormat;
+import ca.nrc.cadc.dali.util.FloatArrayFormat;
+import ca.nrc.cadc.dali.util.FloatFormat;
+import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.util.FormatFactory;
+import ca.nrc.cadc.dali.util.IntArrayFormat;
+import ca.nrc.cadc.dali.util.IntegerFormat;
+import ca.nrc.cadc.dali.util.LongArrayFormat;
+import ca.nrc.cadc.dali.util.LongFormat;
+import ca.nrc.cadc.dali.util.StringFormat;
+import ca.nrc.cadc.dali.util.UTCTimestampFormat;
+import ca.nrc.cadc.dali.util.UUIDFormat;
+import ca.nrc.cadc.io.MultiBufferIO;
+import ca.nrc.cadc.io.RandomAccessFile;
+import ca.nrc.cadc.io.RandomAccessSource;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-import org.apache.avro.generic.GenericRecord;
+import java.io.OutputStream;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import org.apache.log4j.Logger;
-import org.apache.parquet.avro.AvroParquetReader;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
-import org.apache.parquet.io.InputFile;
-import org.apache.parquet.io.SeekableInputStream;
+import org.apache.parquet.schema.GroupType;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
+import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 
-
-//TODO: Temporary implementation
+/**
+ * Parquet Reader - Reads parquet content and produces a VOTableDocument representation.
+ *
+ */
 public class ParquetReader {
 
     private static final Logger log = Logger.getLogger(ParquetReader.class);
 
-    public TableShape read(InputStream inputStream) throws IOException {
+    private static final FormatFactory formatFactory = new FormatFactory();
+    private MessageType parquetSchema;
+    private List<VOTableField> votableFields;
 
-        InputFile inputFile = getInputFile(inputStream);
-        int recordCount = 0;
-        int columnCount = 0;
+    /**
+     * Read a Parquet stream and produce a VOTableDocument.
+     * <p>It reads the stream fully and stores it in a local temporary file before returning.</p>
+     *
+     * @param inputStream stream of Parquet content.
+     * @return VOTableDocument representation of the Parquet content;
+     * @throws IOException if reading from the stream or parsing the Parquet content fails.
+     */
+    public VOTableDocument read(InputStream inputStream) throws IOException {
+        log.debug("Reading InputStream");
+        String fileName = "parquet-" + UUID.randomUUID();
+        File tempFile = null;
 
-        ParquetMetadata metadata = ParquetFileReader.open(inputFile).getFooter();
-        MessageType schema = metadata.getFileMetaData().getSchema();
-        columnCount = schema.getFieldCount();
+        try (inputStream) {
+            tempFile = File.createTempFile(fileName, ".parquet");
+            log.debug("File " + fileName + " created successfully");
 
-        String votable = metadata.getFileMetaData().getKeyValueMetaData().get("IVOA.VOTable-Parquet.content");
-        log.debug("VOTable: " + votable);
+            try (OutputStream out = new FileOutputStream(tempFile)) {
+                MultiBufferIO copier = new MultiBufferIO();
+                copier.copy(inputStream, out);
+                log.debug("File" + fileName + " prepared successfully for reading");
+            } catch (InterruptedException e) {
+                throw new RuntimeException("BUG: unexpected fail : ", e);
+            }
 
-        VOTableReader voTableReader = new VOTableReader();
-        VOTableDocument voTableDocument = voTableReader.read(votable);
+            RandomAccessFile randomAccessSource = new RandomAccessFile(tempFile, "r");
+            VOTableDocument voTableDocument = readEmptyVOTable(new RandomSeekableInputFile(randomAccessSource));
 
-        try (org.apache.parquet.hadoop.ParquetReader<GenericRecord> reader = AvroParquetReader.<GenericRecord>builder(inputFile).build()) {
-            GenericRecord record;
+            ParquetTableData tableData = new ParquetTableData(parquetSchema, votableFields, randomAccessSource);
+            tableData.registerCacheFile(tempFile);
+            voTableDocument.getResourceByType("results").getTable().setTableData(tableData);
 
-            while ((record = reader.read()) != null) {
-                log.debug("Reading Record: " + record);
-                recordCount++;
-
-                // TODO: This is a temporary implementation to read the data
-                Map<String, Object> rowData = new HashMap<>();
-                for (Type field : schema.getFields()) {
-                    String fieldName = field.getName();
-                    rowData.put(fieldName, record.get(fieldName));
+            return voTableDocument;
+        } catch (IOException e) {
+            if (tempFile != null && tempFile.exists()) {
+                try {
+                    if (!tempFile.delete()) {
+                        e.addSuppressed(new IOException("Failed to delete temp file: " + fileName));
+                    }
+                } catch (Exception ex) {
+                    e.addSuppressed(new RuntimeException("Failed to delete temp file: " + fileName, ex));
                 }
-                log.debug("Retrieved Row Data: " + rowData);
             }
-            log.debug("Record Count = " + recordCount);
-
-        } catch (Exception e) {
-            throw new IOException("failed to read parquet data", e);
+            log.debug("File" + fileName + " deleted successfully");
+            throw e;
         }
-        if (recordCount == 0) {
-            throw new RuntimeException("NO Records Read");
-        }
-        return new TableShape(recordCount, columnCount, voTableDocument);
     }
 
-    private static InputFile getInputFile(InputStream inputStream) throws IOException {
+    /**
+     * Read a Parquet data source with random access support and produce a VOTableDocument representation.
+     *
+     * @param randomAccessSource Random-access handle to the Parquet file content.
+     * @return VOTableDocument built from the Parquet input source;
+     * @throws IOException if reading, seeking, or parsing the Parquet content fails.
+     */
+    public VOTableDocument read(RandomAccessSource randomAccessSource) throws IOException {
+        log.debug("Reading RandomAccessSource.");
+        VOTableDocument voTableDocument = readEmptyVOTable(new RandomSeekableInputFile(randomAccessSource));
 
-        // Read the entire InputStream into a byte array
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        byte[] temp = new byte[1024];
-        int bytesRead;
-        while ((bytesRead = inputStream.read(temp)) != -1) {
-            buffer.write(temp, 0, bytesRead);
-        }
-
-        byte[] inputData = buffer.toByteArray();
-
-        return new InputFile() {
-            @Override
-            public long getLength() throws IOException {
-                return inputData.length;
-            }
-
-            @Override
-            public SeekableInputStream newStream() {
-                return new SeekableInputStream() {
-                    private final InputStream delegate = new ByteArrayInputStream(inputData);
-                    private long pos = 0;
-
-                    @Override
-                    public void seek(long newPos) throws IOException {
-                        if (newPos < 0) {
-                            throw new IllegalArgumentException("Negative positions are not supported");
-                        }
-                        delegate.reset();
-                        delegate.skip(newPos);
-                        pos = newPos;
-                    }
-
-                    @Override
-                    public void readFully(byte[] bytes, int off, int len) throws IOException {
-                        int bytesRead = 0;
-                        while (bytesRead < len) {
-                            int result = read(bytes, off + bytesRead, len - bytesRead);
-                            if (result == -1) {
-                                throw new EOFException("Unexpected end of stream");
-                            }
-                            bytesRead += result;
-                        }
-                    }
-
-                    @Override
-                    public void readFully(byte[] bytes) throws IOException {
-                        int bytesRead = 0;
-                        while (bytesRead < bytes.length) {
-                            int result = read(bytes, bytesRead, bytes.length - bytesRead);
-                            if (result == -1) {
-                                throw new EOFException("Unexpected end of stream");
-                            }
-                            bytesRead += result;
-                        }
-                    }
-
-                    @Override
-                    public void readFully(ByteBuffer byteBuffer) throws IOException {
-                        int bytesRead = 0;
-                        while (byteBuffer.hasRemaining()) {
-                            int result = read(byteBuffer);
-                            if (result == -1) {
-                                throw new EOFException("Unexpected end of stream");
-                            }
-                            bytesRead += result;
-                        }
-                    }
-
-                    @Override
-                    public int read(ByteBuffer byteBuffer) throws IOException {
-                        byte[] temp = new byte[byteBuffer.remaining()];
-                        int bytesRead = read(temp);
-                        if (bytesRead > 0) {
-                            byteBuffer.put(temp, 0, bytesRead);
-                        }
-                        return bytesRead;
-                    }
-
-                    @Override
-                    public int read() throws IOException {
-                        int result = delegate.read();
-                        if (result != -1) {
-                            pos++;
-                        }
-                        return result;
-                    }
-
-                    @Override
-                    public long getPos() throws IOException {
-                        return pos;
-                    }
-
-                    @Override
-                    public void close() throws IOException {
-                        delegate.close();
-                    }
-                };
-            }
-        };
+        ParquetTableData tableData = new ParquetTableData(parquetSchema, votableFields, randomAccessSource);
+        voTableDocument.getResourceByType("results").getTable().setTableData(tableData);
+        return voTableDocument;
     }
 
-    public static class TableShape {
-        int recordCount;
-        int columnCount;
+    private VOTableDocument readEmptyVOTable(RandomSeekableInputFile inputFile) throws IOException {
+        log.debug("Reading parquet Input File.");
         VOTableDocument voTableDocument;
 
-        public TableShape(int recordCount, int columnCount, VOTableDocument voTableDocument) {
-            this.recordCount = recordCount;
-            this.columnCount = columnCount;
-            this.voTableDocument = voTableDocument;
-        }
+        try (ParquetFileReader reader = ParquetFileReader.open(inputFile)) {
+            ParquetMetadata metadata = reader.getFooter();
+            parquetSchema = metadata.getFileMetaData().getSchema();
 
-        public int getRecordCount() {
-            return recordCount;
-        }
+            String votable = metadata.getFileMetaData().getKeyValueMetaData().get(IVOA_VOTABLE_PARQUET_CONTENT_KEY);
 
-        public int getColumnCount() {
-            return columnCount;
+            voTableDocument = getVOTableDocument(votable, parquetSchema);
+            votableFields = voTableDocument.getResourceByType("results").getTable().getFields();
         }
+        return voTableDocument;
+    }
 
-        public VOTableDocument getVoTableDocument() {
+    private VOTableDocument getVOTableDocument(String votable, MessageType parquetSchema) throws IOException {
+        if (votable == null || votable.isBlank()) {
+            log.debug("Creating VOTable from scratch as no VOTable content found in Parquet metadata.");
+            List<VOTableField> fields = new ArrayList<>();
+            VOTableDocument voTableDocument = new VOTableDocument();
+
+            VOTableResource voTableResource = new VOTableResource("results");
+            voTableResource.setTable(new VOTableTable());
+            voTableDocument.getResources().add(voTableResource);
+
+            parquetSchema.getFields().forEach(field -> {
+                String name = field.getName();
+                Type actualField = extractActualElementType(field);
+                PrimitiveType.PrimitiveTypeName physicalType = actualField.asPrimitiveType().getPrimitiveTypeName();
+
+                String type;
+                Format format;
+                switch (physicalType) {
+                    case INT32:
+                        type = "int";
+                        format = actualField.isRepetition(Type.Repetition.REPEATED) ? new IntArrayFormat() : new IntegerFormat(null);
+                        break;
+                    case INT64:
+                        LogicalTypeAnnotation logicalType = actualField.asPrimitiveType().getLogicalTypeAnnotation();
+                        if (logicalType instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) {
+                            type = "timestamp";
+                            format = new UTCTimestampFormat();
+                        } else {
+                            type = "long";
+                            format = actualField.isRepetition(Type.Repetition.REPEATED) ? new LongArrayFormat() : new LongFormat(null);
+                        }
+                        break;
+                    case FLOAT:
+                        type = "float";
+                        format = actualField.isRepetition(Type.Repetition.REPEATED) ? new FloatArrayFormat() : new FloatFormat();
+                        break;
+                    case DOUBLE:
+                        type = "double";
+                        format = actualField.isRepetition(Type.Repetition.REPEATED) ? new DoubleArrayFormat() : new DoubleFormat();
+                        break;
+                    case FIXED_LEN_BYTE_ARRAY:
+                        if (actualField.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.UUIDLogicalTypeAnnotation) {
+                            type = "char";
+                            format = new UUIDFormat();
+                        } else if (actualField.asPrimitiveType().getTypeLength() == 1) {
+                            type = "unsignedByte";
+                            format = new ByteFormat();
+                        } else {
+                            type = "unsignedByte";
+                            format = new ByteArrayFormat();
+                        }
+                        break;
+                    case BINARY:
+                        if (actualField.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.StringLogicalTypeAnnotation) {
+                            type = "char";
+                            format = new StringFormat();
+                        } else {
+                            type = "unsignedByte";
+                            format = new ByteArrayFormat();
+                        }
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unsupported parquet physical type: " + physicalType);
+                }
+
+                VOTableField voTableField = new VOTableField(name, type);
+                voTableField.setFormat(format);
+                fields.add(voTableField);
+            });
+            voTableResource.getTable().getFields().addAll(fields);
+            return voTableDocument;
+        } else {
+            log.debug("Reading empty VOTable from Parquet metadata.");
+            VOTableReader voTableReader = new VOTableReader();
+            VOTableDocument voTableDocument = voTableReader.read(votable);
+
+            List<VOTableField> fields = voTableDocument.getResourceByType("results").getTable().getFields();
+            for (int i = 0; i < fields.size(); i++) {
+                VOTableField field = fields.get(i);
+                Type parquetField = parquetSchema.getType(field.getName().replaceAll("\"", "_"));
+                if (parquetField != null && parquetField.isPrimitive()) {
+                    PrimitiveType.PrimitiveTypeName physicalType = parquetField.asPrimitiveType().getPrimitiveTypeName();
+                    if (physicalType == PrimitiveType.PrimitiveTypeName.INT64
+                            && parquetField.asPrimitiveType().getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) {
+
+                        VOTableField timestampField = new VOTableField(field.getName().replaceAll("\"", "_"), "char", "*");
+                        copyFieldValues(timestampField, field);
+                        timestampField.xtype = "timestamp";
+                        field = timestampField; // Update timestamp field
+                    }
+                }
+                field.setFormat(formatFactory.getFormat(field));
+                fields.set(i, field); // Update the field in the list
+            }
+
             return voTableDocument;
         }
+    }
+
+    private static void copyFieldValues(VOTableField targetField, VOTableField sourceField) {
+        targetField.id = sourceField.id;
+        targetField.unit = sourceField.unit;
+        targetField.ucd = sourceField.ucd;
+        targetField.utype = sourceField.utype;
+        targetField.description = sourceField.description;
+        targetField.nullValue = sourceField.nullValue;
+    }
+
+    public static Type extractActualElementType(Type field) {
+        if (field.isPrimitive()) {
+            return field;
+        }
+
+        GroupType group = field.asGroupType();
+
+        // 2-level list: LIST group with repeated primitive directly
+        if (group.getFieldCount() == 1 && group.getType(0).isPrimitive() && group.getType(0).isRepetition(Type.Repetition.REPEATED)) {
+            return group.getType(0); // ex: repeated int32 element
+        }
+
+        // 3-level list: LIST group -> repeated group -> primitive
+        if (group.getFieldCount() == 1 && !group.getType(0).isPrimitive()) {
+            GroupType repeatedGroup = group.getType(0).asGroupType();
+
+            if (repeatedGroup.getFieldCount() == 1 && repeatedGroup.getType(0).isPrimitive()) {
+                return repeatedGroup.getType(0); // ex: required int32 element
+            }
+        }
+
+        throw new IllegalArgumentException("Unsupported nested structure: " + field);
     }
 
 }
