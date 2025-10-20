@@ -79,6 +79,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.zip.GZIPInputStream;
 
+import ca.nrc.cadc.io.ResourceIterator;
 import org.apache.commons.codec.binary.Base64InputStream;
 import org.apache.log4j.Logger;
 
@@ -89,7 +90,7 @@ import org.apache.log4j.Logger;
  * reads each row using a {@link BinaryRowReader}, and returns the row as a list of objects.
  * </p>
  */
-public class Binary2Iterator implements Iterator<List<Object>> {
+public class Binary2Iterator implements ResourceIterator<List<Object>> {
 
     private static final Logger log = Logger.getLogger(Binary2Iterator.class);
 
@@ -144,4 +145,8 @@ public class Binary2Iterator implements Iterator<List<Object>> {
         }
     }
 
+    @Override
+    public void close() throws IOException {
+        in.close();
+    }
 }

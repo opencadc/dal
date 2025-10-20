@@ -71,9 +71,10 @@ package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.io.ResourceIterator;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
 import java.util.List;
 
 public class Binary2TableData implements TableData {
@@ -89,7 +90,12 @@ public class Binary2TableData implements TableData {
     }
 
     @Override
-    public Iterator<List<Object>> iterator() {
+    public ResourceIterator<List<Object>> iterator() {
         return new Binary2Iterator(input, fields, encoding);
+    }
+
+    @Override
+    public void close() throws IOException {
+        // No resources to close
     }
 }
