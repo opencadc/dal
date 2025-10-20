@@ -62,101 +62,75 @@
  *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
  *                                       <http://www.gnu.org/licenses/>.
  *
- *  : 5 $
+ *  $Revision: 5 $
  *
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables.parquet;
+package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
-import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import java.util.ArrayList;
+import ca.nrc.cadc.dali.util.UUIDFormat;
 import java.util.Arrays;
-import java.util.List;
-import org.apache.avro.LogicalTypes;
-import org.apache.avro.Schema;
-import org.apache.log4j.Logger;
+import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.io.api.PrimitiveConverter;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
+import org.apache.parquet.schema.PrimitiveType;
 
-public class DynamicSchemaGenerator {
+public class DynamicPrimitiveConverter extends PrimitiveConverter {
+    private final DynamicRow row;
+    private final String field;
+    private final PrimitiveType type;
 
-    private static final Logger log = Logger.getLogger(DynamicSchemaGenerator.class);
+    public DynamicPrimitiveConverter(DynamicRow row, String field, PrimitiveType type) {
+        this.row = row;
+        this.field = field;
+        this.type = type;
+    }
 
-    public static Schema generateSchema(List<VOTableField> voFields) {
-        // List to hold Avro fields
-        List<Schema.Field> fields = new ArrayList<>();
+    @Override
+    public void addInt(int v) {
+        row.put(field, v);
+    }
+
+    @Override
+    public void addLong(long v) {
+        row.put(field, v);
+    }
+
+    @Override
+    public void addFloat(float v) {
+        row.put(field, v);
+    }
+
+    @Override
+    public void addDouble(double v) {
+        row.put(field, v);
+    }
+
+    @Override
+    public void addBinary(Binary v) {
         try {
-            int columnCount = voFields.size();
-            log.debug("VOTable Column count = " + columnCount);
-            for (VOTableField voField : voFields) {
-                String columnName = voField.getName();
-                Schema.Field field = new Schema.Field(columnName.replaceAll("\"", "_"), getAvroFieldType(voField), null, null);
-                fields.add(field);
+            if (type.getLogicalTypeAnnotation() != null && type.getLogicalTypeAnnotation().equals(LogicalTypeAnnotation.uuidType())
+                    && type.getPrimitiveTypeName().equals(PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY)) {
+                UUIDFormat uuidFormat = new UUIDFormat();
+                row.put(field, uuidFormat.bytesToUUID(v.getBytes()).toString());
+            } else if (type.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.StringLogicalTypeAnnotation) {
+                row.put(field, v.toStringUsingUTF8());
+            } else if (type.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.FIXED_LEN_BYTE_ARRAY
+                    && type.getTypeLength() == 1) {
+                // single byte
+                row.put(field, v.getBytes()[0]);
+            } else {
+                // byte[]
+                row.put(field, Arrays.toString(v.getBytes()));
             }
-            log.debug("Avro Schema.Field count = " + fields.size());
         } catch (Exception e) {
-            log.debug("Failure while creating Avro Schema from VOTable", e);
-            throw new RuntimeException("Failure while creating Avro Schema from VOTable : " + e.getMessage(), e);
+            throw new RuntimeException("Failed to read binary.", e);
         }
-
-        // Define the Avro record schema with the fields
-        Schema schema = Schema.createRecord("Record", null, null, Boolean.FALSE);
-        schema.setFields(fields);
-        log.debug("Schema Generated Successfully : " + schema);
-        return schema;
     }
 
-    private static Schema getAvroFieldType(VOTableField voTableField) {
-        String datatype = voTableField.getDatatype();
-        String arraysize = voTableField.getArraysize();
-        String xtype = voTableField.xtype;
-
-        Schema fieldType;
-        switch (datatype) {
-            case "short":
-            case "int":
-                fieldType = createSchema(Schema.Type.INT, arraysize);
-                break;
-            case "long":
-                fieldType = createSchema(Schema.Type.LONG, arraysize);
-                break;
-            case "float":
-                fieldType = createSchema(Schema.Type.FLOAT, arraysize);
-                break;
-            case "double":
-                fieldType = createSchemaWithXType(Schema.Type.DOUBLE, arraysize, xtype);
-                break;
-            case "char":
-                fieldType = "timestamp".equals(xtype)
-                        ? LogicalTypes.timestampMillis().addToSchema(Schema.create(Schema.Type.LONG)) :
-                        createSchemaWithXType(Schema.Type.STRING, null, xtype);
-                break;
-            case "boolean":
-                fieldType = Schema.create(Schema.Type.BOOLEAN);
-                break;
-            case "date":
-            case "timestamp":
-                fieldType = LogicalTypes.timestampMillis().addToSchema(Schema.create(Schema.Type.LONG));
-                break;
-            case "byte":
-                fieldType = createSchema(Schema.Type.BYTES, arraysize);
-                break;
-            default:
-                fieldType = Schema.create(Schema.Type.STRING);
-        }
-
-        return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), fieldType));
-    }
-
-    private static Schema createSchema(Schema.Type type, String arraysize) {
-        return arraysize == null ? Schema.create(type) : Schema.createArray(Schema.create(type));
-    }
-
-    private static Schema createSchemaWithXType(Schema.Type type, String arraysize, String xtype) {
-        Schema schema = createSchema(type, arraysize);
-        if (xtype != null) {
-            schema.addProp("xtype", xtype);
-        }
-        return schema;
+    @Override
+    public void addBoolean(boolean v) {
+        row.put(field, v);
     }
 }
-

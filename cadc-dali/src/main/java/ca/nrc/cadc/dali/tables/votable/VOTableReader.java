@@ -230,6 +230,7 @@ public class VOTableReader {
         try {
             document = docBuilder.build(reader);
         } catch (JDOMException e) {
+            reader.close();
             throw new IOException("Unable to parse " + e.getMessage());
         }
 
@@ -321,15 +322,16 @@ public class VOTableReader {
                     Element tableData = data.getChild("TABLEDATA", namespace);
 
                     if (tableData != null) {
-                        vot.setTableData(getTableData(tableData, namespace, vot.getFields()));
+                        vot.setTableData(getTableData(tableData, namespace, vot.getFields(), reader));
                     } else {
                         final Element binaryData = getBinaryData(data, namespace);
                         if (binaryData == null) {
+                            reader.close();
                             throw new UnsupportedOperationException("Unknown DATA");
                         } else {
                             final Element streamData = binaryData.getChild("STREAM", namespace);
                             if (streamData == null) {
-                                vot.setTableData(new ListTableData());
+                                vot.setTableData(new ListTableData(reader));
                             } else {
                                 // Default to base64 encoding
                                 // TODO: check for href in which case encoding may be irrelevant?
@@ -511,8 +513,8 @@ public class VOTableReader {
      * @param namespace document namespace.
      * @return TableData object containing rows of data.
      */
-    TableData getTableData(Element element, Namespace namespace, List<VOTableField> fields) {
-        ListTableData tableData = new ListTableData();
+    TableData getTableData(Element element, Namespace namespace, List<VOTableField> fields, Reader reader) {
+        ListTableData tableData = new ListTableData(reader);
 
         if (element != null) {
             List<Element> trs = element.getChildren("TR", namespace);
