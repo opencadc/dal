@@ -70,16 +70,16 @@
 package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.io.ResourceIterator;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.zip.GZIPInputStream;
 
-import ca.nrc.cadc.io.ResourceIterator;
+
 import org.apache.commons.codec.binary.Base64InputStream;
 import org.apache.log4j.Logger;
 
