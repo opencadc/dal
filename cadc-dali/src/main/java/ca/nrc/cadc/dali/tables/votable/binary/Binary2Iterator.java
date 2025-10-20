@@ -79,7 +79,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.zip.GZIPInputStream;
 
-
 import org.apache.commons.codec.binary.Base64InputStream;
 import org.apache.log4j.Logger;
 
