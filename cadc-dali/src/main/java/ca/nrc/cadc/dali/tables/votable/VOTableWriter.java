@@ -357,9 +357,11 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
                     // Data content is added by the XMLOutputProcessor while writing out the XML format
                     if (serialization.equals(SerializationType.TABLEDATA)) {
+                        log.debug("adding TABLEDATA element to DATA element");
                         Element tabledataElement = new Element("TABLEDATA", namespace);
                         data.addContent(tabledataElement);
                     } else if (serialization.equals(SerializationType.BINARY2)) {
+                        log.debug("adding BINARY2 element to DATA element");
                         Element binary2 = new Element("BINARY2", namespace);
                         data.addContent(binary2);
                     } else {

@@ -79,6 +79,7 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.jdom2.Element;
 import org.jdom2.output.support.AbstractXMLOutputProcessor;
 import org.jdom2.output.support.FormatStack;
@@ -89,6 +90,8 @@ import org.jdom2.util.NamespaceStack;
  * It intercepts the writing logic of JDOM elements.
  */
 public class XMLOutputProcessor extends AbstractXMLOutputProcessor {
+
+    private static final Logger log = Logger.getLogger(XMLOutputProcessor.class);
 
     private final Iterator<List<Object>> rowIter;
     private final List<VOTableField> fields;
@@ -112,9 +115,11 @@ public class XMLOutputProcessor extends AbstractXMLOutputProcessor {
     protected void printElement(final Writer out, final FormatStack fstack,
                                 final NamespaceStack nstack, final Element element) throws IOException {
         if (element.getName().equals("BINARY2")) {
+            log.debug("Writing BINARY2 element");
             BinaryElementWriter binaryWriter = new BinaryElementWriter(rowIter, fields, maxIterations, trailer);
             binaryWriter.write(out);
         } else if (element.getName().equals("TABLEDATA")) {
+            log.debug("Writing TABLEDATA element");
             TableDataElementWriter tableWriter = new TableDataElementWriter(rowIter, fields, maxIterations, trailer, formatFactory);
             tableWriter.write(out);
         } else {

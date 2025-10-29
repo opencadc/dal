@@ -80,12 +80,15 @@ import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.jdom2.Element;
 
 /**
  * Writes data in VOTable BINARY2 format.
  */
 public class BinaryElementWriter {
+
+    private static final Logger log = Logger.getLogger(BinaryElementWriter.class);
 
     private final FieldProcessorFactory decoderFactory = new FieldProcessorFactory();
     private final Iterator<List<Object>> rowIter;
@@ -101,6 +104,7 @@ public class BinaryElementWriter {
     }
 
     public void write(Writer out) throws IOException {
+        log.debug("Writing BINARY2 element - starting");
         out.write("<BINARY2><STREAM encoding=\"base64\">");
 
         try (OutputStream base64Out = Base64.getEncoder().wrap(new WriterOutputStream(out))) {
@@ -115,6 +119,7 @@ public class BinaryElementWriter {
                     writeRow(row, dataOut);
                 } catch (Exception ex) {
                     // DALI error
+                    log.error("Error writing row " + rowCount + ": " + ex.getMessage(), ex);
                     trailer.setAttribute("name", "QUERY_STATUS");
                     trailer.setAttribute("value", "ERROR");
                     trailer.setText(ex.toString());
@@ -130,6 +135,7 @@ public class BinaryElementWriter {
         }
 
         out.write("</STREAM></BINARY2>");
+        log.debug("Writing BINARY2 element - done");
     }
 
     private void writeRow(List<Object> row, DataOutputStream out) throws IOException {
