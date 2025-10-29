@@ -67,10 +67,10 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables.votable.binary;
+package ca.nrc.cadc.dali.tables;
 
-import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.dali.tables.votable.binary.Binary2Iterator;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.io.ResourceIterator;
 

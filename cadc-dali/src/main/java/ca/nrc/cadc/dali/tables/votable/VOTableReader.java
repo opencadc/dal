@@ -72,9 +72,9 @@ package ca.nrc.cadc.dali.tables.votable;
 import static ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType.BINARY;
 import static ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType.BINARY2;
 
+import ca.nrc.cadc.dali.tables.Binary2TableData;
 import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
-import ca.nrc.cadc.dali.tables.votable.binary.Binary2TableData;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.util.StringUtil;
