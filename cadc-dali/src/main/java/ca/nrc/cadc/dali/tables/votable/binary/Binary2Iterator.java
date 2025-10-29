@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2019.                            (c) 2019.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -70,9 +70,11 @@
 package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.io.ResourceIterator;
 
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -85,7 +87,7 @@ import org.apache.log4j.Logger;
 /**
  * Iterator for reading rows from a VOTable BINARY2 encoded stream.
  * <p>
- * This class decodes an input stream containing BINARY2 data,
+ * This class decodes an input stream containing BINARY or BINARY2 data,
  * reads each row using a {@link BinaryRowReader}, and returns the row as a list of objects.
  * </p>
  */
@@ -98,7 +100,7 @@ public class Binary2Iterator implements ResourceIterator<List<Object>> {
     private List<Object> nextRow;
     private boolean finished = false;
 
-    public Binary2Iterator(InputStream input, List<VOTableField> fields, String encoding) {
+    public Binary2Iterator(InputStream input, List<VOTableField> fields, String encoding, FormatFactory formatFactory, boolean isBinary2) {
         if ("gzip".equalsIgnoreCase(encoding)) {
             try {
                 this.in = new DataInputStream(new GZIPInputStream(input));
@@ -111,7 +113,7 @@ public class Binary2Iterator implements ResourceIterator<List<Object>> {
             throw new IllegalArgumentException("Unsupported encoding: " + encoding);
         }
 
-        this.binaryRowReader = new BinaryRowReader(fields, new FieldProcessorFactory());
+        this.binaryRowReader = new BinaryRowReader(fields, formatFactory, isBinary2);
         fetchNext();
     }
 
@@ -136,6 +138,9 @@ public class Binary2Iterator implements ResourceIterator<List<Object>> {
             if (nextRow == null) {
                 finished = true;
             }
+        } catch (EOFException eof) { // This can be a loophole. But no other way for binary reading.
+            finished = true;
+            nextRow = null;
         } catch (Exception e) {
             log.error("Error while reading next row", e);
             finished = true;

@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2019.                            (c) 2019.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -71,27 +71,40 @@ package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.io.ResourceIterator;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+/**
+ * Implementation of the {@link TableData} interface for reading VOTable BINARY2 table data.
+ * <p>
+ * This class provides an iterator over table rows, reading from an input stream
+ * using the BINARY and BINARY2 serialization as defined by the VOTable standard.
+ * </p>
+ *
+ */
 public class Binary2TableData implements TableData {
 
     private final InputStream input;
     private final List<VOTableField> fields;
     private final String encoding;
+    private final FormatFactory formatFactory;
+    private final boolean isBinary2;
 
-    public Binary2TableData(InputStream input, List<VOTableField> fields, String encoding) {
+    public Binary2TableData(InputStream input, List<VOTableField> fields, String encoding, FormatFactory formatFactory, boolean isBinary2) {
         this.fields = fields;
         this.input = input;
         this.encoding = encoding;
+        this.formatFactory = formatFactory;
+        this.isBinary2 = isBinary2;
     }
 
     @Override
     public ResourceIterator<List<Object>> iterator() {
-        return new Binary2Iterator(input, fields, encoding);
+        return new Binary2Iterator(input, fields, encoding, formatFactory, isBinary2);
     }
 
     @Override

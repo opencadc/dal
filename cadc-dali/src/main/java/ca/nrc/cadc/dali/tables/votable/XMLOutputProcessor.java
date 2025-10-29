@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2019.                            (c) 2019.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -67,15 +67,15 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables.votable.binary;
+package ca.nrc.cadc.dali.tables.votable;
 
-import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.dali.tables.votable.binary.BinaryElementWriter;
+import ca.nrc.cadc.dali.tables.votable.tabledata.TableDataElementWriter;
+import ca.nrc.cadc.dali.util.FormatFactory;
+import ca.nrc.cadc.xml.MaxIterations;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Writer;
-import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 
@@ -85,68 +85,41 @@ import org.jdom2.output.support.FormatStack;
 import org.jdom2.util.NamespaceStack;
 
 /**
- * XMLOutputProcessor is responsible for serializing VOTable data in BINARY2 format,
- * encoding the binary stream as base64 within the XML output.
+ * XMLOutputProcessor is responsible for serializing VOTable data in TABLEDATA and BINARY2 format within the XML output.
  * It intercepts the writing logic of JDOM elements.
  */
 public class XMLOutputProcessor extends AbstractXMLOutputProcessor {
 
     private final Iterator<List<Object>> rowIter;
-    private final BinaryRowWriter rowEncoder;
     private final List<VOTableField> fields;
+    private final FormatFactory formatFactory;
+    private final MaxIterations maxIterations;
+    private final Element trailer;
 
-    public XMLOutputProcessor(Iterator<List<Object>> rowIter, BinaryRowWriter rowEncoder, List<VOTableField> fields) {
+    public XMLOutputProcessor(Iterator<List<Object>> rowIter, List<VOTableField> fields, MaxIterations maxIterations,
+                              Element trailer, FormatFactory formatFactory) {
         this.rowIter = rowIter;
-        this.rowEncoder = rowEncoder;
         this.fields = fields;
+        this.maxIterations = maxIterations;
+        this.trailer = trailer;
+        this.formatFactory = formatFactory;
     }
 
     /*
-     * Custom logic to write BINARY2 element.
+     * Custom logic to write BINARY2 and TABLEDATA element.
      * */
     @Override
     protected void printElement(final Writer out, final FormatStack fstack,
                                 final NamespaceStack nstack, final Element element) throws IOException {
         if (element.getName().equals("BINARY2")) {
-            out.write("<BINARY2><STREAM encoding=\"base64\">");
-            try (OutputStream base64Out = Base64.getEncoder().wrap(new WriterOutputStream(out))) {
-                DataOutputStream dataOut = new DataOutputStream(base64Out);
-
-                Iterator<List<Object>> iter = rowIter;
-                while (iter.hasNext()) {
-                    List<Object> row = iter.next();
-                    rowEncoder.writeRow(row, dataOut, fields);
-                }
-                dataOut.flush();
-            }
-            out.write("</STREAM></BINARY2>");
+            BinaryElementWriter binaryWriter = new BinaryElementWriter(rowIter, fields, maxIterations, trailer);
+            binaryWriter.write(out);
+        } else if (element.getName().equals("TABLEDATA")) {
+            TableDataElementWriter tableWriter = new TableDataElementWriter(rowIter, fields, maxIterations, trailer, formatFactory);
+            tableWriter.write(out);
         } else {
             super.printElement(out, fstack, nstack, element);
         }
     }
 
-    private static class WriterOutputStream extends OutputStream {
-        private final Writer writer;
-
-        WriterOutputStream(Writer writer) {
-            this.writer = writer;
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            writer.write(b);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            for (int i = off; i < off + len; i++) {
-                writer.write(b[i] & 0xFF);
-            }
-        }
-
-        @Override
-        public void flush() throws IOException {
-            writer.flush();
-        }
-    }
 }

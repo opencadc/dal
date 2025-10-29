@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2019.                            (c) 2019.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -70,57 +70,99 @@
 package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.dali.tables.votable.VOTableUtil;
 import ca.nrc.cadc.dali.util.FormatFactory;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /*
-* Reads a single row from a VOTable binary stream.
-* */
+ * Reads a single row from a VOTable binary stream.
+ * */
 public class BinaryRowReader {
     private final List<VOTableField> fields;
-    private final FieldProcessorFactory decoderFactory;
-    private final FormatFactory formatFactory = new FormatFactory();
+    private final FieldProcessorFactory decoderFactory = new FieldProcessorFactory();
+    private final FormatFactory formatFactory;
+    private final boolean isBinary2;
 
-    public BinaryRowReader(List<VOTableField> fields, FieldProcessorFactory decoderFactory) {
+    public BinaryRowReader(List<VOTableField> fields, FormatFactory formatFactory, boolean isBinary2) {
         this.fields = fields;
-        this.decoderFactory = decoderFactory;
+        this.formatFactory = formatFactory == null ? new FormatFactory() : formatFactory;
+        this.isBinary2 = isBinary2;
     }
 
     public List<Object> readRow(DataInputStream in) throws IOException {
         int numFields = fields.size();
-        int numMaskBytes = (numFields + 7) / 8;
-        byte[] nullMask = new byte[numMaskBytes];
-        int read = in.read(nullMask);
-        if (read < numMaskBytes) {
-            return null; // End of stream
+        byte[] nullMask = null;
+
+        // read null mask if binary2
+        if (isBinary2) {
+            int numMaskBytes = (numFields + 7) / 8;
+            nullMask = new byte[numMaskBytes];
+            int read = in.read(nullMask);
+            if (read < numMaskBytes) {
+                return null; // End of stream
+            }
         }
 
         List<Object> row = new ArrayList<>(numFields);
         for (int i = 0; i < numFields; i++) {
-            boolean isNull = (((nullMask[i / 8] & 0xFF) >> (7 - (i % 8))) & 0x01) != 0;
-            if (isNull) {
-                row.add(null);
-            } else {
-                VOTableField field = fields.get(i);
-                boolean isArray = field.getArraysize() != null;
-                int length;
-
-                if (isArray) {
-                    length = field.getArraysize().contains("*") ? in.readInt() : Integer.parseInt(field.getArraysize());
-                } else {
-                    length = 1;
+            if (isBinary2) {
+                boolean isNull = (nullMask[i / 8] & (1 << (7 - (i % 8)))) != 0;
+                if (isNull) {
+                    row.add(null);
+                    continue;
                 }
-
-                FieldProcessor fieldProcessor = decoderFactory.getFieldProcessor(field.getDatatype().toLowerCase());
-                Object data = fieldProcessor.deSerialize(in, field, length);
-                String stringFormat = fieldProcessor.getStringFormat(length, data);
-                row.add(formatFactory.getFormat(field).parse(stringFormat));
             }
+
+            VOTableField field = fields.get(i);
+            int length = computeLength(in, field);
+
+            FieldProcessor fieldProcessor = decoderFactory.getFieldProcessor(field.getDatatype().toLowerCase());
+            Object rawData = fieldProcessor.deSerialize(in, field, length);
+
+            String stringValue = fieldProcessor.toStringValue(length, rawData);
+            row.add(parseAndResolveNull(field, stringValue));
         }
         return row;
     }
+
+    private static int computeLength(DataInputStream in, VOTableField field) throws IOException {
+        int[] shape = VOTableUtil.parseArraySize(field.getArraysize());
+        int length = 1;
+
+        if (shape != null) {
+            int variableDim = 1;
+            if (shape[shape.length - 1] == -1) { // -1 is for variable dimension
+                variableDim = in.readInt();
+            }
+            for (int dim : shape) {
+                if (dim == -1) {
+                    dim = variableDim;
+                }
+                length *= dim;
+            }
+        }
+        return length;
+    }
+
+    private Object parseAndResolveNull(VOTableField field, String stringValue) {
+        Object parsedData = formatFactory.getFormat(field).parse(stringValue);
+
+        if (field.nullValue != null && !field.nullValue.isEmpty()) {
+            Object nullValue = formatFactory.getFormat(field).parse(field.nullValue);
+            if (Objects.equals(parsedData, nullValue)) {
+                parsedData = null;
+            }
+        } else if (parsedData instanceof Float && Float.isNaN((Float) parsedData)) {
+            parsedData = null;
+        } else if (parsedData instanceof Double && Double.isNaN((Double) parsedData)) {
+            parsedData = null;
+        }
+        return parsedData;
+    }
+
 }

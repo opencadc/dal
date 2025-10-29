@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2019.                            (c) 2019.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -74,6 +74,7 @@ import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.dali.tables.votable.VOTableUtil;
 import ca.nrc.cadc.dali.util.UTCTimestampFormat;
 
 import java.io.DataInputStream;
@@ -129,12 +130,15 @@ public class FieldProcessorFactory {
             }
 
             byte[] bytes = value.toString().getBytes(StandardCharsets.UTF_8);
-            out.writeInt(bytes.length);  // variable-length prefix
+            if (field.getArraysize().contains("*")) {
+                int variableDim = computeVariableDim(field, bytes.length);
+                out.writeInt(variableDim); // variable-length prefix
+            }
             out.write(bytes);
         }
 
         @Override
-        public String getStringFormat(int len, Object data) {
+        public String toStringValue(int len, Object data) {
             return data.toString();
         }
     }
@@ -164,7 +168,8 @@ public class FieldProcessorFactory {
             int[] array = (int[]) value;
 
             if (isVariable) {
-                out.writeInt(array.length); // variable-length prefix
+                int variableDim = computeVariableDim(field, array.length);
+                out.writeInt(variableDim); // variable-length prefix
             }
             for (int data : array) {
                 out.writeInt(data);
@@ -172,7 +177,7 @@ public class FieldProcessorFactory {
         }
 
         @Override
-        public String getStringFormat(int len, Object data) {
+        public String toStringValue(int len, Object data) {
             if (len == 1) {
                 return data.toString();
             } else {
@@ -208,7 +213,8 @@ public class FieldProcessorFactory {
             short[] array = (short[]) value;
 
             if (isVariable) {
-                out.writeInt(array.length); // variable-length prefix
+                int variableDim = computeVariableDim(field, array.length);
+                out.writeInt(variableDim); // variable-length prefix
             }
             for (short data : array) {
                 out.writeShort(data);
@@ -216,7 +222,7 @@ public class FieldProcessorFactory {
         }
 
         @Override
-        public String getStringFormat(int len, Object data) {
+        public String toStringValue(int len, Object data) {
             if (len == 1) {
                 return data.toString();
             }
@@ -258,7 +264,8 @@ public class FieldProcessorFactory {
             float[] array = (float[]) value;
 
             if (isVariable) {
-                out.writeInt(array.length); // variable-length prefix
+                int variableDim = computeVariableDim(field, array.length);
+                out.writeInt(variableDim); // variable-length prefix
             }
             for (float data : array) {
                 out.writeFloat(data);
@@ -266,7 +273,7 @@ public class FieldProcessorFactory {
         }
 
         @Override
-        public String getStringFormat(int len, Object data) {
+        public String toStringValue(int len, Object data) {
             if (len == 1) {
                 return data.toString();
             }
@@ -309,6 +316,21 @@ public class FieldProcessorFactory {
 
             if (value instanceof double[]) {
                 array = (double[]) value;
+            } else if (value instanceof double[][]) {
+                double[][] mda = (double[][]) value;
+
+                int totalLength = 0;
+                for (double[] inner : mda) {
+                    totalLength += inner.length;
+                }
+
+                array = new double[totalLength];
+                int idx = 0;
+                for (double[] inner : mda) {
+                    for (double val : inner) {
+                        array[idx++] = val;
+                    }
+                }
             } else if (value instanceof Point) {
                 Point p = (Point) value;
                 array = p.toArray();
@@ -337,7 +359,8 @@ public class FieldProcessorFactory {
             }
 
             if (isVariable) {
-                out.writeInt(array.length); // variable-length prefix
+                int variableDim = computeVariableDim(field, array.length);
+                out.writeInt(variableDim); // variable-length prefix
             }
             for (double data : array) {
                 out.writeDouble(data);
@@ -345,7 +368,7 @@ public class FieldProcessorFactory {
         }
 
         @Override
-        public String getStringFormat(int len, Object data) {
+        public String toStringValue(int len, Object data) {
             if (len == 1) {
                 return data.toString();
             } else {
@@ -401,7 +424,8 @@ public class FieldProcessorFactory {
             }
 
             if (isVariable) {
-                out.writeInt(array.length); // variable-length prefix
+                int variableDim = computeVariableDim(field, array.length);
+                out.writeInt(variableDim); // variable-length prefix
             }
             for (long data : array) {
                 out.writeLong(data);
@@ -409,7 +433,7 @@ public class FieldProcessorFactory {
         }
 
         @Override
-        public String getStringFormat(int len, Object data) {
+        public String toStringValue(int len, Object data) {
             if (len == 1) {
                 return data.toString();
             }
@@ -437,7 +461,7 @@ public class FieldProcessorFactory {
         }
 
         @Override
-        public String getStringFormat(int len, Object data) {
+        public String toStringValue(int len, Object data) {
             return data.toString();
         }
     }
@@ -466,7 +490,8 @@ public class FieldProcessorFactory {
             byte[] array = (byte[]) value;
 
             if (isVariable) {
-                out.writeInt(array.length);
+                int variableDim = computeVariableDim(field, array.length);
+                out.writeInt(variableDim); // variable-length prefix
             }
             for (byte data : array) {
                 out.writeByte(data);
@@ -474,7 +499,7 @@ public class FieldProcessorFactory {
         }
 
         @Override
-        public String getStringFormat(int len, Object data) {
+        public String toStringValue(int len, Object data) {
             if (len == 1) {
                 return data.toString();
             }
@@ -489,6 +514,24 @@ public class FieldProcessorFactory {
 
             return sb.toString().trim();
         }
+    }
+
+    // Designed for arraysize containing a variable dimension.
+    private static int computeVariableDim(VOTableField field, int arrayDataSize) throws IOException {
+        int[] shape = VOTableUtil.parseArraySize(field.getArraysize());
+        int variableDim = arrayDataSize;
+        int product = 1;
+
+        if (shape != null && shape[shape.length - 1] == -1) {
+            for (int i = 0; i < shape.length - 1; i++) {
+                product *= shape[i];
+            }
+            if (arrayDataSize % product != 0) {
+                throw new IOException("arrayDataSize not divisible by fixed dimensions: " + Arrays.toString(shape));
+            }
+            variableDim = arrayDataSize / product;
+        }
+        return variableDim;
     }
 
 }

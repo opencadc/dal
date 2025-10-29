@@ -110,6 +110,7 @@ public class VOTableReaderWriterTest {
 
     private static final String DATE_TIME = "2009-01-02T11:04:05.678";
     private static DateFormat dateFormat;
+    private static final long DEFAULT_NUM_ROWS = 2L;
 
     static {
         Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.INFO);
@@ -168,7 +169,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            VOTableWriter writer = binarySerialization ? new VOTableWriter(VOTableWriter.SerializationType.BINARY2, null) : new VOTableWriter();
+            VOTableWriter writer = binarySerialization ? new VOTableWriter(VOTableWriter.SerializationType.BINARY2) : new VOTableWriter();
             writer.write(expected, sw);
             String xml = sw.toString();
             log.debug("XML: \n\n" + xml);
@@ -192,6 +193,11 @@ public class VOTableReaderWriterTest {
 
     @Test
     public void testReadWriteVOTableWithMax() throws Exception {
+        testReadWriteVOTableWithMax(VOTableWriter.SerializationType.TABLEDATA);
+        testReadWriteVOTableWithMax(VOTableWriter.SerializationType.BINARY2);
+    }
+
+    public void testReadWriteVOTableWithMax(VOTableWriter.SerializationType serializationType) throws Exception {
         log.debug("testReadWriteVOTable");
         long maxrec = 3L;
         try {
@@ -226,7 +232,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            VOTableWriter writer = new VOTableWriter();
+            VOTableWriter writer = new VOTableWriter(serializationType);
             writer.write(expected, sw, maxrec);
             String xml = sw.toString();
             log.info("XML: \n\n" + xml);
@@ -238,16 +244,21 @@ public class VOTableReaderWriterTest {
             // the write should stick in this extra INFO element, so add to expected
             VOTableInfo vi = new VOTableInfo("QUERY_STATUS", "OVERFLOW");
             vr.getInfos().add(vi);
-            compareVOTable(expected, actual, 3L);
+            compareVOTable(expected, actual, maxrec);
 
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
+
     @Test
     public void testReadWriteVOTableWithIterationFail() throws Exception {
+        testReadWriteVOTableWithIterationFail(VOTableWriter.SerializationType.TABLEDATA);
+        testReadWriteVOTableWithIterationFail(VOTableWriter.SerializationType.BINARY2);
+    }
+
+    public void testReadWriteVOTableWithIterationFail(VOTableWriter.SerializationType serializationType) throws Exception {
         log.debug("testReadWriteVOTable");
         try {
             String resourceName = "VOTable resource name";
@@ -277,11 +288,11 @@ public class VOTableReaderWriterTest {
             vot.getFields().addAll(getTestFields());
 
             // Add TableData.
-            vot.setTableData(new TestTableData());
+            vot.setTableData(new TestTableData(serializationType.equals(VOTableWriter.SerializationType.BINARY2)));
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            VOTableWriter writer = new VOTableWriter();
+            VOTableWriter writer = new VOTableWriter(serializationType);
             writer.setFormatFactory(new BrokenFormatFactory());
             writer.write(expected, sw);
             String xml = sw.toString();
@@ -319,6 +330,11 @@ public class VOTableReaderWriterTest {
 
     @Test
     public void testReadWriteVOTableArraysize() throws Exception {
+        testReadWriteVOTableArraysize(VOTableWriter.SerializationType.TABLEDATA);
+        testReadWriteVOTableArraysize(VOTableWriter.SerializationType.BINARY2);
+    }
+
+    public void testReadWriteVOTableArraysize(VOTableWriter.SerializationType serializationType) throws Exception {
         log.debug("testReadWriteVOTableArraysize");
         try {
             String resourceName = "VOTable resource name";
@@ -405,7 +421,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            VOTableWriter writer = new VOTableWriter();
+            VOTableWriter writer = new VOTableWriter(serializationType);
             writer.write(expected, sw);
             String xml = sw.toString();
             log.debug("XML: \n\n" + xml);
@@ -419,7 +435,7 @@ public class VOTableReaderWriterTest {
 
             // writer always places this placeholder after a table
             vr.getInfos().add(new VOTableInfo("placeholder", "ignore"));
-            compareVOTable(expected, actual, null);
+            compareVOTable(expected, actual, 2L);
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
@@ -698,6 +714,10 @@ public class VOTableReaderWriterTest {
             return;
         }
 
+        if (actualMax == null) {
+            actualMax = DEFAULT_NUM_ROWS;
+        }
+
         compareInfos(expected.getInfos(), actual.getInfos());
         compareParams(expected.getParams(), actual.getParams());
         compareFields(expected.getFields(), actual.getFields());
@@ -711,11 +731,9 @@ public class VOTableReaderWriterTest {
         Iterator<List<Object>> actualIter = actualTableData.iterator();
         Assert.assertNotNull(expectedIter);
         Assert.assertNotNull(actualIter);
-        int iteratorCount = 0;
-        // TODO:  Should be expectedIter.hasNext() for strict check?
-        while (actualIter.hasNext()) // this one is the smaller list
-        {
-            iteratorCount++;
+
+        int iteratorCount = 1;
+        while (iteratorCount <= actualMax) {
             log.debug("iteratorCount: " + (iteratorCount));
 
             List<Object> actualList = actualIter.next();
@@ -767,11 +785,10 @@ public class VOTableReaderWriterTest {
                     Assert.assertEquals("Incorrect value at " + i, expectedObject, actualObject);
                 }
             }
+            iteratorCount++;
         }
 
-        if (actualMax != null) {
-            Assert.assertEquals("wrong number of iterations", actualMax.intValue(), iteratorCount);
-        }
+        Assert.assertEquals("wrong number of iterations", actualMax.intValue(), iteratorCount - 1);
     }
 
     public void compareInfos(List<VOTableInfo> expected, List<VOTableInfo> actual) {
@@ -1116,26 +1133,34 @@ public class VOTableReaderWriterTest {
         List<List<Object>> rowData;
 
         public TestTableData() throws Exception {
-            this(2);
+            this(DEFAULT_NUM_ROWS);
+        }
+
+        public TestTableData(boolean brokenData) throws Exception {
+            this(DEFAULT_NUM_ROWS, brokenData);
         }
 
         public TestTableData(long numrows) throws Exception {
+            this(numrows, false);
+        }
+
+        private TestTableData(long numrows, boolean brokenData) throws Exception {
             rowData = new ArrayList<List<Object>>();
 
             List<Object> row1 = new ArrayList<Object>();
             row1.add(Boolean.TRUE);
             row1.add(new byte[]{1, 2});
-            row1.add(new Byte("1"));
+            row1.add(Byte.valueOf("1"));
             row1.add(new double[]{3.3, 4.4});
-            row1.add(new Double("5.5"));
+            row1.add(5.5D);
             row1.add(new float[]{6.6f, 7.7f});
-            row1.add(new Float("8.8"));
+            row1.add(8.8F);
             row1.add(new int[]{9, 10});
-            row1.add(new Integer("11"));
-            row1.add(new long[]{12l, 13l});
-            row1.add(new Long("14"));
+            row1.add(Integer.valueOf("11"));
+            row1.add(new long[]{12L, 13L});
+            row1.add(Long.valueOf("14"));
             row1.add(new short[]{15, 16});
-            row1.add(new Short("17"));
+            row1.add(brokenData ? "Broken Data" : Short.valueOf("17"));
             row1.add("string value");
             row1.add(dateFormat.parse(DATE_TIME));
 

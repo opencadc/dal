@@ -70,12 +70,9 @@
 package ca.nrc.cadc.dali.tables.votable;
 
 import ca.nrc.cadc.dali.tables.TableWriter;
-import ca.nrc.cadc.dali.tables.votable.binary.BinaryRowWriter;
-import ca.nrc.cadc.dali.tables.votable.binary.XMLOutputProcessor;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.xml.ContentConverter;
-import ca.nrc.cadc.xml.IterableContent;
 import ca.nrc.cadc.xml.MaxIterations;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -94,8 +91,8 @@ import org.jdom2.output.XMLOutputter;
 
 /**
  * Basic VOTable reader. This class currently supports a subset of VOTable (tabledata
- * and Binary2) and always writes with the VOTable-1.2 namespace. TODO: complete support and
- * allow caller to specify the target namespace.
+ * and Binary2) and always writes with the VOTable-1.2 namespace.
+ * TODO: complete support and allow caller to specify the target namespace.
  *
  * @author pdowler
  */
@@ -105,6 +102,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
     public static final String CONTENT_TYPE = "application/x-votable+xml";
     public static final String CONTENT_TYPE_ALT = "text/xml";
+    public static final String SERIALIZATION_PARAM_BINARY2 = " ;serialization=binary2";
+    public static final String SERIALIZATION_PARAM_TABLEDATA = " ;serialization=tabledata";
 
     // VOTable Version number.
     public static final String VOTABLE_VERSION = "1.4";
@@ -119,8 +118,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
     private FormatFactory formatFactory;
 
-    private String mimeType;
-    private SerializationType serialization;
+    private final String contentType;
+    private final SerializationType serialization;
 
     // enum for serialization types
     public enum SerializationType {
@@ -151,22 +150,31 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
      * Default constructor.
      */
     public VOTableWriter() {
-        this(SerializationType.TABLEDATA, null);
-    }
-
-    public VOTableWriter(String mimeType) {
-        this(SerializationType.TABLEDATA, mimeType);
+        this(SerializationType.TABLEDATA);
     }
 
     /**
      * Create a VOTableWriter and optionally support binary TABLEDATA cells.
      *
      * @param serialization preferred serialization type for the VOTable data.
-     * @param mimeType mime type for the VOTable.
      */
-    public VOTableWriter(SerializationType serialization, String mimeType) {
+    public VOTableWriter(SerializationType serialization) {
+        if (serialization == null) {
+            throw new IllegalArgumentException("serialization cannot be null");
+        }
+
         this.serialization = serialization;
-        this.mimeType = mimeType;
+
+        switch (serialization) {
+            case TABLEDATA:
+                contentType = CONTENT_TYPE + SERIALIZATION_PARAM_TABLEDATA;
+                break;
+            case BINARY2:
+                contentType = CONTENT_TYPE + SERIALIZATION_PARAM_BINARY2;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported serialization type: " + serialization);
+        }
     }
 
     /**
@@ -176,19 +184,11 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
      */
     @Override
     public String getContentType() {
-        if (mimeType == null) {
-            return CONTENT_TYPE;
-        }
-
-        return mimeType;
+        return contentType;
     }
 
     public String getErrorContentType() {
         return getContentType();
-    }
-
-    public void setSerialization(SerializationType serialization) {
-        this.serialization = serialization;
     }
 
     /**
@@ -307,8 +307,11 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         Document document = createDocument();
         Element root = document.getRootElement();
         Namespace namespace = root.getNamespace();
+
         Iterator<List<Object>> rowIter = null;
         List<VOTableField> fields = null;
+        Element trailer = null;
+        TabledataMaxIterations maxIterations = null;
 
         for (VOTableResource votResource : votable.getResources()) {
             Element resource = createResource(votResource, namespace);
@@ -343,28 +346,22 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                     table.addContent(data);
 
                     log.debug("setup content interator: maxrec=" + maxrec);
-                    Element trailer = new Element("INFO", namespace);
+                    trailer = new Element("INFO", namespace);
                     trailer.setAttribute("name", "placeholder");
                     trailer.setAttribute("value", "ignore");
                     resource.addContent(trailer);
 
+                    maxIterations = new TabledataMaxIterations(maxrec, trailer);
+                    rowIter = vot.getTableData().iterator();
+                    fields = vot.getFields();
+
+                    // Data content is added by the XMLOutputProcessor while writing out the XML format
                     if (serialization.equals(SerializationType.TABLEDATA)) {
-                        rowIter = vot.getTableData().iterator();
-
-                        TabledataContentConverter elementConverter = new TabledataContentConverter(vot.getFields(), namespace, trailer);
-                        TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer);
-
-                        IterableContent<Element, List<Object>> tabledata
-                                = new IterableContent<>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
-
-                        data.addContent(tabledata);
+                        Element tabledataElement = new Element("TABLEDATA", namespace);
+                        data.addContent(tabledataElement);
                     } else if (serialization.equals(SerializationType.BINARY2)) {
-                        rowIter = vot.getTableData().iterator();
-                        fields = vot.getFields();
-
                         Element binary2 = new Element("BINARY2", namespace);
                         data.addContent(binary2);
-                        // Stream element with data content is added by the XMLOutputProcessor while writing out the XML format
                     } else {
                         throw new RuntimeException("Invalid serialization type: " + serialization);
                     }
@@ -383,9 +380,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         try {
             XMLOutputter outputter = new XMLOutputter();
             outputter.setFormat(org.jdom2.output.Format.getPrettyFormat());
-            if (serialization.equals(SerializationType.BINARY2)) {
-                outputter.setXMLOutputProcessor(new XMLOutputProcessor(rowIter, new BinaryRowWriter(), fields));
-            }
+            outputter.setXMLOutputProcessor(new XMLOutputProcessor(rowIter, fields, maxIterations, trailer, formatFactory));
             outputter.output(document, writer);
         } catch (RuntimeException ex) {
             // IterableContent setup should catch and handle all exceptions, but if they don't
@@ -523,6 +518,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
     }
 
+    // Can be removed
     private class TabledataContentConverter implements ContentConverter<Element, List<Object>> {
 
         private final List<VOTableField> fields;

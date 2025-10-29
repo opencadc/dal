@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2019.                            (c) 2019.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -70,39 +70,111 @@
 package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.xml.MaxIterations;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.util.Base64;
+import java.util.Iterator;
 import java.util.List;
 
+import org.jdom2.Element;
+
 /**
- * Writes a single row of data in VOTable BINARY2 format.
+ * Writes data in VOTable BINARY2 format.
  */
-public class BinaryRowWriter {
+public class BinaryElementWriter {
 
-    public void writeRow(List<Object> row, DataOutputStream out, List<VOTableField> fields) throws IOException {
-        try {
-            // Null flags
-            int numFields = fields.size();
-            int numFlagBytes = (numFields + 7) / 8;
-            byte[] nullFlags = new byte[numFlagBytes];
-            for (int i = 0; i < numFields; i++) {
-                if (row.get(i) == null) {
-                    nullFlags[i / 8] |= (byte) (1 << (7 - (i % 8)));
-                }
-            }
-            out.write(nullFlags);
+    private final FieldProcessorFactory decoderFactory = new FieldProcessorFactory();
+    private final Iterator<List<Object>> rowIter;
+    private final List<VOTableField> fields;
+    private final MaxIterations maxIterations;
+    private final Element trailer;
 
-            // Field values
-            for (int i = 0; i < numFields; i++) {
-                Object value = row.get(i);
-                if (value != null) {
-                    FieldProcessorFactory decoderFactory = new FieldProcessorFactory();
-                    decoderFactory.getFieldProcessor(fields.get(i).getDatatype().toLowerCase()).serialize(out, fields.get(i), value);
+    public BinaryElementWriter(Iterator<List<Object>> rowIter, List<VOTableField> fields, MaxIterations maxIterations, Element trailer) {
+        this.rowIter = rowIter;
+        this.fields = fields;
+        this.maxIterations = maxIterations;
+        this.trailer = trailer;
+    }
+
+    public void write(Writer out) throws IOException {
+        out.write("<BINARY2><STREAM encoding=\"base64\">");
+
+        try (OutputStream base64Out = Base64.getEncoder().wrap(new WriterOutputStream(out))) {
+            DataOutputStream dataOut = new DataOutputStream(base64Out);
+
+            Iterator<List<Object>> iter = rowIter;
+            long rowCount = 1;
+            while (iter.hasNext()) {
+                List<Object> row = iter.next();
+
+                try {
+                    writeRow(row, dataOut);
+                } catch (Exception ex) {
+                    // DALI error
+                    trailer.setAttribute("name", "QUERY_STATUS");
+                    trailer.setAttribute("value", "ERROR");
+                    trailer.setText(ex.toString());
                 }
+
+                if (maxIterations != null && rowCount == maxIterations.getMaxIterations()) {
+                    maxIterations.maxIterationsReached(iter.hasNext());
+                    break;
+                }
+                rowCount++;
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Error serializing BINARY2 row", e);
+            dataOut.flush();
+        }
+
+        out.write("</STREAM></BINARY2>");
+    }
+
+    private void writeRow(List<Object> row, DataOutputStream out) throws IOException {
+        // Null flags
+        int numFields = fields.size();
+        int numFlagBytes = (numFields + 7) / 8;
+        byte[] nullFlags = new byte[numFlagBytes];
+        for (int i = 0; i < numFields; i++) {
+            if (row.get(i) == null) {
+                nullFlags[i / 8] |= (byte) (1 << (7 - (i % 8)));
+            }
+        }
+        out.write(nullFlags);
+
+        // Field values
+        for (int i = 0; i < numFields; i++) {
+            Object value = row.get(i);
+            if (value != null) {
+                decoderFactory.getFieldProcessor(fields.get(i).getDatatype().toLowerCase()).serialize(out, fields.get(i), value);
+            }
+        }
+    }
+
+    static class WriterOutputStream extends OutputStream {
+        private final Writer writer;
+
+        WriterOutputStream(Writer writer) {
+            this.writer = writer;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            writer.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            for (int i = off; i < off + len; i++) {
+                writer.write(b[i] & 0xFF);
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            writer.flush();
         }
     }
 }

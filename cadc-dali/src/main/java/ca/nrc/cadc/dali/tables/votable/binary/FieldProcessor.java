@@ -3,7 +3,7 @@
  *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
  **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
  *
- *  (c) 2019.                            (c) 2019.
+ *  (c) 2025.                            (c) 2025.
  *  Government of Canada                 Gouvernement du Canada
  *  National Research Council            Conseil national de recherches
  *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -84,5 +84,5 @@ public interface FieldProcessor {
     void serialize(DataOutputStream out, VOTableField field, Object data) throws IOException;
 
     // Return the string format of data. The primitive array elements are space separated.
-    String getStringFormat(int len, Object data);
+    String toStringValue(int len, Object data);
 }
