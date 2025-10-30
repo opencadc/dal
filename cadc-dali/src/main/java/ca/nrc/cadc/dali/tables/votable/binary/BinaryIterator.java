@@ -91,16 +91,16 @@ import org.apache.log4j.Logger;
  * reads each row using a {@link BinaryRowReader}, and returns the row as a list of objects.
  * </p>
  */
-public class Binary2Iterator implements ResourceIterator<List<Object>> {
+public class BinaryIterator implements ResourceIterator<List<Object>> {
 
-    private static final Logger log = Logger.getLogger(Binary2Iterator.class);
+    private static final Logger log = Logger.getLogger(BinaryIterator.class);
 
     private final DataInputStream in;
     private final BinaryRowReader binaryRowReader;
     private List<Object> nextRow;
     private boolean finished = false;
 
-    public Binary2Iterator(InputStream input, List<VOTableField> fields, String encoding, FormatFactory formatFactory, boolean isBinary2) {
+    public BinaryIterator(InputStream input, List<VOTableField> fields, String encoding, FormatFactory formatFactory, boolean isBinary2) {
         if ("gzip".equalsIgnoreCase(encoding)) {
             try {
                 this.in = new DataInputStream(new GZIPInputStream(input));
