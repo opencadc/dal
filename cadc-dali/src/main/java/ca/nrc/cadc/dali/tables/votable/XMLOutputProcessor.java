@@ -67,48 +67,64 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables;
+package ca.nrc.cadc.dali.tables.votable;
 
-import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import ca.nrc.cadc.dali.tables.votable.binary.BinaryIterator;
+import ca.nrc.cadc.dali.tables.votable.binary.BinaryElementWriter;
+import ca.nrc.cadc.dali.tables.votable.tabledata.TableDataElementWriter;
 import ca.nrc.cadc.dali.util.FormatFactory;
-import ca.nrc.cadc.io.ResourceIterator;
+import ca.nrc.cadc.xml.MaxIterations;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Writer;
+import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+import org.jdom2.Element;
+import org.jdom2.output.support.AbstractXMLOutputProcessor;
+import org.jdom2.output.support.FormatStack;
+import org.jdom2.util.NamespaceStack;
+
 /**
- * Implementation of the {@link TableData} interface for reading VOTable BINARY2 table data.
- * <p>
- * This class provides an iterator over table rows, reading from an input stream
- * using the BINARY and BINARY2 serialization as defined by the VOTable standard.
- * </p>
- *
+ * XMLOutputProcessor is responsible for serializing VOTable data in TABLEDATA and BINARY2 format within the XML output.
+ * It intercepts the writing logic of JDOM elements.
  */
-public class BinaryTableData implements TableData {
+public class XMLOutputProcessor extends AbstractXMLOutputProcessor {
 
-    private final InputStream input;
+    private static final Logger log = Logger.getLogger(XMLOutputProcessor.class);
+
+    private final Iterator<List<Object>> rowIter;
     private final List<VOTableField> fields;
-    private final String encoding;
     private final FormatFactory formatFactory;
-    private final boolean isBinary2;
+    private final MaxIterations maxIterations;
+    private final Element trailer;
 
-    public BinaryTableData(InputStream input, List<VOTableField> fields, String encoding, FormatFactory formatFactory, boolean isBinary2) {
+    public XMLOutputProcessor(Iterator<List<Object>> rowIter, List<VOTableField> fields, MaxIterations maxIterations,
+                              Element trailer, FormatFactory formatFactory) {
+        this.rowIter = rowIter;
         this.fields = fields;
-        this.input = input;
-        this.encoding = encoding;
+        this.maxIterations = maxIterations;
+        this.trailer = trailer;
         this.formatFactory = formatFactory;
-        this.isBinary2 = isBinary2;
     }
 
+    /*
+     * Custom logic to write BINARY2 and TABLEDATA element.
+     * */
     @Override
-    public ResourceIterator<List<Object>> iterator() {
-        return new BinaryIterator(input, fields, encoding, formatFactory, isBinary2);
+    protected void printElement(final Writer out, final FormatStack fstack,
+                                final NamespaceStack nstack, final Element element) throws IOException {
+        if (element.getName().equals("BINARY2")) {
+            log.debug("Writing BINARY2 element");
+            BinaryElementWriter binaryWriter = new BinaryElementWriter(rowIter, fields, maxIterations, trailer);
+            binaryWriter.write(out);
+        } else if (element.getName().equals("TABLEDATA")) {
+            log.debug("Writing TABLEDATA element");
+            TableDataElementWriter tableWriter = new TableDataElementWriter(rowIter, fields, maxIterations, trailer, formatFactory);
+            tableWriter.write(out);
+        } else {
+            super.printElement(out, fstack, nstack, element);
+        }
     }
 
-    @Override
-    public void close() throws IOException {
-        // No resources to close
-    }
 }

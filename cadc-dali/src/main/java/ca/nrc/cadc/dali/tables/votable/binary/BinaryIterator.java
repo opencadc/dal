@@ -67,48 +67,90 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables;
+package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import ca.nrc.cadc.dali.tables.votable.binary.BinaryIterator;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.io.ResourceIterator;
 
+import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.zip.GZIPInputStream;
+
+import org.apache.commons.codec.binary.Base64InputStream;
+import org.apache.log4j.Logger;
 
 /**
- * Implementation of the {@link TableData} interface for reading VOTable BINARY2 table data.
+ * Iterator for reading rows from a VOTable BINARY2 encoded stream.
  * <p>
- * This class provides an iterator over table rows, reading from an input stream
- * using the BINARY and BINARY2 serialization as defined by the VOTable standard.
+ * This class decodes an input stream containing BINARY or BINARY2 data,
+ * reads each row using a {@link BinaryRowReader}, and returns the row as a list of objects.
  * </p>
- *
  */
-public class BinaryTableData implements TableData {
+public class BinaryIterator implements ResourceIterator<List<Object>> {
 
-    private final InputStream input;
-    private final List<VOTableField> fields;
-    private final String encoding;
-    private final FormatFactory formatFactory;
-    private final boolean isBinary2;
+    private static final Logger log = Logger.getLogger(BinaryIterator.class);
 
-    public BinaryTableData(InputStream input, List<VOTableField> fields, String encoding, FormatFactory formatFactory, boolean isBinary2) {
-        this.fields = fields;
-        this.input = input;
-        this.encoding = encoding;
-        this.formatFactory = formatFactory;
-        this.isBinary2 = isBinary2;
+    private final DataInputStream in;
+    private final BinaryRowReader binaryRowReader;
+    private List<Object> nextRow;
+    private boolean finished = false;
+
+    public BinaryIterator(InputStream input, List<VOTableField> fields, String encoding, FormatFactory formatFactory, boolean isBinary2) {
+        if ("gzip".equalsIgnoreCase(encoding)) {
+            try {
+                this.in = new DataInputStream(new GZIPInputStream(input));
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to create GZIPInputStream");
+            }
+        } else if ("base64".equalsIgnoreCase(encoding)) {
+            this.in = new DataInputStream(new Base64InputStream(input));
+        } else {
+            throw new IllegalArgumentException("Unsupported encoding: " + encoding);
+        }
+
+        this.binaryRowReader = new BinaryRowReader(fields, formatFactory, isBinary2);
+        fetchNext();
     }
 
     @Override
-    public ResourceIterator<List<Object>> iterator() {
-        return new BinaryIterator(input, fields, encoding, formatFactory, isBinary2);
+    public boolean hasNext() {
+        return nextRow != null && !finished;
+    }
+
+    @Override
+    public List<Object> next() {
+        if (!hasNext()) {
+            throw new NoSuchElementException("No more rows");
+        }
+        List<Object> current = nextRow;
+        fetchNext();
+        return current;
+    }
+
+    private void fetchNext() {
+        try {
+            nextRow = binaryRowReader.readRow(in);
+            if (nextRow == null) {
+                finished = true;
+            }
+        } catch (EOFException eof) { // This can be a loophole. But no other way for binary reading.
+            finished = true;
+            nextRow = null;
+        } catch (Exception e) {
+            log.error("Error while reading next row", e);
+            finished = true;
+            nextRow = null;
+            throw new IllegalStateException(e.getMessage(), e);
+        }
     }
 
     @Override
     public void close() throws IOException {
-        // No resources to close
+        in.close();
     }
 }

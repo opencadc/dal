@@ -67,48 +67,93 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables;
+package ca.nrc.cadc.dali.tables.votable.tabledata;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import ca.nrc.cadc.dali.tables.votable.binary.BinaryIterator;
+import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
-import ca.nrc.cadc.io.ResourceIterator;
+import ca.nrc.cadc.xml.MaxIterations;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Writer;
+import java.util.Iterator;
 import java.util.List;
 
-/**
- * Implementation of the {@link TableData} interface for reading VOTable BINARY2 table data.
- * <p>
- * This class provides an iterator over table rows, reading from an input stream
- * using the BINARY and BINARY2 serialization as defined by the VOTable standard.
- * </p>
- *
- */
-public class BinaryTableData implements TableData {
+import org.apache.log4j.Logger;
+import org.jdom2.Element;
 
-    private final InputStream input;
+public class TableDataElementWriter {
+
+    private static final Logger log = Logger.getLogger(TableDataElementWriter.class);
+
+    private final Iterator<List<Object>> rowIter;
     private final List<VOTableField> fields;
-    private final String encoding;
     private final FormatFactory formatFactory;
-    private final boolean isBinary2;
+    private final MaxIterations maxIterations;
+    private final Element trailer;
 
-    public BinaryTableData(InputStream input, List<VOTableField> fields, String encoding, FormatFactory formatFactory, boolean isBinary2) {
+    public TableDataElementWriter(Iterator<List<Object>> rowIter, List<VOTableField> fields, MaxIterations maxIterations,
+                                  Element trailer, FormatFactory formatFactory) {
+        this.rowIter = rowIter;
         this.fields = fields;
-        this.input = input;
-        this.encoding = encoding;
+        this.maxIterations = maxIterations;
+        this.trailer = trailer;
         this.formatFactory = formatFactory;
-        this.isBinary2 = isBinary2;
     }
 
-    @Override
-    public ResourceIterator<List<Object>> iterator() {
-        return new BinaryIterator(input, fields, encoding, formatFactory, isBinary2);
+    public void write(Writer out) throws IOException {
+        log.debug("Writing TABLEDATA element - starting");
+        out.write("<TABLEDATA>");
+
+        long rowCount = 1;
+
+        while (rowIter.hasNext()) {
+            List<Object> row = rowIter.next();
+            writeRow(out, row);
+
+            // check for max iterations
+            if (maxIterations != null && rowCount == maxIterations.getMaxIterations()) {
+                maxIterations.maxIterationsReached(rowIter.hasNext());
+                break;
+            }
+            rowCount++;
+        }
+        out.write("</TABLEDATA>");
+        log.debug("Finished writing TABLEDATA element. Wrote " + (rowCount - 1) + " rows");
     }
 
-    @Override
-    public void close() throws IOException {
-        // No resources to close
+    private void writeRow(Writer out, List<Object> row) throws IOException {
+        out.write("<TR>");
+
+        for (int i = 0; i < row.size(); i++) {
+            Object value = row.get(i);
+            Format fmt = formatFactory.getFormat(fields.get(i));
+
+            if (value == null) {
+                out.write("<TD/>");
+            } else {
+                out.write("<TD>");
+                try {
+                    out.write(escapeXml(fmt.format(value)));
+                } catch (Exception ex) {
+                    // DALI error
+                    trailer.setAttribute("name", "QUERY_STATUS");
+                    trailer.setAttribute("value", "ERROR");
+                    trailer.setText(ex.toString());
+                }
+                out.write("</TD>");
+            }
+        }
+
+        out.write("</TR>");
+    }
+
+    // Utility method to escape XML special characters
+    private static String escapeXml(String input) {
+        return input.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
     }
 }

@@ -73,7 +73,6 @@ import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.xml.ContentConverter;
-import ca.nrc.cadc.xml.IterableContent;
 import ca.nrc.cadc.xml.MaxIterations;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -92,8 +91,8 @@ import org.jdom2.output.XMLOutputter;
 
 /**
  * Basic VOTable reader. This class currently supports a subset of VOTable (tabledata
- * only) and always writes with the VOTable-1.2 namespace. TODO: complete support and
- * allow caller to specify the target namespace.
+ * and Binary2) and always writes with the VOTable-1.2 namespace.
+ * TODO: complete support and allow caller to specify the target namespace.
  *
  * @author pdowler
  */
@@ -103,6 +102,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
     public static final String CONTENT_TYPE = "application/x-votable+xml";
     public static final String CONTENT_TYPE_ALT = "text/xml";
+    public static final String SERIALIZATION_PARAM_BINARY2 = " ;serialization=binary2";
+    public static final String SERIALIZATION_PARAM_TABLEDATA = " ;serialization=tabledata";
 
     // VOTable Version number.
     public static final String VOTABLE_VERSION = "1.4";
@@ -117,29 +118,63 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
     private FormatFactory formatFactory;
 
-    private boolean binaryTable;
-    private String mimeType;
+    private final String contentType;
+    private final SerializationType serialization;
+
+    // enum for serialization types
+    public enum SerializationType {
+
+        TABLEDATA, BINARY, BINARY2;
+
+        public static boolean contains(final String value) {
+            SerializationType[] values = SerializationType.values();
+            for (SerializationType serializationType : values) {
+                if (serializationType.name().equalsIgnoreCase(value)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static SerializationType toValue(String str) {
+            for (SerializationType serializationType : values()) {
+                if (serializationType.toString().equalsIgnoreCase(str)) {
+                    return serializationType;
+                }
+            }
+            throw new IllegalArgumentException("No Serialization Type found for : " + str);
+        }
+    }
 
     /**
      * Default constructor.
      */
     public VOTableWriter() {
-        this(false, null);
-    }
-
-    public VOTableWriter(String mimeType) {
-        this(false, mimeType);
+        this(SerializationType.TABLEDATA);
     }
 
     /**
-     * Create a VOTableWriter and optionally support binary TABLEDATA cells (not
-     * yet implemented.)
+     * Create a VOTableWriter and optionally support binary TABLEDATA cells.
      *
-     * @param binaryTable
+     * @param serialization preferred serialization type for the VOTable data.
      */
-    public VOTableWriter(boolean binaryTable, String mimeType) {
-        this.binaryTable = binaryTable;
-        this.mimeType = mimeType;
+    public VOTableWriter(SerializationType serialization) {
+        if (serialization == null) {
+            throw new IllegalArgumentException("serialization cannot be null");
+        }
+
+        this.serialization = serialization;
+
+        switch (serialization) {
+            case TABLEDATA:
+                contentType = CONTENT_TYPE + SERIALIZATION_PARAM_TABLEDATA;
+                break;
+            case BINARY2:
+                contentType = CONTENT_TYPE + SERIALIZATION_PARAM_BINARY2;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported serialization type: " + serialization);
+        }
     }
 
     /**
@@ -149,11 +184,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
      */
     @Override
     public String getContentType() {
-        if (mimeType == null) {
-            return CONTENT_TYPE;
-        }
-
-        return mimeType;
+        return contentType;
     }
 
     public String getErrorContentType() {
@@ -277,6 +308,11 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         Element root = document.getRootElement();
         Namespace namespace = root.getNamespace();
 
+        Iterator<List<Object>> rowIter = null;
+        List<VOTableField> fields = null;
+        Element trailer = null;
+        TabledataMaxIterations maxIterations = null;
+
         for (VOTableResource votResource : votable.getResources()) {
             Element resource = createResource(votResource, namespace);
             root.addContent(resource);
@@ -305,25 +341,32 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                 log.debug("wrote resource.table.field: " + vot.getFields().size());
 
                 if (vot.getTableData() != null) {
-                    // Create the DATA and TABLEDATA elements.
+                    // Create the DATA and either TABLEDATA OR BINARY2 elements.
                     Element data = new Element("DATA", namespace);
                     table.addContent(data);
 
                     log.debug("setup content interator: maxrec=" + maxrec);
-                    Element trailer = new Element("INFO", namespace);
+                    trailer = new Element("INFO", namespace);
                     trailer.setAttribute("name", "placeholder");
                     trailer.setAttribute("value", "ignore");
                     resource.addContent(trailer);
 
-                    Iterator<List<Object>> rowIter = vot.getTableData().iterator();
+                    maxIterations = new TabledataMaxIterations(maxrec, trailer);
+                    rowIter = vot.getTableData().iterator();
+                    fields = vot.getFields();
 
-                    TabledataContentConverter elementConverter = new TabledataContentConverter(vot.getFields(), namespace, trailer);
-                    TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer);
-
-                    IterableContent<Element, List<Object>> tabledata
-                            = new IterableContent<>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
-
-                    data.addContent(tabledata);
+                    // Data content is added by the XMLOutputProcessor while writing out the XML format
+                    if (serialization.equals(SerializationType.TABLEDATA)) {
+                        log.debug("adding TABLEDATA element to DATA element");
+                        Element tabledataElement = new Element("TABLEDATA", namespace);
+                        data.addContent(tabledataElement);
+                    } else if (serialization.equals(SerializationType.BINARY2)) {
+                        log.debug("adding BINARY2 element to DATA element");
+                        Element binary2 = new Element("BINARY2", namespace);
+                        data.addContent(binary2);
+                    } else {
+                        throw new RuntimeException("Invalid serialization type: " + serialization);
+                    }
                 } else {
                     table.addContent(new Comment("data goes here"));
                 }
@@ -339,6 +382,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         try {
             XMLOutputter outputter = new XMLOutputter();
             outputter.setFormat(org.jdom2.output.Format.getPrettyFormat());
+            outputter.setXMLOutputProcessor(new XMLOutputProcessor(rowIter, fields, maxIterations, trailer, formatFactory));
             outputter.output(document, writer);
         } catch (RuntimeException ex) {
             // IterableContent setup should catch and handle all exceptions, but if they don't
@@ -476,6 +520,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
     }
 
+    // Can be removed
     private class TabledataContentConverter implements ContentConverter<Element, List<Object>> {
 
         private final List<VOTableField> fields;

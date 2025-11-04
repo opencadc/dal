@@ -67,48 +67,22 @@
  ************************************************************************
  */
 
-package ca.nrc.cadc.dali.tables;
+package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-import ca.nrc.cadc.dali.tables.votable.binary.BinaryIterator;
-import ca.nrc.cadc.dali.util.FormatFactory;
-import ca.nrc.cadc.io.ResourceIterator;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
 
-/**
- * Implementation of the {@link TableData} interface for reading VOTable BINARY2 table data.
- * <p>
- * This class provides an iterator over table rows, reading from an input stream
- * using the BINARY and BINARY2 serialization as defined by the VOTable standard.
- * </p>
- *
- */
-public class BinaryTableData implements TableData {
+public interface FieldProcessor {
 
-    private final InputStream input;
-    private final List<VOTableField> fields;
-    private final String encoding;
-    private final FormatFactory formatFactory;
-    private final boolean isBinary2;
+    // Read the field data from the input stream.
+    Object deSerialize(DataInputStream in, VOTableField field, int length) throws IOException;
 
-    public BinaryTableData(InputStream input, List<VOTableField> fields, String encoding, FormatFactory formatFactory, boolean isBinary2) {
-        this.fields = fields;
-        this.input = input;
-        this.encoding = encoding;
-        this.formatFactory = formatFactory;
-        this.isBinary2 = isBinary2;
-    }
+    // Write out the field data to the output stream along with the variable dimension if present.
+    void serialize(DataOutputStream out, VOTableField field, Object data) throws IOException;
 
-    @Override
-    public ResourceIterator<List<Object>> iterator() {
-        return new BinaryIterator(input, fields, encoding, formatFactory, isBinary2);
-    }
-
-    @Override
-    public void close() throws IOException {
-        // No resources to close
-    }
+    // Return the string format of data. The primitive array elements are space separated.
+    String toStringValue(int len, Object data);
 }

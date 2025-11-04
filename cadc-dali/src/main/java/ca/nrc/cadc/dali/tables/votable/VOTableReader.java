@@ -69,6 +69,9 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import static ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType.BINARY;
+import static ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType.BINARY2;
+
 import ca.nrc.cadc.dali.tables.BinaryTableData;
 import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
@@ -90,6 +93,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import org.apache.log4j.Logger;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
@@ -335,15 +339,15 @@ public class VOTableReader {
                             } else {
                                 // Default to base64 encoding
                                 // TODO: check for href in which case encoding may be irrelevant?
-                                final String encoding =
-                                        streamData.getAttributeValue("encoding",
-                                                                     VOTableReader.DEFAULT_STREAM_ENCODING);
-                                vot.setTableData(new BinaryTableData(vot.getFields(),
-                                                                     new ByteArrayInputStream(
-                                                                             streamData.getText().getBytes(
-                                                                                     StandardCharsets.UTF_8)),
-                                                                     encoding,
-                                                                     binaryData.getName().equals("BINARY2")));
+                                final String encoding = streamData.getAttributeValue("encoding", VOTableReader.DEFAULT_STREAM_ENCODING);
+
+                                if (binaryData.getName().equals(BINARY.name()) || binaryData.getName().equals(BINARY2.name())) {
+                                    vot.setTableData(new BinaryTableData(
+                                            new ByteArrayInputStream(streamData.getText().getBytes(StandardCharsets.UTF_8)),
+                                            vot.getFields(), encoding, formatFactory, binaryData.getName().equals(BINARY2.name())));
+                                } else {
+                                    throw new UnsupportedOperationException("Unsupported type: " + binaryData.getName());
+                                }
                             }
                         }
                     }
@@ -529,7 +533,14 @@ public class VOTableReader {
                     if (text != null && text.length() == 0) {
                         text = null;
                     }
-                    row.add(format.parse(text));
+                    Object parsedData = format.parse(text);
+                    if (field.nullValue != null && !field.nullValue.isEmpty()) {
+                        Object nullObj = formatFactory.getFormat(field).parse(field.nullValue);
+                        if (Objects.equals(parsedData, nullObj)) {
+                            parsedData = null;
+                        }
+                    }
+                    row.add(parsedData);
                 }
                 tableData.getArrayList().add(row);
             }
