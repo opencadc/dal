@@ -104,7 +104,7 @@ public class AsciiTableWriterTest
 
         TableWriter<VOTableDocument> voTableDocumentTableWriter =
                 new VOTableWriter();
-        Assert.assertEquals("application/x-votable+xml ;serialization=tabledata",
+        Assert.assertEquals("application/x-votable+xml; serialization=tabledata",
                             voTableDocumentTableWriter.getContentType());
         Assert.assertEquals("xml", voTableDocumentTableWriter.getExtension());
     }
