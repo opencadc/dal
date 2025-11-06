@@ -103,7 +103,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
     public static final String CONTENT_TYPE = "application/x-votable+xml";
     public static final String CONTENT_TYPE_ALT = "text/xml";
     public static final String SERIALIZATION_PARAM_BINARY2 = " ;serialization=binary2";
-    public static final String SERIALIZATION_PARAM_TABLEDATA = " ;serialization=tabledata";
+    public static final String SERIALIZATION_PARAM_TABLEDATA = "; serialization=tabledata";
 
     // VOTable Version number.
     public static final String VOTABLE_VERSION = "1.4";
