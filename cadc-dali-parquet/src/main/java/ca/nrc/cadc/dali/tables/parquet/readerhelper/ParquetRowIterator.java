@@ -71,6 +71,8 @@ package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.io.RandomAccessSource;
 import ca.nrc.cadc.io.ResourceIterator;
 
@@ -102,6 +104,7 @@ public class ParquetRowIterator implements ResourceIterator<List<Object>> {
     private final RandomAccessSource inputSource;
     private final MessageType schema;
     private final List<VOTableField> fields;
+    private final List<Format<Object>> formatters = new ArrayList<>();
     private PageReadStore currentRowGroup;
     private RecordReader<DynamicRow> recordReader;
     private long rowsInGroup;
@@ -116,6 +119,12 @@ public class ParquetRowIterator implements ResourceIterator<List<Object>> {
         this.recordReader = null;
         this.rowsInGroup = 0;
         this.rowIndex = 0;
+        
+        FormatFactory ff = new FormatFactory();
+        for (VOTableField vf : fields) {
+            Format<Object> f = ff.getFormat(vf);
+            formatters.add(f);
+        }
         advanceRowGroup();
     }
 
@@ -157,7 +166,9 @@ public class ParquetRowIterator implements ResourceIterator<List<Object>> {
         DynamicRow dynamicRow = recordReader.read();
         List<Object> row = new ArrayList<>();
 
-        for (VOTableField field : fields) {
+        for (int i = 0; i < fields.size(); i++) {
+            final VOTableField field = fields.get(i);
+            final Format<Object> fmt = formatters.get(i);
             String fieldName = field.getName();
             Type parquetField = schema.getType(fieldName);
             Object valueObj = dynamicRow.get(fieldName);
@@ -178,7 +189,7 @@ public class ParquetRowIterator implements ResourceIterator<List<Object>> {
                 value = valueObj.toString().replaceAll("[\\[\\],]", "");
             }
 
-            row.add(field.getFormat().parse(value));
+            row.add(fmt.parse(value));
         }
         return row;
     }

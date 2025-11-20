@@ -275,7 +275,6 @@ public class ParquetReader {
                 }
 
                 VOTableField voTableField = new VOTableField(name, type);
-                voTableField.setFormat(format);
                 fields.add(voTableField);
             });
             voTableResource.getTable().getFields().addAll(fields);
@@ -300,7 +299,6 @@ public class ParquetReader {
                         field = timestampField; // Update timestamp field
                     }
                 }
-                field.setFormat(formatFactory.getFormat(field));
                 fields.set(i, field); // Update the field in the list
             }
 
