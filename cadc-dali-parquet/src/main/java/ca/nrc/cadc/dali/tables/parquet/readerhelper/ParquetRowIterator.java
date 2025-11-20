@@ -104,27 +104,24 @@ public class ParquetRowIterator implements ResourceIterator<List<Object>> {
     private final RandomAccessSource inputSource;
     private final MessageType schema;
     private final List<VOTableField> fields;
-    private final List<Format<Object>> formatters = new ArrayList<>();
+    private final List<Format<Object>> formatters;
     private PageReadStore currentRowGroup;
     private RecordReader<DynamicRow> recordReader;
     private long rowsInGroup;
     private long rowIndex;
 
-    public ParquetRowIterator(MessageType schema, List<VOTableField> fields, RandomAccessSource inputSource) throws IOException {
+    public ParquetRowIterator(MessageType schema, List<VOTableField> fields, List<Format<Object>> formatters, RandomAccessSource inputSource) 
+            throws IOException {
         this.inputSource = inputSource;
         this.reader = ParquetFileReader.open(new RandomSeekableInputFile(inputSource));
         this.schema = schema;
         this.fields = fields;
+        this.formatters = formatters;
         this.currentRowGroup = null;
         this.recordReader = null;
         this.rowsInGroup = 0;
         this.rowIndex = 0;
         
-        FormatFactory ff = new FormatFactory();
-        for (VOTableField vf : fields) {
-            Format<Object> f = ff.getFormat(vf);
-            formatters.add(f);
-        }
         advanceRowGroup();
     }
 

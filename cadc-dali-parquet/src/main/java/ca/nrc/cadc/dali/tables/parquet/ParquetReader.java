@@ -125,7 +125,8 @@ public class ParquetReader {
 
     private static final Logger log = Logger.getLogger(ParquetReader.class);
 
-    private static final FormatFactory formatFactory = new FormatFactory();
+    private final FormatFactory formatFactory = new FormatFactory();
+    private final List<Format<Object>> formatters = new ArrayList<>();
     private MessageType parquetSchema;
     private List<VOTableField> votableFields;
 
@@ -157,7 +158,7 @@ public class ParquetReader {
             RandomAccessFile randomAccessSource = new RandomAccessFile(tempFile, "r");
             VOTableDocument voTableDocument = readEmptyVOTable(new RandomSeekableInputFile(randomAccessSource));
 
-            ParquetTableData tableData = new ParquetTableData(parquetSchema, votableFields, randomAccessSource);
+            ParquetTableData tableData = new ParquetTableData(parquetSchema, votableFields, formatters, randomAccessSource);
             tableData.registerCacheFile(tempFile);
             voTableDocument.getResourceByType("results").getTable().setTableData(tableData);
 
@@ -188,7 +189,7 @@ public class ParquetReader {
         log.debug("Reading RandomAccessSource.");
         VOTableDocument voTableDocument = readEmptyVOTable(new RandomSeekableInputFile(randomAccessSource));
 
-        ParquetTableData tableData = new ParquetTableData(parquetSchema, votableFields, randomAccessSource);
+        ParquetTableData tableData = new ParquetTableData(parquetSchema, votableFields, formatters, randomAccessSource);
         voTableDocument.getResourceByType("results").getTable().setTableData(tableData);
         return voTableDocument;
     }
@@ -276,6 +277,7 @@ public class ParquetReader {
 
                 VOTableField voTableField = new VOTableField(name, type);
                 fields.add(voTableField);
+                formatters.add(format);
             });
             voTableResource.getTable().getFields().addAll(fields);
             return voTableDocument;
@@ -300,6 +302,7 @@ public class ParquetReader {
                     }
                 }
                 fields.set(i, field); // Update the field in the list
+                formatters.add(formatFactory.getFormat(field));
             }
 
             return voTableDocument;

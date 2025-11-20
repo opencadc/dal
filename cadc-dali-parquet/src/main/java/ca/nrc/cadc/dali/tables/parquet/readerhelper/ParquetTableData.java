@@ -71,6 +71,8 @@ package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.dali.util.Format;
+import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.io.RandomAccessSource;
 import ca.nrc.cadc.io.ResourceIterator;
 
@@ -84,12 +86,14 @@ public class ParquetTableData implements TableData {
 
     private final MessageType schema;
     private final List<VOTableField> fields;
+    private final List<Format<Object>> formatters;
     private final RandomAccessSource inputSource;
     private File cacheFile;
 
-    public ParquetTableData(MessageType schema, List<VOTableField> fields, RandomAccessSource inputSource) {
+    public ParquetTableData(MessageType schema, List<VOTableField> fields, List<Format<Object>> formatters, RandomAccessSource inputSource) {
         this.schema = schema;
         this.fields = fields;
+        this.formatters = formatters;
         this.inputSource = inputSource;
     }
 
@@ -99,7 +103,7 @@ public class ParquetTableData implements TableData {
 
     @Override
     public ResourceIterator<List<Object>> iterator() throws IOException {
-        return new ParquetRowIterator(schema, fields, inputSource);
+        return new ParquetRowIterator(schema, fields, formatters, inputSource);
     }
 
     @Override
