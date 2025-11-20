@@ -123,11 +123,12 @@ public class TableDataElementWriter {
     }
 
     private void writeRow(Writer out, List<Object> row) throws IOException {
-        out.write("<TR>");
+        out.write("\n<TR>");
 
         for (int i = 0; i < row.size(); i++) {
             Object value = row.get(i);
-            Format fmt = formatFactory.getFormat(fields.get(i));
+            VOTableField fd = fields.get(i);
+            Format fmt = formatFactory.getFormat(fd);
 
             if (value == null) {
                 out.write("<TD/>");
@@ -137,6 +138,7 @@ public class TableDataElementWriter {
                     out.write(escapeXml(fmt.format(value)));
                 } catch (Exception ex) {
                     // DALI error
+                    log.warn("ERROR serializing row data: " + fd, ex);
                     trailer.setAttribute("name", "QUERY_STATUS");
                     trailer.setAttribute("value", "ERROR");
                     trailer.setText(ex.toString());
