@@ -124,6 +124,7 @@ public class BinaryElementWriter {
                     trailer.setAttribute("name", "QUERY_STATUS");
                     trailer.setAttribute("value", "ERROR");
                     trailer.setText(ex.toString());
+                    break;
                 }
 
                 if (maxIterations != null && rowCount == maxIterations.getMaxIterations()) {

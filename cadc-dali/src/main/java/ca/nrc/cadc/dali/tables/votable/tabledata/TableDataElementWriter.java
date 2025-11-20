@@ -91,6 +91,7 @@ public class TableDataElementWriter {
     private final FormatFactory formatFactory;
     private final MaxIterations maxIterations;
     private final Element trailer;
+    private boolean hasFailure = false;
 
     public TableDataElementWriter(Iterator<List<Object>> rowIter, List<VOTableField> fields, MaxIterations maxIterations,
                                   Element trailer, FormatFactory formatFactory) {
@@ -107,7 +108,7 @@ public class TableDataElementWriter {
 
         long rowCount = 1;
 
-        while (rowIter.hasNext()) {
+        while (rowIter.hasNext() && !hasFailure) {
             List<Object> row = rowIter.next();
             writeRow(out, row);
 
@@ -140,6 +141,9 @@ public class TableDataElementWriter {
                     trailer.setAttribute("name", "QUERY_STATUS");
                     trailer.setAttribute("value", "ERROR");
                     trailer.setText(ex.toString());
+                    hasFailure = true;
+                    out.write("</TD>");
+                    break;
                 }
                 out.write("</TD>");
             }
