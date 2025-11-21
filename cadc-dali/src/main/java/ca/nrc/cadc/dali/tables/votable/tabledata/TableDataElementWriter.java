@@ -91,7 +91,6 @@ public class TableDataElementWriter {
     private final FormatFactory formatFactory;
     private final MaxIterations maxIterations;
     private final Element trailer;
-    private boolean hasFailure = false;
 
     public TableDataElementWriter(Iterator<List<Object>> rowIter, List<VOTableField> fields, MaxIterations maxIterations,
                                   Element trailer, FormatFactory formatFactory) {
@@ -106,30 +105,47 @@ public class TableDataElementWriter {
         log.debug("Writing TABLEDATA element - starting");
         out.write("<TABLEDATA>");
 
-        long rowCount = 1;
+        long rowCount = 0;
+        boolean success;
 
-        while (rowIter.hasNext() && !hasFailure) {
+        while (rowIter.hasNext()) {
+            rowCount ++;
             List<Object> row = rowIter.next();
-            writeRow(out, row);
+            success = writeRow(out, row);
+
+            if (!success) {
+                break; // Stop processing on failure
+            }
 
             // check for max iterations
             if (maxIterations != null && rowCount == maxIterations.getMaxIterations()) {
                 maxIterations.maxIterationsReached(rowIter.hasNext());
                 break;
             }
-            rowCount++;
         }
         out.write("</TABLEDATA>");
-        log.debug("Finished writing TABLEDATA element. Wrote " + (rowCount - 1) + " rows");
+        log.debug("Finished writing TABLEDATA element. Wrote " + rowCount + " rows");
     }
 
-    private void writeRow(Writer out, List<Object> row) throws IOException {
+    private boolean writeRow(Writer out, List<Object> row) throws IOException {
         out.write("\n<TR>");
 
         for (int i = 0; i < row.size(); i++) {
             Object value = row.get(i);
             VOTableField fd = fields.get(i);
-            Format fmt = formatFactory.getFormat(fd);
+
+            Format fmt;
+            try {
+                fmt = formatFactory.getFormat(fd);
+            } catch (Exception e) {
+                // DALI error
+                log.warn("ERROR getting formatter for field: " + fd, e);
+                trailer.setAttribute("name", "QUERY_STATUS");
+                trailer.setAttribute("value", "ERROR");
+                trailer.setText(e.toString());
+                out.write("<TR/>");
+                return false;
+            }
 
             if (value == null) {
                 out.write("<TD/>");
@@ -143,15 +159,15 @@ public class TableDataElementWriter {
                     trailer.setAttribute("name", "QUERY_STATUS");
                     trailer.setAttribute("value", "ERROR");
                     trailer.setText(ex.toString());
-                    hasFailure = true;
-                    out.write("</TD>");
-                    break;
+                    out.write("</TD></TR>");
+                    return false;
                 }
                 out.write("</TD>");
             }
         }
 
         out.write("</TR>");
+        return true;
     }
 
     // Utility method to escape XML special characters
