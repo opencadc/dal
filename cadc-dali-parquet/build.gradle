@@ -15,7 +15,7 @@ sourceCompatibility = 11
 
 group = 'org.opencadc'
 
-version = '0.5.2'
+version = '0.5.3'
 
 description = 'OpenCADC VO-parquet library'
 def git_url = 'https://github.com/opencadc/dal'
@@ -39,18 +39,18 @@ dependencies {
 // as all these libs are not needed
 configurations {
   // pull by parquet-avro dependencies but not needed
-  runtime.exclude group: 'com.sun.jersey'
-  runtime.exclude group: 'com.sun.jersey.contribs'
-  runtime.exclude group: 'com.google.inject'
-  runtime.exclude group: 'com.google.inject.extensions'
-  runtime.exclude group: 'com.github.pjfanning'
-  runtime.exclude group: 'javax.servlet'
-  runtime.exclude group: 'javax.servlet.jsp'
-  runtime.exclude group: 'org.apache.httpcomponents'
-  runtime.exclude group: 'org.apache.kerby'
-  runtime.exclude group: 'org.eclipse.jetty'
-  runtime.exclude group: 'org.eclipse.jetty'
-  runtime.exclude group: 'io.netty'
+  runtimeOnly.exclude group: 'com.sun.jersey'
+  runtimeOnly.exclude group: 'com.sun.jersey.contribs'
+  runtimeOnly.exclude group: 'com.google.inject'
+  runtimeOnly.exclude group: 'com.google.inject.extensions'
+  runtimeOnly.exclude group: 'com.github.pjfanning'
+  runtimeOnly.exclude group: 'javax.servlet'
+  runtimeOnly.exclude group: 'javax.servlet.jsp'
+  runtimeOnly.exclude group: 'org.apache.httpcomponents'
+  runtimeOnly.exclude group: 'org.apache.kerby'
+  runtimeOnly.exclude group: 'org.eclipse.jetty'
+  runtimeOnly.exclude group: 'org.eclipse.jetty'
+  runtimeOnly.exclude group: 'io.netty'
 
 }
 
