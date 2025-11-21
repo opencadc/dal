@@ -108,12 +108,12 @@ public class TableDataElementWriter {
         long rowCount = 0;
 
         while (rowIter.hasNext()) {
-            rowCount ++;
+            rowCount++;
             List<Object> row = rowIter.next();
 
             out.write("\n<TR>");
             try {
-                 writeRow(out, row);
+                writeRow(out, row);
             } catch (Exception e) {
                 // DALI error
                 log.warn("ERROR writing row : " + row, e);
