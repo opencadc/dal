@@ -216,15 +216,11 @@ public class AsciiTableWriter implements TableWriter<VOTableDocument> {
         List<VOTableField> fields = vt.getFields();
 
         // initialize the list of associated formats
-        List<Format<Object>> formats = new ArrayList<Format<Object>>();
+        List<Format<Object>> formats = new ArrayList<>();
         if (fields != null && !fields.isEmpty()) {
             for (VOTableField field : fields) {
                 Format<Object> format = null;
-                if (field.getFormat() == null) {
-                    format = formatFactory.getFormat(field);
-                } else {
-                    format = field.getFormat();
-                }
+                format = formatFactory.getFormat(field);
                 formats.add(format);
             }
         }

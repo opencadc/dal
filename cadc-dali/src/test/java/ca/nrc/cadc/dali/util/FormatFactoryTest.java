@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2011.                            (c) 2011.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -62,99 +62,52 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
-package ca.nrc.cadc.dali.tables.votable;
+package ca.nrc.cadc.dali.util;
 
-import ca.nrc.cadc.dali.util.Format;
-import java.util.ArrayList;
-import java.util.List;
+import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.util.Log4jInit;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
- * VOTable-specific extension of TableColumn. This adds the XML ID/IDREF attributes
- * and a list of string values as permitted by the VOTable schema.
  *
  * @author pdowler
  */
-public class VOTableField {
-    private String name;
-    private String datatype;
+public class FormatFactoryTest {
+    private static final Logger log = Logger.getLogger(FormatFactoryTest.class);
 
-    protected String arraysize;
-    protected int[] arrayShape;
-
-    public String ucd;
-    public String unit;
-    public String utype;
-    public String xtype;
-    public String description;
-    public String nullValue;
-
-    // TODO: add precision support and use it to configure numeric format objects
-    public String id;
-    public String ref;
-
-    private final List<String> values = new ArrayList<String>();
-
-    protected VOTableField() {
+    static {
+        Log4jInit.setLevel("ca.nrc.cadc.dali", Level.INFO);
     }
-
-    public VOTableField(String name, String datatype) {
-        this(name, datatype, null);
+    public FormatFactoryTest() { 
     }
-
-    public VOTableField(String name, String datatype, String arraysize) {
-        this(name, datatype, arraysize, null);
-    }
-
-    public VOTableField(String name, String datatype, String arraysize, String xtype) {
-        this.name = name;
-        this.datatype = datatype;
-        this.arraysize = arraysize;
-        this.xtype = xtype;
-        validateArraysize();
-    }
-
-    private void validateArraysize() {
-        this.arrayShape = VOTableUtil.getArrayShape(arraysize);
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDatatype() {
-        return datatype;
-    }
-
-    public String getArraysize() {
-        return arraysize;
-    }
-
-    public int[] getArrayShape() {
-        return arrayShape;
-    }
-
-    public List<String> getValues() {
-        return values;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.getClass().getSimpleName()).append("[");
-        sb.append(name).append(",");
-        sb.append(datatype);
-        if (arraysize != null) {
-            sb.append(",").append(arraysize);
-        }
-        if (xtype != null) {
-            sb.append(",").append(xtype);
-        }
-        sb.append("]");
-        return sb.toString();
+    
+    @Test
+    public void testDALI() {
+        // test DALI xtype support
+        FormatFactory ff = new FormatFactory();
+        
+        VOTableField vf = new VOTableField("foo", "char", "*");
+        Format actual;
+        
+        vf.xtype = "uuid";
+        actual = ff.getFormat(vf);
+        log.info(vf + " " + actual.getClass().getName());
+        Assert.assertEquals(UUIDFormat.class, actual.getClass());
+        
+        vf.xtype = "shape";
+        actual = ff.getFormat(vf);
+        log.info(vf + " " + actual.getClass().getName());
+        Assert.assertEquals(ShapeFormat.class, actual.getClass());
+        
+        vf.xtype = "multishape";
+        actual = ff.getFormat(vf);
+        log.info(vf + " " + actual.getClass().getName());
+        Assert.assertEquals(MultiShapeFormat.class, actual.getClass());
     }
 }

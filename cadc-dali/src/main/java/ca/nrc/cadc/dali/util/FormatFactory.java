@@ -83,16 +83,17 @@ public class FormatFactory {
     private static final Logger log = Logger.getLogger(FormatFactory.class);
 
     /**
-     *
-     * @param field
-     * @return
+     * Create a new Format object.
+     * 
+     * @param field the VOTable type (uses: datatype,arraysize,xtype)
+     * @return a Format object suitable for the specified VOTable type
      */
     public Format getFormat(VOTableField field) {
         String datatype = field.getDatatype();
         Format ret = new DefaultFormat();
 
         if (datatype == null) {
-            ret = new DefaultFormat();
+            // already initialised above
         } else if (datatype.equalsIgnoreCase("boolean")) {
             ret = new BooleanFormat();
         } else if (datatype.equalsIgnoreCase("bit")) {
@@ -143,9 +144,9 @@ public class FormatFactory {
             if (isArray(field)) {
                 if ("point".equalsIgnoreCase(field.xtype)) {
                     ret = new PointFormat();
-                } else if ("circle".equalsIgnoreCase(field.xtype)) {
+                } else if ("circle".equals(field.xtype)) {
                     ret = new CircleFormat();
-                } else if ("polygon".equalsIgnoreCase(field.xtype)) {
+                } else if ("polygon".equals(field.xtype)) {
                     ret = new PolygonFormat();
                 } else if ("multipolygon".equalsIgnoreCase(field.xtype)) {
                     ret = new MultiPolygonFormat();
@@ -166,13 +167,15 @@ public class FormatFactory {
                 } else if ("polygon".equalsIgnoreCase(field.xtype)) {
                     ret = new PolygonFormat();
                 } else if ("multipolygon".equalsIgnoreCase(field.xtype)) {
-                    ret = new MultiPolygonFormat();
+                    ret = new MultiPolygonFormat(); // backwards compat: remove asap
                 } else if ("interval".equalsIgnoreCase(field.xtype)) {
                     if (field.getArrayShape().length == 1 && field.getArrayShape()[0] == 2) {
                         ret = new DoubleIntervalFormat();
                     } else if (field.getArrayShape().length == 2 && field.getArrayShape()[0] == 2) {
-                        ret = new DoubleIntervalArrayFormat();
+                        ret = new DoubleIntervalArrayFormat(); // backwards compat: remove when argus stops using 2x*
                     }
+                } else if ("multiinterval".equals(field.xtype)) {
+                    ret = new DoubleIntervalArrayFormat();
                 } else if (field.getArrayShape().length == 1) {
                     ret = new DoubleArrayFormat();
                 } else if (field.getArrayShape().length == 2) {
@@ -189,19 +192,21 @@ public class FormatFactory {
             if (isArray(field)) {
                 if ("timestamp".equalsIgnoreCase(field.xtype)) { // DALI-1.1
                     ret = new UTCTimestampFormat();
-                } else if (field.xtype != null && field.xtype.endsWith("shape")) { // DALI-1.2
-                    ret = new ShapeFormat();
-                } else if ("adql:timestamp".equalsIgnoreCase(field.xtype)) {
-                    ret = new UTCTimestampFormat();
-                } else if ("adql:point".equalsIgnoreCase(field.xtype)) {
-                    ret = new STCPositionFormat();
-                } else if ("adql:region".equalsIgnoreCase(field.xtype)) {
-                    ret = new STCRegionFormat();
                 } else if ("uuid".equalsIgnoreCase(field.xtype)) { // DALI-1.2
                     ret = new UUIDFormat();
                 } else if ("uri".equalsIgnoreCase(field.xtype)) { // DALI-1.2
                     ret = new URIFormat();
-                }
+                } else if ("shape".equals(field.xtype)) { // DALI-1.2
+                    ret = new ShapeFormat();
+                } else if ("multishape".equals(field.xtype)) { // DALI-1.2
+                    ret = new MultiShapeFormat();
+                } else if ("adql:timestamp".equalsIgnoreCase(field.xtype)) { // obsolete
+                    ret = new UTCTimestampFormat();
+                } else if ("adql:point".equalsIgnoreCase(field.xtype)) { // obsolete
+                    ret = new STCPositionFormat();
+                } else if ("adql:region".equalsIgnoreCase(field.xtype)) { // obsolete
+                    ret = new STCRegionFormat();
+                } 
             }
         }
         log.debug(field + " formatter: " + ret.getClass().getName());
