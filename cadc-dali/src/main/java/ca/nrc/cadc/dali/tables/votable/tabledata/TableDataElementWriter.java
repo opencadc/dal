@@ -105,26 +105,37 @@ public class TableDataElementWriter {
         log.debug("Writing TABLEDATA element - starting");
         out.write("<TABLEDATA>");
 
-        long rowCount = 1;
+        long rowCount = 0;
 
         while (rowIter.hasNext()) {
+            rowCount++;
             List<Object> row = rowIter.next();
-            writeRow(out, row);
+
+            out.write("\n<TR>");
+            try {
+                writeRow(out, row);
+            } catch (Exception e) {
+                // DALI error
+                log.warn("ERROR writing row : " + row, e);
+                trailer.setAttribute("name", "QUERY_STATUS");
+                trailer.setAttribute("value", "ERROR");
+                trailer.setText(e.toString());
+                break;
+            } finally {
+                out.write("</TR>");
+            }
 
             // check for max iterations
             if (maxIterations != null && rowCount == maxIterations.getMaxIterations()) {
                 maxIterations.maxIterationsReached(rowIter.hasNext());
                 break;
             }
-            rowCount++;
         }
         out.write("</TABLEDATA>");
-        log.debug("Finished writing TABLEDATA element. Wrote " + (rowCount - 1) + " rows");
+        log.debug("Finished writing TABLEDATA element. Wrote " + rowCount + " rows");
     }
 
     private void writeRow(Writer out, List<Object> row) throws IOException {
-        out.write("\n<TR>");
-
         for (int i = 0; i < row.size(); i++) {
             Object value = row.get(i);
             VOTableField fd = fields.get(i);
@@ -136,18 +147,11 @@ public class TableDataElementWriter {
                 out.write("<TD>");
                 try {
                     out.write(escapeXml(fmt.format(value)));
-                } catch (Exception ex) {
-                    // DALI error
-                    log.warn("ERROR serializing row data: " + fd, ex);
-                    trailer.setAttribute("name", "QUERY_STATUS");
-                    trailer.setAttribute("value", "ERROR");
-                    trailer.setText(ex.toString());
+                } finally {
+                    out.write("</TD>");
                 }
-                out.write("</TD>");
             }
         }
-
-        out.write("</TR>");
     }
 
     // Utility method to escape XML special characters

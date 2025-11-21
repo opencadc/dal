@@ -107,13 +107,14 @@ public class BinaryElementWriter {
         log.debug("Writing BINARY2 element - starting");
         out.write("<BINARY2><STREAM encoding=\"base64\">");
 
-        long rowCount = 1;
+        long rowCount = 0;
 
         try (OutputStream base64Out = Base64.getEncoder().wrap(new WriterOutputStream(out))) {
             DataOutputStream dataOut = new DataOutputStream(base64Out);
 
             Iterator<List<Object>> iter = rowIter;
             while (iter.hasNext()) {
+                rowCount++;
                 List<Object> row = iter.next();
 
                 try {
@@ -124,19 +125,19 @@ public class BinaryElementWriter {
                     trailer.setAttribute("name", "QUERY_STATUS");
                     trailer.setAttribute("value", "ERROR");
                     trailer.setText(ex.toString());
+                    break;
                 }
 
                 if (maxIterations != null && rowCount == maxIterations.getMaxIterations()) {
                     maxIterations.maxIterationsReached(iter.hasNext());
                     break;
                 }
-                rowCount++;
             }
             dataOut.flush();
         }
 
         out.write("</STREAM></BINARY2>");
-        log.debug("Finished writing BINARY2 element. Wrote " + (rowCount - 1) + " rows");
+        log.debug("Finished writing BINARY2 element. Wrote " + rowCount + " rows");
     }
 
     private void writeRow(List<Object> row, DataOutputStream out) throws IOException {
