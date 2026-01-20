@@ -236,7 +236,7 @@ public class ParquetReader {
                         LogicalTypeAnnotation logicalType = actualField.asPrimitiveType().getLogicalTypeAnnotation();
                         if (logicalType instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) {
                             type = "timestamp";
-                            format = new UTCTimestampFormat();
+                            format = new UTCTimestampFormat(null, null);
                         } else {
                             type = "long";
                             format = actualField.isRepetition(Type.Repetition.REPEATED) ? new LongArrayFormat() : new LongFormat(null);

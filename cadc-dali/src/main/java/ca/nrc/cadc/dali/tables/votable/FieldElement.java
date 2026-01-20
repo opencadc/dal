@@ -102,7 +102,7 @@ public class FieldElement extends Element {
         if (field != null) {
             setFieldAttribute("name", field.getName());
             setFieldAttribute("datatype", field.getDatatype());
-            setFieldAttribute("arraysize", field.getArraysize() == null || field.getArraysize().equals("1") ? null : field.getArraysize());
+            setFieldAttribute("arraysize", field.getArraysize());
             setFieldAttribute("ID", field.id);
             setFieldAttribute("ucd", field.ucd);
             setFieldAttribute("unit", field.unit);

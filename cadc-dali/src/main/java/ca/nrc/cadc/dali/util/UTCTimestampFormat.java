@@ -87,7 +87,7 @@ public class UTCTimestampFormat implements Format<Date> {
 
     // arraysize = null/0 and isVariable = null/true indicates * (no limit)
     public UTCTimestampFormat(Integer arraysize, Boolean isVariable) {
-        if(arraysize == null){
+        if (arraysize == null) {
             arraysize = 23; // default to full timestamp
         }
         if (isVariable == null) {
@@ -145,7 +145,7 @@ public class UTCTimestampFormat implements Format<Date> {
             case 23:
                 return format;
             default:
-                throw  new IllegalArgumentException("Invalid array size " + arraysize + " for timestamp. Standard sizes are 10, 19, or 23.");
+                throw new IllegalArgumentException("Invalid array size " + arraysize + " for timestamp. Standard sizes are 10, 19, or 23.");
         }
     }
 
