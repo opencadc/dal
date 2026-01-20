@@ -466,7 +466,7 @@ public class VOTableReader {
             String name = element.getAttributeValue("name");
             String datatype = element.getAttributeValue("datatype");
             String arraysize = element.getAttributeValue("arraysize");
-            VOTableField tableField = new VOTableField(name, datatype, arraysize);
+            VOTableField tableField = new VOTableField(name, datatype, arraysize == null || arraysize.equals("1") ? null : arraysize);
             updateTableField(tableField, element, namespace);
             fields.add(tableField);
         }

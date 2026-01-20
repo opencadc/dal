@@ -82,8 +82,23 @@ public class UTCTimestampFormat implements Format<Date> {
 
     private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
 
+    private Integer arraysize;
+    private Boolean isVariable;
+
+    // arraysize = null/0 and isVariable = null/true indicates * (no limit)
+    public UTCTimestampFormat(Integer arraysize, Boolean isVariable) {
+        if(arraysize == null){
+            arraysize = 23; // default to full timestamp
+        }
+        if (isVariable == null) {
+            isVariable = true;
+        }
+        this.arraysize = arraysize;
+        this.isVariable = isVariable;
+    }
+
     /**
-     * Takes an Date or Timestamp and returns a String representation
+     * Takes Date or Timestamp and returns a String representation
      * in UTC ISO8601 date format.
      *
      * @param object Date to format.
@@ -102,10 +117,35 @@ public class UTCTimestampFormat implements Format<Date> {
             date = DateUtil.toDate(object);
         }
 
-        if (date != null) {
-            return dateFormat.format(date);
-        } else {
-            throw new UnsupportedOperationException("formatting " + object.getClass().getName() + " " + object);
+        String format = dateFormat.format(date);
+
+        switch (arraysize) {
+            case 10:
+                return format.substring(0, 10);
+            case 11:
+            case 12:
+            case 14:
+            case 15:
+            case 16:
+            case 17:
+            case 18:
+                if (!isVariable) {
+                    throw new IllegalArgumentException("Invalid array size " + arraysize + " for timestamp. Standard sizes are 10, 19, or 23.");
+                }
+                return format.substring(0, 10);
+            case 19:
+                return format.substring(0, 19);
+            case 20:
+            case 21:
+            case 22:
+                if (!isVariable) {
+                    throw new IllegalArgumentException("Invalid array size " + arraysize + " for timestamp. Standard sizes are 10, 19, or 23.");
+                }
+                return format.substring(0, 19);
+            case 23:
+                return format;
+            default:
+                throw  new IllegalArgumentException("Invalid array size " + arraysize + " for timestamp. Standard sizes are 10, 19, or 23.");
         }
     }
 

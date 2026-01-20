@@ -69,7 +69,10 @@
 
 package ca.nrc.cadc.dali.util;
 
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Log4jInit;
+
+import java.text.DateFormat;
 import java.util.Date;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -97,7 +100,7 @@ public class UTCTimestampFormatTest
         log.debug("testValue");
         try
         {
-            UTCTimestampFormat format = new UTCTimestampFormat();
+            UTCTimestampFormat format = new UTCTimestampFormat(null, null);
             Date expected = new Date();
 
             String result = format.format(expected);
@@ -131,7 +134,7 @@ public class UTCTimestampFormatTest
     {
         log.debug("testNull");
 
-        UTCTimestampFormat format = new UTCTimestampFormat();
+        UTCTimestampFormat format = new UTCTimestampFormat(null, null);
         
         String result = format.format(null);
         assertEquals("", result);
@@ -140,6 +143,37 @@ public class UTCTimestampFormatTest
         assertNull(object);
 
         log.info("testNull passed");
+    }
+
+    private static DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+    @Test
+    public void testDates() throws Exception {
+
+        UTCTimestampFormat format23 = new UTCTimestampFormat(23, null);
+        UTCTimestampFormat format19 = new UTCTimestampFormat(19, null);
+        UTCTimestampFormat format10 = new UTCTimestampFormat(10, null);
+        UTCTimestampFormat format = new UTCTimestampFormat(null, null);
+        UTCTimestampFormat format11 = new UTCTimestampFormat(11, true);
+        UTCTimestampFormat format21 = new UTCTimestampFormat(21, true);
+        UTCTimestampFormat format22 = new UTCTimestampFormat(22, false); // Should throw exception.
+
+        Date date = dateFormat.parse("2009-01-02T11:04:05.678");
+        String formattedDate23 = format23.format(date);
+        String formattedDate19 = format19.format(date);
+        String formattedDate10 = format10.format(date);
+        String formattedDate11 = format11.format(date);
+        String formattedDate21 = format21.format(date);
+        String formattedDate = format.format(date); // arraysize = *
+
+        Assert.assertEquals("2009-01-02T11:04:05.678", formattedDate23);
+        Assert.assertEquals("2009-01-02T11:04:05", formattedDate19);
+        Assert.assertEquals("2009-01-02", formattedDate10);
+        Assert.assertEquals("2009-01-02T11:04:05.678", formattedDate);
+        Assert.assertEquals("2009-01-02", formattedDate11);
+        Assert.assertEquals("2009-01-02T11:04:05", formattedDate21);
+        Assert.assertThrows("Expected an exception. ", IllegalArgumentException.class, () -> {
+            format22.format(date);
+        });
     }
 
 }

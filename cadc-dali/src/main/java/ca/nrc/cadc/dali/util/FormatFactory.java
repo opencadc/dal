@@ -191,7 +191,9 @@ public class FormatFactory {
         } else if (datatype.equalsIgnoreCase("char")) {
             if (isArray(field)) {
                 if ("timestamp".equalsIgnoreCase(field.xtype)) { // DALI-1.1
-                    ret = new UTCTimestampFormat();
+                    String arraySize = field.getArraysize();
+                    int computedArraySize = getComputedArraySizeForTimestamp(arraySize);
+                    ret = new UTCTimestampFormat(computedArraySize, arraySize != null && arraySize.endsWith("*"));
                 } else if ("uuid".equalsIgnoreCase(field.xtype)) { // DALI-1.2
                     ret = new UUIDFormat();
                 } else if ("uri".equalsIgnoreCase(field.xtype)) { // DALI-1.2
@@ -201,7 +203,9 @@ public class FormatFactory {
                 } else if ("multishape".equals(field.xtype)) { // DALI-1.2
                     ret = new MultiShapeFormat();
                 } else if ("adql:timestamp".equalsIgnoreCase(field.xtype)) { // obsolete
-                    ret = new UTCTimestampFormat();
+                    String arraySize = field.getArraysize();
+                    int computedArraySize = getComputedArraySizeForTimestamp(arraySize);
+                    ret = new UTCTimestampFormat(computedArraySize, arraySize != null && arraySize.endsWith("*"));
                 } else if ("adql:point".equalsIgnoreCase(field.xtype)) { // obsolete
                     ret = new STCPositionFormat();
                 } else if ("adql:region".equalsIgnoreCase(field.xtype)) { // obsolete
@@ -211,6 +215,19 @@ public class FormatFactory {
         }
         log.debug(field + " formatter: " + ret.getClass().getName());
         return ret;
+    }
+
+    public static int getComputedArraySizeForTimestamp(String arraySize) {
+        int computedArraySize = 23; // default size for timestamp "yyyy-MM-ddTHH:mm:ss.SSS"
+
+        if (arraySize != null && !arraySize.equals("*")) {
+            if (arraySize.contains("x")) {
+                throw new IllegalArgumentException("Multidimensional array found for timestamp field: " + arraySize);
+            } else {
+                computedArraySize = arraySize.endsWith("*") ? Integer.parseInt(arraySize.substring(0, arraySize.length() - 1)) : Integer.parseInt(arraySize);
+            }
+        }
+        return computedArraySize;
     }
 
     private static boolean isArray(VOTableField field) {
