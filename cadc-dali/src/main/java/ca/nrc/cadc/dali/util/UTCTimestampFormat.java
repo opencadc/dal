@@ -80,21 +80,51 @@ import java.util.Date;
  */
 public class UTCTimestampFormat implements Format<Date> {
 
-    private DateFormat dateFormat = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+    private String ivoaDateFormat;
+    private final DateFormat dateFormat;
+    private static final int[] standardDateLength = {10,19,23};
 
     private Integer arraysize;
     private Boolean isVariable;
 
     // arraysize = null/0 and isVariable = null/true indicates * (no limit)
     public UTCTimestampFormat(Integer arraysize, Boolean isVariable) {
-        if (arraysize == null) {
+        if (isVariable == null) {
+            this.isVariable = isVariable = true;
+        } else {
+            this.isVariable = isVariable;
+        }
+
+        if (arraysize == null || arraysize == 0 || arraysize == 23) {
             arraysize = 23; // default to full timestamp
         }
-        if (isVariable == null) {
-            isVariable = true;
+        if (arraysize < 10 || arraysize > 23) {
+            throw new IllegalArgumentException("Invalid array size " + arraysize + " for timestamp. Standard sizes are 10, 19, or 23.");
         }
-        this.arraysize = arraysize;
-        this.isVariable = isVariable;
+
+        boolean found = false;
+        for (int len : standardDateLength) {
+            if (arraysize == len) {
+                found = true;
+                break;
+            }
+        }
+        if (!found && !isVariable) {
+            throw new IllegalArgumentException();
+        }
+
+        if (arraysize < 19) { // 10 to 18
+            this.arraysize = 10;
+            ivoaDateFormat = "yyyy-MM-dd";
+        } else if (arraysize < 23) { // 19 to 22
+            this.arraysize = 19;
+            ivoaDateFormat = "yyyy-MM-dd'T'HH:mm:ss";
+        } else {
+            this.arraysize = 23;
+            ivoaDateFormat = DateUtil.IVOA_DATE_FORMAT;
+        }
+
+        dateFormat = DateUtil.getDateFormat(ivoaDateFormat, DateUtil.UTC);
     }
 
     /**
@@ -117,36 +147,7 @@ public class UTCTimestampFormat implements Format<Date> {
             date = DateUtil.toDate(object);
         }
 
-        String format = dateFormat.format(date);
-
-        switch (arraysize) {
-            case 10:
-                return format.substring(0, 10);
-            case 11:
-            case 12:
-            case 14:
-            case 15:
-            case 16:
-            case 17:
-            case 18:
-                if (!isVariable) {
-                    throw new IllegalArgumentException("Invalid array size " + arraysize + " for timestamp. Standard sizes are 10, 19, or 23.");
-                }
-                return format.substring(0, 10);
-            case 19:
-                return format.substring(0, 19);
-            case 20:
-            case 21:
-            case 22:
-                if (!isVariable) {
-                    throw new IllegalArgumentException("Invalid array size " + arraysize + " for timestamp. Standard sizes are 10, 19, or 23.");
-                }
-                return format.substring(0, 19);
-            case 23:
-                return format;
-            default:
-                throw new IllegalArgumentException("Invalid array size " + arraysize + " for timestamp. Standard sizes are 10, 19, or 23.");
-        }
+        return dateFormat.format(date);
     }
 
     /**
@@ -159,8 +160,24 @@ public class UTCTimestampFormat implements Format<Date> {
         if (s == null || s.isEmpty()) {
             return null;
         }
+
+        int strLength = s.length();
+        if (this.isVariable) {
+            if (strLength > this.arraysize) {
+                s = s.substring(0, this.arraysize);
+            }
+        } else {
+            if (strLength != this.arraysize) {
+                throw new IllegalArgumentException("String length " + strLength + " does not match fixed arraysize " + arraysize);
+            }
+        }
+
         try {
-            return DateUtil.flexToDate(s, dateFormat);
+            if (isVariable) {
+                return DateUtil.flexToDate(s, dateFormat);
+            } else {
+                return dateFormat.parse(s);
+            }
         } catch (ParseException ex) {
             throw new UnsupportedOperationException("Unable to parse to a Date " + s);
         }

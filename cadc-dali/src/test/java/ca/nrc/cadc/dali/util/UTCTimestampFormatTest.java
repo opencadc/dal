@@ -152,10 +152,9 @@ public class UTCTimestampFormatTest
         UTCTimestampFormat format23 = new UTCTimestampFormat(23, null);
         UTCTimestampFormat format19 = new UTCTimestampFormat(19, null);
         UTCTimestampFormat format10 = new UTCTimestampFormat(10, null);
-        UTCTimestampFormat format = new UTCTimestampFormat(null, null);
         UTCTimestampFormat format11 = new UTCTimestampFormat(11, true);
         UTCTimestampFormat format21 = new UTCTimestampFormat(21, true);
-        UTCTimestampFormat format22 = new UTCTimestampFormat(22, false); // Should throw exception.
+        UTCTimestampFormat format = new UTCTimestampFormat(null, null);
 
         Date date = dateFormat.parse("2009-01-02T11:04:05.678");
         String formattedDate23 = format23.format(date);
@@ -171,8 +170,9 @@ public class UTCTimestampFormatTest
         Assert.assertEquals("2009-01-02T11:04:05.678", formattedDate);
         Assert.assertEquals("2009-01-02", formattedDate11);
         Assert.assertEquals("2009-01-02T11:04:05", formattedDate21);
-        Assert.assertThrows("Expected an exception. ", IllegalArgumentException.class, () -> {
-            format22.format(date);
+
+        Assert.assertThrows("Expected an exception. isValue has to be true for a non-standard arraysize", IllegalArgumentException.class, () -> {
+            new UTCTimestampFormat(22, false);
         });
     }
 
