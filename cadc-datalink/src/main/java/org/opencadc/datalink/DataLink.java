@@ -83,31 +83,31 @@ public class DataLink {
      * Terms from the http://www.ivoa.net/rdf/datalink/core vocabulary
      */
     public enum Term { // TODO: re-use the VocabularyTerm code once extracted from caom2
-        THIS("#this"),
         
-        PROGENITOR("#progenitor"),
-        DERIVATION("#derivation"),
-        DOCUMENTATION("#documentation"),
         
         AUXILIARY("#auxiliary"),
-        WEIGHT("#weight"),
-        ERROR("#error"),
-        NOISE("#noise"),
-        
-        CALIBRATION("#calibration"),
         BIAS("#bias"),
+        CALIBRATION("#calibration"),
+        CODERIVED("#coderived"),
+        COUNTERPART("#counterpart"),
+        CUTOUT("#cutout"),
         DARK("#dark"),
+        DERIVATION("#derivation"),
+        DETEACHED_HEADER("#detached-header"),
+        DOCUMENTATION("#documentation"),
+        ERROR("#error"),
         FLAT("#flat"),
-        
+        NOISE("#noise"),
+        PACKAGE("#package"),
         PREVIEW("#preview"),
         PREVIEW_IMAGE("#preview-image"),
         PREVIEW_PLOT("#preview-plot"),
-        THUMBNAIL("#thumbnail"),
-        
         PROC("#proc"),
-        CUTOUT("#cutout"),
-        PACKAGE("#package");
-
+        PROGENITOR("#progenitor"),
+        THIS("#this"),
+        THUMBNAIL("#thumbnail"),
+        WEIGHT("#weight");
+        
         private final String value;
 
         private Term(String value) {
@@ -116,6 +116,15 @@ public class DataLink {
 
         public String getValue() {
             return value;
+        }
+        
+        public static DataLink.Term getTerm(String s) {
+            for (Term t : values()) {
+                if (t.value.equals(s)) {
+                    return t;
+                }
+            }
+            return null;
         }
     }
 

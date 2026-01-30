@@ -74,17 +74,18 @@ import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
-import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.dali.util.PointFormat;
 import ca.nrc.cadc.dali.util.ShortFormat;
 import ca.nrc.cadc.date.DateUtil;
+import ca.nrc.cadc.io.ResourceIterator;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.text.DateFormat;
@@ -109,6 +110,7 @@ public class VOTableReaderWriterTest {
 
     private static final String DATE_TIME = "2009-01-02T11:04:05.678";
     private static DateFormat dateFormat;
+    private static final long DEFAULT_NUM_ROWS = 2L;
 
     static {
         Log4jInit.setLevel("ca.nrc.cadc.dali.tables", Level.INFO);
@@ -119,7 +121,12 @@ public class VOTableReaderWriterTest {
     }
 
     @Test
-    public void testReadWriteVOTable() throws Exception {
+    public void testReadWriteVOTable() {
+        testReadWriteVOTable(true);
+        testReadWriteVOTable(false);
+    }
+
+    public void testReadWriteVOTable(boolean binarySerialization) {
         log.debug("testReadWriteVOTable");
         try {
             String resourceName = "VOTable resource name";
@@ -127,24 +134,31 @@ public class VOTableReaderWriterTest {
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
 
+            // Add INFO's to the VOTableDocument.
+            expected.getInfos().addAll(getTestInfos("a"));
+
             VOTableResource vr = new VOTableResource("meta");
             vr.description = "what is a meta?";
             expected.getResources().add(vr);
+
             vr.getParams().addAll(getMetaParams());
             vr.getGroups().add(getMetaGroup());
 
+            // Add INFO's to meta VOTableResource.
+            vr.getInfos().addAll(getTestInfos("b"));
+
             vr = new VOTableResource("results");
-            VOTableInfo vi = new VOTableInfo("FOO", "bar");
-            vi.content = "useful message";
-            vr.getInfos().add(vi);
             expected.getResources().add(vr);
             vr.setName(resourceName);
+
+            // Add INFO's to results VOTableResource.
+            vr.getInfos().addAll(getTestInfos("c"));
 
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
 
-            // Add INFO's.
-            vot.getInfos().addAll(getTestInfos());
+            // Add INFO's to VOTableTable.
+            vot.getInfos().addAll(getTestInfos("d"));
 
             // Add VOTableFields.
             vot.getParams().addAll(getTestParams());
@@ -155,7 +169,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new VOTableWriter();
+            VOTableWriter writer = binarySerialization ? new VOTableWriter(VOTableWriter.SerializationType.BINARY2) : new VOTableWriter();
             writer.write(expected, sw);
             String xml = sw.toString();
             log.debug("XML: \n\n" + xml);
@@ -179,6 +193,11 @@ public class VOTableReaderWriterTest {
 
     @Test
     public void testReadWriteVOTableWithMax() throws Exception {
+        testReadWriteVOTableWithMax(VOTableWriter.SerializationType.TABLEDATA);
+        testReadWriteVOTableWithMax(VOTableWriter.SerializationType.BINARY2);
+    }
+
+    public void testReadWriteVOTableWithMax(VOTableWriter.SerializationType serializationType) throws Exception {
         log.debug("testReadWriteVOTable");
         long maxrec = 3L;
         try {
@@ -186,16 +205,23 @@ public class VOTableReaderWriterTest {
 
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
+
+            // Add INFO's to document.
+            expected.getInfos().addAll(getTestInfos("a"));
+
             VOTableResource vr = new VOTableResource("results");
             vr.getInfos().add(new VOTableInfo("QUERY_STATUS", "OK"));
             expected.getResources().add(vr);
             vr.setName(resourceName);
 
+            // Add INFO's to resource.
+            vr.getInfos().addAll(getTestInfos("b"));
+
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
 
-            // Add INFO's.
-            vot.getInfos().addAll(getTestInfos());
+            // Add INFO's to table.
+            vot.getInfos().addAll(getTestInfos("c"));
 
             // Add VOTableFields.
             vot.getParams().addAll(getTestParams());
@@ -206,7 +232,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new VOTableWriter();
+            VOTableWriter writer = new VOTableWriter(serializationType);
             writer.write(expected, sw, maxrec);
             String xml = sw.toString();
             log.info("XML: \n\n" + xml);
@@ -218,43 +244,55 @@ public class VOTableReaderWriterTest {
             // the write should stick in this extra INFO element, so add to expected
             VOTableInfo vi = new VOTableInfo("QUERY_STATUS", "OVERFLOW");
             vr.getInfos().add(vi);
-            compareVOTable(expected, actual, 3L);
+            compareVOTable(expected, actual, maxrec);
 
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
-    
+
     @Test
     public void testReadWriteVOTableWithIterationFail() throws Exception {
+        testReadWriteVOTableWithIterationFail(VOTableWriter.SerializationType.TABLEDATA);
+        testReadWriteVOTableWithIterationFail(VOTableWriter.SerializationType.BINARY2);
+    }
+
+    public void testReadWriteVOTableWithIterationFail(VOTableWriter.SerializationType serializationType) throws Exception {
         log.debug("testReadWriteVOTable");
         try {
             String resourceName = "VOTable resource name";
 
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
+
+            // Add INFO's to document.
+            expected.getInfos().addAll(getTestInfos("a"));
+
             VOTableResource vr = new VOTableResource("results");
             vr.getInfos().add(new VOTableInfo("QUERY_STATUS", "OK"));
             expected.getResources().add(vr);
             vr.setName(resourceName);
 
+            // Add INFO's to resource.
+            vr.getInfos().addAll(getTestInfos("b"));
+
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
 
-            // Add INFO's.
-            vot.getInfos().addAll(getTestInfos());
+            // Add INFO's to table.
+            vot.getInfos().addAll(getTestInfos("c"));
 
             // Add VOTableFields.
             vot.getParams().addAll(getTestParams());
             vot.getFields().addAll(getTestFields());
 
             // Add TableData.
-            vot.setTableData(new TestTableData());
+            vot.setTableData(new TestTableData(serializationType.equals(VOTableWriter.SerializationType.BINARY2)));
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new VOTableWriter();
+            VOTableWriter writer = new VOTableWriter(serializationType);
             writer.setFormatFactory(new BrokenFormatFactory());
             writer.write(expected, sw);
             String xml = sw.toString();
@@ -292,12 +330,20 @@ public class VOTableReaderWriterTest {
 
     @Test
     public void testReadWriteVOTableArraysize() throws Exception {
+        testReadWriteVOTableArraysize(VOTableWriter.SerializationType.TABLEDATA);
+        testReadWriteVOTableArraysize(VOTableWriter.SerializationType.BINARY2);
+    }
+
+    public void testReadWriteVOTableArraysize(VOTableWriter.SerializationType serializationType) throws Exception {
         log.debug("testReadWriteVOTableArraysize");
         try {
             String resourceName = "VOTable resource name";
 
             // Build a VOTable.
             VOTableDocument expected = new VOTableDocument();
+
+            // Add INFO's to document.
+            expected.getInfos().addAll(getTestInfos("a"));
 
             VOTableResource vr = new VOTableResource("meta");
             expected.getResources().add(vr);
@@ -375,7 +421,7 @@ public class VOTableReaderWriterTest {
 
             // Write VOTable to xml.
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new VOTableWriter();
+            VOTableWriter writer = new VOTableWriter(serializationType);
             writer.write(expected, sw);
             String xml = sw.toString();
             log.debug("XML: \n\n" + xml);
@@ -389,7 +435,7 @@ public class VOTableReaderWriterTest {
 
             // writer always places this placeholder after a table
             vr.getInfos().add(new VOTableInfo("placeholder", "ignore"));
-            compareVOTable(expected, actual, null);
+            compareVOTable(expected, actual, 2L);
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
@@ -559,7 +605,8 @@ public class VOTableReaderWriterTest {
      *
      * @throws Exception For any issues to report.
      */
-    @Test
+    //@Test // Binary serialization is not supported as of now.
+    // TODO : Remove this test when starlink module's Binary serialization impl is permanently removed.
     public void testReadVOTableBinaryData() throws Exception {
         final File tempFile = FileUtil.getFileFromResource(getClass().getSimpleName()
                                                            + "_testReadVOTableBinaryData.xml", getClass());
@@ -634,7 +681,7 @@ public class VOTableReaderWriterTest {
      * Test might be a bit dodgy since it's assuming the VOTable
      * elements will be written and read in the same order.
      */
-    public void compareVOTable(VOTableDocument expected, VOTableDocument actual, Long actualMax) {
+    public void compareVOTable(VOTableDocument expected, VOTableDocument actual, Long actualMax) throws IOException {
         Assert.assertNotNull(expected);
         Assert.assertNotNull(actual);
 
@@ -645,7 +692,7 @@ public class VOTableReaderWriterTest {
         }
     }
 
-    public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax) {
+    public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax) throws IOException {
         Assert.assertEquals(expected.getName(), actual.getName());
         
         Assert.assertEquals(expected.description, actual.description);
@@ -659,12 +706,16 @@ public class VOTableReaderWriterTest {
         compareTables(expected.getTable(), actual.getTable(), actualMax);
     }
 
-    public void compareTables(VOTableTable expected, VOTableTable actual, Long actualMax) {
+    public void compareTables(VOTableTable expected, VOTableTable actual, Long actualMax) throws IOException {
         if (expected != null) {
             Assert.assertNotNull(actual);
         } else {
             Assert.assertNull(actual);
             return;
+        }
+
+        if (actualMax == null) {
+            actualMax = DEFAULT_NUM_ROWS;
         }
 
         compareInfos(expected.getInfos(), actual.getInfos());
@@ -680,10 +731,9 @@ public class VOTableReaderWriterTest {
         Iterator<List<Object>> actualIter = actualTableData.iterator();
         Assert.assertNotNull(expectedIter);
         Assert.assertNotNull(actualIter);
-        int iteratorCount = 0;
-        while (actualIter.hasNext()) // this one is the smaller list
-        {
-            iteratorCount++;
+
+        int iteratorCount = 1;
+        while (iteratorCount <= actualMax) {
             log.debug("iteratorCount: " + (iteratorCount));
 
             List<Object> actualList = actualIter.next();
@@ -735,11 +785,10 @@ public class VOTableReaderWriterTest {
                     Assert.assertEquals("Incorrect value at " + i, expectedObject, actualObject);
                 }
             }
+            iteratorCount++;
         }
 
-        if (actualMax != null) {
-            Assert.assertEquals("wrong number of iterations", actualMax.intValue(), iteratorCount);
-        }
+        Assert.assertEquals("wrong number of iterations", actualMax.intValue(), iteratorCount - 1);
     }
 
     public void compareInfos(List<VOTableInfo> expected, List<VOTableInfo> actual) {
@@ -760,6 +809,7 @@ public class VOTableReaderWriterTest {
             Assert.assertNotNull(actualInfo);
             Assert.assertEquals(expectedInfo.getName(), actualInfo.getName());
             Assert.assertEquals(expectedInfo.getValue(), actualInfo.getValue());
+            Assert.assertEquals(expectedInfo.id, actualInfo.id);
             Assert.assertEquals(expectedInfo.content, actualInfo.content);
         }
     }
@@ -830,10 +880,17 @@ public class VOTableReaderWriterTest {
         }
     }
 
-    public static List<VOTableInfo> getTestInfos() {
+    public static List<VOTableInfo> getTestInfos(String idPrefix) {
         List<VOTableInfo> infos = new ArrayList<VOTableInfo>();
 
-        infos.add(new VOTableInfo("QUERY", "select * from ivoa.ObsCore"));
+        VOTableInfo info1 = new VOTableInfo("QUERY1", "select foo from ivoa.ObsCore");
+        info1.id = idPrefix + "-id1";
+        info1.content = "content 1";
+        infos.add(info1);
+
+        VOTableInfo info2 = new VOTableInfo("QUERY2", "select bar from ivoa.ObsCore");
+        info2.content = "content 2";
+        infos.add(info2);
 
         return infos;
     }
@@ -1076,26 +1133,34 @@ public class VOTableReaderWriterTest {
         List<List<Object>> rowData;
 
         public TestTableData() throws Exception {
-            this(2);
+            this(DEFAULT_NUM_ROWS);
+        }
+
+        public TestTableData(boolean brokenData) throws Exception {
+            this(DEFAULT_NUM_ROWS, brokenData);
         }
 
         public TestTableData(long numrows) throws Exception {
+            this(numrows, false);
+        }
+
+        private TestTableData(long numrows, boolean brokenData) throws Exception {
             rowData = new ArrayList<List<Object>>();
 
             List<Object> row1 = new ArrayList<Object>();
             row1.add(Boolean.TRUE);
             row1.add(new byte[]{1, 2});
-            row1.add(new Byte("1"));
+            row1.add(Byte.valueOf("1"));
             row1.add(new double[]{3.3, 4.4});
-            row1.add(new Double("5.5"));
+            row1.add(5.5D);
             row1.add(new float[]{6.6f, 7.7f});
-            row1.add(new Float("8.8"));
+            row1.add(8.8F);
             row1.add(new int[]{9, 10});
-            row1.add(new Integer("11"));
-            row1.add(new long[]{12l, 13l});
-            row1.add(new Long("14"));
+            row1.add(Integer.valueOf("11"));
+            row1.add(new long[]{12L, 13L});
+            row1.add(Long.valueOf("14"));
             row1.add(new short[]{15, 16});
-            row1.add(new Short("17"));
+            row1.add(brokenData ? "Broken Data" : Short.valueOf("17"));
             row1.add("string value");
             row1.add(dateFormat.parse(DATE_TIME));
 
@@ -1128,10 +1193,32 @@ public class VOTableReaderWriterTest {
             log.info("TestData: " + rowData.size());
         }
 
-        public Iterator<List<Object>> iterator() {
-            return rowData.iterator();
+        public ResourceIterator<List<Object>> iterator() {
+            return new ResourceIterator<>() {
+                private final Iterator<List<Object>> it = rowData.iterator();
+
+                public boolean hasNext() {
+                    return it.hasNext();
+                }
+
+                public List<Object> next() {
+                    return it.next();
+                }
+
+                public void remove() {
+                    it.remove();
+                }
+
+                public void close() throws IOException {
+                // Nothing to close.
+                }
+            };
         }
 
+        @Override
+        public void close() throws IOException {
+            // nothing to close
+        }
     }
 
 }

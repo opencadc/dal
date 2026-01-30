@@ -72,13 +72,12 @@ package ca.nrc.cadc.dali;
 /**
  *
  * @author pdowler
+ * @deprecated use Interval directly
  */
+@Deprecated
 public class LongInterval extends Interval<Long> {
 
     public LongInterval(long lower, long upper) {
         super(lower, upper);
-        if (upper < lower) {
-            throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
-        }
     }
 }

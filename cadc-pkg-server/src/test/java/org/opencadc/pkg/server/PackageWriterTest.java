@@ -71,10 +71,17 @@ package org.opencadc.pkg.server;
 
 import ca.nrc.cadc.util.Log4jInit;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+
+import org.apache.commons.compress.archivers.zip.UnixStat;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -129,6 +136,26 @@ public class PackageWriterTest {
 
             Assert.assertTrue(zipFile.canRead());
             Assert.assertTrue(zipFile.length() > 0);
+
+            // Need to use ZipArchiveInputStream to read the zip file, because UNIX permissions are not
+            // retrieved using the ZipArchiveInputStream.
+            final ZipFile zipFileObj = ZipFile.builder().setFile(zipFile).get();
+            for (final Enumeration<ZipArchiveEntry> entries = zipFileObj.getEntries(); entries.hasMoreElements();) {
+                final ZipArchiveEntry zipArchiveEntry = entries.nextElement();
+                if (zipArchiveEntry.isDirectory()) {
+                    Assert.assertEquals("Incorrect dir perms (" + zipArchiveEntry.getName() + ")",
+                                        UnixStat.DIR_FLAG + UnixStat.DEFAULT_DIR_PERM,
+                                        zipArchiveEntry.getUnixMode());
+                } else if (zipArchiveEntry.isUnixSymlink()) {
+                    Assert.assertEquals("Incorrect link perms (" + zipArchiveEntry.getName() + ")",
+                                        UnixStat.LINK_FLAG + UnixStat.DEFAULT_LINK_PERM,
+                                        zipArchiveEntry.getUnixMode());
+                } else {
+                    Assert.assertEquals("Incorrect file perms (" + zipArchiveEntry.getName() + ")",
+                                        UnixStat.FILE_FLAG + UnixStat.DEFAULT_FILE_PERM,
+                                        zipArchiveEntry.getUnixMode());
+                }
+            }
 
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);

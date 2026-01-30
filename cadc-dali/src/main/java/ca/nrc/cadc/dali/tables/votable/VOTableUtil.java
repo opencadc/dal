@@ -112,4 +112,32 @@ public abstract class VOTableUtil {
         }
         return arrayShape;
     }
+
+    // same as getArrayShape but does not preserve max length for variable dim like 100*. i.e.: sets -1 for 100* like dimensions.
+    public static int[] parseArraySize(String arraysize) {
+        if (arraysize == null) {
+            return null;
+        }
+
+        String[] parts = arraysize.split("x");
+        int[] arrayShape = new int[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i].trim();
+
+            // if any part ends with "*" or is "*" (like "10*", "*")
+            if (part.endsWith("*")) {
+                if (i != parts.length - 1) {
+                    throw new IllegalArgumentException("invalid arraysize: " + arraysize + " . expected * only in last dimension");
+                }
+                arrayShape[i] = -1;
+            } else {
+                try {
+                    arrayShape[i] = Integer.parseInt(part);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("invalid arraysize: " + arraysize + " found: " + part + " expected: integer");
+                }
+            }
+        }
+        return arrayShape;
+    }
 }

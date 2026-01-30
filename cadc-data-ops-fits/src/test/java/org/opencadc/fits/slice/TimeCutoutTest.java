@@ -72,6 +72,7 @@ import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
+import nom.tam.fits.header.DateTime;
 import nom.tam.fits.header.Standard;
 import nom.tam.fits.header.extra.NOAOExt;
 import org.apache.log4j.Level;
@@ -89,7 +90,7 @@ public class TimeCutoutTest extends BaseCutoutTest {
     }
 
     @Test
-    public void testSimpleOverlap() throws Exception {
+    public void testSimpleOverlap() {
         final Header testHeader = new Header();
         final Calendar calendar = Calendar.getInstance(DateUtil.UTC);
         calendar.set(2007, Calendar.SEPTEMBER, 18, 1, 15, 0);
@@ -102,9 +103,9 @@ public class TimeCutoutTest extends BaseCutoutTest {
         testHeader.addValue(Standard.CRPIXn.n(1), 10.0);
         testHeader.addValue(Standard.CDELTn.n(1), 13.3629);
         testHeader.addValue(Standard.CTYPEn.n(1), "UTC");
-        testHeader.addValue(CADCExt.DATEOBS, "2008-10-07T00:39:35.3342");
-        testHeader.addValue(CADCExt.MJDOBS, 54746.02749237);
-        testHeader.addValue(CADCExt.MJDREF, 54746.0);
+        testHeader.addValue(DateTime.DATE_OBS, "2008-10-07T00:39:35.3342");
+        testHeader.addValue(DateTime.MJD_OBS, 54746.02749237);
+        testHeader.addValue(DateTime.MJDREF, 54746.0);
 
         final Interval<Number> testInterval = new Interval<>(54746.013D, 54746.058D);
         final TimeCutout testSubject = new TimeCutout(testHeader);
@@ -116,7 +117,7 @@ public class TimeCutoutTest extends BaseCutoutTest {
     }
 
     @Test
-    public void testSimpleMJDOverlap() throws Exception {
+    public void testSimpleMJDOverlap() {
         final Header testHeader = new Header();
 
         testHeader.setNaxes(3);
@@ -128,8 +129,8 @@ public class TimeCutoutTest extends BaseCutoutTest {
         testHeader.addValue(Standard.CRPIXn.n(1), 102.0);
         testHeader.addValue(Standard.CDELTn.n(1), 0.369);
         testHeader.addValue(Standard.CTYPEn.n(1), "UTC");
-        testHeader.addValue(CADCExt.MJDBEG, 54533.0112D);
-        testHeader.addValue(CADCExt.MJDEND, 54565.0112D);
+        testHeader.addValue(DateTime.MJD_BEG, 54533.0112D);
+        testHeader.addValue(DateTime.MJD_END, 54565.0112D);
         testHeader.addValue(CADCExt.MJDREFI, 54468);
         testHeader.addValue(CADCExt.MJDREFF, 0.2489D);
 
@@ -155,7 +156,7 @@ public class TimeCutoutTest extends BaseCutoutTest {
     }
 
     @Test
-    public void testNoOverlap() throws Exception {
+    public void testNoOverlap() {
         final Header testHeader = new Header();
 
         testHeader.setNaxes(1);
@@ -165,10 +166,10 @@ public class TimeCutoutTest extends BaseCutoutTest {
         testHeader.addValue(Standard.CRPIXn.n(1), 1.0D);
         testHeader.addValue(Standard.CDELTn.n(1), 7.0856D);
         testHeader.addValue(Standard.CTYPEn.n(1), "TIME");
-        testHeader.addValue(NOAOExt.TIMESYS, "UTC");
-        testHeader.addValue(CADCExt.DATEBEG, "1977-11-25T01:21:13.0");
-        testHeader.addValue(CADCExt.DATEEND, "1977-11-25T03:11:00.0");
-        testHeader.addValue(CADCExt.MJDREF, 30005.3321D);
+        testHeader.addValue(DateTime.TIMESYS, "UTC");
+        testHeader.addValue(DateTime.DATE_BEG, "1977-11-25T01:21:13.0");
+        testHeader.addValue(DateTime.DATE_END, "1977-11-25T03:11:00.0");
+        testHeader.addValue(DateTime.MJDREF, 30005.3321D);
 
         final Interval<Number> testInterval = new Interval<>(52644.1D, 52830.33D);
         final TimeCutout testSubject = new TimeCutout(testHeader);

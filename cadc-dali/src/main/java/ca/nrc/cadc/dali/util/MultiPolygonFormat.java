@@ -83,6 +83,8 @@ public class MultiPolygonFormat implements Format<MultiPolygon> {
     private final PolygonFormat pf = new PolygonFormat();
     private final DoubleArrayFormat fmt = new DoubleArrayFormat();
     
+    private static final String MP_SEPARATOR = " NaN NaN ";
+
     public MultiPolygonFormat() { 
     }
 
@@ -96,29 +98,41 @@ public class MultiPolygonFormat implements Format<MultiPolygon> {
             return null;
         }
         
-        return parseSingleNaN(s); // format is single NaN
+        double[] dd = fmt.parse(s);
+        return parseDoubleNaN(dd, s);
     }
     
-    MultiPolygon parseSingleNaN(String s) {
-        String[] comps = s.toLowerCase().split("nan");
-        log.warn("MultiPolygonFormat.parse: " + comps.length);
-        MultiPolygon ret = new MultiPolygon();
-        for (String c : comps) {
-            c = c.trim();
-            if (c.isEmpty()) {
-                throw new IllegalArgumentException("invalid polygon (interpretting 'NaN NaN' as a NaN coordinate value): " + s);
+    public MultiPolygon build(double[] dd) {
+        return parseDoubleNaN(dd, null);
+    }
+    
+    public static double[] toArray(MultiPolygon mp) {
+        int num = 0;
+        Iterator<Polygon> i = mp.getPolygons().iterator();
+        while (i.hasNext()) {
+            Polygon poly = i.next();
+            num += 2 * poly.getVertices().size();
+            if (i.hasNext()) {
+                num += 2; // separator
             }
-            log.warn("MultiPolygonFormat.parse: '" + c + "'");
-            Polygon p = pf.parse(c);
-            ret.getPolygons().add(p);
         }
-        
+        double[] ret = new double[num];
+        int n = 0;
+        i = mp.getPolygons().iterator();
+        while (i.hasNext()) {
+            Polygon poly = i.next();
+            double[] da = poly.toArray();
+            System.arraycopy(da, 0, ret, n, da.length);
+            n += da.length;
+            if (i.hasNext()) {
+                ret[n++] = Double.NaN;
+                ret[n++] = Double.NaN;
+            }
+        }
         return ret;
     }
-    
-    MultiPolygon parseDoubleNaN(String s) {
-        double[] dd = fmt.parse(s);
 
+    MultiPolygon parseDoubleNaN(double[] dd, String s) {
         MultiPolygon ret = new MultiPolygon();
         Polygon poly = new Polygon();
         try {
@@ -152,6 +166,24 @@ public class MultiPolygonFormat implements Format<MultiPolygon> {
         return ret;
     }
 
+    // DALI discussions chose double-NaN
+    MultiPolygon parseSingleNaN(String s) {
+        String[] comps = s.toLowerCase().split("nan");
+        log.warn("MultiPolygonFormat.parse: " + comps.length);
+        MultiPolygon ret = new MultiPolygon();
+        for (String c : comps) {
+            c = c.trim();
+            if (c.isEmpty()) {
+                throw new IllegalArgumentException("invalid polygon (interpretting 'NaN NaN' as a NaN coordinate value): " + s);
+            }
+            log.warn("MultiPolygonFormat.parse: '" + c + "'");
+            Polygon p = pf.parse(c);
+            ret.getPolygons().add(p);
+        }
+        
+        return ret;
+    }
+
     @Override
     public String format(MultiPolygon mp) {
         if (mp == null || mp.getPolygons().isEmpty()) {
@@ -163,7 +195,7 @@ public class MultiPolygonFormat implements Format<MultiPolygon> {
         while (i.hasNext()) {
             sb.append(pf.format(i.next()));
             if (i.hasNext()) {
-                sb.append(" NaN ");
+                sb.append(MP_SEPARATOR);
             }
         }
         return sb.toString();

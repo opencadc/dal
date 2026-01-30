@@ -93,8 +93,7 @@ public class PointFormat implements Format<Point> {
             return null;
         }
 
-        DoubleArrayFormat daf = new DoubleArrayFormat();
-        double[] vv = daf.parse(s);
+        double[] vv = fmt.parse(s);
         if (vv.length != 2) {
             throw new IllegalArgumentException();
         }
@@ -106,32 +105,9 @@ public class PointFormat implements Format<Point> {
         if (t == null) {
             return "";
         }
-        return fmt.format(new Iterator<Double>() {
-            private int num = 0;
-
-            @Override
-            public boolean hasNext() {
-                return (num < 2);
-            }
-
-            @Override
-            public Double next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                num++;
-                if (num == 1) {
-                    return t.getLongitude();
-                }
-                return t.getLatitude();
-            }
-
-            // java7 support
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        });
+        StringBuilder sb = new StringBuilder();
+        sb.append(t.getLongitude()).append(" ");
+        sb.append(t.getLatitude());
+        return sb.toString();
     }
-
 }

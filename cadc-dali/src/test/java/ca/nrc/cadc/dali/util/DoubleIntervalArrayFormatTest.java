@@ -63,12 +63,12 @@
 *                                       <http://www.gnu.org/licenses/>.
 *
 ************************************************************************
-*/
+ */
 
 package ca.nrc.cadc.dali.util;
 
-
 import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Interval;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -77,62 +77,61 @@ import org.junit.Test;
  *
  * @author pdowler
  */
-public class DoubleIntervalArrayFormatTest 
-{
+public class DoubleIntervalArrayFormatTest {
+
     private static final Logger log = Logger.getLogger(DoubleIntervalArrayFormatTest.class);
 
-    public DoubleIntervalArrayFormatTest() { }
-    
+    public DoubleIntervalArrayFormatTest() {
+    }
+
     @Test
-    public void testValue()
-    {
+    public void testValue() {
         log.debug("testValue");
         DoubleIntervalArrayFormat format = new DoubleIntervalArrayFormat();
-        
-        try
-        {
-            DoubleInterval[] expected = new DoubleInterval[]
-            {
+
+        try {
+            Interval<Double>[] expected = new Interval[]{
                 new DoubleInterval(1.0, 2.0),
                 new DoubleInterval(3.0, 4.0),
                 new DoubleInterval(5.0, 6.0)
             };
-            
+
             String result = format.format(expected);
             Assert.assertEquals("no extra whitespace", result.trim(), result);
-            DoubleInterval[] actual = format.parse(result);
+            Interval<Double>[] actual = format.parse(result);
 
             Assert.assertEquals(expected.length, actual.length);
-            for (int i=0; i<expected.length; i++)
+            for (int i = 0; i < expected.length; i++) {
                 Assert.assertEquals(expected[i], actual[i]);
-        }
-        catch(Exception unexpected)
-        {
+            }
+        } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
         }
     }
 
     @Test
-    public void testInvalidStringRep() throws Exception
-    {
+    public void testInvalidStringRep() throws Exception {
         log.debug("testInvalidStringRep");
 
         DoubleIntervalArrayFormat format = new DoubleIntervalArrayFormat();
-        
+
         String tooShort = "1.0";
         String oddLength = "1.0 2.0 3.0 4.0 5.0";
 
-        try { format.parse(tooShort); }
-        catch(IllegalArgumentException expected) { }
-        
-        try { format.parse(oddLength); }
-        catch(IllegalArgumentException expected) { }
+        try {
+            format.parse(tooShort);
+        } catch (IllegalArgumentException expected) {
+        }
+
+        try {
+            format.parse(oddLength);
+        } catch (IllegalArgumentException expected) {
+        }
     }
-    
+
     @Test
-    public void testNull() throws Exception
-    {
+    public void testNull() throws Exception {
         log.debug("testNull");
 
         DoubleIntervalArrayFormat format = new DoubleIntervalArrayFormat();
@@ -140,7 +139,7 @@ public class DoubleIntervalArrayFormatTest
         String s = format.format(null);
         Assert.assertEquals("", s);
 
-        DoubleInterval[] object = format.parse(null);
+        Interval<Double>[] object = format.parse(null);
         Assert.assertNull(object);
     }
 }

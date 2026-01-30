@@ -68,6 +68,7 @@
 package ca.nrc.cadc.dali.util;
 
 import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Range;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -99,7 +100,7 @@ public class RangeFormat implements Format<Range> {
 
     @Override
     public Range parse(String s) {
-        DoubleInterval[] dis = diaf.parse(s);
+        Interval<Double>[] dis = diaf.parse(s);
         if (dis.length != 2) {
             throw new IllegalArgumentException("invalid range: found " + dis.length + " intervals");
         }

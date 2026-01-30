@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -98,11 +98,53 @@ public class Circle implements Shape {
         return this.center.equals(rhs.getCenter()) && this.radius == rhs.radius;
     }
 
+    @Override
+    public double getArea() {
+        return Math.PI * radius * radius;
+    }
+
+    @Override
+    public double getSize() {
+        return 2.0 * radius;
+    }
+
+    
+    @Override
     public Point getCenter() {
         return center;
     }
 
     public double getRadius() {
         return radius;
+    }
+
+    public double[] toArray() {
+        return new double[]{center.getLongitude(), center.getLatitude(), radius};
+    }
+
+    // utility method to generate a polygon approximation of a circle
+    // recommend numVerts ~11-13 so the difference in area is minimal
+    public static Polygon generatePolygonApproximation(Circle val, int numVerts) {
+        if (numVerts < 4) {
+            throw new IllegalArgumentException("number of vertices in approximation too small (min: 4)");
+        }
+        
+        CartesianTransform trans = CartesianTransform.getTransform(val);
+        Point cen = trans.transform(val.getCenter());
+
+        double phi = 2.0 * Math.PI / ((double) numVerts);
+        // compute distance to vertices so that the edges are tangent and circle is inside the polygon
+        double vdist = val.getRadius() / Math.cos(phi / 2.0);
+        
+        CartesianTransform inv = trans.getInverseTransform();
+        Polygon ret = new ca.nrc.cadc.dali.Polygon();        
+        for (int i = 0; i < numVerts; i++) {
+            double x = cen.getLongitude() + vdist * Math.cos(i * phi);
+            double y = cen.getLatitude() + vdist * Math.sin(i * phi);
+            Point p = new Point(x, y);
+            p = inv.transform(p);
+            ret.getVertices().add(p);
+        }
+        return ret;
     }
 }

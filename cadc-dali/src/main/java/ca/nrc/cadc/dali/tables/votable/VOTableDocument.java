@@ -69,15 +69,18 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author pdowler
  */
-public class VOTableDocument {
+public class VOTableDocument implements Closeable {
 
-    private List<VOTableResource> resources = new ArrayList<VOTableResource>();
+    private List<VOTableResource> resources = new ArrayList<>();
+    private List<VOTableInfo> infos = new ArrayList<>();
 
     public VOTableDocument() {
     }
@@ -104,11 +107,24 @@ public class VOTableDocument {
         return null;
     }
 
+    public List<VOTableInfo> getInfos() {
+        return infos;
+    }
+
     public VOTableGroup getGroupByID(String id) {
         throw new UnsupportedOperationException();
     }
 
     public VOTableField getFieldByID(String id) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void close() throws IOException {
+        for (VOTableResource resource : this.getResources()) {
+            if (resource.getTable() != null && resource.getTable().getTableData() != null) {
+                resource.getTable().getTableData().close();
+            }
+        }
     }
 }

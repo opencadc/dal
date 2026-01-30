@@ -77,6 +77,7 @@ import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
+import nom.tam.fits.header.extra.NOAOExt;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -91,10 +92,10 @@ public class FitsTest {
 
     private static final IFitsHeader[] HEADER_CARD_KEYS_TO_CHECK = new IFitsHeader[]{
             Standard.BITPIX, Standard.NAXIS, Standard.EXTNAME, Standard.XTENSION, Standard.SIMPLE, Standard.EXTVER,
-            Standard.BSCALE, Standard.BUNIT
+            Standard.BSCALE, Standard.BUNIT, NOAOExt.CD1_1, NOAOExt.CD1_2, Standard.CDELTn.n(1), Standard.CRPIXn.n(1)
     };
 
-    public static void assertFitsEqual(final Fits expected, final Fits result) throws Exception {
+    public static void assertFitsEqual(final Fits expected, final Fits result) {
         final BasicHDU<?>[] expectedHDUList = expected.read();
         final BasicHDU<?>[] resultHDUList = result.read();
 
@@ -104,26 +105,17 @@ public class FitsTest {
             final BasicHDU<?> nextExpectedHDU = expectedHDUList[expectedIndex];
             final BasicHDU<?> nextResultHDU = resultHDUList[expectedIndex];
 
-            try {
-                FitsTest.assertHDUEqual(nextExpectedHDU, nextResultHDU);
-            } catch (AssertionError assertionError) {
-                LOGGER.error("On Extension at index " + expectedIndex);
-                throw assertionError;
-            }
+            LOGGER.debug("On Extension at index " + expectedIndex);
+            FitsTest.assertHeadersEqual(nextExpectedHDU.getHeader(), nextResultHDU.getHeader());
         }
     }
 
-    public static void assertHDUEqual(final BasicHDU<?> expectedHDU, final BasicHDU<?> resultHDU) throws Exception {
-        final Header expectedHeader = expectedHDU.getHeader();
-        final Header resultHeader = resultHDU.getHeader();
-
-        FitsTest.assertHeadersEqual(expectedHeader, resultHeader);
-    }
-
-    public static void assertHeadersEqual(final Header expectedHeader, final Header resultHeader) throws Exception {
+    public static void assertHeadersEqual(final Header expectedHeader, final Header resultHeader) {
         Arrays.stream(HEADER_CARD_KEYS_TO_CHECK).forEach(headerCardKey -> {
             final HeaderCard expectedCard = expectedHeader.findCard(headerCardKey);
             final HeaderCard resultCard = resultHeader.findCard(headerCardKey);
+
+            LOGGER.info("Checking " + headerCardKey.key());
 
             if (expectedCard == null) {
                 Assert.assertNull("Card " + headerCardKey.key() + " should be null.", resultCard);
@@ -135,7 +127,17 @@ public class FitsTest {
                 if (valueType == Float.class) {
                     Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
                                         Float.parseFloat(expectedCard.getValue()),
-                                        Float.parseFloat(resultCard.getValue()), 0.0F);
+                                        Float.parseFloat(resultCard.getValue()), 1.0e-5F);
+                } else if (valueType == Double.class) {
+                    Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
+                                        Double.parseDouble(expectedCard.getValue()),
+                                        Double.parseDouble(resultCard.getValue()), 1.0e-5D);
+                } else if (valueType == Integer.class) {
+                    // Expected type has been declared as Integer, but result may have been converted to Float (i.e. 0 == 0e0), so
+                    // allow some robustness here.
+                    Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
+                                        Integer.parseInt(expectedCard.getValue()),
+                                        Math.round(Float.parseFloat(resultCard.getValue())));
                 } else {
                     Assert.assertEquals("Header " + headerCardKey.key() + " has the wrong value.",
                                         expectedCard.getValue(), resultCard.getValue());

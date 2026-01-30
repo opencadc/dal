@@ -73,7 +73,6 @@ import ca.nrc.cadc.dali.tables.TableWriter;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.xml.ContentConverter;
-import ca.nrc.cadc.xml.IterableContent;
 import ca.nrc.cadc.xml.MaxIterations;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -84,6 +83,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.log4j.Logger;
+import org.jdom2.Comment;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.Namespace;
@@ -91,8 +91,8 @@ import org.jdom2.output.XMLOutputter;
 
 /**
  * Basic VOTable reader. This class currently supports a subset of VOTable (tabledata
- * only) and always writes with the VOTable-1.2 namespace. TODO: complete support and
- * allow caller to specify the target namespace.
+ * and Binary2) and always writes with the VOTable-1.2 namespace.
+ * TODO: complete support and allow caller to specify the target namespace.
  *
  * @author pdowler
  */
@@ -102,6 +102,8 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
     public static final String CONTENT_TYPE = "application/x-votable+xml";
     public static final String CONTENT_TYPE_ALT = "text/xml";
+    public static final String SERIALIZATION_PARAM_BINARY2 = " ;serialization=binary2";
+    public static final String SERIALIZATION_PARAM_TABLEDATA = "; serialization=tabledata";
 
     // VOTable Version number.
     public static final String VOTABLE_VERSION = "1.4";
@@ -116,29 +118,63 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
     private FormatFactory formatFactory;
 
-    private boolean binaryTable;
-    private String mimeType;
+    private final String contentType;
+    private final SerializationType serialization;
+
+    // enum for serialization types
+    public enum SerializationType {
+
+        TABLEDATA, BINARY, BINARY2;
+
+        public static boolean contains(final String value) {
+            SerializationType[] values = SerializationType.values();
+            for (SerializationType serializationType : values) {
+                if (serializationType.name().equalsIgnoreCase(value)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static SerializationType toValue(String str) {
+            for (SerializationType serializationType : values()) {
+                if (serializationType.toString().equalsIgnoreCase(str)) {
+                    return serializationType;
+                }
+            }
+            throw new IllegalArgumentException("No Serialization Type found for : " + str);
+        }
+    }
 
     /**
      * Default constructor.
      */
     public VOTableWriter() {
-        this(false, null);
-    }
-
-    public VOTableWriter(String mimeType) {
-        this(false, mimeType);
+        this(SerializationType.TABLEDATA);
     }
 
     /**
-     * Create a VOTableWriter and optionally support binary TABLEDATA cells (not
-     * yet implemented.)
+     * Create a VOTableWriter and optionally support binary TABLEDATA cells.
      *
-     * @param binaryTable
+     * @param serialization preferred serialization type for the VOTable data.
      */
-    public VOTableWriter(boolean binaryTable, String mimeType) {
-        this.binaryTable = binaryTable;
-        this.mimeType = mimeType;
+    public VOTableWriter(SerializationType serialization) {
+        if (serialization == null) {
+            throw new IllegalArgumentException("serialization cannot be null");
+        }
+
+        this.serialization = serialization;
+
+        switch (serialization) {
+            case TABLEDATA:
+                contentType = CONTENT_TYPE + SERIALIZATION_PARAM_TABLEDATA;
+                break;
+            case BINARY2:
+                contentType = CONTENT_TYPE + SERIALIZATION_PARAM_BINARY2;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported serialization type: " + serialization);
+        }
     }
 
     /**
@@ -148,11 +184,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
      */
     @Override
     public String getContentType() {
-        if (mimeType == null) {
-            return CONTENT_TYPE;
-        }
-
-        return mimeType;
+        return contentType;
     }
 
     public String getErrorContentType() {
@@ -211,7 +243,6 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
      * @param writer Writer to write to.
      * @throws IOException if problem writing to the writer.
      */
-    @Override
     public void write(VOTableDocument votable, Writer writer)
             throws IOException {
         write(votable, writer, Long.MAX_VALUE);
@@ -227,7 +258,6 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
      * @param maxrec maximum number of rows to write.
      * @throws IOException if problem writing to the writer.
      */
-    @Override
     public void write(VOTableDocument votable, Writer writer, Long maxrec)
             throws IOException {
         if (formatFactory == null) {
@@ -278,6 +308,11 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         Element root = document.getRootElement();
         Namespace namespace = root.getNamespace();
 
+        Iterator<List<Object>> rowIter = null;
+        List<VOTableField> fields = null;
+        Element trailer = null;
+        TabledataMaxIterations maxIterations = null;
+
         for (VOTableResource votResource : votable.getResources()) {
             Element resource = createResource(votResource, namespace);
             root.addContent(resource);
@@ -289,16 +324,9 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                 Element table = new Element("TABLE", namespace);
                 resource.addContent(table);
 
-                // Create the INFO element and add to the RESOURCE element.
-                for (VOTableInfo in : vot.getInfos()) {
-                    Element info = new Element("INFO", namespace);
-                    info.setAttribute("name", in.getName());
-                    info.setAttribute("value", in.getValue());
-                    log.debug("INFO content: " + in.content);
-                    if (in.content != null) {
-                        info.setText(in.content);
-                    }
-                    table.addContent(info);
+                // Add INFO elements to the TABLE element.
+                for (VOTableInfo tableInfo : vot.getInfos()) {
+                    table.addContent(createInfo(tableInfo, namespace));
                 }
                 log.debug("wrote resource.table.info: " + vot.getInfos().size());
 
@@ -313,34 +341,55 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
                 log.debug("wrote resource.table.field: " + vot.getFields().size());
 
                 if (vot.getTableData() != null) {
-                    // Create the DATA and TABLEDATA elements.
+                    // Create the DATA and either TABLEDATA OR BINARY2 elements.
                     Element data = new Element("DATA", namespace);
                     table.addContent(data);
 
                     log.debug("setup content interator: maxrec=" + maxrec);
-                    Element trailer = new Element("INFO", namespace);
+                    trailer = new Element("INFO", namespace);
                     trailer.setAttribute("name", "placeholder");
                     trailer.setAttribute("value", "ignore");
                     resource.addContent(trailer);
 
-                    Iterator<List<Object>> rowIter = vot.getTableData().iterator();
+                    maxIterations = new TabledataMaxIterations(maxrec, trailer);
+                    rowIter = vot.getTableData().iterator();
+                    fields = vot.getFields();
 
-                    TabledataContentConverter elementConverter = new TabledataContentConverter(vot.getFields(), namespace, trailer);
-                    TabledataMaxIterations maxIterations = new TabledataMaxIterations(maxrec, trailer);
-
-                    IterableContent<Element, List<Object>> tabledata
-                            = new IterableContent<Element, List<Object>>("TABLEDATA", namespace, rowIter, elementConverter, maxIterations);
-
-                    data.addContent(tabledata);
-                    
+                    // Data content is added by the XMLOutputProcessor while writing out the XML format
+                    if (serialization.equals(SerializationType.TABLEDATA)) {
+                        log.debug("adding TABLEDATA element to DATA element");
+                        Element tabledataElement = new Element("TABLEDATA", namespace);
+                        data.addContent(tabledataElement);
+                    } else if (serialization.equals(SerializationType.BINARY2)) {
+                        log.debug("adding BINARY2 element to DATA element");
+                        Element binary2 = new Element("BINARY2", namespace);
+                        data.addContent(binary2);
+                    } else {
+                        throw new RuntimeException("Invalid serialization type: " + serialization);
+                    }
+                } else {
+                    table.addContent(new Comment("data goes here"));
                 }
             }
         }
 
+        // Add INFO elements to the VOTABLE element.
+        for (VOTableInfo votableInfo : votable.getInfos()) {
+            root.addContent(createInfo(votableInfo, namespace));
+        }
+
         // Write out the VOTABLE.
-        XMLOutputter outputter = new XMLOutputter();
-        outputter.setFormat(org.jdom2.output.Format.getPrettyFormat());
-        outputter.output(document, writer);
+        try {
+            XMLOutputter outputter = new XMLOutputter();
+            outputter.setFormat(org.jdom2.output.Format.getPrettyFormat());
+            outputter.setXMLOutputProcessor(new XMLOutputProcessor(rowIter, fields, maxIterations, trailer, formatFactory));
+            outputter.output(document, writer);
+        } catch (RuntimeException ex) {
+            // IterableContent setup should catch and handle all exceptions, but if they don't
+            // might as well be useful here
+            log.error("OUTPUT FAIL", ex);
+            throw ex;
+        }
     }
 
     private Element createResource(VOTableResource votResource, Namespace namespace) {
@@ -369,15 +418,9 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
             resource.addContent(description);
         }
 
-        // Create the INFO element and add to the RESOURCE element.
+        // Add INFO elements to the RESOURCE element.
         for (VOTableInfo in : votResource.getInfos()) {
-            Element info = new Element("INFO", namespace);
-            info.setAttribute("name", in.getName());
-            info.setAttribute("value", in.getValue());
-            if (in.content != null) {
-                info.setText(in.content);
-            }
-            resource.addContent(info);
+            resource.addContent(createInfo(in, namespace));
         }
         log.debug("wrote resource.info: " + votResource.getInfos().size());
 
@@ -411,6 +454,19 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         document.addContent(votable);
 
         return document;
+    }
+
+    private Element createInfo(VOTableInfo voTableInfo, Namespace namespace) {
+        Element info = new Element("INFO", namespace);
+        info.setAttribute("name", voTableInfo.getName());
+        info.setAttribute("value", voTableInfo.getValue());
+        if (voTableInfo.id != null) {
+            info.setAttribute("ID", voTableInfo.id);
+        }
+        if (voTableInfo.content != null) {
+            info.setText(voTableInfo.content);
+        }
+        return info;
     }
 
     // Build a String containing the nested Exception messages.
@@ -454,7 +510,7 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
 
         @Override
         public void maxIterationsReached(boolean moreAvailable) {
-            log.warn("TabledataMaxIterations.maxIterationsReached: " + maxRec + ", more=" + moreAvailable);
+            log.debug("TabledataMaxIterations.maxIterationsReached: " + maxRec + ", more=" + moreAvailable);
             if (moreAvailable) {
                 // DALI overflow
                 info.setAttribute("name", "QUERY_STATUS");
@@ -463,65 +519,4 @@ public class VOTableWriter implements TableWriter<VOTableDocument> {
         }
 
     }
-
-    private class TabledataContentConverter implements ContentConverter<Element, List<Object>> {
-
-        private final List<VOTableField> fields;
-        private final Namespace namespace;
-        private final List<Format<Object>> formats;
-        private final Element trailer;
-
-        TabledataContentConverter(List<VOTableField> fields, Namespace namespace, Element trailer) {
-            this.fields = fields;
-            this.namespace = namespace;
-            this.trailer = trailer;
-            
-            // initialize the list of associated formats
-            this.formats = new ArrayList<Format<Object>>(fields.size());
-
-            for (VOTableField field : fields) {
-                Format<Object> format = null;
-                if (field.getFormat() == null) {
-                    format = formatFactory.getFormat(field);
-                } else {
-                    format = field.getFormat();
-                }
-                formats.add(format);
-            }
-        }
-
-        @Override
-        public Element convert(List<Object> row) {
-            if (row.size() != fields.size()) {
-                throw new IllegalStateException("cannot write row: " + fields.size()
-                        + " metadata fields, " + row.size() + " data columns");
-            }
-
-            // TR element.
-            Element tr = new Element("TR", namespace);
-
-            // TD elements.
-            for (int i = 0; i < row.size(); i++) {
-                try {
-                    Object o = row.get(i);
-                    Format<Object> fmt = formats.get(i);
-                    Element td = new Element("TD", namespace);
-                    td.setText(fmt.format(o));
-                    tr.addContent(td);
-                } catch (Exception ex) {
-                    log.debug("failure while iterating", ex);
-                    // DALI error
-                    trailer.setAttribute("name", "QUERY_STATUS");
-                    trailer.setAttribute("value", "ERROR");
-                    trailer.setText(ex.toString());
-                    throw ex;
-                }
-            }
-
-            return tr;
-
-        }
-
-    }
-
 }

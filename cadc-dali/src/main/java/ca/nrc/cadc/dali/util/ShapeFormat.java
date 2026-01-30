@@ -3,7 +3,7 @@
 *******************  CANADIAN ASTRONOMY DATA CENTRE  *******************
 **************  CENTRE CANADIEN DE DONNÉES ASTRONOMIQUES  **************
 *
-*  (c) 2019.                            (c) 2019.
+*  (c) 2025.                            (c) 2025.
 *  Government of Canada                 Gouvernement du Canada
 *  National Research Council            Conseil national de recherches
 *  Ottawa, Canada, K1A 0R6              Ottawa, Canada, K1A 0R6
@@ -83,13 +83,17 @@ public class ShapeFormat implements Format<Shape> {
 
     private static final Logger log = Logger.getLogger(ShapeFormat.class);
 
-    private boolean sia2 = false;
+    private final PointFormat pointF = new PointFormat();
+    private final CircleFormat circleF = new CircleFormat();
+    private final PolygonFormat polyF = new PolygonFormat();
+    private final RangeFormat rangeF;
 
     public ShapeFormat() {
+        this(false);
     }
 
     public ShapeFormat(boolean supportSIA2) {
-        this.sia2 = supportSIA2;
+        this.rangeF = new RangeFormat(supportSIA2);
     }
 
     @Override
@@ -102,18 +106,12 @@ public class ShapeFormat implements Format<Shape> {
             return null;
         }
         String[] parts = separateKey(s);
-        if (Point.class.getSimpleName().equalsIgnoreCase(parts[0])) {
-            PointFormat fmt = new PointFormat();
-            return fmt.parse(parts[1]);
-        } else if (Circle.class.getSimpleName().equalsIgnoreCase(parts[0])) {
-            CircleFormat fmt = new CircleFormat();
-            return fmt.parse(parts[1]);
+        if (Circle.class.getSimpleName().equalsIgnoreCase(parts[0])) {
+            return circleF.parse(parts[1]);
         } else if (Range.class.getSimpleName().equalsIgnoreCase(parts[0])) {
-            RangeFormat fmt = new RangeFormat(sia2);
-            return fmt.parse(parts[1]);
+            return rangeF.parse(parts[1]);
         } else if (Polygon.class.getSimpleName().equalsIgnoreCase(parts[0])) {
-            PolygonFormat fmt = new PolygonFormat();
-            return fmt.parse(parts[1]);
+            return polyF.parse(parts[1]);
         }
 
         throw new IllegalArgumentException("unexpected shape: " + parts[0]);
@@ -126,18 +124,12 @@ public class ShapeFormat implements Format<Shape> {
         }
         StringBuilder sb = new StringBuilder();
         sb.append(t.getClass().getSimpleName().toLowerCase()).append(" ");
-        if (t instanceof Point) {
-            PointFormat fmt = new PointFormat();
-            sb.append(fmt.format((Point) t));
-        } else if (t instanceof Circle) {
-            CircleFormat fmt = new CircleFormat();
-            sb.append(fmt.format((Circle) t));
+        if (t instanceof Circle) {
+            sb.append(circleF.format((Circle) t));
         } else if (t instanceof Range) {
-            RangeFormat fmt = new RangeFormat();
-            sb.append(fmt.format((Range) t));
+            sb.append(rangeF.format((Range) t));
         } else if (t instanceof Polygon) {
-            PolygonFormat fmt = new PolygonFormat();
-            sb.append(fmt.format((Polygon) t));
+            sb.append(polyF.format((Polygon) t));
         } else {
             throw new IllegalArgumentException("unsupported shape: " + t.getClass().getName());
         }

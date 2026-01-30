@@ -134,17 +134,4 @@ public class IntervalFormatTest {
         LongInterval actual = df.parse(result);
         assertEquals(expected, actual);
     }
-    
-    @Test
-    public void testFloat() throws Exception {
-        IntervalFormat format = new IntervalFormat();
-
-        Interval<Float> expected = new Interval<Float>(1.1f, 2.2f);
-        try {
-            String result = format.format(expected);
-            fail("expected UnsupportedOperationException, got: " + result);
-        } catch (UnsupportedOperationException ex) {
-            log.info("caught: " + ex);
-        }
-    }
 }

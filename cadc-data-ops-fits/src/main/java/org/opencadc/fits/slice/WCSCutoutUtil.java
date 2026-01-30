@@ -81,7 +81,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 import org.opencadc.soda.PixelRange;
 import org.opencadc.soda.server.Cutout;
@@ -136,6 +138,55 @@ public class WCSCutoutUtil {
         }
 
         return allPixelRanges.toArray(new PixelRange[0]);
+    }
+
+    /**
+     * Post cutout routine to adjust necessary Header Card values, such as CRPIXn, to match the dimensions of the resulting cutout.
+     * @param header            The Header to adjust.
+     * @param dimensionLength   The length of the dimensions to iterate.
+     * @param corners           The corners (starting co-ordinates) of the resulting image.
+     * @param steps             The striding value to skip while reading.
+     */
+    static void adjustHeaders(final Header header, final int dimensionLength, final int[] corners, final int[] steps) {
+        // CRPIX values are not set automatically.  Adjust them here, if present.
+        for (int i = 0; i < dimensionLength; i++) {
+            final HeaderCard crPixCard = header.findCard(Standard.CRPIXn.n(i + 1));
+            final int stepValue = steps[steps.length - i - 1];
+            if (crPixCard != null) {
+                // Need to run backwards (reverse order) to match the dimensions.
+                final double nextValue = corners[corners.length - i - 1];
+                final double crPixValue = Double.parseDouble(crPixCard.getValue()) - nextValue;
+
+                if (stepValue > 1) {
+                    final double newValue = (crPixValue / stepValue) + (1.0 - (1.0 / stepValue));
+                    crPixCard.setValue(newValue);
+                    LOGGER.debug("Adjusted " + crPixCard.getKey() + " to " + newValue);
+                } else {
+                    crPixCard.setValue(crPixValue);
+                    LOGGER.debug("Set " + crPixCard.getKey() + " to " + crPixValue);
+                }
+            }
+
+            // CDELTn cards are typically present for PC matrices, but due to the nature of Archive data,
+            // they could be present even if a CD matrix is present.  Since PC matrices are the default in
+            // the absence of a CD matrix, it's not unusual for it to be absent.
+            // See https://www.aanda.org/articles/aa/pdf/2002/45/aah3859.pdf
+            //
+            final HeaderCard cDeltCard = header.findCard(Standard.CDELTn.n(i + 1));
+            if (cDeltCard != null) {
+                final double cDeltValue = Double.parseDouble(cDeltCard.getValue());
+                cDeltCard.setValue(cDeltValue * (double) stepValue);
+            }
+
+            // Handle the entire CD matrix.
+            for (int j = 0; j < dimensionLength; j++) {
+                final HeaderCard cdMatrixCard = header.findCard(String.format("CD%d_%d", i + 1, j + 1));
+                if (cdMatrixCard != null) {
+                    final double cdMatrixValue = Double.parseDouble(cdMatrixCard.getValue());
+                    cdMatrixCard.setValue(cdMatrixValue * (double) stepValue);
+                }
+            }
+        }
     }
 
     static PixelRange[] getSpatialBounds(final Header header, final Shape shape)

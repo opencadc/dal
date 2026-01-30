@@ -78,10 +78,26 @@ public class Interval<T extends Number> {
     private T upper;
 
     public Interval(T lower, T upper) {
-        DaliUtil.assertNotNull("lower", upper);
+        DaliUtil.assertNotNull("lower", lower);
         DaliUtil.assertNotNull("upper", upper);
+        validateBounds(lower, upper);
         this.lower = lower;
         this.upper = upper;
+    }
+
+    private void validateBounds(T lower, T upper) {
+        if (lower instanceof Double) {
+            if (upper.doubleValue() < lower.doubleValue()) {
+                throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
+            }
+        } else if (lower instanceof Long) {
+            if (upper.longValue() < lower.longValue()) {
+                throw new IllegalArgumentException("invalid interval: " + upper + " < " + lower);
+            }
+        } else {
+            throw new UnsupportedOperationException("validateBounds numeric type not implemented: "
+                    + lower.getClass().getName());
+        }
     }
 
     public T getLower() {
@@ -100,5 +116,42 @@ public class Interval<T extends Number> {
 
         Interval rhs = (Interval) obj;
         return lower.equals(rhs.lower) && upper.equals(rhs.upper);
+    }
+
+    public Object[] toArray() {
+        if (lower instanceof Double && upper instanceof Double) {
+            return new Double[]{(Double) lower, (Double) upper};
+        } else if (lower instanceof Long && upper instanceof Long) {
+            return new Long[]{(Long) lower, (Long) upper};
+        }
+        throw new UnsupportedOperationException("unsupported interval type: " + lower.getClass().getName());
+    }
+    
+    public static Object[] toArray(Interval[] arr) {
+        Object[] ret;
+        if (arr[0].getLower() instanceof Double) {
+            ret = new Double[2 * arr.length];
+        } else if (arr[0].getLower() instanceof Long) {
+            ret = new Long[2 * arr.length];
+        } else {
+            throw new UnsupportedOperationException("unsupported interval array type: " + arr[0].getLower().getClass().getName());
+        }
+        int j = 0;
+        for (int i = 0; i < arr.length; i++) {
+            ret[j] = arr[i].getLower();
+            ret[j + 1] = arr[i].getUpper();
+            j += 2;
+        }
+        return ret;
+    }
+    
+    public static Interval<Double> intersection(Interval<Double> i1, Interval<Double> i2) {
+        if (i1.getLower() > i2.getUpper() || i1.getUpper() < i2.getLower()) {
+            return null; // no overlap
+        }
+
+        double lb = Math.max(i1.getLower(), i2.getLower());
+        double ub = Math.min(i1.getUpper(), i2.getUpper());
+        return new Interval<>(lb, ub);
     }
 }

@@ -69,7 +69,10 @@
 
 package ca.nrc.cadc.dali.tables;
 
-import java.util.Iterator;
+import ca.nrc.cadc.io.ResourceIterator;
+
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -86,7 +89,7 @@ import java.util.List;
  *
  * @author pdowler
  */
-public interface TableData {
+public interface TableData extends Closeable {
 
     /**
      * An iterator over the rows in the table. Each row is returned by one call
@@ -94,5 +97,6 @@ public interface TableData {
      *
      * @return iterator over the table rows
      */
-    public Iterator<List<Object>> iterator();
+    ResourceIterator<List<Object>> iterator() throws IOException;
+
 }

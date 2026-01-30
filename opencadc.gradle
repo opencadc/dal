@@ -1,10 +1,14 @@
 configurations {
     checkstyleDep
+    intTestImplementation.extendsFrom testImplementation
+
+    runtime.exclude module: 'slf4j-reload4j'
+    runtime.exclude module: 'reload4j'
 }
 
 dependencies {
-    testCompile 'com.puppycrawl.tools:checkstyle:8.2'
-    checkstyleDep 'org.opencadc:cadc-quality:1.+'
+    testImplementation 'com.puppycrawl.tools:checkstyle:8.2'
+    checkstyleDep 'org.opencadc:cadc-quality:[1.0,)'
 }
 
 checkstyle {
@@ -14,9 +18,19 @@ checkstyle {
     sourceSets = []
 }
 
+sourceSets {
+    intTest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += compileClasspath
+        }
+        resources.srcDirs += file('src/intTest/resources')
+        resources.srcDirs += new File(System.getenv('A') + '/test-certificates/')
+    }
+}
+
 // Temporary work around for issue https://github.com/gradle/gradle/issues/881 - 
 // gradle not displaying fail build status when warnings reported -->
-
 tasks.withType(Checkstyle).each { checkstyleTask ->
     checkstyleTask.doLast {
         reports.all { report ->
@@ -28,6 +42,25 @@ tasks.withType(Checkstyle).each { checkstyleTask ->
     }
 }
 
+tasks.withType(Test) {
+    // reset the report destinations so that intTests go to their own page
+    //reports.html.destination = file("${reporting.baseDir}/${name}")
+    reports.html.destination = file(reporting.baseDir.getAbsolutePath() + '/' + name)
+    
+    // Assign all Java system properties from
+    // the command line to the tests
+    systemProperties System.properties
+}
+
+task intTest(type: Test) {
+    // set the configuration context
+    testClassesDirs = sourceSets.intTest.output.classesDirs
+    classpath = sourceSets.intTest.runtimeClasspath
+    
+    // run the tests always
+    outputs.upToDateWhen { false }
+}
+
 test {
     testLogging {
         events "PASSED", "FAILED", "SKIPPED"
@@ -35,3 +68,25 @@ test {
     }
 }
 
+intTest {
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED"
+        // "STARTED",
+    }
+}
+
+pluginManager.withPlugin('maven-publish') {
+  // configure maven-publish to support publishToMavenLocal
+    publishing {
+        publications {
+            thisLibrary(MavenPublication) {
+                from components.java
+            }
+        }
+    }
+}
+
+// backwards compat usage
+task install {
+    dependsOn 'publishToMavenLocal'
+}

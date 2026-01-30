@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.dali.util;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 
@@ -100,5 +101,17 @@ public class UUIDFormat implements Format<UUID> {
             return "";
         }
         return t.toString();
+    }
+
+    public UUID bytesToUUID(byte[] bytes) {
+        long hi = 0;
+        long lo = 0;
+        for (int i = 0; i < 8; i++) {
+            hi = (hi << 8) | (bytes[i] & 0xFF);
+        }
+        for (int i = 8; i < 16; i++) {
+            lo = (lo << 8) | (bytes[i] & 0xFF);
+        }
+        return new UUID(hi, lo);
     }
 }

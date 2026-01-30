@@ -104,7 +104,7 @@ public class AsciiTableWriterTest
 
         TableWriter<VOTableDocument> voTableDocumentTableWriter =
                 new VOTableWriter();
-        Assert.assertEquals("application/x-votable+xml",
+        Assert.assertEquals("application/x-votable+xml; serialization=tabledata",
                             voTableDocumentTableWriter.getContentType());
         Assert.assertEquals("xml", voTableDocumentTableWriter.getExtension());
     }
@@ -131,13 +131,13 @@ public class AsciiTableWriterTest
 
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
-            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos());
+            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos("a"));
             vot.getParams().addAll(VOTableReaderWriterTest.getTestParams());
             vot.getFields().addAll(VOTableReaderWriterTest.getTestFields());
             vot.setTableData(new VOTableReaderWriterTest.TestTableData());
 
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
+            AsciiTableWriter writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
 
             Assert.assertEquals("Should be csv extension.", "csv",
                                 writer.getExtension());
@@ -181,7 +181,7 @@ public class AsciiTableWriterTest
             vot.setTableData(new VOTableReaderWriterTest.TestTableData());
 
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
+            AsciiTableWriter writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
 
             Assert.assertEquals("Should be csv extension.", "csv",
                                 writer.getExtension());
@@ -219,13 +219,13 @@ public class AsciiTableWriterTest
 
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
-            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos());
+            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos("a"));
             vot.getParams().addAll(VOTableReaderWriterTest.getTestParams());
             vot.getFields().addAll(VOTableReaderWriterTest.getTestFields());
             vot.setTableData(new VOTableReaderWriterTest.TestTableData());
 
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.TSV);
+            AsciiTableWriter writer = new AsciiTableWriter(AsciiTableWriter.ContentType.TSV);
 
             Assert.assertEquals("Should be tsv extension.", "tsv",
                                 writer.getExtension());
@@ -264,13 +264,13 @@ public class AsciiTableWriterTest
 
             VOTableTable vot = new VOTableTable();
             vr.setTable(vot);
-            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos());
+            vot.getInfos().addAll(VOTableReaderWriterTest.getTestInfos("a"));
             vot.getParams().addAll(VOTableReaderWriterTest.getTestParams());
             vot.getFields().addAll(VOTableReaderWriterTest.getTestFields());
             vot.setTableData(new VOTableReaderWriterTest.TestTableData(maxrec + 1));
 
             StringWriter sw = new StringWriter();
-            TableWriter<VOTableDocument> writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
+            AsciiTableWriter writer = new AsciiTableWriter(AsciiTableWriter.ContentType.CSV);
 
             Assert.assertEquals("Should be csv extension.", "csv",
                                 writer.getExtension());

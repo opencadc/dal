@@ -80,13 +80,11 @@ import java.util.List;
  * @author pdowler
  */
 public class VOTableField {
-
     private String name;
     private String datatype;
 
     protected String arraysize;
     protected int[] arrayShape;
-    protected Format<Object> format;
 
     public String ucd;
     public String unit;
@@ -112,11 +110,11 @@ public class VOTableField {
         this(name, datatype, arraysize, null);
     }
 
-    public VOTableField(String name, String datatype, String arraysize, Format<Object> format) {
+    public VOTableField(String name, String datatype, String arraysize, String xtype) {
         this.name = name;
         this.datatype = datatype;
         this.arraysize = arraysize;
-        this.format = format;
+        this.xtype = xtype;
         validateArraysize();
     }
 
@@ -136,20 +134,12 @@ public class VOTableField {
         return arraysize;
     }
 
-    public Format<Object> getFormat() {
-        return format;
-    }
-
     public int[] getArrayShape() {
         return arrayShape;
     }
 
     public List<String> getValues() {
         return values;
-    }
-
-    public void setFormat(Format<Object> format) {
-        this.format = format;
     }
 
     @Override

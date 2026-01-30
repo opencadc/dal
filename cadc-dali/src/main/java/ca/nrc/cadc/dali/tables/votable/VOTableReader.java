@@ -69,6 +69,9 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import static ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType.BINARY;
+import static ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType.BINARY2;
+
 import ca.nrc.cadc.dali.tables.BinaryTableData;
 import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
@@ -90,6 +93,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import org.apache.log4j.Logger;
 import org.jdom2.Attribute;
 import org.jdom2.Document;
@@ -230,6 +234,7 @@ public class VOTableReader {
         try {
             document = docBuilder.build(reader);
         } catch (JDOMException e) {
+            reader.close();
             throw new IOException("Unable to parse " + e.getMessage());
         }
 
@@ -242,6 +247,10 @@ public class VOTableReader {
         // Namespace for the root element.
         Namespace namespace = root.getNamespace();
         log.debug("Namespace: " + namespace);
+
+        // document INFO elements
+        List<Element> documentInfos = root.getChildren("INFO", namespace);
+        votable.getInfos().addAll(getInfos(documentInfos, namespace));
 
         // RESOURCE elements
         List<Element> resources = root.getChildren("RESOURCE", namespace);
@@ -274,10 +283,10 @@ public class VOTableReader {
                 votResource.description = description.getText();
             }
 
-            // INFO elements
-            List<Element> infos = resource.getChildren("INFO", namespace);
-            log.debug("found resource.info: " + infos.size());
-            votResource.getInfos().addAll(getInfos(infos, namespace));
+            // resource INFO elements
+            List<Element> resourceInfos = resource.getChildren("INFO", namespace);
+            log.debug("found resource.info: " + resourceInfos.size());
+            votResource.getInfos().addAll(getInfos(resourceInfos, namespace));
 
             // PARAM elements
             List<Element> params = resource.getChildren("PARAM", namespace);
@@ -295,9 +304,10 @@ public class VOTableReader {
                 VOTableTable vot = new VOTableTable();
                 votResource.setTable(vot);
 
-                List<Element> tinfos = table.getChildren("INFO", namespace);
-                log.debug("found resource.table.info: " + tinfos.size());
-                vot.getInfos().addAll(getInfos(tinfos, namespace));
+                // table INFO elements
+                List<Element> tableInfos = table.getChildren("INFO", namespace);
+                log.debug("found resource.table.info: " + tableInfos.size());
+                vot.getInfos().addAll(getInfos(tableInfos, namespace));
 
                 // PARAM elements
                 List<Element> tparams = table.getChildren("PARAM", namespace);
@@ -316,33 +326,35 @@ public class VOTableReader {
                     Element tableData = data.getChild("TABLEDATA", namespace);
 
                     if (tableData != null) {
-                        vot.setTableData(getTableData(tableData, namespace, vot.getFields()));
+                        vot.setTableData(getTableData(tableData, namespace, vot.getFields(), reader));
                     } else {
                         final Element binaryData = getBinaryData(data, namespace);
                         if (binaryData == null) {
+                            reader.close();
                             throw new UnsupportedOperationException("Unknown DATA");
                         } else {
                             final Element streamData = binaryData.getChild("STREAM", namespace);
                             if (streamData == null) {
-                                vot.setTableData(new ListTableData());
+                                vot.setTableData(new ListTableData(reader));
                             } else {
                                 // Default to base64 encoding
                                 // TODO: check for href in which case encoding may be irrelevant?
-                                final String encoding =
-                                        streamData.getAttributeValue("encoding",
-                                                                     VOTableReader.DEFAULT_STREAM_ENCODING);
-                                vot.setTableData(new BinaryTableData(vot.getFields(),
-                                                                     new ByteArrayInputStream(
-                                                                             streamData.getText().getBytes(
-                                                                                     StandardCharsets.UTF_8)),
-                                                                     encoding,
-                                                                     binaryData.getName().equals("BINARY2")));
+                                final String encoding = streamData.getAttributeValue("encoding", VOTableReader.DEFAULT_STREAM_ENCODING);
+
+                                if (binaryData.getName().equals(BINARY.name()) || binaryData.getName().equals(BINARY2.name())) {
+                                    vot.setTableData(new BinaryTableData(
+                                            new ByteArrayInputStream(streamData.getText().getBytes(StandardCharsets.UTF_8)),
+                                            vot.getFields(), encoding, formatFactory, binaryData.getName().equals(BINARY2.name())));
+                                } else {
+                                    throw new UnsupportedOperationException("Unsupported type: " + binaryData.getName());
+                                }
                             }
                         }
                     }
                 }
             }
         }
+
         return votable;
     }
 
@@ -375,13 +387,16 @@ public class VOTableReader {
         for (Element element : elements) {
             String name = element.getAttributeValue("name");
             String value = element.getAttributeValue("value");
-            if (name != null && !name.trim().isEmpty()
-                    && value != null && !value.trim().isEmpty()) {
+            if (StringUtil.hasText(name) && StringUtil.hasText(value)) {
                 VOTableInfo i = new VOTableInfo(name, value);
                 String s = element.getText();
                 log.debug("INFO content: " + s);
                 if (StringUtil.hasText(s)) {
                     i.content = s;
+                }
+                String id = element.getAttributeValue("ID");
+                if (StringUtil.hasText(id)) {
+                    i.id = id;
                 }
                 infos.add(i);
             }
@@ -502,8 +517,8 @@ public class VOTableReader {
      * @param namespace document namespace.
      * @return TableData object containing rows of data.
      */
-    TableData getTableData(Element element, Namespace namespace, List<VOTableField> fields) {
-        ListTableData tableData = new ListTableData();
+    TableData getTableData(Element element, Namespace namespace, List<VOTableField> fields, Reader reader) {
+        ListTableData tableData = new ListTableData(reader);
 
         if (element != null) {
             List<Element> trs = element.getChildren("TR", namespace);
@@ -518,7 +533,14 @@ public class VOTableReader {
                     if (text != null && text.length() == 0) {
                         text = null;
                     }
-                    row.add(format.parse(text));
+                    Object parsedData = format.parse(text);
+                    if (field.nullValue != null && !field.nullValue.isEmpty()) {
+                        Object nullObj = formatFactory.getFormat(field).parse(field.nullValue);
+                        if (Objects.equals(parsedData, nullObj)) {
+                            parsedData = null;
+                        }
+                    }
+                    row.add(parsedData);
                 }
                 tableData.getArrayList().add(row);
             }
