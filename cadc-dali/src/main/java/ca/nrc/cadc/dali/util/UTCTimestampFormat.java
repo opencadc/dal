@@ -73,6 +73,7 @@ import ca.nrc.cadc.date.DateUtil;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Objects;
 
 /**
  * Formats a Date or Timestamp in UTC into a String.
@@ -80,51 +81,45 @@ import java.util.Date;
  */
 public class UTCTimestampFormat implements Format<Date> {
 
-    private String ivoaDateFormat;
     private final DateFormat dateFormat;
-    private static final int[] standardDateLength = {10,19,23};
+    public static final String DATE_FORMAT_WITH_TIME = "yyyy-MM-dd'T'HH:mm:ss";
+    public static final String DATE_FORMAT_DATE_ONLY = "yyyy-MM-dd";
 
-    private Integer arraysize;
-    private Boolean isVariable;
+    private final Integer arraysize;
+    private final Boolean isVariable;
 
-    // arraysize = null/0 and isVariable = null/true indicates * (no limit)
+    // Default to arraysize of 23 and variable length.
+    public UTCTimestampFormat() {
+        this(23, true);
+    }
+
+    /*
+    * arraysize must be one of the standard lengths: 10, 19, or 23. Use no-arg constructor for default behaviour.
+    * UTCTimestampFormat(null, null) == UTCTimestampFormat() == UTCTimestampFormat(23, true)
+    * */
     public UTCTimestampFormat(Integer arraysize, Boolean isVariable) {
-        if (isVariable == null) {
-            this.isVariable = isVariable = true;
-        } else {
-            this.isVariable = isVariable;
+        this.isVariable = Objects.requireNonNullElse(isVariable, true); // default is true as no-arg constructor sets true for null isVariable
+        if (arraysize == null) {
+            if (isVariable == null || isVariable) {
+                arraysize = 23;
+            } else {
+                throw new IllegalArgumentException("arraysize cannot be null for fixed length timestamp.");
+            }
         }
+        this.arraysize = arraysize;
 
-        if (arraysize == null || arraysize == 0 || arraysize == 23) {
-            arraysize = 23; // default to full timestamp
-        }
-        if (arraysize < 10 || arraysize > 23) {
+        String selectedDateFormat;
+        if (this.arraysize == 10) {
+            selectedDateFormat = DATE_FORMAT_DATE_ONLY;
+        } else if (this.arraysize == 19) {
+            selectedDateFormat = DATE_FORMAT_WITH_TIME;
+        } else if (this.arraysize == 23) {
+            selectedDateFormat = DateUtil.IVOA_DATE_FORMAT;
+        } else {
             throw new IllegalArgumentException("Invalid array size " + arraysize + " for timestamp. Standard sizes are 10, 19, or 23.");
         }
 
-        boolean found = false;
-        for (int len : standardDateLength) {
-            if (arraysize == len) {
-                found = true;
-                break;
-            }
-        }
-        if (!found && !isVariable) {
-            throw new IllegalArgumentException();
-        }
-
-        if (arraysize < 19) { // 10 to 18
-            this.arraysize = 10;
-            ivoaDateFormat = "yyyy-MM-dd";
-        } else if (arraysize < 23) { // 19 to 22
-            this.arraysize = 19;
-            ivoaDateFormat = "yyyy-MM-dd'T'HH:mm:ss";
-        } else {
-            this.arraysize = 23;
-            ivoaDateFormat = DateUtil.IVOA_DATE_FORMAT;
-        }
-
-        dateFormat = DateUtil.getDateFormat(ivoaDateFormat, DateUtil.UTC);
+        dateFormat = DateUtil.getDateFormat(selectedDateFormat, DateUtil.UTC);
     }
 
     /**
