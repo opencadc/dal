@@ -75,6 +75,7 @@ import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableUtil;
+import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.dali.util.UTCTimestampFormat;
 
 import java.io.DataInputStream;
@@ -121,12 +122,16 @@ public class FieldProcessorFactory {
 
         @Override
         public void serialize(DataOutputStream out, VOTableField field, Object value) throws IOException {
-            if (value instanceof Date) {
-                UTCTimestampFormat timestampFormat = new UTCTimestampFormat();
-                value = timestampFormat.format((Date) value);
-            } else if (value instanceof Instant) {
-                UTCTimestampFormat timestampFormat = new UTCTimestampFormat();
-                value = timestampFormat.format(Date.from((Instant) value));
+            if (field.xtype != null && field.xtype.equals("timestamp")) {
+                String arraySize = field.getArraysize();
+                UTCTimestampFormat timestampFormat = new UTCTimestampFormat(FormatFactory.getComputedArraySizeForTimestamp(arraySize),
+                        arraySize != null && arraySize.endsWith("*"));
+
+                if (value instanceof Date) {
+                    value = timestampFormat.format((Date) value);
+                } else if (value instanceof Instant) {
+                    value = timestampFormat.format(Date.from((Instant) value));
+                }
             }
 
             byte[] bytes = value.toString().getBytes(StandardCharsets.UTF_8);

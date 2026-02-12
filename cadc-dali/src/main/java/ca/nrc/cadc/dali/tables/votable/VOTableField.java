@@ -69,7 +69,6 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
-import ca.nrc.cadc.dali.util.Format;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -113,7 +112,7 @@ public class VOTableField {
     public VOTableField(String name, String datatype, String arraysize, String xtype) {
         this.name = name;
         this.datatype = datatype;
-        this.arraysize = arraysize;
+        this.arraysize = arraysize == null || arraysize.equals("1") ? null : arraysize;
         this.xtype = xtype;
         validateArraysize();
     }
@@ -131,7 +130,7 @@ public class VOTableField {
     }
 
     public String getArraysize() {
-        return arraysize;
+        return arraysize == null || arraysize.equals("1") ? null : arraysize;
     }
 
     public int[] getArrayShape() {

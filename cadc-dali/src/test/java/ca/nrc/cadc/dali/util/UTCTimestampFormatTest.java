@@ -69,7 +69,10 @@
 
 package ca.nrc.cadc.dali.util;
 
+import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.util.Log4jInit;
+
+import java.text.DateFormat;
 import java.util.Date;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -84,6 +87,9 @@ import static org.junit.Assert.*;
 public class UTCTimestampFormatTest
 {
     private static final Logger log = Logger.getLogger(UTCTimestampFormatTest.class);
+    private static final DateFormat DATE_FORMAT = DateUtil.getDateFormat(DateUtil.IVOA_DATE_FORMAT, DateUtil.UTC);
+    private static final DateFormat DATE_FORMAT_DATE_ONLY = DateUtil.getDateFormat("yyyy-MM-dd", DateUtil.UTC);
+
     static
     {
         Log4jInit.setLevel("ca", Level.INFO);
@@ -140,6 +146,41 @@ public class UTCTimestampFormatTest
         assertNull(object);
 
         log.info("testNull passed");
+    }
+
+    @Test
+    public void testDates() throws Exception {
+        UTCTimestampFormat format23 = new UTCTimestampFormat(23, null);
+        UTCTimestampFormat format19 = new UTCTimestampFormat(19, null);
+        UTCTimestampFormat format10 = new UTCTimestampFormat(10, null);
+        UTCTimestampFormat format = new UTCTimestampFormat(null, null); // behaves like default settings
+
+        Date fullDate = DATE_FORMAT.parse("2009-01-02T11:04:05.678");
+        Date dateOnly = DATE_FORMAT_DATE_ONLY.parse("2009-01-02");
+
+        String formattedDate23 = format23.format(fullDate);
+        String formattedDate23DateOnly = format23.format(dateOnly);
+        String formattedDate19 = format19.format(fullDate);
+        String formattedDate10 = format10.format(fullDate);
+        String formattedDate10DateOnly = format10.format(dateOnly);
+        String formattedDate = format.format(fullDate);
+
+        Assert.assertEquals("2009-01-02T11:04:05.678", formattedDate23);
+        Assert.assertEquals("2009-01-02T00:00:00.000", formattedDate23DateOnly);
+        Assert.assertEquals("2009-01-02T11:04:05", formattedDate19);
+        Assert.assertEquals("2009-01-02", formattedDate10);
+        Assert.assertEquals("2009-01-02", formattedDate10DateOnly);
+        Assert.assertEquals("2009-01-02T11:04:05.678", formattedDate);
+
+        Assert.assertThrows("Expected an exception. 11 is not a standard arraysize for Timestamp", IllegalArgumentException.class, () -> {
+            new UTCTimestampFormat(11, false);
+        });
+        Assert.assertThrows("Expected an exception. isValue has to be true for null arraysize OR default constructor can be used for defatlt settings.",
+                IllegalArgumentException.class, () -> {
+            new UTCTimestampFormat(null, false);
+        });
+
+        log.info("testDates passed");
     }
 
 }
