@@ -79,6 +79,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -92,6 +94,8 @@ public class CommonParamValidator {
     // DALI params
     public static final String RUNID = "RUNID";
     public static final String RESPONSEFORMAT = "RESPONSEFORMAT";
+
+    public static final String MAXREC = "MAXREC";
     
     // common params
     public static final String POS = "POS";
@@ -135,6 +139,33 @@ public class CommonParamValidator {
             return null;
         }
         return values.get(0);
+    }
+
+    public String getResponseFormat(Map<String, List<String>> params, String defaultResponseFormat) {
+        final String providedResponseFormat = getResponseFormat(params);
+        return providedResponseFormat == null ? defaultResponseFormat : providedResponseFormat;
+    }
+
+    /**
+     * Obtain the requested MAXREC value, or an optional default if provided.  This value will be capped at the
+     * provided maxValue.
+     * @param params        The parameters to pull the value from.
+     * @param defaultValue  The default value to provide if nothing provided.
+     * @param maxValue      The maximum value allowed.
+     * @return      Max records count allowed, or default, or max value, or null.
+     */
+    public Integer getMaxRec(Map<String, List<String>> params, Integer defaultValue, Integer maxValue) {
+        final List<Integer> validMaxRecs = validateInteger(MAXREC, params);
+        if (validMaxRecs.isEmpty()) {
+            return defaultValue;
+        } else {
+            final Integer maxRecValue = validMaxRecs.get(0);
+            if (maxRecValue > maxValue) {
+                return maxValue;
+            } else {
+                return maxRecValue;
+            }
+        }
     }
 
     private String scalarToInterval(String s) {
@@ -302,6 +333,19 @@ public class CommonParamValidator {
             }
         }
         return ret;
+    }
+
+    /**
+     * Validate an integer parameter against allowed set of values.
+     * @param paramName         The parameter to look up in the params.
+     * @param params            The map of Request parameters.
+     * @param allowedValues     The values that are permitted.
+     * @return      List of Integer objects, or empty List.  Never null.
+     */
+    public List<Integer> validateInteger(String paramName, Map<String, List<String>> params,
+                                         Collection<Integer> allowedValues) {
+        final List<Integer> parsedValues = this.validateInteger(paramName, params);
+        return parsedValues.stream().filter(allowedValues::contains).collect(Collectors.toList());
     }
 
     public List<Integer> validateInteger(String paramName, Map<String, List<String>> params) {
