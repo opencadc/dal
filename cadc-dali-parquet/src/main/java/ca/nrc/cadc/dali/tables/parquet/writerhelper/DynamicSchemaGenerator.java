@@ -74,6 +74,7 @@ import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
@@ -180,11 +181,17 @@ public class DynamicSchemaGenerator {
             }
             return prim.named(fieldName);
         } else {
-            // list
+            // Standard level 3 list structure for arrays
+
+            // Middle repeated group containing optional primitive leaf
+            GroupType repeatedGroup = Types.buildGroup(Type.Repetition.REPEATED)
+                    .addField(Types.optional(typeName).named("element"))
+                    .named("list");
+
+            // Top-level optional group with LIST annotation
             return Types.optionalGroup()
                     .as(LogicalTypeAnnotation.listType())
-                    .repeated(typeName)
-                    .named("element")
+                    .addField(repeatedGroup)
                     .named(fieldName);
         }
     }

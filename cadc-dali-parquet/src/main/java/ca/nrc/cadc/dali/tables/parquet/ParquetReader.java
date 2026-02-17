@@ -230,7 +230,11 @@ public class ParquetReader {
                 switch (physicalType) {
                     case INT32:
                         type = "int";
-                        format = actualField.isRepetition(Type.Repetition.REPEATED) ? new IntArrayFormat() : new IntegerFormat(null);
+                        if (field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
+                            format = new IntArrayFormat();
+                        } else {
+                            format = new IntegerFormat();
+                        }
                         break;
                     case INT64:
                         LogicalTypeAnnotation logicalType = actualField.asPrimitiveType().getLogicalTypeAnnotation();
@@ -239,16 +243,28 @@ public class ParquetReader {
                             format = new UTCTimestampFormat();
                         } else {
                             type = "long";
-                            format = actualField.isRepetition(Type.Repetition.REPEATED) ? new LongArrayFormat() : new LongFormat(null);
+                            if (field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
+                                format = new LongArrayFormat();
+                            } else {
+                                format = new LongFormat();
+                            }
                         }
                         break;
                     case FLOAT:
                         type = "float";
-                        format = actualField.isRepetition(Type.Repetition.REPEATED) ? new FloatArrayFormat() : new FloatFormat();
+                        if (field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
+                            format = new FloatArrayFormat();
+                        } else {
+                            format = new FloatFormat();
+                        }
                         break;
                     case DOUBLE:
                         type = "double";
-                        format = actualField.isRepetition(Type.Repetition.REPEATED) ? new DoubleArrayFormat() : new DoubleFormat();
+                        if (field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
+                            format = new DoubleArrayFormat();
+                        } else {
+                            format = new DoubleFormat();
+                        }
                         break;
                     case FIXED_LEN_BYTE_ARRAY:
                         if (actualField.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.UUIDLogicalTypeAnnotation) {

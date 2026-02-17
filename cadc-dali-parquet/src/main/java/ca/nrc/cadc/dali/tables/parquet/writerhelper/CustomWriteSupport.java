@@ -158,48 +158,76 @@ public class CustomWriteSupport extends WriteSupport<List<Object>> {
         }
 
         recordConsumer.startGroup();
-        recordConsumer.startField("element", 0);
+        recordConsumer.startField("list", 0);
         if (data instanceof int[]) {
             int[] array = (int[]) data;
             for (int value : array) {
+                recordConsumer.startGroup();
+                recordConsumer.startField("element", 0);
                 recordConsumer.addInteger(value);
+                recordConsumer.endField("element", 0);
+                recordConsumer.endGroup();
             }
         } else if (data instanceof long[]) {
             long[] array = (long[]) data;
             for (long value : array) {
+                recordConsumer.startGroup();
+                recordConsumer.startField("element", 0);
                 recordConsumer.addLong(value);
+                recordConsumer.endField("element", 0);
+                recordConsumer.endGroup();
             }
         } else if (data instanceof double[]) {
             double[] array = (double[]) data;
             for (double value : array) {
+                recordConsumer.startGroup();
+                recordConsumer.startField("element", 0);
                 recordConsumer.addDouble(value);
+                recordConsumer.endField("element", 0);
+                recordConsumer.endGroup();
             }
         } else if (data instanceof float[]) {
             float[] array = (float[]) data;
             for (float value : array) {
+                recordConsumer.startGroup();
+                recordConsumer.startField("element", 0);
                 recordConsumer.addFloat(value);
+                recordConsumer.endField("element", 0);
+                recordConsumer.endGroup();
             }
         } else if (data instanceof Long[]) {
             Long[] array = (Long[]) data;
             for (Long value : array) {
+                recordConsumer.startGroup();
+                recordConsumer.startField("element", 0);
                 recordConsumer.addLong(value);
+                recordConsumer.endField("element", 0);
+                recordConsumer.endGroup();
             }
         } else if (data instanceof Double[]) {
             Double[] array = (Double[]) data;
             for (Double value : array) {
+                recordConsumer.startGroup();
+                recordConsumer.startField("element", 0);
                 recordConsumer.addDouble(value);
+                recordConsumer.endField("element", 0);
+                recordConsumer.endGroup();
             }
         } else if (data instanceof short[]) {
             short[] array = (short[]) data;
             for (short value : array) {
+                recordConsumer.startGroup();
+                recordConsumer.startField("element", 0);
                 recordConsumer.addInteger(value); // Parquet does not have a short type, so we use int
+                recordConsumer.endField("element", 0);
+                recordConsumer.endGroup();
             }
         } else {
             log.debug("Unsupported array data type: " + data.getClass().getName());
             throw new UnsupportedOperationException("Unsupported array data type: " + data.getClass().getName());
         }
 
-        recordConsumer.endField("element", 0);
+        recordConsumer.endField("list", 0);
         recordConsumer.endGroup();
     }
 }
