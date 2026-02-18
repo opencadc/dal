@@ -69,13 +69,21 @@
 
 package ca.nrc.cadc.dali.tables.parquet;
 
+import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
+import ca.nrc.cadc.dali.tables.votable.VOTableField;
+import ca.nrc.cadc.dali.tables.votable.VOTableResource;
+import ca.nrc.cadc.io.ResourceIterator;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.util.List;
 
 public class ParquetReaderWriterTest extends TestUtil {
 
@@ -95,6 +103,77 @@ public class ParquetReaderWriterTest extends TestUtil {
         VOTableDocument actualVOTableDoc = reader.read(inputStream);
 
         compareVOTable(originalVOTableDoc, actualVOTableDoc, null);
+    }
+
+    @Test
+    public void readArbitrarySampleFile() throws Exception {
+        log.debug("readArbitrarySampleFile");
+
+        //File sample = new File(System.getProperty("user.home") + "/Downloads/sample.parquet"); // example path to a sample parquet file. You can change it to point to your own sample parquet file.
+        File sample = new File("sample.parquet");
+
+        if (!sample.exists()) {
+            log.debug("not found: sample.parquet -- Skipping test...");
+            return;
+        }
+
+        log.info("found: sample.parquet -- Reading...");
+        ParquetReader reader = new ParquetReader();
+        try (InputStream in = new FileInputStream(sample)) {
+
+            VOTableDocument doc = reader.read(in);
+
+            VOTableResource results = doc.getResourceByType("results");
+            if (results != null) {
+                log.info("Found results resource -- Reading...");
+
+                if (results.getTable() != null) {
+                    log.info("Found table in results resource");
+                    for (VOTableField field : results.getTable().getFields()) {
+                        log.info("field: " + field.getName() + " & type: " + field.getDatatype());
+                    }
+
+                    if (results.getTable().getTableData() != null) {
+                        log.info("Found data table in results resource");
+                        TableData tableData = results.getTable().getTableData();
+                        ResourceIterator<List<Object>> iterator = tableData.iterator();
+                        int iteratorCount = 0;
+
+                        while (iterator.hasNext()) {
+                            List<Object> row = iterator.next();
+                            StringBuilder sb = new StringBuilder();
+
+                            for (Object data : row) {
+                                if (data == null) {
+                                    sb.append("null").append("\t");
+                                } else if (data.getClass().isArray()) { // This might overwhelm the logs if there are large arrays. So comment if you experience it hard to load the standard output.
+                                    int length = Array.getLength(data);
+                                    sb.append("[");
+                                    for (int i = 0; i < length; i++) {
+                                        sb.append(Array.get(data, i));
+                                        if (i < length - 1) {
+                                            sb.append(", ");
+                                        }
+                                    }
+                                    sb.append("]").append("\t");
+                                } else {
+                                    sb.append(data).append("\t");
+                                }
+                            }
+
+                            log.info("row: " + sb);
+                            iteratorCount++;
+                        }
+                        log.info("Total Rows count: " + iteratorCount);
+                    }
+                } else {
+                    log.info("No results resource found");
+                }
+
+            } else {
+                log.info("No table found in results resource");
+            }
+        }
     }
 
 }
