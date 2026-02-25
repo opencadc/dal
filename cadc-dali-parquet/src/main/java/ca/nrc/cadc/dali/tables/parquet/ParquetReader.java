@@ -226,12 +226,14 @@ public class ParquetReader {
                 PrimitiveType.PrimitiveTypeName physicalType = actualField.asPrimitiveType().getPrimitiveTypeName();
 
                 String type;
+                String arraysize = null;
                 Format format;
                 switch (physicalType) {
                     case INT32:
                         type = "int";
                         if (field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
                             format = new IntArrayFormat();
+                            arraysize = "*";
                         } else {
                             format = new IntegerFormat();
                         }
@@ -241,10 +243,12 @@ public class ParquetReader {
                         if (logicalType instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) {
                             type = "timestamp";
                             format = new UTCTimestampFormat();
+                            arraysize = "*";
                         } else {
                             type = "long";
                             if (field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
                                 format = new LongArrayFormat();
+                                arraysize = "*";
                             } else {
                                 format = new LongFormat();
                             }
@@ -254,6 +258,7 @@ public class ParquetReader {
                         type = "float";
                         if (field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
                             format = new FloatArrayFormat();
+                            arraysize = "*";
                         } else {
                             format = new FloatFormat();
                         }
@@ -262,6 +267,7 @@ public class ParquetReader {
                         type = "double";
                         if (field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
                             format = new DoubleArrayFormat();
+                            arraysize = "*";
                         } else {
                             format = new DoubleFormat();
                         }
@@ -269,21 +275,25 @@ public class ParquetReader {
                     case FIXED_LEN_BYTE_ARRAY:
                         if (actualField.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.UUIDLogicalTypeAnnotation) {
                             type = "char";
+                            arraysize = "*";
                             format = new UUIDFormat();
                         } else if (actualField.asPrimitiveType().getTypeLength() == 1) {
                             type = "unsignedByte";
                             format = new ByteFormat();
                         } else {
                             type = "unsignedByte";
+                            arraysize = "*";
                             format = new ByteArrayFormat();
                         }
                         break;
                     case BINARY:
                         if (actualField.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.StringLogicalTypeAnnotation) {
                             type = "char";
+                            arraysize = "*";
                             format = new StringFormat();
                         } else {
                             type = "unsignedByte";
+                            arraysize = "*";
                             format = new ByteArrayFormat();
                         }
                         break;
@@ -291,7 +301,7 @@ public class ParquetReader {
                         throw new IllegalArgumentException("Unsupported parquet physical type: " + physicalType);
                 }
 
-                VOTableField voTableField = new VOTableField(name, type);
+                VOTableField voTableField = new VOTableField(name, type, arraysize);
                 fields.add(voTableField);
                 formatters.add(format);
             });
