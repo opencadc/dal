@@ -130,7 +130,8 @@ public class ParquetReaderWriterTest extends TestUtil {
                 if (results.getTable() != null) {
                     log.info("Found table in results resource");
                     for (VOTableField field : results.getTable().getFields()) {
-                        log.info("field: " + field.getName() + " & type: " + field.getDatatype());
+                        log.info("field: " + field.getName() + " & type: " + field.getDatatype()
+                            + "," + field.getArraysize() + "," + field.xtype);
                     }
 
                     if (results.getTable().getTableData() != null) {
@@ -165,6 +166,10 @@ public class ParquetReaderWriterTest extends TestUtil {
                             iteratorCount++;
                         }
                         log.info("Total Rows count: " + iteratorCount);
+                    }
+                    for (VOTableField field : results.getTable().getFields()) {
+                        log.info("field: " + field.getName() + " & type: " + field.getDatatype()
+                            + "," + field.getArraysize() + "," + field.xtype);
                     }
                 } else {
                     log.info("No results resource found");
