@@ -35,6 +35,16 @@ dependencies {
     testImplementation 'xerces:xercesImpl:[2.0,3.0)'
 }
 
+// work around for google guava variant builds (gradle 6 compat)
+import org.gradle.api.attributes.java.TargetJvmEnvironment
+configurations.all {
+    attributes {
+        // Tell Gradle this environment is a standard JVM, not Android
+        attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, 
+                  objects.named(TargetJvmEnvironment, TargetJvmEnvironment.STANDARD_JVM))
+    }
+}
+
 // end applications could also add the following exclude
 // as all these libs are not needed
 configurations {
