@@ -70,7 +70,6 @@
 package ca.nrc.cadc.dali.tables.parquet;
 
 import ca.nrc.cadc.dali.tables.TableReader;
-import static ca.nrc.cadc.dali.tables.parquet.ParquetWriter.IVOA_VOTABLE_PARQUET_CONTENT_KEY;
 import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetTableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
@@ -198,7 +197,7 @@ public class ParquetReader implements TableReader {
             ParquetMetadata metadata = reader.getFooter();
             parquetSchema = metadata.getFileMetaData().getSchema();
 
-            String votable = metadata.getFileMetaData().getKeyValueMetaData().get(IVOA_VOTABLE_PARQUET_CONTENT_KEY);
+            String votable = metadata.getFileMetaData().getKeyValueMetaData().get(ParquetWriter.IVOA_VOTABLE_PARQUET_CONTENT_KEY);
 
             voTableDocument = getVOTableDocument(votable, parquetSchema);
             votableFields = voTableDocument.getResourceByType("results").getTable().getFields();
