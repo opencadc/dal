@@ -69,13 +69,11 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
-import ca.nrc.cadc.dali.tables.TableReader;
-import static ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType.BINARY;
-import static ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType.BINARY2;
-
 import ca.nrc.cadc.dali.tables.BinaryTableData;
 import ca.nrc.cadc.dali.tables.ListTableData;
 import ca.nrc.cadc.dali.tables.TableData;
+import ca.nrc.cadc.dali.tables.TableReader;
+import ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType;
 import ca.nrc.cadc.dali.util.Format;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.util.StringUtil;
@@ -343,10 +341,11 @@ public class VOTableReader implements TableReader {
                                 // TODO: check for href in which case encoding may be irrelevant?
                                 final String encoding = streamData.getAttributeValue("encoding", VOTableReader.DEFAULT_STREAM_ENCODING);
 
-                                if (binaryData.getName().equals(BINARY.name()) || binaryData.getName().equals(BINARY2.name())) {
+                                if (binaryData.getName().equals(SerializationType.BINARY.name()) 
+                                        || binaryData.getName().equals(SerializationType.BINARY2.name())) {
                                     vot.setTableData(new BinaryTableData(
                                             new ByteArrayInputStream(streamData.getText().getBytes(StandardCharsets.UTF_8)),
-                                            vot.getFields(), encoding, formatFactory, binaryData.getName().equals(BINARY2.name())));
+                                            vot.getFields(), encoding, formatFactory, binaryData.getName().equals(SerializationType.BINARY2.name())));
                                 } else {
                                     throw new UnsupportedOperationException("Unsupported type: " + binaryData.getName());
                                 }
