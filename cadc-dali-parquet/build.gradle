@@ -24,9 +24,9 @@ dependencies {
     implementation 'org.opencadc:cadc-util:[1.12.10,)'
     implementation 'org.opencadc:cadc-dali:[1.2.30,)'
 
-    implementation 'org.apache.hadoop:hadoop-common:[3.3.6,)'
+    implementation 'org.apache.hadoop:hadoop-common:[3.3.6,3.5)'
     implementation 'org.apache.parquet:parquet-hadoop:[1.13.1,)'
-    implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:[3.3.6,)'
+    implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:[3.3.6,3.5)'
 
     // CVE-2025-52999
     runtimeOnly 'com.fasterxml.jackson.core:jackson-core:[2.15,)'
