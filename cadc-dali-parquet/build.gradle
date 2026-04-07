@@ -15,24 +15,39 @@ sourceCompatibility = 11
 
 group = 'org.opencadc'
 
-version = '0.5.5'
+version = '0.5.6'
 
 description = 'OpenCADC VO-parquet library'
 def git_url = 'https://github.com/opencadc/dal'
 
 dependencies {
     implementation 'org.opencadc:cadc-util:[1.12.10,)'
-    implementation 'org.opencadc:cadc-dali:[1.2.29,)'
+    implementation 'org.opencadc:cadc-dali:[1.2.30,)'
 
-    implementation 'org.apache.hadoop:hadoop-common:[3.3.6,)'
+    implementation 'org.apache.hadoop:hadoop-common:[3.3.6,3.5)'
     implementation 'org.apache.parquet:parquet-hadoop:[1.13.1,)'
-    implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:[3.3.6,)'
+    implementation 'org.apache.hadoop:hadoop-mapreduce-client-core:[3.3.6,3.5)'
 
     // CVE-2025-52999
     runtimeOnly 'com.fasterxml.jackson.core:jackson-core:[2.15,)'
 
     testImplementation 'junit:junit:[4.0,5.0)'
     testImplementation 'xerces:xercesImpl:[2.0,3.0)'
+}
+
+// HACK: needed because of guava variants
+configurations.all {
+    def envAttr = Attribute.of("org.gradle.jvm.environment", String)
+    
+    try {
+        // Try the Gradle 7/8 way (using the actual Class)
+        def targetJvmClass = Class.forName("org.gradle.api.attributes.java.TargetJvmEnvironment")
+        def jvmAttr = Attribute.of("org.gradle.jvm.environment", targetJvmClass)
+        attributes.attribute(jvmAttr, objects.named(targetJvmClass, "standard-jvm"))
+    } catch (ClassNotFoundException e) {
+        // Fallback for Gradle 6 (using the String)
+        attributes.attribute(envAttr, "standard-jvm")
+    }
 }
 
 // end applications could also add the following exclude
