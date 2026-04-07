@@ -35,13 +35,18 @@ dependencies {
     testImplementation 'xerces:xercesImpl:[2.0,3.0)'
 }
 
-// work around for google guava variant builds (gradle 6 compat)
-import org.gradle.api.attributes.java.TargetJvmEnvironment
+// HACK: needed because of guava variants
 configurations.all {
-    attributes {
-        // Tell Gradle this environment is a standard JVM, not Android
-        attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE, 
-                  objects.named(TargetJvmEnvironment, TargetJvmEnvironment.STANDARD_JVM))
+    def envAttr = Attribute.of("org.gradle.jvm.environment", String)
+    
+    try {
+        // Try the Gradle 7/8 way (using the actual Class)
+        def targetJvmClass = Class.forName("org.gradle.api.attributes.java.TargetJvmEnvironment")
+        def jvmAttr = Attribute.of("org.gradle.jvm.environment", targetJvmClass)
+        attributes.attribute(jvmAttr, objects.named(targetJvmClass, "standard-jvm"))
+    } catch (ClassNotFoundException e) {
+        // Fallback for Gradle 6 (using the String)
+        attributes.attribute(envAttr, "standard-jvm")
     }
 }
 
