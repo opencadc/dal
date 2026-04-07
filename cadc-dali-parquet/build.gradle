@@ -15,14 +15,14 @@ sourceCompatibility = 11
 
 group = 'org.opencadc'
 
-version = '0.5.5'
+version = '0.5.6'
 
 description = 'OpenCADC VO-parquet library'
 def git_url = 'https://github.com/opencadc/dal'
 
 dependencies {
     implementation 'org.opencadc:cadc-util:[1.12.10,)'
-    implementation 'org.opencadc:cadc-dali:[1.2.29,)'
+    implementation 'org.opencadc:cadc-dali:[1.2.30,)'
 
     implementation 'org.apache.hadoop:hadoop-common:[3.3.6,)'
     implementation 'org.apache.parquet:parquet-hadoop:[1.13.1,)'

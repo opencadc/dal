@@ -69,6 +69,7 @@
 
 package ca.nrc.cadc.dali.tables.votable;
 
+import ca.nrc.cadc.dali.tables.TableReader;
 import static ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType.BINARY;
 import static ca.nrc.cadc.dali.tables.votable.VOTableWriter.SerializationType.BINARY2;
 
@@ -106,7 +107,7 @@ import org.jdom2.input.SAXBuilder;
  *
  * @author pdowler
  */
-public class VOTableReader {
+public class VOTableReader implements TableReader {
 
     private static final Logger log = Logger.getLogger(VOTableReader.class);
 
@@ -206,6 +207,7 @@ public class VOTableReader {
      * @return a VOTable object.
      * @throws IOException is problem reading the InputStream.
      */
+    @Override
     public VOTableDocument read(InputStream istream)
             throws IOException {
         Reader reader = new BufferedReader(new InputStreamReader(istream, "UTF-8"));

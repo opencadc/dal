@@ -69,8 +69,8 @@
 
 package ca.nrc.cadc.dali.tables.parquet;
 
+import ca.nrc.cadc.dali.tables.TableReader;
 import static ca.nrc.cadc.dali.tables.parquet.ParquetWriter.IVOA_VOTABLE_PARQUET_CONTENT_KEY;
-
 import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.parquet.readerhelper.ParquetTableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableDocument;
@@ -78,7 +78,6 @@ import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableReader;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableTable;
-
 import ca.nrc.cadc.dali.util.ByteArrayFormat;
 import ca.nrc.cadc.dali.util.ByteFormat;
 import ca.nrc.cadc.dali.util.DoubleArrayFormat;
@@ -97,17 +96,14 @@ import ca.nrc.cadc.dali.util.UUIDFormat;
 import ca.nrc.cadc.io.MultiBufferIO;
 import ca.nrc.cadc.io.RandomAccessFile;
 import ca.nrc.cadc.io.RandomAccessSource;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
 import org.apache.log4j.Logger;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
@@ -121,7 +117,7 @@ import org.apache.parquet.schema.Type;
  * Parquet Reader - Reads parquet content and produces a VOTableDocument representation.
  *
  */
-public class ParquetReader {
+public class ParquetReader implements TableReader {
 
     private static final Logger log = Logger.getLogger(ParquetReader.class);
 
