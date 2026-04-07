@@ -29,6 +29,7 @@ dependencies {
 
     implementation 'org.opencadc:cadc-util:[1.6.1,)'
     implementation 'org.opencadc:cadc-rest:[1.4.5,)'
+    implementation 'org.opencadc:cadc-registry:[1.9,)'
     implementation 'org.opencadc:cadc-cdp:[1.2.3,)'
     implementation 'org.opencadc:cadc-uws:[1.0.5,)'
     implementation 'org.opencadc:cadc-uws-server:[1.2.4,)'
