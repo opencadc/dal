@@ -67,12 +67,14 @@
 
 package ca.nrc.cadc.dali;
 
+import org.opencadc.persist.PrimitiveWrapper;
+
 /**
  *
  * @author pdowler
  * @param <T>
  */
-public class Interval<T extends Number> {
+public class Interval<T extends Number> implements PrimitiveWrapper {
 
     private T lower;
     private T upper;
@@ -108,6 +110,12 @@ public class Interval<T extends Number> {
         return upper;
     }
 
+    // org.opencadc.entity.PrimitiveWrapper
+    @Override
+    public Object getValue() {
+        return toArray();
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {

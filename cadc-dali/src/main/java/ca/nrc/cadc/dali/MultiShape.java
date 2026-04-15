@@ -70,12 +70,13 @@ package ca.nrc.cadc.dali;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.log4j.Logger;
+import org.opencadc.persist.PrimitiveWrapper;
 
 /**
  *
  * @author pdowler
  */
-public class MultiShape {
+public class MultiShape implements PrimitiveWrapper {
     private static final Logger log = Logger.getLogger(MultiShape.class);
 
     private final List<Shape> shapes = new ArrayList<>();
@@ -85,6 +86,12 @@ public class MultiShape {
 
     public List<Shape> getShapes() {
         return shapes;
+    }
+
+    // org.opencadc.entity.PrimitiveWrapper
+    @Override
+    public Object getValue() {
+        return getShapes();
     }
 
     @Override
