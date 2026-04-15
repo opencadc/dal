@@ -73,6 +73,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.log4j.Logger;
+import org.opencadc.persist.PrimitiveWrapper;
 
 /**
  * DALI polygon class with port of CAOM-2.4 polygon validation code. Note: the code
@@ -82,7 +83,7 @@ import org.apache.log4j.Logger;
  *
  * @author pdowler
  */
-public class Polygon implements Shape {
+public class Polygon implements Shape, PrimitiveWrapper {
 
     private static final Logger log = Logger.getLogger(Polygon.class);
 
@@ -130,6 +131,12 @@ public class Polygon implements Shape {
             }
         }
         return true;
+    }
+
+    // org.opencadc.entity.PrimitiveWrapper
+    @Override
+    public Object getValue() {
+        return toArray();
     }
 
     public double[] toArray() {

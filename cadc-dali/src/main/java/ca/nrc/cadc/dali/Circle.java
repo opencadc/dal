@@ -69,11 +69,13 @@
 
 package ca.nrc.cadc.dali;
 
+import org.opencadc.persist.PrimitiveWrapper;
+
 /**
  *
  * @author pdowler
  */
-public class Circle implements Shape {
+public class Circle implements Shape, PrimitiveWrapper {
     private Point center;
     private double radius;
 
@@ -116,6 +118,12 @@ public class Circle implements Shape {
 
     public double getRadius() {
         return radius;
+    }
+
+    // org.opencadc.entity.PrimitiveWrapper
+    @Override
+    public Object getValue() {
+        return toArray();
     }
 
     public double[] toArray() {
