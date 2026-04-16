@@ -114,7 +114,7 @@ public class Point implements PrimitiveWrapper {
 
     // org.opencadc.entity.PrimitiveWrapper
     @Override
-    public Object getValue() {
+    public Object getWrappedValue() {
         return toArray();
     }
 

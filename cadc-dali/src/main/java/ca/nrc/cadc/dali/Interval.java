@@ -112,8 +112,13 @@ public class Interval<T extends Number> implements PrimitiveWrapper {
 
     // org.opencadc.entity.PrimitiveWrapper
     @Override
-    public Object getValue() {
-        return toArray();
+    public Object getWrappedValue() {
+        if (lower instanceof Double) {
+            return new double[] { lower.doubleValue(), upper.doubleValue() };
+        } else if (lower instanceof Long) {
+            return new long[] { lower.longValue(), upper.longValue() };
+        }
+        throw new UnsupportedOperationException("unsupported interval type: " + lower.getClass().getName());
     }
     
     @Override

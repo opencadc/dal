@@ -135,7 +135,7 @@ public class Polygon implements Shape, PrimitiveWrapper {
 
     // org.opencadc.entity.PrimitiveWrapper
     @Override
-    public Object getValue() {
+    public Object getWrappedValue() {
         return toArray();
     }
 
