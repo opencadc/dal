@@ -77,14 +77,11 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import jsky.coords.wcscon;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Compression;
 import org.apache.log4j.Logger;
-
 
 /**
  * A Spatial Polygon cutout.  This class is executed after the inputs are parsed into an appropriate Polygon shape.

@@ -69,15 +69,12 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.dali.Shape;
-
 import java.io.Serializable;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
-
 
 /**
  * Base class for Shapes (Spatial cutouts).  It mainly contains a convenience method that can be shared.

@@ -72,7 +72,6 @@ package ca.nrc.cadc.dali.tables.votable.binary;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableUtil;
 import ca.nrc.cadc.dali.util.FormatFactory;
-
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;

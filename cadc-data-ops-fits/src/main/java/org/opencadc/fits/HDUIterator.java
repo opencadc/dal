@@ -71,11 +71,9 @@ package org.opencadc.fits;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
-
 
 /**
  * Iterate over HDUs of a nom.tam.fits.Fits object.  The Fits object essentially contains two lists of HDUs; one is the
