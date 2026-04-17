@@ -75,11 +75,9 @@ import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.Range;
 import ca.nrc.cadc.dali.Shape;
 import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
@@ -87,7 +85,6 @@ import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 import org.opencadc.soda.PixelRange;
 import org.opencadc.soda.server.Cutout;
-
 
 /**
  * Utility class to provide bounds for the given WCS Cutout.  In the unlikely event that multiple cutouts are specified,

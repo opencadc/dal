@@ -71,7 +71,6 @@ package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.Converter;
 import org.apache.parquet.io.api.GroupConverter;

@@ -77,7 +77,6 @@ import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableTable;
 import ca.nrc.cadc.io.ResourceIterator;
 import ca.nrc.cadc.reg.Standards;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
