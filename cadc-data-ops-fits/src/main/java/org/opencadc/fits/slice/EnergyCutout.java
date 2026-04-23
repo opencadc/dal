@@ -133,10 +133,20 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
             return null;
         } else {
             final int naxis = spectralWCSKeywords.getIntValue(Standard.NAXIS.key());
-            final Interval<Double> boundsIntervalPixel = getCutoutPixelInterval(bounds, energyAxis, naxis);
-            final Interval<Double> nativePixelsInterval =
-                    new Interval<>(0.0D, (double) spectralWCSKeywords.getIntValue(
-                            Standard.NAXISn.n(energyAxis).key()));
+            final String ctype = spectralWCSKeywords.getStringValue(Standard.CTYPEn.n(energyAxis).key());
+            final boolean isVelocity = CoordTypeCode.fromCType(ctype).isVelocity();
+            // Intersect user-requested wavelength (m) with the spectral range covered by the data at pixels 1..N
+            // so that extended / infinite physical bounds (e.g. -Inf) map to a finite WCS call instead of
+            // sky2pix endpoints that miss the field of view in pixel space.
+            final Interval<Number> requestMetres = isVelocity ? bounds : clampWavelengthToSpectralFieldOfView(bounds, energyAxis);
+            if (requestMetres == null) {
+                LOGGER.warn("No overlap with spectral extent on data.");
+                return null;
+            }
+            final int nchan = spectralWCSKeywords.getIntValue(Standard.NAXISn.n(energyAxis).key());
+            final Interval<Double> boundsIntervalPixel = getCutoutPixelInterval(requestMetres, energyAxis, naxis);
+            // FITS pixel indices 1..N; clip() in FITSCutout is 1-based to len inclusive.
+            final Interval<Double> nativePixelsInterval = new Interval<>(1.0D, (double) nchan);
             final Interval<Double> intersectionPixels = getOverlap(nativePixelsInterval, boundsIntervalPixel);
 
             if (intersectionPixels == null) {
@@ -152,39 +162,65 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
                         clip(maxSpectralLength, (long) Math.floor(Math.min(low, up) + 0.5D),
                              (long) Math.ceil(Math.max(low, up) - 0.5D));
 
-                final long[] entireBounds = clippedSpectralBounds == null ? null : new long[naxis * 2];
-
-                if (entireBounds != null) {
-                    for (int i = 0; i < entireBounds.length; i += 2) {
-                        final int axis = (i + 2) / 2;
-                        if (axis == energyAxis) {
-                            entireBounds[i] = clippedSpectralBounds[0];
-                            entireBounds[i + 1] = clippedSpectralBounds[1];
-                        } else {
-                            entireBounds[i] = 1L;
-                            entireBounds[i + 1] = (long) this.fitsHeaderWCSKeywords.getDoubleValue(
-                                    Standard.NAXISn.n(axis).key());
-                        }
-                    }
-                }
-
-                return entireBounds;
+                final int axes = clippedSpectralBounds == null ? 0 : naxis * 2;
+                return AxisBoundsFiller.fill(axes, clippedSpectralBounds, energyAxis,
+                                             AxisBoundsFiller.naxisSizes(spectralWCSKeywords, naxis));
             }
         }
     }
 
-    private Interval<Double> getOverlap(final Interval<Double> headerWCSInterval, final Interval<Double> cutoutBounds) {
-        LOGGER.debug("Checking overlap between header pixels ("
-                     + headerWCSInterval.getLower() + ", " + headerWCSInterval.getUpper()
-                     + ") and requested bounds pixels ("
-                     + cutoutBounds.getLower() + ", " + cutoutBounds.getUpper() + ")");
-        if (headerWCSInterval.getLower() > cutoutBounds.getUpper()
-            || headerWCSInterval.getUpper() < cutoutBounds.getLower()) {
+    private Interval<Double> getOverlap(final Interval<Double> a, final Interval<Double> b) {
+        final double lo = Math.max(a.getLower(), b.getLower());
+        final double hi = Math.min(a.getUpper(), b.getUpper());
+        LOGGER.debug("Pixel interval intersection (" + a.getLower() + ", " + a.getUpper() + ") with ("
+                     + b.getLower() + ", " + b.getUpper() + ") -> (" + lo + ", " + hi + ")");
+        if (lo > hi) {
             return null;
-        } else {
-            return new Interval<>(Math.max(headerWCSInterval.getLower(), cutoutBounds.getLower()),
-                                  Math.min(headerWCSInterval.getUpper(), cutoutBounds.getUpper()));
         }
+        return new Interval<>(lo, hi);
+    }
+
+    /**
+     * Wavelength in metres (barycentric) for channels 1 and nchan, using a linear WCS in the native
+     * spectral unit (CUNIT) at the reference pixel (same approximation as a simple 1D grid).
+     * Returns the ordered pair [min, max] in metres.
+     */
+    private double[] spectralWavelengthMetresAtBandEdges(final int energyAxis) {
+        final int nchan = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(energyAxis).key());
+        final double crval = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(energyAxis).key());
+        final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(energyAxis).key(), 0.0D);
+        final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(energyAxis).key());
+        final String cunit = this.fitsHeaderWCSKeywords.getStringValue(CADCExt.CUNITn.n(energyAxis).key());
+        final double world1 = crval + cdelt * (1.0D - crpix);
+        final double worldN = crval + cdelt * ((double) nchan - crpix);
+        final EnergyConverter energyConverter = new EnergyConverter();
+        final double m1 = energyConverter.toMeters(world1, cunit);
+        final double m2 = energyConverter.toMeters(worldN, cunit);
+        return new double[]{Math.min(m1, m2), Math.max(m1, m2)};
+    }
+
+    /**
+     * Intersect the requested barycentric wavelength range (m) with the [min,max] in metres of the
+     * spectral band on the data (linear in native unit at pixels 1 and nchan). Handles ±Infinity on
+     * the request via {@code max}/{@code min} with the band; returns null if there is no intersection.
+     */
+    private Interval<Number> clampWavelengthToSpectralFieldOfView(final Interval<Number> bounds, final int energyAxis) {
+        final double wmin = bounds.getLower().doubleValue();
+        final double wmax = bounds.getUpper().doubleValue();
+        final double rlo = Math.min(wmin, wmax);
+        final double rhi = Math.max(wmin, wmax);
+        final double[] m = spectralWavelengthMetresAtBandEdges(energyAxis);
+        final double mmin = m[0];
+        final double mmax = m[1];
+        // max(rlo, mmin) lets -Inf select the in-band start; min(rhi, mmax) clips a request that runs past the band.
+        final double cLo = Math.max(rlo, mmin);
+        final double cHi = Math.min(rhi, mmax);
+        LOGGER.debug("Spectral (m) request [" + rlo + ", " + rhi + "] with header band ~[" + mmin + ", " + mmax
+                     + "] -> [" + cLo + ", " + cHi + "]");
+        if (cLo > cHi) {
+            return null;
+        }
+        return new Interval<>(cLo, cHi);
     }
 
     /**

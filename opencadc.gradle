@@ -87,6 +87,6 @@ pluginManager.withPlugin('maven-publish') {
 }
 
 // backwards compat usage
-task install {
+tasks.register('install') {
     dependsOn 'publishToMavenLocal'
 }
