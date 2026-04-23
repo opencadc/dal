@@ -5,11 +5,19 @@ The `cadc-data-ops-fits` library depends on the NASA led NOM TAM FITS library
 (https://github.com/nom-tam-fits/nom-tam-fits) version 1.15.3 (or newer).
 
 ## Building it
-You may use the provided Gradle Wrapper, or provide your own Gradle (< 7) installation.
+Use the repository Gradle Wrapper (8.x). From the repo root:
 
 ```sh
-$ ../gradlew -i clean build
+../gradlew -i :cadc-data-ops-fits:clean :cadc-data-ops-fits:build
 ```
+
+### WCS native dependency (`cadc-wcs`)
+
+World-coordinate cutouts use **`cadc-wcs`**, which loads a JNI library bundled in the JAR plus the system **WCSLib** C library at runtime. **`mavenLocal()` is listed before `mavenCentral()`** in this module so you can **`publishToMavenLocal`** a locally built `cadc-wcs` (with a JNI binary for your OS) and override the artifact from Central.
+
+**Linux:** Install WCSLib from your distribution (e.g. `wcslib-dev` on Debian/Ubuntu) or a prefix build. **macOS:** Install via Homebrew, MacPorts, or a prefix build ([WCSLIB](https://www.atnf.csiro.au/computing/software/wcs/)).
+
+If tests fail with `WCSLibInitializationException` or `UnsatisfiedLinkError`, build JNI in the [`opencadc/wcs`](https://github.com/opencadc/wcs) `cadc-wcs` project (`./gradlew -c settings-jni.gradle copyJniToResources` after installing WCSLib), then `./gradlew :cadc-wcs:publishToMavenLocal` from that repo. Optional overrides when building JNI: environment variables **`WCSLIB_LIB`** (path to `libwcs.so` / `libwcs.dylib`) or **`WCSLIB_LIB_DIR`**, or Gradle **`-Pwcslib.lib=...` / `-Pwcslib.libDir=...`**.
 
 ## Cutout API
 This library supports the commonly used cutout syntax to extract a sub-image from an Image HDU.
