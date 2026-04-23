@@ -26,7 +26,7 @@ dependencies {
     implementation 'org.opencadc:cadc-dali:[1.2.10,2.0.0)'
     implementation 'org.opencadc:cadc-util:[1.12.5,2.0)'
     implementation 'org.opencadc:cadc-soda-server:[1.2.1,2.0)'
-    implementation 'org.opencadc:cadc-wcs:[2.3.0,2.4.0)'
+    implementation 'org.opencadc:cadc-wcs:[2.2.0,2.4.0)'
     implementation 'org.opencadc:jsky:[1.0.0,2.0.0)'
     implementation 'gov.nasa.gsfc.heasarc:nom-tam-fits:1.22.0'
 
