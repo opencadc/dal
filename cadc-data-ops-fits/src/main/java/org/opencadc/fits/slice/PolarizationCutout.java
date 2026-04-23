@@ -139,7 +139,7 @@ public class PolarizationCutout extends FITSCutout<PolarizationState[]> {
         }
         final int axes = naxis * 2;
         return AxisBoundsFiller.fill(axes, clippedPolarizationBounds, polarizationAxis,
-                AxisBoundsFiller.nAxisSizes(this.fitsHeaderWCSKeywords, naxis));
+                AxisBoundsFiller.naxisSizes(this.fitsHeaderWCSKeywords, naxis));
     }
 
     /**

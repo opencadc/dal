@@ -164,7 +164,7 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
 
                 final int axes = clippedSpectralBounds == null ? 0 : naxis * 2;
                 return AxisBoundsFiller.fill(axes, clippedSpectralBounds, energyAxis,
-                                             AxisBoundsFiller.nAxisSizes(spectralWCSKeywords, naxis));
+                                             AxisBoundsFiller.naxisSizes(spectralWCSKeywords, naxis));
             }
         }
     }

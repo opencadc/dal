@@ -61,7 +61,7 @@ public class AxisBoundsFillerTest {
         }
 
         final FITSHeaderWCSKeywords wcs = new FITSHeaderWCSKeywords(header);
-        final int[] sizes = AxisBoundsFiller.nAxisSizes(wcs, 3);
+        final int[] sizes = AxisBoundsFiller.naxisSizes(wcs, 3);
         Assert.assertArrayEquals(new int[]{10, 20, 4}, sizes);
     }
 }
