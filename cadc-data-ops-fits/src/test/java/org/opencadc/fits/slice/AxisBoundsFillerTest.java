@@ -25,16 +25,13 @@ public class AxisBoundsFillerTest {
     @Test
     public void fillPutsClipOnRequestedAxisAndFullExtentOnOthers() {
         final int naxis = 4;
-        final int axes = naxis * 2;
         final int clipAxis = 3;
         final long[] clippedSpectral = new long[]{5L, 18L};
         final int[] nAxisPerAxis = new int[]{400, 400, 60, 1};
 
-        final long[] out = AxisBoundsFiller.fill(axes, clippedSpectral, clipAxis, nAxisPerAxis);
+        final long[] out = AxisBoundsFiller.fill(naxis, clippedSpectral, clipAxis, nAxisPerAxis);
 
-        final long[] expected = new long[]{
-                1L, 400L, 1L, 400L, 5L, 18L, 1L, 1L
-        };
+        final long[] expected = new long[]{1L, 400L, 1L, 400L, 5L, 18L, 1L, 1L};
         Assert.assertArrayEquals("RA/DEC and Stokes full, spectral axis from clip", expected, out);
     }
 
@@ -42,12 +39,12 @@ public class AxisBoundsFillerTest {
     public void fillUsesClippedRangeOnFirstAxis() {
         final int naxis = 2;
         final long[] out = AxisBoundsFiller.fill(
-                naxis * 2, new long[]{3L, 9L}, 1, new int[]{128, 256});
+                naxis, new long[]{3L, 9L}, 1, new int[]{128, 256});
         Assert.assertArrayEquals(new long[]{3L, 9L, 1L, 256L}, out);
     }
 
     @Test
-    public void nAxisSizesReadsNaxis1ThroughN() throws Exception {
+    public void naxisSizesReadsNaxis1ThroughN() throws Exception {
         final Header header = new Header();
         header.setSimple(true);
         header.setNaxes(3);

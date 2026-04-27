@@ -137,8 +137,7 @@ public class PolarizationCutout extends FITSCutout<PolarizationState[]> {
         if (clippedPolarizationBounds == null) {
             return null;
         }
-        final int axes = naxis * 2;
-        return AxisBoundsFiller.fill(axes, clippedPolarizationBounds, polarizationAxis,
+        return AxisBoundsFiller.fill(naxis, clippedPolarizationBounds, polarizationAxis,
                 AxisBoundsFiller.naxisSizes(this.fitsHeaderWCSKeywords, naxis));
     }
 

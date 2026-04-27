@@ -140,7 +140,6 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
             // sky2pix endpoints that miss the field of view in pixel space.
             final Interval<Number> requestMetres = isVelocity ? bounds : clampWavelengthToSpectralFieldOfView(bounds, energyAxis);
             if (requestMetres == null) {
-                LOGGER.warn("No overlap with spectral extent on data.");
                 return null;
             }
             final int nchan = spectralWCSKeywords.getIntValue(Standard.NAXISn.n(energyAxis).key());
@@ -150,7 +149,6 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
             final Interval<Double> intersectionPixels = getOverlap(nativePixelsInterval, boundsIntervalPixel);
 
             if (intersectionPixels == null) {
-                LOGGER.warn("No overlap.");
                 return null;
             } else {
                 final double low = intersectionPixels.getLower();
@@ -162,8 +160,8 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
                         clip(maxSpectralLength, (long) Math.floor(Math.min(low, up) + 0.5D),
                              (long) Math.ceil(Math.max(low, up) - 0.5D));
 
-                final int axes = clippedSpectralBounds == null ? 0 : naxis * 2;
-                return AxisBoundsFiller.fill(axes, clippedSpectralBounds, energyAxis,
+                final int fillNaxis = clippedSpectralBounds == null ? 0 : naxis;
+                return AxisBoundsFiller.fill(fillNaxis, clippedSpectralBounds, energyAxis,
                                              AxisBoundsFiller.naxisSizes(spectralWCSKeywords, naxis));
             }
         }
