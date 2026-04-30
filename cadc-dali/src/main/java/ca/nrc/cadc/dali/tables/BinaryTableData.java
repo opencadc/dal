@@ -73,7 +73,6 @@ import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.binary.BinaryIterator;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.io.ResourceIterator;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;

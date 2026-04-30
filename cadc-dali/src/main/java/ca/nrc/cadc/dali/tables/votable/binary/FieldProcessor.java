@@ -70,7 +70,6 @@
 package ca.nrc.cadc.dali.tables.votable.binary;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

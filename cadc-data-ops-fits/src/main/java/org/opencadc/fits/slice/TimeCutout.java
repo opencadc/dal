@@ -71,15 +71,11 @@ package org.opencadc.fits.slice;
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.date.DateUtil;
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
-
 import java.text.ParseException;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
-
-
 
 /**
  * Time cutout.  The Temporal Axis is determined from the WCSKeywords, and CRPIXn, CRVALn, and CDELTn are required

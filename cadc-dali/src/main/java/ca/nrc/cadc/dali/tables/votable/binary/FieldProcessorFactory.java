@@ -77,7 +77,6 @@ import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableUtil;
 import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.dali.util.UTCTimestampFormat;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

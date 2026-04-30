@@ -72,9 +72,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-
 import nom.tam.util.RandomAccessFileIO;
-
 
 public class RandomAccessStorageObject extends RandomAccessFile implements RandomAccessFileIO {
     public RandomAccessStorageObject(File file, String mode) throws FileNotFoundException {
