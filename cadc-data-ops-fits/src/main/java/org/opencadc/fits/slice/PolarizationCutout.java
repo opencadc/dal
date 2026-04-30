@@ -69,16 +69,13 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.dali.PolarizationState;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
-
 
 /**
  * Provide the cutout bounds for the given Header.

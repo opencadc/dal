@@ -73,15 +73,12 @@ import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.wcs.Transform;
 import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
-
 import java.util.Arrays;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 import org.opencadc.fits.CADCExt;
-
 
 /**
  * Provide the cutout bounds for the given Header.  This class is executed after the inputs are parsed into a

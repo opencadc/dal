@@ -69,18 +69,15 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.date.DateUtil;
-
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.DateTime;
 import org.apache.log4j.Logger;
 import org.opencadc.fits.CADCExt;
-
 
 /**
  * Class to sanitize and obtain time specific values.
