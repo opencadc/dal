@@ -67,12 +67,14 @@
 
 package ca.nrc.cadc.dali;
 
+import org.opencadc.persist.PrimitiveWrapper;
+
 /**
  *
  * @author pdowler
  * @param <T>
  */
-public class Interval<T extends Number> {
+public class Interval<T extends Number> implements PrimitiveWrapper {
 
     private T lower;
     private T upper;
@@ -108,6 +110,17 @@ public class Interval<T extends Number> {
         return upper;
     }
 
+    // org.opencadc.entity.PrimitiveWrapper
+    @Override
+    public Object getWrappedValue() {
+        if (lower instanceof Double) {
+            return new double[] { lower.doubleValue(), upper.doubleValue() };
+        } else if (lower instanceof Long) {
+            return new long[] { lower.longValue(), upper.longValue() };
+        }
+        throw new UnsupportedOperationException("unsupported interval type: " + lower.getClass().getName());
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
