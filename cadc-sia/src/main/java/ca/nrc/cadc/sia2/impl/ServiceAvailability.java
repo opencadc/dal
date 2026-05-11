@@ -75,6 +75,8 @@ import ca.nrc.cadc.reg.Standards;
 import ca.nrc.cadc.reg.client.RegistryClient;
 import ca.nrc.cadc.sia2.SiaRunner;
 import ca.nrc.cadc.util.FileUtil;
+import ca.nrc.cadc.util.InvalidConfigException;
+import ca.nrc.cadc.util.MultiValuedProperties;
 import ca.nrc.cadc.util.PropertiesReader;
 import ca.nrc.cadc.vosi.Availability;
 import ca.nrc.cadc.vosi.AvailabilityPlugin;
@@ -94,7 +96,7 @@ import org.apache.log4j.Logger;
 public class ServiceAvailability implements AvailabilityPlugin {
 
     private static final Logger log = Logger.getLogger(ServiceAvailability.class);
-    private static final String CONFIG_FILE_NAME = SiaRunner.class.getSimpleName() + ".properties";
+    private static final String CONFIG_FILE_NAME = "sia.properties";
     private static final String CONFIG_TAP_URI_KEY = "tapURI";
 
     private String applicationName;
@@ -190,16 +192,13 @@ public class ServiceAvailability implements AvailabilityPlugin {
     }
 
     private static String getTapURIProperty() throws IOException {
-        // Try to get from a file on disk first.
         final PropertiesReader propertiesReader = new PropertiesReader(CONFIG_FILE_NAME);
-
-        if (propertiesReader.canRead()) {
-            return propertiesReader.getFirstPropertyValue(CONFIG_TAP_URI_KEY);
-        } else {
-            URL url = FileUtil.getURLFromResource(CONFIG_FILE_NAME, ServiceAvailability.class);
-            Properties props = new Properties();
-            props.load(url.openStream());
-            return props.getProperty(CONFIG_TAP_URI_KEY);
-        }
+        MultiValuedProperties mvp = propertiesReader.getAllProperties();
+        String ret = mvp.getFirstPropertyValue(CONFIG_TAP_URI_KEY);
+        log.warn("found tapURI: " + ret);
+        if (ret != null) {
+            return ret;
+        } 
+        throw new InvalidConfigException("not found/readable: " + CONFIG_FILE_NAME);
     }
 }
