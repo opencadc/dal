@@ -73,6 +73,9 @@ import ca.nrc.cadc.util.CaseInsensitiveStringComparator;
 import ca.nrc.cadc.util.Log4jInit;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -457,6 +460,56 @@ public class CommonParamValidatorTest {
         } catch (Exception unexpected) {
             log.error("unexpected exception", unexpected);
             Assert.fail("unexpected exception: " + unexpected);
+        }
+    }
+
+    @Test
+    public void testValidateInteger() {
+        final Map<String, List<String>> params = new HashMap<>();
+        params.put("param1", Arrays.asList("2", "4"));
+        params.put("param2", Arrays.asList("5", "9"));
+        try {
+            final List<Integer> validIntegers =
+                    paramValidator.validateInteger("param1", params, Arrays.asList(1, 2, 3));
+            Assert.assertArrayEquals("Wrong list of ints.", new Integer[] { 2 }, validIntegers.toArray());
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+            throw unexpected;
+        }
+
+        try {
+            final List<Integer> validIntegers =
+                    paramValidator.validateInteger("param2", params, Arrays.asList(1, 2, 3));
+            Assert.assertArrayEquals("Should be empty array of ints.", new Integer[] { },
+                                     validIntegers.toArray());
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+            throw unexpected;
+        }
+    }
+
+    @Test
+    public void testGetResponseFormat() {
+        final Map<String, List<String>> params = new HashMap<>();
+        try {
+            Assert.assertEquals("Wrong RESPONSEFORMAT.", "tsv",
+                                paramValidator.getResponseFormat(params, "tsv"));
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+            throw unexpected;
+        }
+
+        try {
+            params.put("RESPONSEFORMAT", Collections.singletonList("votable"));
+            Assert.assertEquals("Wrong RESPONSEFORMAT.", "votable",
+                                paramValidator.getResponseFormat(params, "tsv"));
+        } catch (Exception unexpected) {
+            log.error("unexpected exception", unexpected);
+            Assert.fail("unexpected exception: " + unexpected);
+            throw unexpected;
         }
     }
 
