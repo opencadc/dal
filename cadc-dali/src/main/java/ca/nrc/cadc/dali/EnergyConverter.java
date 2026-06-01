@@ -70,12 +70,10 @@
 package ca.nrc.cadc.dali;
 
 import ca.nrc.cadc.util.ArrayUtil;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import org.apache.log4j.Logger;
 
 

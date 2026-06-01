@@ -70,9 +70,7 @@ package org.opencadc.soda.server;
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.PolarizationState;
 import ca.nrc.cadc.dali.Shape;
-
 import java.util.List;
-
 import org.opencadc.soda.ExtensionSlice;
 
 

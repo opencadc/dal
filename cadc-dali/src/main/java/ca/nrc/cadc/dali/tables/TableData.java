@@ -70,7 +70,6 @@
 package ca.nrc.cadc.dali.tables;
 
 import ca.nrc.cadc.io.ResourceIterator;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;

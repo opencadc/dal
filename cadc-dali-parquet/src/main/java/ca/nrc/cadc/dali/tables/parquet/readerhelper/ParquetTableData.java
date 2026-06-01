@@ -72,14 +72,11 @@ package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 import ca.nrc.cadc.dali.tables.TableData;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.util.Format;
-import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.io.RandomAccessSource;
 import ca.nrc.cadc.io.ResourceIterator;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-
 import org.apache.parquet.schema.MessageType;
 
 public class ParquetTableData implements TableData {

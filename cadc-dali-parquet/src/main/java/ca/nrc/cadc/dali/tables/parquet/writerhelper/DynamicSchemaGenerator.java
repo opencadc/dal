@@ -70,9 +70,7 @@
 package ca.nrc.cadc.dali.tables.parquet.writerhelper;
 
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
-
 import java.util.List;
-
 import org.apache.log4j.Logger;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;

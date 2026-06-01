@@ -69,13 +69,11 @@
 package org.opencadc.fits.slice;
 
 import ca.nrc.cadc.dali.DaliUtil;
-
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.log4j.Logger;
 import org.opencadc.soda.ExtensionSlice;
 import org.opencadc.soda.PixelRange;
-
 
 /**
  * Simple class to cut pixels out.  Exists to maintain the same format as the WCS cutouts.

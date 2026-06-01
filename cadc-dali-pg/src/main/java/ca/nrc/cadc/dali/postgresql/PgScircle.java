@@ -137,7 +137,7 @@ public class PgScircle {
         s = s.substring(open + 1, close);
         String[] values = s.split(",");
 
-        double r = Double.parseDouble(values[2]);
+        final String radius = values[2];
 
         open = s.indexOf("(");
         close = s.lastIndexOf(")");
@@ -154,6 +154,7 @@ public class PgScircle {
 
         double x = Double.parseDouble(values[0]);
         double y = Double.parseDouble(values[1]);
+        double r = Double.parseDouble(radius);
 
         x = Math.toDegrees(x);
         y = Math.toDegrees(y);

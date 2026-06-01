@@ -70,10 +70,8 @@
 package ca.nrc.cadc.dali.tables.parquet.io;
 
 import ca.nrc.cadc.io.RandomAccessSource;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
 import org.apache.parquet.io.SeekableInputStream;
 
 /**

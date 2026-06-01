@@ -72,10 +72,8 @@ package ca.nrc.cadc.dali.tables.parquet.readerhelper;
 import ca.nrc.cadc.dali.tables.parquet.io.RandomSeekableInputFile;
 import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.util.Format;
-import ca.nrc.cadc.dali.util.FormatFactory;
 import ca.nrc.cadc.io.RandomAccessSource;
 import ca.nrc.cadc.io.ResourceIterator;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -83,14 +81,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-
 import org.apache.parquet.column.page.PageReadStore;
 import org.apache.parquet.hadoop.ParquetFileReader;
 import org.apache.parquet.io.ColumnIOFactory;
 import org.apache.parquet.io.MessageColumnIO;
 import org.apache.parquet.io.RecordReader;
 import org.apache.parquet.io.api.RecordMaterializer;
-
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.Type;

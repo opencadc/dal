@@ -85,7 +85,6 @@ import ca.nrc.cadc.uws.util.JobLogInfo;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Iterator;
-
 import org.apache.log4j.Logger;
 
 /**
@@ -106,7 +105,8 @@ public abstract class PackageRunner implements JobRunner {
     protected Job job;
     protected String packageName;
 
-    public PackageRunner() {}
+    public PackageRunner() {
+    }
 
     /**
      * Perform any functions needed to initialize the Package. (Setting the

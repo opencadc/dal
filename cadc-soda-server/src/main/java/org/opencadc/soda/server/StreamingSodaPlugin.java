@@ -70,7 +70,6 @@ package org.opencadc.soda.server;
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Shape;
 import ca.nrc.cadc.rest.SyncOutput;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
