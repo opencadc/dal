@@ -68,13 +68,13 @@
 
 package org.opencadc.fits.slice;
 
-import ca.nrc.cadc.dali.DoubleInterval;
+import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Range;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
 import nom.tam.util.ArrayDataInput;
-import nom.tam.util.BufferedDataInputStream;
+import nom.tam.util.FitsInputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -98,10 +98,10 @@ public class RangeCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
             final Header testHeader = Header.readHeader(arrayDataInput);
-            final Range range = new Range(new DoubleInterval(246.50902531258566D, 246.53097468741436D),
-                                          new DoubleInterval(-24.34D, -24.319999999999997D));
+            final Range range = new Range(new Interval<>(246.50902531258566D, 246.53097468741436D),
+                                          new Interval<>(-24.34D, -24.319999999999997D));
             final RangeCutout rangeCutout = new RangeCutout(testHeader);
 
             final long[] expected = new long[]{169, 300, 151, 300, 1, 151, 1, 1};
@@ -119,10 +119,10 @@ public class RangeCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
             final Header testHeader = Header.readHeader(arrayDataInput);
-            final Range range = new Range(new DoubleInterval(110.5D, 155.8D),
-                                          new DoubleInterval(-4.34D, 10.31D));
+            final Range range = new Range(new Interval<>(110.5D, 155.8D),
+                                          new Interval<>(-4.34D, 10.31D));
             final RangeCutout rangeCutout = new RangeCutout(testHeader);
 
             final long[] result = rangeCutout.getBounds(range);

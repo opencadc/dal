@@ -81,7 +81,6 @@ import java.util.Arrays;
 import nom.tam.fits.Header;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayDataInput;
-import nom.tam.util.BufferedDataInputStream;
 import nom.tam.util.FitsInputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
