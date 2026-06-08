@@ -62,97 +62,70 @@
 *  <http://www.gnu.org/licenses/>.      pas le cas, consultez :
 *                                       <http://www.gnu.org/licenses/>.
 *
-*  $Revision: 5 $
-*
 ************************************************************************
- */
+*/
 
 package ca.nrc.cadc.dali;
 
-import org.opencadc.persist.PrimitiveWrapper;
+import ca.nrc.cadc.util.Log4jInit;
+import java.net.URI;
+import java.security.MessageDigest;
+import java.util.UUID;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
+import org.opencadc.persist.Entity;
 
 /**
- *
+ * Single test to verify that classes implementing PrimitiveWrapper return
+ * acceptable wrapped value types.
+ * 
  * @author pdowler
  */
-public class Circle implements Shape, PrimitiveWrapper {
-    private Point center;
-    private double radius;
+public class PrimitiveWrapperTest {
+    private static final Logger log = Logger.getLogger(PrimitiveWrapperTest.class);
 
-    public Circle(Point center, double radius) {
-        DaliUtil.assertNotNull("center", center);
-        DaliUtil.assertValidRange("radius", radius, 0.0, 360.0);
-        this.center = center;
-        this.radius = radius;
+    static {
+        Log4jInit.setLevel(PrimitiveWrapperTest.class.getPackageName(), Level.INFO);
     }
 
-    @Override
-    public String toString() {
-        return "Circle[" + center + "," + radius + "]";
+    public PrimitiveWrapperTest() { 
     }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        Circle rhs = (Circle) obj;
-        return this.center.equals(rhs.getCenter()) && this.radius == rhs.radius;
-    }
-
-    @Override
-    public double getArea() {
-        return Math.PI * radius * radius;
-    }
-
-    @Override
-    public double getSize() {
-        return 2.0 * radius;
-    }
-
     
-    @Override
-    public Point getCenter() {
-        return center;
-    }
-
-    public double getRadius() {
-        return radius;
-    }
-
-    // org.opencadc.entity.PrimitiveWrapper
-    @Override
-    public Object getWrappedValue() {
-        return toArray();
-    }
-
-    public double[] toArray() {
-        return new double[]{center.getLongitude(), center.getLatitude(), radius};
-    }
-
-    // utility method to generate a polygon approximation of a circle
-    // recommend numVerts ~11-13 so the difference in area is minimal
-    public static Polygon generatePolygonApproximation(Circle val, int numVerts) {
-        if (numVerts < 4) {
-            throw new IllegalArgumentException("number of vertices in approximation too small (min: 4)");
-        }
+    @Test
+    public void testDataTypes() throws Exception {
+        // static UUID because it is included in metaChecksum
+        final UUID id = UUID.fromString("15c271c5-c8f9-4484-a87f-8545f57e5f0e");
+        // previously computed value to make sure behaviour is stable
+        final URI expected = URI.create("md5:748bd39388a2bb672019c62acb0841b9");
         
-        CartesianTransform trans = CartesianTransform.getTransform(val);
-        Point cen = trans.transform(val.getCenter());
-
-        double phi = 2.0 * Math.PI / ((double) numVerts);
-        // compute distance to vertices so that the edges are tangent and circle is inside the polygon
-        double vdist = val.getRadius() / Math.cos(phi / 2.0);
+        TestEntity e = new TestEntity(id);
+        log.info("Entity.id: " + e.getID());
+        URI mcs = e.computeMetaChecksum(MessageDigest.getInstance("md5"));
+        log.info("metaChecksum: " + mcs);
+        Assert.assertNotNull(mcs);
+        Assert.assertEquals("md5", mcs.getScheme());
+        Assert.assertEquals(expected, mcs);
+    }
+    
+    private class TestEntity extends Entity {
+        public Interval<Double> doubleInterval = new Interval<>(1.0, 2.0);
+        public Interval<Long> longInterval = new Interval<>(3L, 4L);
+        public Point point = new Point(10.0, 11.0);
+        public Circle circle = new Circle(point, 0.5);
+        public Polygon poly = new Polygon();
+        public MultiShape multiShape = new MultiShape();
         
-        CartesianTransform inv = trans.getInverseTransform();
-        Polygon ret = new ca.nrc.cadc.dali.Polygon();        
-        for (int i = 0; i < numVerts; i++) {
-            double x = cen.getLongitude() + vdist * Math.cos(i * phi);
-            double y = cen.getLatitude() + vdist * Math.sin(i * phi);
-            Point p = new Point(x, y);
-            p = inv.transform(p);
-            ret.getVertices().add(p);
+        TestEntity(UUID id) {
+            super(id, false, true, true, true);
+            poly.getVertices().add(new Point(2.0, 2.0));
+            poly.getVertices().add(new Point(1.0, 3.0));
+            poly.getVertices().add(new Point(2.0, 4.0));
+            poly.getVertices().add(new Point(3.0, 3.0));
+            
+            multiShape.getShapes().add(circle);
+            multiShape.getShapes().add(poly);
         }
-        return ret;
     }
 }
