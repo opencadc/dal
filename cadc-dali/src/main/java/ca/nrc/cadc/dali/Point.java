@@ -69,11 +69,13 @@
 
 package ca.nrc.cadc.dali;
 
+import org.opencadc.persist.PrimitiveWrapper;
+
 /**
  *
  * @author pdowler
  */
-public class Point {
+public class Point implements PrimitiveWrapper {
     private final double cval1;
     private final double cval2;
 
@@ -108,6 +110,12 @@ public class Point {
 
     public double getLatitude() {
         return cval2;
+    }
+
+    // org.opencadc.entity.PrimitiveWrapper
+    @Override
+    public Object getWrappedValue() {
+        return toArray();
     }
 
     public double[] toArray() {

@@ -74,7 +74,9 @@ import org.apache.log4j.Logger;
 /**
  *
  * @author pdowler
+ * @deprecated did not make it into DALI-1.2 and not used in CAOM-2.5
  */
+@Deprecated
 public class MultiPolygon {
     private static final Logger log = Logger.getLogger(MultiPolygon.class);
 
