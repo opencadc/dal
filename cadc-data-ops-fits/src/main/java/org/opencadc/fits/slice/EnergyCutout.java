@@ -71,6 +71,7 @@ package org.opencadc.fits.slice;
 import ca.nrc.cadc.dali.EnergyConverter;
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.wcs.Transform;
+import ca.nrc.cadc.wcs.WCSKeywords;
 import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
 import java.util.Arrays;
@@ -178,20 +179,50 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
     /**
      * Wavelength in metres (barycentric) for channels 1 and nchan, using a linear WCS in the native
      * spectral unit (CUNIT) at the reference pixel (same approximation as a simple 1D grid).
-     * Returns the ordered pair [min, max] in metres.
+     * @see <a href="https://github.com/opencadc/caom2/blob/main/caom2-compute/src/main/java/ca/nrc/cadc/caom2/compute/EnergyUtil.java#L496">caom2-compute source (toInterval)</a>
+     * @return The ordered pair [min, max] in metres.
      */
-    private double[] spectralWavelengthMetresAtBandEdges(final int energyAxis) {
-        final int nchan = this.fitsHeaderWCSKeywords.getIntValue(Standard.NAXISn.n(energyAxis).key());
-        final double crval = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRVALn.n(energyAxis).key());
-        final double cdelt = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CDELTn.n(energyAxis).key(), 0.0D);
-        final double crpix = this.fitsHeaderWCSKeywords.getDoubleValue(Standard.CRPIXn.n(energyAxis).key());
-        final String cunit = this.fitsHeaderWCSKeywords.getStringValue(CADCExt.CUNITn.n(energyAxis).key());
-        final double world1 = crval + cdelt * (1.0D - crpix);
-        final double worldN = crval + cdelt * ((double) nchan - crpix);
+    static Interval<Number> spectralWavelengthMetresAtBandEdges(final int energyAxis,
+                                                                final WCSKeywords wcsKeywords)
+            throws NoSuchKeywordException, WCSLibRuntimeException {
+        // convert to TARGET_CTYPE
+        Transform trans = new Transform(wcsKeywords);
+        final String ctype = wcsKeywords.getStringValue(Standard.CTYPEn.n(energyAxis).key());
+        final WCSKeywords kw;
+        if (!ctype.startsWith(EnergyConverter.CORE_CTYPE)) {
+            LOGGER.debug("toInterval: transform from " + ctype + " to " + EnergyConverter.CORE_CTYPE + "-???");
+            kw = trans.translate(EnergyConverter.CORE_CTYPE + "-???"); // any linearization algorithm
+            trans = new Transform(kw);
+        } else {
+            kw = wcsKeywords;
+        }
+        double naxis = kw.getDoubleValue("NAXIS1"); // axis set to 1 above
+        double p1 = 0.5;
+        double p2 = naxis + 0.5;
+        Transform.Result start = trans.pix2sky(new double[] {p1});
+        Transform.Result end = trans.pix2sky(new double[] {p2});
+
+        double a = start.coordinates[0];
+        double b = end.coordinates[0];
+        LOGGER.debug("toInterval: wcslib returned " + a + start.units[0] + "," + b + end.units[0]);
+
+        final String specsys = kw.getStringValue(CADCExt.SPECSYS.key());
         final EnergyConverter energyConverter = new EnergyConverter();
-        final double m1 = energyConverter.toMeters(world1, cunit);
-        final double m2 = energyConverter.toMeters(worldN, cunit);
-        return new double[]{Math.min(m1, m2), Math.max(m1, m2)};
+        if (!EnergyConverter.CORE_SPECSYS.equals(specsys)) {
+            a = energyConverter.convertSpecsys(a, specsys);
+            b = energyConverter.convertSpecsys(b, specsys);
+        }
+
+        // wcslib convert to WAVE-??? but units might be a multiple of EnergyConverter.CORE_UNIT
+        String cunit = start.units[0]; // assume same as end.units[0]
+        if (!EnergyConverter.CORE_UNIT.equals(cunit)) {
+            LOGGER.debug("toInterval: converting " + a + " " + cunit);
+            a = energyConverter.convert(a, EnergyConverter.CORE_CTYPE, cunit);
+            LOGGER.debug("toInterval: converting " + b + " " + cunit);
+            b = energyConverter.convert(b, EnergyConverter.CORE_CTYPE, cunit);
+        }
+
+        return new Interval<>(Math.min(a, b), Math.max(a, b));
     }
 
     /**
@@ -199,14 +230,15 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
      * spectral band on the data (linear in native unit at pixels 1 and nchan). Handles ±Infinity on
      * the request via {@code max}/{@code min} with the band; returns null if there is no intersection.
      */
-    private Interval<Number> clampWavelengthToSpectralFieldOfView(final Interval<Number> bounds, final int energyAxis) {
+    private Interval<Number> clampWavelengthToSpectralFieldOfView(final Interval<Number> bounds, final int energyAxis)
+            throws NoSuchKeywordException, WCSLibRuntimeException {
         final double wmin = bounds.getLower().doubleValue();
         final double wmax = bounds.getUpper().doubleValue();
         final double rlo = Math.min(wmin, wmax);
         final double rhi = Math.max(wmin, wmax);
-        final double[] m = spectralWavelengthMetresAtBandEdges(energyAxis);
-        final double mmin = m[0];
-        final double mmax = m[1];
+        final Interval<Number> m = EnergyCutout.spectralWavelengthMetresAtBandEdges(energyAxis, this.fitsHeaderWCSKeywords);
+        final double mmin = m.getLower().doubleValue();
+        final double mmax = m.getUpper().doubleValue();
         // max(rlo, mmin) lets -Inf select the in-band start; min(rhi, mmax) clips a request that runs past the band.
         final double cLo = Math.max(rlo, mmin);
         final double cHi = Math.min(rhi, mmax);

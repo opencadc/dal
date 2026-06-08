@@ -82,6 +82,7 @@ import nom.tam.fits.Header;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.BufferedDataInputStream;
+import nom.tam.util.FitsInputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -105,7 +106,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
@@ -129,7 +130,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
@@ -153,7 +154,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
@@ -178,7 +179,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
@@ -332,7 +333,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
