@@ -72,6 +72,7 @@ import ca.nrc.cadc.dali.EnergyConverter;
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.wcs.Transform;
 import ca.nrc.cadc.wcs.WCSKeywords;
+import ca.nrc.cadc.wcs.WCSKeywordsImpl;
 import ca.nrc.cadc.wcs.exceptions.NoSuchKeywordException;
 import ca.nrc.cadc.wcs.exceptions.WCSLibRuntimeException;
 import java.util.Arrays;
@@ -182,21 +183,22 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
      * @see <a href="https://github.com/opencadc/caom2/blob/main/caom2-compute/src/main/java/ca/nrc/cadc/caom2/compute/EnergyUtil.java#L496">caom2-compute source (toInterval)</a>
      * @return The ordered pair [min, max] in metres.
      */
-    static Interval<Number> spectralWavelengthMetresAtBandEdges(final int energyAxis,
-                                                                final WCSKeywords wcsKeywords)
+    static Interval<Number> spectralWavelengthMetresAtBandEdges(final int energyAxis, final WCSKeywords wcsKeywords)
             throws NoSuchKeywordException, WCSLibRuntimeException {
-        // convert to TARGET_CTYPE
-        Transform trans = new Transform(wcsKeywords);
-        final String ctype = wcsKeywords.getStringValue(Standard.CTYPEn.n(energyAxis).key());
+        // wcslib translate/pix2sky require NAXIS to match the coordinate array length; use a 1D
+        // spectral WCS as in caom2-compute WCSWrapper(SpectralWCS, 1).
+        final WCSKeywords spectralWcs = EnergyCutout.extractSpectralAxis(wcsKeywords, energyAxis);
+        Transform trans = new Transform(spectralWcs);
+        final String ctype = spectralWcs.getStringValue(Standard.CTYPEn.n(1).key());
         final WCSKeywords kw;
         if (!ctype.startsWith(EnergyConverter.CORE_CTYPE)) {
             LOGGER.debug("toInterval: transform from " + ctype + " to " + EnergyConverter.CORE_CTYPE + "-???");
             kw = trans.translate(EnergyConverter.CORE_CTYPE + "-???"); // any linearization algorithm
             trans = new Transform(kw);
         } else {
-            kw = wcsKeywords;
+            kw = spectralWcs;
         }
-        double naxis = kw.getDoubleValue("NAXIS1"); // axis set to 1 above
+        double naxis = kw.getDoubleValue("NAXIS1");
         double p1 = 0.5;
         double p2 = naxis + 0.5;
         Transform.Result start = trans.pix2sky(new double[] {p1});
@@ -223,6 +225,56 @@ public class EnergyCutout extends FITSCutout<Interval<Number>> {
         }
 
         return new Interval<>(Math.min(a, b), Math.max(a, b));
+    }
+
+    /**
+     * Build a 1-axis WCS containing only the spectral axis, mapped to axis 1.
+     */
+    static WCSKeywords extractSpectralAxis(final WCSKeywords wcsKeywords, final int energyAxis) {
+        final WCSKeywordsImpl kw = new WCSKeywordsImpl();
+        kw.put("NAXIS", 1);
+        kw.put("NAXIS1", wcsKeywords.getIntValue(Standard.NAXISn.n(energyAxis).key()));
+        kw.put("CTYPE1", wcsKeywords.getStringValue(Standard.CTYPEn.n(energyAxis).key()));
+        kw.put("CRPIX1", wcsKeywords.getDoubleValue(Standard.CRPIXn.n(energyAxis).key()));
+        kw.put("CRVAL1", wcsKeywords.getDoubleValue(Standard.CRVALn.n(energyAxis).key()));
+
+        final String cunitKey = CADCExt.CUNITn.n(energyAxis).key();
+        if (wcsKeywords.containsKey(cunitKey)) {
+            kw.put("CUNIT1", wcsKeywords.getStringValue(cunitKey));
+        }
+
+        final String cdeltKey = Standard.CDELTn.n(energyAxis).key();
+        if (wcsKeywords.containsKey(cdeltKey)) {
+            kw.put("CDELT1", wcsKeywords.getDoubleValue(cdeltKey));
+        }
+
+        EnergyCutout.copyOptionalStringKeyword(wcsKeywords, kw, CADCExt.SPECSYS.key());
+        EnergyCutout.copyOptionalDoubleKeyword(wcsKeywords, kw, CADCExt.RESTFRQ.key());
+        EnergyCutout.copyOptionalDoubleKeyword(wcsKeywords, kw, CADCExt.RESTWAV.key());
+        EnergyCutout.copyOptionalDoubleKeyword(wcsKeywords, kw, "RESTFREQ");
+        EnergyCutout.copyOptionalIntKeyword(wcsKeywords, kw, "VELREF");
+        return kw;
+    }
+
+    private static void copyOptionalStringKeyword(final WCSKeywords source, final WCSKeywordsImpl target,
+                                                  final String key) {
+        if (source.containsKey(key)) {
+            target.put(key, source.getStringValue(key));
+        }
+    }
+
+    private static void copyOptionalDoubleKeyword(final WCSKeywords source, final WCSKeywordsImpl target,
+                                                  final String key) {
+        if (source.containsKey(key)) {
+            target.put(key, source.getDoubleValue(key));
+        }
+    }
+
+    private static void copyOptionalIntKeyword(final WCSKeywords source, final WCSKeywordsImpl target,
+                                               final String key) {
+        if (source.containsKey(key)) {
+            target.put(key, source.getIntValue(key));
+        }
     }
 
     /**
