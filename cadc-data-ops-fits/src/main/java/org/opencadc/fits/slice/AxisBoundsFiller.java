@@ -1,7 +1,6 @@
 package org.opencadc.fits.slice;
 
 import java.util.Arrays;
-
 import nom.tam.fits.header.Standard;
 import org.apache.log4j.Logger;
 
