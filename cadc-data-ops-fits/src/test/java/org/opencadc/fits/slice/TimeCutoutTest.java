@@ -74,7 +74,6 @@ import ca.nrc.cadc.util.Log4jInit;
 import nom.tam.fits.Header;
 import nom.tam.fits.header.DateTime;
 import nom.tam.fits.header.Standard;
-import nom.tam.fits.header.extra.NOAOExt;
 import org.apache.log4j.Level;
 import org.junit.Assert;
 import org.junit.Test;

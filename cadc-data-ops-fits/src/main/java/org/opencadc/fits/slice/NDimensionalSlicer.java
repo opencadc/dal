@@ -78,7 +78,6 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -401,7 +400,7 @@ public class NDimensionalSlicer {
     private void fillCornersAndLengths(final int[] dimensions, final Header header,
                                        final ExtensionSlice extensionSliceValue, final int[] corners,
                                        final int[] lengths, final int[] steps)
-        throws FitsException {
+        throws FitsException, NoOverlapException {
 
         LOGGER.debug("Full dimensions are " + Arrays.toString(dimensions));
         final int dimensionLength = dimensions.length;
@@ -423,21 +422,37 @@ public class NDimensionalSlicer {
             final int rangeUpBound = pixelRange.upperBound;
             final int rangeStep = pixelRange.step;
 
+            // PixelRange is 1-based inclusive [low, high]. Tiler / nom-tam use 0-based half-open [start, end)
+            // with end equal to the 1-based upper bound (exclusive 0-based end index).
             final int lowerBound = rangeLowBound > 0 ? rangeLowBound - 1 : rangeLowBound;
             LOGGER.debug("Set lowerBound to " + lowerBound + " from rangeLowBound " + rangeLowBound);
             final int upperBound;
             final int step;
+            int corner0;
+            int nextLength;
 
             if (lowerBound > rangeUpBound) {
                 upperBound = rangeUpBound - 2;
                 step = rangeStep * -1;
+                nextLength = Math.min((upperBound - lowerBound), maxRegionSize);
+                corner0 = lowerBound;
             } else {
                 upperBound = rangeUpBound;
                 step = rangeStep;
+                // Clamp to the image: intersection with [0, maxRegionSize) in 0-based half-open form.
+                final int endExclusive = Math.min(upperBound, maxRegionSize);
+                final int start0 = Math.max(0, lowerBound);
+                if (start0 >= endExclusive) {
+                    nextLength = 0;
+                } else {
+                    nextLength = endExclusive - start0;
+                }
+                corner0 = start0;
             }
-
-            final int nextLength = Math.min((upperBound - lowerBound), maxRegionSize);
-            LOGGER.debug("Length is " + nextLength + " (" + upperBound + " - " + lowerBound + "):" + step);
+            if (nextLength <= 0) {
+                throw new NoOverlapException();
+            }
+            LOGGER.debug("Length is " + nextLength + " (corner0=" + corner0 + ", upperBound=" + upperBound + "): " + step);
 
             // Adjust the NAXISn header appropriately.  If the step value does not divide perfectly into the length,
             // then there will be an extra write, so add 1 where necessary.
@@ -445,13 +460,34 @@ public class NDimensionalSlicer {
                             (nextLength / step) + ((nextLength % step) == 0 ? 0 : 1));
 
             // Need to set the values backwards (reverse order) to match the dimensions.
-            corners[corners.length - i - 1] = lowerBound;
+            corners[corners.length - i - 1] = corner0;
 
             // Need to set the values backwards (reverse order) to match the dimensions.
             lengths[lengths.length - i - 1] = nextLength;
 
             // Need to set the values backwards (reverse order) to match the dimensions.
             steps[steps.length - i - 1] = step;
+        }
+    }
+
+    /**
+     * For tests: 1-based inclusive {@code [rangeLowBound, rangeUpBound]} → 0-based half-open tile along one axis
+     * clipped to an image of length {@code maxRegionSize} (FITS NAXISn value).
+     */
+    static int computeClippedAxisLengthForTests(final int maxRegionSize, final int rangeLowBound,
+                                                final int rangeUpBound) {
+        final int lowerBound = rangeLowBound > 0 ? rangeLowBound - 1 : rangeLowBound;
+        if (lowerBound > rangeUpBound) {
+            final int upperBound = rangeUpBound - 2;
+            return Math.min(upperBound - lowerBound, maxRegionSize);
+        } else {
+            final int endExclusive = Math.min(rangeUpBound, maxRegionSize);
+            final int start0 = Math.max(0, lowerBound);
+            if (start0 >= endExclusive) {
+                return 0;
+            } else {
+                return endExclusive - start0;
+            }
         }
     }
 
@@ -677,27 +713,29 @@ public class NDimensionalSlicer {
             hduIndex++;
         }
 
-        // Check for missing matches.
+        // Check for missing matches. Matched entries use PixelCutout-clipped bounds, which may be tighter than the
+        // request (e.g. request 50:200, image width 100 -> matched 50:100), so we accept a match when the same
+        // extension is targeted and each axis range in the result lies within the request span (same step).
         final List<ExtensionSlice> matchedValues =
             overlapHDUIndexesSlices.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-        final List<ExtensionSlice> containsAll =
+        final List<ExtensionSlice> missing =
             extensionSlices.stream().filter(e -> {
-                boolean contained = false;
                 for (final ExtensionSlice extensionSlice : matchedValues) {
+                    if (!sameExtensionSliceTarget(e, extensionSlice)) {
+                        continue;
+                    }
                     final List<PixelRange> matchedPixelRange = extensionSlice.getPixelRanges();
                     final List<PixelRange> requestedPixelRange = e.getPixelRanges();
                     LOGGER.debug("\nMatched: " + matchedPixelRange + "\nRequested: " + requestedPixelRange);
-                    if ((matchedPixelRange.isEmpty() && requestedPixelRange.isEmpty())
-                        || new HashSet<>(requestedPixelRange).containsAll(matchedPixelRange)) {
-                        contained = true;
-                        break;
+                    if (pixelCutoutSatisfiedByClippedMatch(requestedPixelRange, matchedPixelRange)) {
+                        return false;
                     }
                 }
-                return !contained;
+                return true;
             }).collect(Collectors.toList());
 
-        if (!containsAll.isEmpty()) {
-            throw new NoOverlapException("One or more requested slices could not be found:\n" + containsAll);
+        if (!missing.isEmpty()) {
+            throw new NoOverlapException("One or more requested slices could not be found:\n" + missing);
         }
 
         return overlapHDUIndexesSlices;
@@ -717,5 +755,51 @@ public class NDimensionalSlicer {
 
             return overlapSlice;
         }
+    }
+
+    private static boolean sameExtensionSliceTarget(final ExtensionSlice a, final ExtensionSlice b) {
+        if (a.extensionIndex != null) {
+            return a.extensionIndex.equals(b.extensionIndex);
+        }
+        if (b.extensionIndex != null) {
+            return false;
+        }
+        if (a.extensionName == null || b.extensionName == null) {
+            return false;
+        }
+        final int vA = a.extensionVersion == null ? 1 : a.extensionVersion;
+        final int vB = b.extensionVersion == null ? 1 : b.extensionVersion;
+        return a.extensionName.equalsIgnoreCase(b.extensionName) && (vA == vB);
+    }
+
+    private static boolean pixelCutoutSatisfiedByClippedMatch(final List<PixelRange> requested,
+                                                              final List<PixelRange> matched) {
+        if (requested.isEmpty()) {
+            return matched.isEmpty();
+        }
+        if (requested.size() != matched.size()) {
+            return false;
+        }
+        for (int i = 0; i < requested.size(); i++) {
+            if (!pixelRangeIsClippedWithinRequest(requested.get(i), matched.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * True when {@code result} is the same span as a fully-overlapping request, or a tighter span along the same axis
+     * (PixelCutout clipping to the image), with matching step.
+     */
+    private static boolean pixelRangeIsClippedWithinRequest(final PixelRange requested, final PixelRange result) {
+        if (requested.step != result.step) {
+            return false;
+        }
+        final int reqMin = Math.min(requested.lowerBound, requested.upperBound);
+        final int reqMax = Math.max(requested.lowerBound, requested.upperBound);
+        final int resMin = Math.min(result.lowerBound, result.upperBound);
+        final int resMax = Math.max(result.lowerBound, result.upperBound);
+        return resMin >= reqMin && resMax <= reqMax;
     }
 }

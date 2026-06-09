@@ -131,23 +131,11 @@ public class PolarizationCutout extends FITSCutout<PolarizationState[]> {
 
         // The polarization axis is the length to compare against.
         final long[] clippedPolarizationBounds = clip(polarizationAxis, pix1, pix2);
-        final long[] entireBounds = clippedPolarizationBounds == null ? null : new long[naxis * 2];
-
-        if (entireBounds != null) {
-            for (int i = 0; i < entireBounds.length; i += 2) {
-                final int axis = (i + 2) / 2;
-                if (axis == polarizationAxis) {
-                    entireBounds[i] = clippedPolarizationBounds[0];
-                    entireBounds[i + 1] = clippedPolarizationBounds[1];
-                } else {
-                    entireBounds[i] = 1L;
-                    entireBounds[i + 1] = (long) this.fitsHeaderWCSKeywords.getDoubleValue(
-                            Standard.NAXISn.n(axis).key());
-                }
-            }
+        if (clippedPolarizationBounds == null) {
+            return null;
         }
-
-        return entireBounds;
+        return AxisBoundsFiller.fill(naxis, clippedPolarizationBounds, polarizationAxis,
+                AxisBoundsFiller.naxisSizes(this.fitsHeaderWCSKeywords, naxis));
     }
 
     /**

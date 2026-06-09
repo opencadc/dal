@@ -68,6 +68,7 @@
 
 package org.opencadc.fits.slice;
 
+import ca.nrc.cadc.dali.EnergyConverter;
 import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.util.FileUtil;
 import ca.nrc.cadc.util.Log4jInit;
@@ -80,7 +81,7 @@ import java.util.Arrays;
 import nom.tam.fits.Header;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayDataInput;
-import nom.tam.util.BufferedDataInputStream;
+import nom.tam.util.FitsInputStream;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -104,7 +105,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
@@ -128,7 +129,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
@@ -152,7 +153,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
@@ -177,7 +178,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);
@@ -194,8 +195,50 @@ public class EnergyCutoutTest extends BaseCutoutTest {
     public void test1DEnergy() throws Exception {
         final long startMillis = System.currentTimeMillis();
 
-        final Header testHeader = new Header();
+        final Header testHeader = newOneDimensionalTestFreqHeader();
 
+        final EnergyCutout energyCutout = new EnergyCutout(testHeader);
+        final Interval<Number> energyCutoutBounds = new Interval<>(2.600708E-3D, 2.6008209E-3D);
+        energyCutout.fitsHeaderWCSKeywords.iterator().forEachRemaining(keyVal -> LOGGER.debug(keyVal.getKey() + " = "
+                                                                                              + keyVal.getValue()));
+        final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
+        final long[] expectedBounds = new long[]{22L, 87L};
+
+        assertFuzzyPixelArrayEquals("Wrong energy bounds 1D file.", expectedBounds, resultBounds);
+        LOGGER.debug("EnergyCutoutTest.test1DEnergy OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+    }
+
+    /**
+     * A requested wavelength upper limit beyond the data band (barycentric metres) must clip to the
+     * on-air spectral extent instead of giving no overlap (previously, sky2pix at unclamped
+     * endpoints could place the pixel range entirely off the grism).
+     */
+    @Test
+    public void testOversizeWavelengthUpperClipsToBand() throws Exception {
+        final Header testHeader = newOneDimensionalTestFreqHeader();
+        final EnergyConverter energyConverter = new EnergyConverter();
+        final double crval = 1.152750450330E+11D;
+        final double cdelt = -7.690066705322E+04D;
+        final double crpix = 1.000000000000E+00D;
+        final int nchan = 151;
+        final String cunit = "Hz";
+        final double w1 = crval + cdelt * (1.0D - crpix);
+        final double wN = crval + cdelt * ((double) nchan - crpix);
+        final double m1 = energyConverter.toMeters(w1, cunit);
+        final double m2 = energyConverter.toMeters(wN, cunit);
+        final double mmax = Math.max(m1, m2);
+
+        final EnergyCutout energyCutout = new EnergyCutout(testHeader);
+        final long[] atMax = energyCutout.getBounds(new Interval<>(Double.NEGATIVE_INFINITY, mmax));
+        final long[] beyond = energyCutout.getBounds(new Interval<>(Double.NEGATIVE_INFINITY, mmax * 1.1D));
+        Assert.assertNotNull("clamped request must overlap the cube", beyond);
+        assertFuzzyPixelArrayEquals("OOB upper in metres (above band) should match cutout to header band max.",
+                atMax, beyond);
+
+    }
+
+    private static Header newOneDimensionalTestFreqHeader() {
+        final Header testHeader = new Header();
         testHeader.setSimple(true);
         testHeader.setBitpix(-32);
         testHeader.setNaxes(1);
@@ -217,16 +260,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         testHeader.addValue("LONPOLE", 1.800000000000E+02D, "");
         testHeader.addValue(Standard.EQUINOX, 2.000000000000E+03D);
         testHeader.addValue(Standard.RADESYS, "FK5");
-
-        final EnergyCutout energyCutout = new EnergyCutout(testHeader);
-        final Interval<Number> energyCutoutBounds = new Interval<>(2.600708E-3D, 2.6008209E-3D);
-        energyCutout.fitsHeaderWCSKeywords.iterator().forEachRemaining(keyVal -> LOGGER.debug(keyVal.getKey() + " = "
-                                                                                              + keyVal.getValue()));
-        final long[] resultBounds = energyCutout.getBounds(energyCutoutBounds);
-        final long[] expectedBounds = new long[]{22L, 87L};
-
-        assertFuzzyPixelArrayEquals("Wrong energy bounds 1D file.", expectedBounds, resultBounds);
-        LOGGER.debug("EnergyCutoutTest.test1DEnergy OK: " + (System.currentTimeMillis() - startMillis) + " ms");
+        return testHeader;
     }
 
     @Test
@@ -298,7 +332,7 @@ public class EnergyCutoutTest extends BaseCutoutTest {
         final File testFile = FileUtil.getFileFromResource(headerFileName, CircleCutoutTest.class);
 
         try (final InputStream inputStream = new FileInputStream(testFile);
-             final ArrayDataInput arrayDataInput = new BufferedDataInputStream(inputStream)) {
+             final ArrayDataInput arrayDataInput = new FitsInputStream(inputStream)) {
 
             final Header testHeader = Header.readHeader(arrayDataInput);
             final EnergyCutout energyCutout = new EnergyCutout(testHeader);

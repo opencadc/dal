@@ -76,6 +76,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import nom.tam.fits.BasicHDU;
@@ -84,9 +85,11 @@ import nom.tam.util.FitsOutputStream;
 import nom.tam.util.RandomAccessFileIO;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import nom.tam.fits.header.Standard;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.Assume;
 import org.opencadc.fits.FitsTest;
 import org.opencadc.fits.NoOverlapException;
 import org.opencadc.fits.RandomAccessStorageObject;
@@ -399,5 +402,95 @@ public class NDimensionalSlicerTest {
         }
 
         Files.deleteIfExists(outputPath);
+    }
+
+    /**
+     * In-memory FITS: requesting pixels past the image edge must yield a sub-image of the intersection only
+     * (not a box as wide as min(requested span, N)).
+     */
+    @Test
+    public void testPixelCutoutClampsToImageWhenRequestExceedsBounds() throws Exception {
+        final int w = 100;
+        final int h = 100;
+        final int[][] data = new int[h][w];
+        final File file = Files.createTempFile("overshoot-cutout-", ".fits").toFile();
+        try (final FitsOutputStream fitsOutputStream = new FitsOutputStream(Files.newOutputStream(file.toPath()));
+             final Fits fits = new Fits()) {
+            fits.addHDU(Fits.makeHDU(data));
+            fits.write(fitsOutputStream);
+            fitsOutputStream.flush();
+        }
+
+        final ExtensionSliceFormat fmt = new ExtensionSliceFormat();
+        final Cutout cutout = new Cutout();
+        cutout.pixelCutouts = Collections.singletonList(fmt.parse("[0][50:200,1:100]"));
+
+        final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
+        final Path outputPath = (configuredTestWriteDir == null)
+                ? Files.createTempFile("overshoot-cutout-out-", ".fits")
+                : Files.createTempFile(new File(configuredTestWriteDir).toPath(), "overshoot-cutout-out-", ".fits");
+
+        try (final RandomAccessFileIO randomAccessDataObject = new RandomAccessStorageObject(file, "r");
+             final OutputStream outputStream = Files.newOutputStream(outputPath.toFile().toPath())) {
+            final NDimensionalSlicer slicer = new NDimensionalSlicer();
+            slicer.slice(randomAccessDataObject, cutout, outputStream);
+            outputStream.flush();
+        }
+
+        try (final Fits result = new Fits(outputPath.toFile())) {
+            result.read();
+            final BasicHDU<?> hdu = result.getHDU(0);
+            final int n1 = hdu.getHeader().getIntValue(Standard.NAXIS1);
+            final int n2 = hdu.getHeader().getIntValue(Standard.NAXIS2);
+            // Intersection: 51 x 100 pixels (order follows FITS / nom-tam).
+            final int a = Math.min(n1, n2);
+            final int b = Math.max(n1, n2);
+            Assert.assertEquals("Sub-image should be 51x100 (intersection), not 100x100 from buggy span cap.",
+                    51, a);
+            Assert.assertEquals(100, b);
+        } finally {
+            Files.deleteIfExists(outputPath);
+            Files.deleteIfExists(file.toPath());
+        }
+    }
+
+    /**
+     * In-memory FITS: a pixel range that does not intersect the image at all must yield NoOverlap (not a zero-sized
+     * or partial write).
+     */
+    @Test
+    public void testPixelCutoutNoIntersectionThrowsNoOverlapException() throws Exception {
+        final int w = 100;
+        final int h = 100;
+        final int[][] data = new int[h][w];
+        final File file = Files.createTempFile("disjoint-cutout-", ".fits").toFile();
+        try (final FitsOutputStream fitsOutputStream = new FitsOutputStream(Files.newOutputStream(file.toPath()));
+             final Fits fits = new Fits()) {
+            fits.addHDU(Fits.makeHDU(data));
+            fits.write(fitsOutputStream);
+            fitsOutputStream.flush();
+        }
+
+        final ExtensionSliceFormat fmt = new ExtensionSliceFormat();
+        final Cutout cutout = new Cutout();
+        // Entirely past the 1:100 1-based extent on both axes (no common pixels with the 100x100 array).
+        cutout.pixelCutouts = Collections.singletonList(fmt.parse("[0][201:300,201:300]"));
+
+        final String configuredTestWriteDir = System.getenv("TEST_WRITE_DIR");
+        final Path outputPath = (configuredTestWriteDir == null)
+                ? Files.createTempFile("disjoint-cutout-out-", ".fits")
+                : Files.createTempFile(new File(configuredTestWriteDir).toPath(), "disjoint-cutout-out-", ".fits");
+
+        try (final RandomAccessFileIO randomAccessDataObject = new RandomAccessStorageObject(file, "r");
+             final OutputStream outputStream = Files.newOutputStream(outputPath.toFile().toPath())) {
+            final NDimensionalSlicer slicer = new NDimensionalSlicer();
+            slicer.slice(randomAccessDataObject, cutout, outputStream);
+            Assert.fail("Disjoint pixel cutout should not produce a slice");
+        } catch (NoOverlapException e) {
+            // ok
+        } finally {
+            Files.deleteIfExists(outputPath);
+            Files.deleteIfExists(file.toPath());
+        }
     }
 }
