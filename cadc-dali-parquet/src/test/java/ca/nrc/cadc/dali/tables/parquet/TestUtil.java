@@ -70,6 +70,7 @@
 package ca.nrc.cadc.dali.tables.parquet;
 
 import ca.nrc.cadc.dali.Circle;
+import ca.nrc.cadc.dali.Interval;
 import ca.nrc.cadc.dali.Point;
 import ca.nrc.cadc.dali.Polygon;
 import ca.nrc.cadc.dali.tables.TableData;
@@ -85,6 +86,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
@@ -348,6 +350,15 @@ public class TestUtil {
         dateColumn.description = "date column";
         fields.add(dateColumn);
 
+        VOTableField intervalColumn = new VOTableField("interval column", "double", "2");
+        intervalColumn.id = "intervalColumn.id";
+        intervalColumn.ucd = "intervalColumn.ucd";
+        intervalColumn.unit = "intervalColumn.unit";
+        intervalColumn.utype = "intervalColumn.utype";
+        intervalColumn.xtype = "interval";
+        intervalColumn.description = "interval column";
+        fields.add(intervalColumn);
+
         VOTableField pointColumn = new VOTableField("point column", "double", "2");
         pointColumn.id = "pointColumn.id";
         pointColumn.ucd = "pointColumn.ucd";
@@ -441,6 +452,7 @@ public class TestUtil {
             row1.add(dateFormat.parse(DATE_TIME));
 
             // DALI geom
+            row1.add(new Interval<>(1.0, 2.0));
             row1.add(new Point(1.0, 2.0));
             row1.add(new Circle(new Point(1.0, 2.0), 0.2));
             Polygon poly = new Polygon();
@@ -495,32 +507,42 @@ public class TestUtil {
         }
     }
 
-    public void compareVOTable(VOTableDocument expected, VOTableDocument actual, Long actualMax) throws IOException {
+    public void compareVOTable(VOTableDocument expected, VOTableDocument actual, Long actualMax, boolean withMetadata) throws IOException {
         Assert.assertNotNull(expected);
         Assert.assertNotNull(actual);
 
-        Assert.assertEquals(expected.getResources().size(), actual.getResources().size());
-
-        for (int i = 0; i < expected.getResources().size(); i++) {
-            compareVOTableResource(expected.getResources().get(i), actual.getResources().get(i), actualMax);
+        long resourceCount;
+        if (withMetadata) {
+            resourceCount = expected.getResources().size();
+        } else {
+            resourceCount = expected.getResources().stream().filter(r -> r.getType().equals("results")).count();
         }
+        Assert.assertEquals(resourceCount, actual.getResources().size());
+        compareVOTableResource(expected.getResourceByType("results"), actual.getResourceByType("results"), actualMax, withMetadata);
     }
 
-    public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax) throws IOException {
-        Assert.assertEquals(expected.getName(), actual.getName());
+    public void compareVOTableResource(VOTableResource expected, VOTableResource actual, Long actualMax, boolean withMetadata) throws IOException {
 
-        Assert.assertEquals(expected.description, actual.description);
+        if (withMetadata) {
+            Assert.assertEquals(expected.getName(), actual.getName());
 
-        compareInfos(expected.getInfos(), actual.getInfos());
+            Assert.assertEquals(expected.description, actual.description);
 
-        compareParams(expected.getParams(), actual.getParams());
+            compareInfos(expected.getInfos(), actual.getInfos());
 
-        compareGroups(expected.getGroups(), actual.getGroups());
+            compareParams(expected.getParams(), actual.getParams());
 
-        compareTables(expected.getTable(), actual.getTable(), actualMax);
+            compareGroups(expected.getGroups(), actual.getGroups());
+        }
+
+        // for parquet without metadata, only compare the 'results' resource
+        if (!withMetadata && !expected.getType().equals("results")) {
+            return;
+        }
+        compareTables(expected.getTable(), actual.getTable(), actualMax, withMetadata);
     }
 
-    public void compareTables(VOTableTable expected, VOTableTable actual, Long actualMax) throws IOException {
+    public void compareTables(VOTableTable expected, VOTableTable actual, Long actualMax, boolean withMetadata) throws IOException {
         if (expected != null) {
             Assert.assertNotNull(actual);
         } else {
@@ -528,9 +550,11 @@ public class TestUtil {
             return;
         }
 
-        compareInfos(expected.getInfos(), actual.getInfos());
-        compareParams(expected.getParams(), actual.getParams());
-        compareFields(expected.getFields(), actual.getFields());
+        if (withMetadata) {
+            compareInfos(expected.getInfos(), actual.getInfos());
+            compareParams(expected.getParams(), actual.getParams());
+        }
+        compareFields(expected.getFields(), actual.getFields(), withMetadata);
 
         // TABLEDATA
         Assert.assertNotNull(expected.getTableData());
@@ -582,7 +606,21 @@ public class TestUtil {
                 } else if (expectedObject instanceof Short && actualObject instanceof Integer) {
                     Assert.assertEquals(((Number) expectedObject).intValue(), actualObject);
                 } else {
-                    Assert.assertEquals("Incorrect value at " + i, expectedObject, actualObject);
+                    if (!withMetadata && expectedObject instanceof Point) {
+                        Assert.assertArrayEquals(((Point) expectedObject).toArray(), (double[]) actualObject, 0.0);
+                    } else if (!withMetadata && expectedObject instanceof Circle) {
+                        Assert.assertArrayEquals(((Circle) expectedObject).toArray(), (double[]) actualObject, 0.0);
+                    } else if (!withMetadata && expectedObject instanceof Interval) {
+                        Object[] expectedArray = ((Interval<?>) expectedObject).toArray();
+                        Object[] actualArray = Arrays.stream((double[]) actualObject).boxed().toArray(Object[]::new);
+                        Assert.assertArrayEquals(expectedArray,actualArray);
+                    } else if (!withMetadata && expectedObject instanceof Polygon) {
+                        Assert.assertArrayEquals(((Polygon) expectedObject).toArray(), (double[]) actualObject, 0.0);
+                    } else if (!withMetadata && expectedObject instanceof URI) {
+                        Assert.assertEquals(expectedObject.toString(), actualObject.toString());
+                    } else {
+                        Assert.assertEquals("Incorrect value at " + i, expectedObject, actualObject);
+                    }
                 }
             }
         }
@@ -667,7 +705,7 @@ public class TestUtil {
         }
     }
 
-    public void compareFields(List<VOTableField> expected, List<VOTableField> actual) {
+    public void compareFields(List<VOTableField> expected, List<VOTableField> actual, boolean withMetadata) {
         // FIELD
         Assert.assertNotNull(expected);
         Assert.assertNotNull(actual);
@@ -677,22 +715,41 @@ public class TestUtil {
             VOTableField actualField = actual.get(i);
             Assert.assertNotNull(expectedField);
             Assert.assertNotNull(actualField);
-            System.out.println("expectedField: " + expectedField);
             Assert.assertEquals(expectedField.getName(), actualField.getName());
             if (expectedField.getDatatype().equalsIgnoreCase("short")) {
                 Assert.assertEquals("int", actualField.getDatatype());
             } else {
-                Assert.assertEquals(expectedField.getDatatype(), actualField.getDatatype());
+                if (withMetadata) {
+                    Assert.assertEquals(expectedField.getDatatype(), actualField.getDatatype());
+                } else {
+                    if (expectedField.getDatatype().equalsIgnoreCase("point")
+                            || expectedField.getDatatype().equalsIgnoreCase("circle")
+                            || expectedField.getDatatype().equalsIgnoreCase("polygon")
+                            || expectedField.getDatatype().equalsIgnoreCase("interval")) {
+                        Assert.assertEquals("double", actualField.getDatatype());
+                    } else {
+                        Assert.assertEquals(expectedField.getDatatype(), actualField.getDatatype());
+                    }
+                }
             }
-            Assert.assertEquals(expectedField.id, actualField.id);
-            Assert.assertEquals(expectedField.ucd, actualField.ucd);
-            Assert.assertEquals(expectedField.unit, actualField.unit);
-            Assert.assertEquals(expectedField.utype, actualField.utype);
-            if (expectedField.xtype != null && !expectedField.xtype.equalsIgnoreCase("timestamp")) {
-                Assert.assertEquals(expectedField.xtype, actualField.xtype);
-                Assert.assertEquals(expectedField.getArraysize(), actualField.getArraysize());
+
+            if (withMetadata) {
+                Assert.assertEquals(expectedField.id, actualField.id);
+                Assert.assertEquals(expectedField.ucd, actualField.ucd);
+                Assert.assertEquals(expectedField.unit, actualField.unit);
+                Assert.assertEquals(expectedField.utype, actualField.utype);
+                if (expectedField.xtype != null && !expectedField.xtype.equalsIgnoreCase("timestamp")) {
+                    Assert.assertEquals(expectedField.xtype, actualField.xtype);
+                    Assert.assertEquals(expectedField.getArraysize(), actualField.getArraysize());
+                }
+                Assert.assertEquals(expectedField.description, actualField.description);
+            } else {
+                // without metadata, only the timestamp field's xtype is retrieved
+                if (expectedField.xtype != null && expectedField.xtype.equalsIgnoreCase("timestamp")) {
+                    Assert.assertEquals(expectedField.xtype, actualField.xtype);
+                    Assert.assertEquals("*", actualField.getArraysize());
+                }
             }
-            Assert.assertEquals(expectedField.description, actualField.description);
         }
     }
 }
