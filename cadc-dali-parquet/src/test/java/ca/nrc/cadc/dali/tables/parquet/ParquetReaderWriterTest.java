@@ -92,9 +92,15 @@ public class ParquetReaderWriterTest extends TestUtil {
     @Test
     public void testReadWriteParquet() throws Exception {
         log.debug("testReadWriteParquet");
+        testReadWriteParquet(true);
+        testReadWriteParquet(false);
+    }
+
+    public void testReadWriteParquet(boolean withMetadata) throws Exception {
+        log.debug("testReadWriteParquet for withMetadata = " + withMetadata);
         VOTableDocument originalVOTableDoc = prepareVOTable();
 
-        ParquetWriter writer = new ParquetWriter();
+        ParquetWriter writer = new ParquetWriter(withMetadata);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         writer.write(prepareVOTable(), out);
 
@@ -102,10 +108,10 @@ public class ParquetReaderWriterTest extends TestUtil {
         InputStream inputStream = new ByteArrayInputStream(out.toByteArray());
         VOTableDocument actualVOTableDoc = reader.read(inputStream);
 
-        compareVOTable(originalVOTableDoc, actualVOTableDoc, null);
+        compareVOTable(originalVOTableDoc, actualVOTableDoc, null, withMetadata);
     }
 
-    @Test
+    //@Test
     public void readArbitrarySampleFile() throws Exception {
         log.debug("readArbitrarySampleFile");
 

@@ -77,6 +77,7 @@ import ca.nrc.cadc.dali.tables.votable.VOTableField;
 import ca.nrc.cadc.dali.tables.votable.VOTableReader;
 import ca.nrc.cadc.dali.tables.votable.VOTableResource;
 import ca.nrc.cadc.dali.tables.votable.VOTableTable;
+import ca.nrc.cadc.dali.util.BooleanFormat;
 import ca.nrc.cadc.dali.util.ByteArrayFormat;
 import ca.nrc.cadc.dali.util.ByteFormat;
 import ca.nrc.cadc.dali.util.DoubleArrayFormat;
@@ -223,6 +224,7 @@ public class ParquetReader implements TableReader {
                 String type;
                 String arraysize = null;
                 Format format;
+                String xtype = null;
                 switch (physicalType) {
                     case INT32:
                         type = "int";
@@ -236,9 +238,10 @@ public class ParquetReader implements TableReader {
                     case INT64:
                         LogicalTypeAnnotation logicalType = actualField.asPrimitiveType().getLogicalTypeAnnotation();
                         if (logicalType instanceof LogicalTypeAnnotation.TimestampLogicalTypeAnnotation) {
-                            type = "timestamp";
+                            type = "char";
                             format = new UTCTimestampFormat();
                             arraysize = "*";
+                            xtype = "timestamp";
                         } else {
                             type = "long";
                             if (field.getLogicalTypeAnnotation() instanceof LogicalTypeAnnotation.ListLogicalTypeAnnotation) {
@@ -292,11 +295,17 @@ public class ParquetReader implements TableReader {
                             format = new ByteArrayFormat();
                         }
                         break;
+                    case BOOLEAN:
+                        // Boolean array is not possible in VOTable.
+                        type = "boolean";
+                        format = new BooleanFormat();
+                        break;
                     default:
                         throw new IllegalArgumentException("Unsupported parquet physical type: " + physicalType);
                 }
 
                 VOTableField voTableField = new VOTableField(name, type, arraysize);
+                voTableField.xtype = xtype;
                 fields.add(voTableField);
                 formatters.add(format);
             });
